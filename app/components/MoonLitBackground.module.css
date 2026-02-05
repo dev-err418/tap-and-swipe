@@ -23,10 +23,9 @@
 
 .noise {
     position: absolute;
-    top: -15%;
-    left: 0;
+    inset: 0;
     width: 100%;
-    height: 120%;
+    height: 100%;
     background: radial-gradient(circle at 50% 50%,
             rgba(0, 0, 0, 1),
             rgba(0, 0, 0, 0)),
@@ -34,6 +33,8 @@
     filter: contrast(145%) brightness(650%) invert(100%);
     mix-blend-mode: screen;
     pointer-events: none;
+    z-index: 1;
+    /* Ensure noise is above the background but below drawing if needed, though mix-blend handles it. Actually drawing is sibling. */
 }
 
 @media all and (-webkit-min-device-pixel-ratio:0) and (min-resolution: .001dpcm) {
