@@ -66,7 +66,7 @@ const LandingPage = () => {
                     </div>
 
                     <p className="mt-4 text-sm font-medium text-[#c9c4bc]">
-                        Join before the group closes (<span className="text-[#f4cf8f]">12 seats left</span>)
+                        Limited spots available (<span className="text-[#f4cf8f]">9 seats left</span>)
                     </p>
 
                     <div className="mt-8 flex flex-col items-center gap-3">
