@@ -6,21 +6,15 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-black px-4 py-16 text-white">
+    <main className="min-h-screen bg-[#2a2725] px-4 py-16 text-[#f1ebe2] selection:bg-[#f4cf8f]/30">
       <article className="mx-auto max-w-2xl">
-        <Link
-          href="/"
-          className="text-sm text-slate-400 hover:text-white transition-colors"
-        >
-          &larr; Back to home
-        </Link>
 
-        <h1 className="mt-8 font-serif text-4xl font-bold tracking-tight sm:text-5xl">
+        <h1 className="mt-8 font-serif text-4xl font-bold tracking-tight sm:text-5xl text-[#f1ebe2]">
           Privacy Policy
         </h1>
-        <p className="mt-2 text-slate-400">Effective Date: February 10, 2025</p>
+        <p className="mt-2 text-[#c9c4bc]">Effective Date: February 10, 2025</p>
 
-        <div className="mt-10 space-y-8 text-slate-300 leading-relaxed">
+        <div className="mt-10 space-y-8 text-[#c9c4bc] leading-relaxed">
           <p>
             Welcome to Tap &amp; Swipe! This Privacy Policy explains how we
             collect, use, and protect your personal information. By using our
@@ -28,24 +22,24 @@ export default function PrivacyPage() {
           </p>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">
               1. Information We Collect
             </h2>
             <p className="mt-2">We collect the following types of information:</p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
-                <strong className="text-white">Personal Information:</strong> Your
+                <strong className="text-[#f1ebe2]">Personal Information:</strong> Your
                 Discord username, Discord avatar, and payment information.
               </li>
               <li>
-                <strong className="text-white">Non-Personal Information:</strong>{" "}
+                <strong className="text-[#f1ebe2]">Non-Personal Information:</strong>{" "}
                 Web cookies to enhance your browsing experience.
               </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">
               2. Purpose of Data Collection
             </h2>
             <p className="mt-2">
@@ -55,7 +49,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">
               3. Data Sharing
             </h2>
             <p className="mt-2">
@@ -64,15 +58,15 @@ export default function PrivacyPage() {
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
-                <strong className="text-white">Stripe</strong> (to handle
+                <strong className="text-[#f1ebe2]">Stripe</strong> (to handle
                 payments and subscriptions)
               </li>
               <li>
-                <strong className="text-white">Discord</strong> (for
+                <strong className="text-[#f1ebe2]">Discord</strong> (for
                 authentication and community access)
               </li>
               <li>
-                <strong className="text-white">Vercel</strong> (to host and serve
+                <strong className="text-[#f1ebe2]">Vercel</strong> (to host and serve
                 the website)
               </li>
             </ul>
@@ -85,7 +79,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">
               4. Children&apos;s Privacy
             </h2>
             <p className="mt-2">
@@ -96,7 +90,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">
               5. Updates to this Policy
             </h2>
             <p className="mt-2">
@@ -106,13 +100,13 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">6. Contact Us</h2>
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">6. Contact Us</h2>
             <p className="mt-2">
               If you have any questions or concerns about this Privacy Policy,
               please contact us at{" "}
               <a
                 href="mailto:arthurs.dev@gmail.com"
-                className="text-white underline hover:text-slate-300"
+                className="text-[#f4cf8f] underline hover:text-[#f4cf8f]/80"
               >
                 arthurs.dev@gmail.com
               </a>{" "}
@@ -120,7 +114,7 @@ export default function PrivacyPage() {
             </p>
           </section>
 
-          <p className="pt-4 text-sm text-slate-500">
+          <p className="pt-4 text-sm text-[#c9c4bc]">
             By using Tap &amp; Swipe, you agree to the terms outlined in this
             Privacy Policy.
           </p>

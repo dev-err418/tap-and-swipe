@@ -6,23 +6,17 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-black px-4 py-16 text-white">
+    <main className="min-h-screen bg-[#2a2725] px-4 py-16 text-[#f1ebe2] selection:bg-[#f4cf8f]/30">
       <article className="mx-auto max-w-2xl">
-        <Link
-          href="/"
-          className="text-sm text-slate-400 hover:text-white transition-colors"
-        >
-          &larr; Back to home
-        </Link>
 
-        <h1 className="mt-8 font-serif text-4xl font-bold tracking-tight sm:text-5xl">
+        <h1 className="mt-8 font-serif text-4xl font-bold tracking-tight sm:text-5xl text-[#f1ebe2]">
           Terms of Service
         </h1>
-        <p className="mt-2 text-slate-400">Effective Date: February 10, 2025</p>
+        <p className="mt-2 text-[#c9c4bc]">Effective Date: February 10, 2025</p>
 
-        <div className="mt-10 space-y-8 text-slate-300 leading-relaxed">
+        <div className="mt-10 space-y-8 text-[#c9c4bc] leading-relaxed">
           <section>
-            <h2 className="text-xl font-semibold text-white">1. Overview</h2>
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">1. Overview</h2>
             <p className="mt-2">
               Tap &amp; Swipe provides App Sprint, a course designed to help you
               build and launch mobile apps. Upon purchase, users receive access
@@ -34,7 +28,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">
               2. Usage Rights
             </h2>
             <ul className="mt-2 list-disc space-y-1 pl-6">
@@ -54,7 +48,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">
               3. Refund Policy
             </h2>
             <p className="mt-2">
@@ -63,7 +57,7 @@ export default function TermsPage() {
               at{" "}
               <a
                 href="mailto:arthurs.dev@gmail.com"
-                className="text-white underline hover:text-slate-300"
+                className="text-[#f4cf8f] underline hover:text-[#f4cf8f]/80"
               >
                 arthurs.dev@gmail.com
               </a>{" "}
@@ -72,14 +66,14 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">4. User Data</h2>
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">4. User Data</h2>
             <p className="mt-2">
               We collect your Discord account information and payment information
               as part of our service. Non-personal data, such as cookies, may
               also be collected. For details, refer to our{" "}
               <Link
                 href="/privacy"
-                className="text-white underline hover:text-slate-300"
+                className="text-[#f4cf8f] underline hover:text-[#f4cf8f]/80"
               >
                 Privacy Policy
               </Link>
@@ -88,7 +82,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">
               5. Governing Law
             </h2>
             <p className="mt-2">
@@ -97,7 +91,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">
               6. Modifications
             </h2>
             <ul className="mt-2 list-disc space-y-1 pl-6">
@@ -109,14 +103,14 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-[#f1ebe2]">
               7. Contact Information
             </h2>
             <p className="mt-2">
               If you have questions, please reach out at{" "}
               <a
                 href="mailto:arthurs.dev@gmail.com"
-                className="text-white underline hover:text-slate-300"
+                className="text-[#f4cf8f] underline hover:text-[#f4cf8f]/80"
               >
                 arthurs.dev@gmail.com
               </a>{" "}
@@ -124,7 +118,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          <p className="pt-4 text-sm text-slate-500">
+          <p className="pt-4 text-sm text-[#c9c4bc]">
             By using Tap &amp; Swipe, you acknowledge and agree to these Terms.
           </p>
         </div>
