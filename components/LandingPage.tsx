@@ -50,9 +50,7 @@ const LandingPage = () => {
 
                     <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                         <a
-                            href="https://discord.gg/"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            href="/api/auth/discord"
                             className="group flex h-12 items-center gap-2 rounded-full bg-[#5865F2] px-8 text-base font-semibold text-white transition-all hover:bg-[#4752C4] hover:ring-4 hover:ring-[#5865F2]/20 cursor-pointer"
                         >
                             <DiscordIcon className="h-5 w-5" />
