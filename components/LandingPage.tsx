@@ -210,6 +210,34 @@ const LandingPage = () => {
                 </div>
             </section>
 
+            {/* Testimonials Section (Placeholder) */}
+            <section id="testimonials" className="bg-[#2a2725] py-24 border-t border-white/5">
+                <div className="mx-auto max-w-7xl px-6">
+                    <div className="mb-16 text-center">
+                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">What makers are saying</h2>
+                        <p className="mt-4 text-lg text-[#c9c4bc]">Join the community of builders shipping their dreams.</p>
+                    </div>
+                    {/* Placeholder content */}
+                    <div className="flex h-64 items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-8 text-[#c9c4bc]">
+                        Testimonials coming soon...
+                    </div>
+                </div>
+            </section>
+
+            {/* Group Calls Section (Placeholder) */}
+            <section id="group-calls" className="bg-[#2a2725] py-24 border-t border-white/5">
+                <div className="mx-auto max-w-7xl px-6">
+                    <div className="mb-16 text-center">
+                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Group Calls</h2>
+                        <p className="mt-4 text-lg text-[#c9c4bc]">Weekly live sessions to unblock your progress.</p>
+                    </div>
+                    {/* Placeholder content */}
+                    <div className="flex h-64 items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-8 text-[#c9c4bc]">
+                        Group calls schedule coming soon...
+                    </div>
+                </div>
+            </section>
+
             {/* Footer */}
             <footer className="border-t border-white/10 bg-[#2a2725] py-8">
                 <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
