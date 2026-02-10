@@ -27,24 +27,29 @@ const DiscordIcon = ({ className }: { className?: string }) => (
 
 const LandingPage = () => {
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-orange-500/30">
+        <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30">
 
             {/* Hero Section */}
             <header className="relative overflow-hidden pt-20 pb-32">
                 <div className="mx-auto max-w-7xl px-6 text-center">
-                    <Badge className="mb-6 rounded-full border border-orange-500/20 bg-orange-500/10 px-4 py-1.5 text-sm font-medium text-orange-400 hover:bg-orange-500/20">
-                        <span className="mr-2">🚀</span> New Course Available
-                    </Badge>
+                    <div className="mb-6 flex items-center justify-center gap-2">
+                        <img
+                            src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
+                            alt="ArthurBuildsStuff"
+                            className="h-8 w-8 rounded-full border border-[#f4cf8f]/20"
+                        />
+                        <span className="text-sm font-medium text-[#c9c4bc]">By ArthurBuildsStuff</span>
+                    </div>
                     <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[0.9] sm:text-7xl">
                         Build a mobile app in <br />
-                        weeks <span className="relative inline-block font-serif text-6xl text-orange-500 sm:text-8xl">
+                        weeks <span className="relative inline-block font-serif text-6xl text-[#f4cf8f] sm:text-8xl">
                             not months
                             <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 10" preserveAspectRatio="none">
-                                <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="2" fill="none" className="text-orange-900/50" />
+                                <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="2" fill="none" className="text-[#f4cf8f]/50" />
                             </svg>
                         </span>
                     </h1>
-                    <p className="mx-auto mt-8 max-w-2xl text-lg text-gray-400 sm:text-xl">
+                    <p className="mx-auto mt-8 max-w-2xl text-lg text-[#c9c4bc] sm:text-xl">
                         Stop dreaming and start shipping. The complete guide to validating, designing, building, and scaling your own mobile app business.
                     </p>
 
@@ -61,7 +66,7 @@ const LandingPage = () => {
 
 
                     <div className="mt-16 flex justify-center">
-                        <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-orange-500/10 ring-1 ring-white/10">
+                        <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-[#f4cf8f]/10 ring-1 ring-white/10">
                             <video
                                 src="https://assets.whop.com/uploads-optimized/2026-02-05/10143289-4fe6-4555-b43e-26d66a821835.mp4"
                                 autoPlay
@@ -77,30 +82,30 @@ const LandingPage = () => {
             </header>
 
             {/* Bento Grid Section */}
-            <section id="curriculum" className="bg-black py-24">
+            <section id="curriculum" className="bg-[#2a2725] py-24">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Everything you need to launch</h2>
-                        <p className="mt-4 text-lg text-gray-400">From just an idea to your first paying customer.</p>
+                        <h2 className="text-3xl font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Everything you need to launch</h2>
+                        <p className="mt-4 text-lg text-[#c9c4bc]">From just an idea to your first paying customer.</p>
                     </div>
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4 lg:grid-rows-2">
 
                         {/* 1. Idea Validation (Large square) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-zinc-900/50 p-8 shadow-sm transition-all hover:bg-zinc-900 hover:shadow-md md:col-span-2 md:row-span-2 border border-white/5">
-                            <div className="absolute top-0 right-0 -mr-8 -mt-8 h-32 w-32 rounded-full bg-yellow-500/10 blur-3xl"></div>
+                        <div className="group relative overflow-hidden rounded-3xl bg-white/5 p-8 shadow-sm transition-all hover:bg-white/10 hover:shadow-md md:col-span-2 md:row-span-2 border border-white/5">
+                            <div className="absolute top-0 right-0 -mr-8 -mt-8 h-32 w-32 rounded-full bg-[#f4cf8f]/10 blur-3xl"></div>
                             <div className="relative z-10">
-                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f4cf8f]/10 text-[#f4cf8f] border border-[#f4cf8f]/20">
                                     <Lightbulb className="h-6 w-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white">Idea Validation</h3>
-                                <p className="mt-4 text-gray-400 leading-relaxed">
+                                <h3 className="text-2xl font-bold text-[#f1ebe2]">Idea Validation</h3>
+                                <p className="mt-4 text-[#c9c4bc] leading-relaxed">
                                     Don't waste time building something nobody wants. Learn how to find profitable niches, interview potential users, and pre-sell your app before writing a single line of code.
                                 </p>
                                 <ul className="mt-8 space-y-3">
                                     {['Market Research Framework', 'The "Mom Test" Approach', 'Landing Page Testing'].map((item) => (
-                                        <li key={item} className="flex items-center gap-3 text-sm font-medium text-gray-300">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-yellow-500"></div>
+                                        <li key={item} className="flex items-center gap-3 text-sm font-medium text-[#f1ebe2]/80">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-[#f4cf8f]"></div>
                                             {item}
                                         </li>
                                     ))}
@@ -109,15 +114,15 @@ const LandingPage = () => {
                         </div>
 
                         {/* 2. Design UI & UX (Horizontal rectangle) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-zinc-900/50 p-8 shadow-sm transition-all hover:bg-zinc-900 hover:shadow-md md:col-span-2 border border-white/5">
+                        <div className="group relative overflow-hidden rounded-3xl bg-white/5 p-8 shadow-sm transition-all hover:bg-white/10 hover:shadow-md md:col-span-2 border border-white/5">
                             <div className="absolute bottom-0 right-0 -mb-8 -mr-8 h-40 w-40 rounded-full bg-pink-500/10 blur-3xl"></div>
                             <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                                 <div>
                                     <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10 text-pink-500 border border-pink-500/20">
                                         <Palette className="h-5 w-5" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-white">Design UI & UX</h3>
-                                    <p className="mt-2 text-sm text-gray-400">Create beautiful, intuitive interfaces that users love.</p>
+                                    <h3 className="text-xl font-bold text-[#f1ebe2]">Design UI & UX</h3>
+                                    <p className="mt-2 text-sm text-[#c9c4bc]">Create beautiful, intuitive interfaces that users love.</p>
                                 </div>
                                 {/* Abstract UI representation */}
                                 <div className="flex gap-2">
@@ -129,45 +134,45 @@ const LandingPage = () => {
                         </div>
 
                         {/* 3. Development Guide (Vertical rectangle) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-black p-8 shadow-sm transition-all hover:shadow-md md:col-span-1 border border-zinc-800">
-                            <div className="relative z-10 text-white">
-                                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-800 text-gray-200 border border-zinc-700">
+                        <div className="group relative overflow-hidden rounded-3xl bg-black/40 p-8 shadow-sm transition-all hover:shadow-md md:col-span-1 border border-white/5">
+                            <div className="relative z-10 text-[#f1ebe2]">
+                                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#c9c4bc] border border-white/10">
                                     <Code className="h-5 w-5" />
                                 </div>
                                 <h3 className="text-lg font-bold">Development</h3>
-                                <p className="mt-2 text-sm text-gray-400">React Native / Expo</p>
+                                <p className="mt-2 text-sm text-[#c9c4bc]">React Native / Expo</p>
                                 <div className="mt-8 space-y-2">
-                                    <div className="h-2 w-full rounded-full bg-zinc-800"></div>
-                                    <div className="h-2 w-3/4 rounded-full bg-zinc-800"></div>
-                                    <div className="h-2 w-1/2 rounded-full bg-zinc-700"></div>
+                                    <div className="h-2 w-full rounded-full bg-white/10"></div>
+                                    <div className="h-2 w-3/4 rounded-full bg-white/10"></div>
+                                    <div className="h-2 w-1/2 rounded-full bg-white/5"></div>
                                 </div>
-                                <div className="mt-6 rounded-lg bg-zinc-900 border border-zinc-800 p-3 font-mono text-xs text-green-400">
+                                <div className="mt-6 rounded-lg bg-black/50 border border-white/5 p-3 font-mono text-xs text-green-400">
                                     $ npx create-expo-app
                                 </div>
                             </div>
                         </div>
 
                         {/* 4. Paywall (Small square) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-zinc-900/50 p-8 shadow-sm transition-all hover:bg-zinc-900 hover:shadow-md md:col-span-1 border border-white/5">
+                        <div className="group relative overflow-hidden rounded-3xl bg-white/5 p-8 shadow-sm transition-all hover:bg-white/10 hover:shadow-md md:col-span-1 border border-white/5">
                             <div className="absolute top-0 right-0 h-24 w-24 rounded-bl-full bg-green-500/10 opacity-50"></div>
                             <div className="relative z-10">
                                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-500 border border-green-500/20">
                                     <CreditCard className="h-5 w-5" />
                                 </div>
-                                <h3 className="text-lg font-bold text-white">Cashing in</h3>
-                                <p className="mt-2 text-sm text-gray-400">Stripe & RevenueCat.</p>
+                                <h3 className="text-lg font-bold text-[#f1ebe2]">Cashing in</h3>
+                                <p className="mt-2 text-sm text-[#c9c4bc]">Stripe & RevenueCat.</p>
                             </div>
                         </div>
 
                         {/* 5. Marketing & Growth (Small square) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-orange-600 p-8 shadow-sm transition-all hover:bg-orange-600 hover:shadow-md md:col-span-2 border border-orange-500 text-white">
+                        <div className="group relative overflow-hidden rounded-3xl bg-[#f4cf8f] p-8 shadow-sm transition-all hover:bg-[#eac07e] hover:shadow-md md:col-span-2 border border-[#f4cf8f] text-[#2a2725]">
                             <div className="relative z-10 flex items-center justify-between">
                                 <div>
-                                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white border border-white/20">
+                                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#2a2725]/10 text-[#2a2725] border border-[#2a2725]/10">
                                         <TrendingUp className="h-5 w-5" />
                                     </div>
                                     <h3 className="text-xl font-bold">Marketing & Growth</h3>
-                                    <p className="mt-2 text-sm text-white/80">Scale to your first 1,000 users.</p>
+                                    <p className="mt-2 text-sm text-[#2a2725]/80">Scale to your first 1,000 users.</p>
                                 </div>
                                 <div className="text-4xl font-bold opacity-20">10x</div>
                             </div>
@@ -178,12 +183,12 @@ const LandingPage = () => {
             </section>
 
             {/* Footer */}
-            <footer className="border-t border-white/10 bg-black py-8">
+            <footer className="border-t border-white/10 bg-[#2a2725] py-8">
                 <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
-                    <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Tap & Swipe. All rights reserved.</p>
+                    <p className="text-sm text-[#c9c4bc]">&copy; {new Date().getFullYear()} Tap & Swipe. All rights reserved.</p>
                     <div className="flex gap-6">
-                        <a href="/tos" className="text-sm text-gray-500 hover:text-gray-300">Terms of Service</a>
-                        <a href="/privacy" className="text-sm text-gray-500 hover:text-gray-300">Privacy Policy</a>
+                        <a href="/tos" className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]">Terms of Service</a>
+                        <a href="/privacy" className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]">Privacy Policy</a>
                     </div>
                 </div>
             </footer>
