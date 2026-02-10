@@ -128,12 +128,12 @@
   }
 
   html {
-    background-color: #111;
+    background-color: #2a2725;
   }
 
   body {
     @apply text-foreground;
-    background: transparent;
+    background-color: #2a2725;
     min-height: 100vh;
     min-height: 100dvh;
   }
