@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import {
     Lightbulb,
@@ -12,7 +10,6 @@ import {
     Play,
     Star
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 const DiscordIcon = ({ className }: { className?: string }) => (
     <svg
