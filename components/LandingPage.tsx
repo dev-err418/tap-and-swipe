@@ -85,7 +85,7 @@ const LandingPage = () => {
             <section id="curriculum" className="bg-[#2a2725] py-24">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Everything you need to launch</h2>
+                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Everything you need to launch</h2>
                         <p className="mt-4 text-lg text-[#c9c4bc]">From just an idea to your first paying customer.</p>
                     </div>
 
