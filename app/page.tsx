@@ -8,6 +8,14 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center text-center">
+        <div className="mb-6 flex items-center justify-center gap-2">
+          <img
+            src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
+            alt="ArthurBuildsStuff"
+            className="h-8 w-8 rounded-full border border-[#f4cf8f]/20"
+          />
+          <span className="text-sm font-medium text-[#c9c4bc]">By ArthurBuildsStuff</span>
+        </div>
         <h1
           className="font-serif text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl text-[#f1ebe2]"
         >
@@ -38,9 +46,9 @@ export default function Home() {
         <div className="mt-8">
           <a
             href="/app-sprint"
-            className="text-lg font-medium text-[#f4cf8f] hover:text-[#f4cf8f]/80 underline decoration-[#f4cf8f]/50 underline-offset-4 transition-colors"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-[#f4cf8f] px-8 text-base font-semibold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20"
           >
-            App Sprint
+            Check App Sprint
           </a>
         </div>
       </section>
