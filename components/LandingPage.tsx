@@ -27,48 +27,43 @@ const DiscordIcon = ({ className }: { className?: string }) => (
 
 const LandingPage = () => {
     return (
-        <div className="min-h-screen bg-[#Fdfdfd] text-[#1a1a1a] font-sans selection:bg-orange-500/20">
+        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-orange-500/30">
 
             {/* Hero Section */}
             <header className="relative overflow-hidden pt-20 pb-32">
                 <div className="mx-auto max-w-7xl px-6 text-center">
-                    <Badge className="mb-6 rounded-full border border-orange-200 bg-orange-50 px-4 py-1.5 text-sm font-medium text-orange-600 hover:bg-orange-100">
+                    <Badge className="mb-6 rounded-full border border-orange-500/20 bg-orange-500/10 px-4 py-1.5 text-sm font-medium text-orange-400 hover:bg-orange-500/20">
                         <span className="mr-2">🚀</span> New Course Available
                     </Badge>
-                    <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[1.1] sm:text-7xl">
+                    <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[0.9] sm:text-7xl">
                         Build a mobile app in <br />
-                        <span className="relative inline-block text-orange-500">
-                            weeks not months
+                        weeks <span className="relative inline-block font-serif text-6xl text-orange-500 sm:text-8xl">
+                            not months
                             <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 10" preserveAspectRatio="none">
-                                <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="2" fill="none" className="text-orange-200" />
+                                <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="2" fill="none" className="text-orange-900/50" />
                             </svg>
                         </span>
                     </h1>
-                    <p className="mx-auto mt-8 max-w-2xl text-lg text-gray-600 sm:text-xl">
+                    <p className="mx-auto mt-8 max-w-2xl text-lg text-gray-400 sm:text-xl">
                         Stop dreaming and start shipping. The complete guide to validating, designing, building, and scaling your own mobile app business.
                     </p>
 
                     <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                        <button className="group flex h-12 items-center gap-2 rounded-full bg-[#5865F2] px-8 text-base font-semibold text-white transition-all hover:bg-[#4752C4] hover:ring-4 hover:ring-[#5865F2]/20">
+                        <a
+                            href="https://discord.gg/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex h-12 items-center gap-2 rounded-full bg-[#5865F2] px-8 text-base font-semibold text-white transition-all hover:bg-[#4752C4] hover:ring-4 hover:ring-[#5865F2]/20 cursor-pointer"
+                        >
                             <DiscordIcon className="h-5 w-5" />
                             Join the Community
                             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        </button>
+                        </a>
                     </div>
 
-                    <div className="mt-12 flex items-center justify-center gap-8 text-sm text-gray-500">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span>No prior experience needed</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span>Lifetime access</span>
-                        </div>
-                    </div>
 
                     <div className="mt-16 flex justify-center">
-                        <div className="relative overflow-hidden rounded-[32px] shadow-xl ring-1 ring-gray-900/10">
+                        <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-orange-500/10 ring-1 ring-white/10">
                             <video
                                 src="https://assets.whop.com/uploads-optimized/2026-02-05/10143289-4fe6-4555-b43e-26d66a821835.mp4"
                                 autoPlay
@@ -84,30 +79,30 @@ const LandingPage = () => {
             </header>
 
             {/* Bento Grid Section */}
-            <section id="curriculum" className="bg-gray-50 py-24">
+            <section id="curriculum" className="bg-black py-24">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Everything you need to launch</h2>
-                        <p className="mt-4 text-lg text-gray-600">From just an idea to your first paying customer.</p>
+                        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Everything you need to launch</h2>
+                        <p className="mt-4 text-lg text-gray-400">From just an idea to your first paying customer.</p>
                     </div>
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4 lg:grid-rows-2">
 
                         {/* 1. Idea Validation (Large square) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-white p-8 shadow-sm transition-all hover:shadow-md md:col-span-2 md:row-span-2 border border-gray-100">
-                            <div className="absolute top-0 right-0 -mr-8 -mt-8 h-32 w-32 rounded-full bg-yellow-100/50 blur-3xl"></div>
+                        <div className="group relative overflow-hidden rounded-3xl bg-zinc-900/50 p-8 shadow-sm transition-all hover:bg-zinc-900 hover:shadow-md md:col-span-2 md:row-span-2 border border-white/5">
+                            <div className="absolute top-0 right-0 -mr-8 -mt-8 h-32 w-32 rounded-full bg-yellow-500/10 blur-3xl"></div>
                             <div className="relative z-10">
-                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-100 text-yellow-600">
+                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
                                     <Lightbulb className="h-6 w-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900">Idea Validation</h3>
-                                <p className="mt-4 text-gray-600 leading-relaxed">
+                                <h3 className="text-2xl font-bold text-white">Idea Validation</h3>
+                                <p className="mt-4 text-gray-400 leading-relaxed">
                                     Don't waste time building something nobody wants. Learn how to find profitable niches, interview potential users, and pre-sell your app before writing a single line of code.
                                 </p>
                                 <ul className="mt-8 space-y-3">
                                     {['Market Research Framework', 'The "Mom Test" Approach', 'Landing Page Testing'].map((item) => (
-                                        <li key={item} className="flex items-center gap-3 text-sm font-medium text-gray-700">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-yellow-400"></div>
+                                        <li key={item} className="flex items-center gap-3 text-sm font-medium text-gray-300">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-yellow-500"></div>
                                             {item}
                                         </li>
                                     ))}
@@ -116,61 +111,61 @@ const LandingPage = () => {
                         </div>
 
                         {/* 2. Design UI & UX (Horizontal rectangle) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-white p-8 shadow-sm transition-all hover:shadow-md md:col-span-2 border border-gray-100">
-                            <div className="absolute bottom-0 right-0 -mb-8 -mr-8 h-40 w-40 rounded-full bg-pink-100/50 blur-3xl"></div>
+                        <div className="group relative overflow-hidden rounded-3xl bg-zinc-900/50 p-8 shadow-sm transition-all hover:bg-zinc-900 hover:shadow-md md:col-span-2 border border-white/5">
+                            <div className="absolute bottom-0 right-0 -mb-8 -mr-8 h-40 w-40 rounded-full bg-pink-500/10 blur-3xl"></div>
                             <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                                 <div>
-                                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-pink-100 text-pink-600">
+                                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10 text-pink-500 border border-pink-500/20">
                                         <Palette className="h-5 w-5" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-gray-900">Design UI & UX</h3>
-                                    <p className="mt-2 text-sm text-gray-600">Create beautiful, intuitive interfaces that users love.</p>
+                                    <h3 className="text-xl font-bold text-white">Design UI & UX</h3>
+                                    <p className="mt-2 text-sm text-gray-400">Create beautiful, intuitive interfaces that users love.</p>
                                 </div>
                                 {/* Abstract UI representation */}
                                 <div className="flex gap-2">
-                                    <div className="h-16 w-12 rounded-lg bg-gray-50 border border-gray-100 shadow-sm animate-pulse"></div>
-                                    <div className="h-16 w-12 rounded-lg bg-pink-50 border border-pink-100 shadow-sm"></div>
-                                    <div className="h-16 w-12 rounded-lg bg-gray-50 border border-gray-100 shadow-sm"></div>
+                                    <div className="h-16 w-12 rounded-lg bg-white/5 border border-white/10 shadow-sm animate-pulse"></div>
+                                    <div className="h-16 w-12 rounded-lg bg-pink-500/10 border border-pink-500/20 shadow-sm"></div>
+                                    <div className="h-16 w-12 rounded-lg bg-white/5 border border-white/10 shadow-sm"></div>
                                 </div>
                             </div>
                         </div>
 
                         {/* 3. Development Guide (Vertical rectangle) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-black p-8 shadow-sm transition-all hover:shadow-md md:col-span-1 border border-gray-800">
+                        <div className="group relative overflow-hidden rounded-3xl bg-black p-8 shadow-sm transition-all hover:shadow-md md:col-span-1 border border-zinc-800">
                             <div className="relative z-10 text-white">
-                                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-gray-800 text-gray-200">
+                                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-800 text-gray-200 border border-zinc-700">
                                     <Code className="h-5 w-5" />
                                 </div>
                                 <h3 className="text-lg font-bold">Development</h3>
                                 <p className="mt-2 text-sm text-gray-400">React Native / Expo</p>
                                 <div className="mt-8 space-y-2">
-                                    <div className="h-2 w-full rounded-full bg-gray-800"></div>
-                                    <div className="h-2 w-3/4 rounded-full bg-gray-800"></div>
-                                    <div className="h-2 w-1/2 rounded-full bg-gray-700"></div>
+                                    <div className="h-2 w-full rounded-full bg-zinc-800"></div>
+                                    <div className="h-2 w-3/4 rounded-full bg-zinc-800"></div>
+                                    <div className="h-2 w-1/2 rounded-full bg-zinc-700"></div>
                                 </div>
-                                <div className="mt-6 rounded-lg bg-gray-900 p-3 font-mono text-xs text-green-400">
+                                <div className="mt-6 rounded-lg bg-zinc-900 border border-zinc-800 p-3 font-mono text-xs text-green-400">
                                     $ npx create-expo-app
                                 </div>
                             </div>
                         </div>
 
                         {/* 4. Paywall (Small square) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-white p-8 shadow-sm transition-all hover:shadow-md md:col-span-1 border border-gray-100">
-                            <div className="absolute top-0 right-0 h-24 w-24 rounded-bl-full bg-green-50 opacity-50"></div>
+                        <div className="group relative overflow-hidden rounded-3xl bg-zinc-900/50 p-8 shadow-sm transition-all hover:bg-zinc-900 hover:shadow-md md:col-span-1 border border-white/5">
+                            <div className="absolute top-0 right-0 h-24 w-24 rounded-bl-full bg-green-500/10 opacity-50"></div>
                             <div className="relative z-10">
-                                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-600">
+                                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-500 border border-green-500/20">
                                     <CreditCard className="h-5 w-5" />
                                 </div>
-                                <h3 className="text-lg font-bold text-gray-900">Cashing in</h3>
-                                <p className="mt-2 text-sm text-gray-600">Stripe & RevenueCat.</p>
+                                <h3 className="text-lg font-bold text-white">Cashing in</h3>
+                                <p className="mt-2 text-sm text-gray-400">Stripe & RevenueCat.</p>
                             </div>
                         </div>
 
                         {/* 5. Marketing & Growth (Small square) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-orange-500 p-8 shadow-sm transition-all hover:shadow-md md:col-span-2 border border-orange-400 text-white">
+                        <div className="group relative overflow-hidden rounded-3xl bg-orange-600 p-8 shadow-sm transition-all hover:bg-orange-600 hover:shadow-md md:col-span-2 border border-orange-500 text-white">
                             <div className="relative z-10 flex items-center justify-between">
                                 <div>
-                                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white">
+                                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white border border-white/20">
                                         <TrendingUp className="h-5 w-5" />
                                     </div>
                                     <h3 className="text-xl font-bold">Marketing & Growth</h3>
