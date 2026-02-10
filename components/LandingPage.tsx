@@ -177,6 +177,16 @@ const LandingPage = () => {
                 </div>
             </section>
 
+            {/* Footer */}
+            <footer className="border-t border-white/10 bg-black py-8">
+                <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
+                    <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Tap & Swipe. All rights reserved.</p>
+                    <div className="flex gap-6">
+                        <a href="/tos" className="text-sm text-gray-500 hover:text-gray-300">Terms of Service</a>
+                        <a href="/privacy" className="text-sm text-gray-500 hover:text-gray-300">Privacy Policy</a>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 };
