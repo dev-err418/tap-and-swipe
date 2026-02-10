@@ -30,7 +30,7 @@ const LandingPage = () => {
         <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30">
 
             {/* Hero Section */}
-            <header className="relative overflow-hidden pt-20 pb-32">
+            <header className="relative overflow-hidden pt-32 pb-32">
                 <div className="mx-auto max-w-7xl px-6 text-center">
                     <div className="mb-6 flex items-center justify-center gap-2">
                         <img
