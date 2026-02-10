@@ -83,7 +83,7 @@ const LandingPage = () => {
                                 ))}
                             </div>
                             <p className="text-sm font-medium text-[#c9c4bc]">
-                                <span className="font-bold text-[#f1ebe2]">41</span> makers ship faster
+                                <span className="font-bold text-[#f1ebe2]">41</span> makers building together
                             </p>
                         </div>
                     </div>
