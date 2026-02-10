@@ -34,6 +34,15 @@ export default function Home() {
             </Badge>
           </a>
         </div>
+
+        <div className="mt-8">
+          <a
+            href="/app-sprint"
+            className="text-lg font-medium text-[#f4cf8f] hover:text-[#f4cf8f]/80 underline decoration-[#f4cf8f]/50 underline-offset-4 transition-colors"
+          >
+            App Sprint
+          </a>
+        </div>
       </section>
 
       {/* Footer */}
