@@ -1,5 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-
 export default function Home() {
   return (
     <main className="relative z-10 flex min-h-screen flex-col items-center justify-between bg-[#2a2725] px-4 py-8 text-[#f1ebe2] selection:bg-[#f4cf8f]/30">
@@ -8,14 +6,19 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center text-center">
-        <div className="mb-6 flex items-center justify-center gap-2">
+        <a
+          href="https://www.youtube.com/@ArthurBuildsStuff"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-6 flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
+        >
           <img
             src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
             alt="ArthurBuildsStuff"
             className="h-8 w-8 rounded-full border border-[#f4cf8f]/20"
           />
           <span className="text-sm font-medium text-[#c9c4bc]">By ArthurBuildsStuff</span>
-        </div>
+        </a>
         <h1
           className="font-serif text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl text-[#f1ebe2]"
         >

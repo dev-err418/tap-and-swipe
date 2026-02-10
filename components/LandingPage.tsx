@@ -1,4 +1,3 @@
-import React from "react";
 import {
     Lightbulb,
     Palette,
@@ -6,8 +5,6 @@ import {
     CreditCard,
     TrendingUp,
     ArrowRight,
-    CheckCircle2,
-    Play,
     Star
 } from "lucide-react";
 
@@ -30,14 +27,19 @@ const LandingPage = () => {
             {/* Hero Section */}
             <header className="relative overflow-hidden pt-32 pb-32">
                 <div className="mx-auto max-w-7xl px-6 text-center">
-                    <div className="mb-6 flex items-center justify-center gap-2">
+                    <a
+                        href="https://www.youtube.com/@ArthurBuildsStuff"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mb-6 flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
+                    >
                         <img
                             src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
                             alt="ArthurBuildsStuff"
                             className="h-8 w-8 rounded-full border border-[#f4cf8f]/20"
                         />
                         <span className="text-sm font-medium text-[#c9c4bc]">By ArthurBuildsStuff</span>
-                    </div>
+                    </a>
                     <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[0.9] sm:text-7xl">
                         Build a mobile app in <br />
                         weeks <span className="relative inline-block font-serif text-6xl text-[#f4cf8f] sm:text-8xl">
