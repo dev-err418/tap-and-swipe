@@ -9,7 +9,8 @@ import {
     TrendingUp,
     ArrowRight,
     CheckCircle2,
-    Play
+    Play,
+    Star
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -62,6 +63,29 @@ const LandingPage = () => {
                             Join the Community
                             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </a>
+                    </div>
+
+                    <div className="mt-8 flex flex-col items-center gap-3">
+                        <div className="flex -space-x-3">
+                            {[...Array(5)].map((_, i) => (
+                                <img
+                                    key={i}
+                                    className="h-10 w-10 rounded-full border-2 border-[#2a2725]"
+                                    src={`https://i.pravatar.cc/100?img=${i + 10}`}
+                                    alt="User avatar"
+                                />
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="flex text-[#f4cf8f]">
+                                {[...Array(5)].map((_, i) => (
+                                    <Star key={i} className="h-4 w-4 fill-current" />
+                                ))}
+                            </div>
+                            <p className="text-sm font-medium text-[#c9c4bc]">
+                                <span className="font-bold text-[#f1ebe2]">41</span> makers ship faster
+                            </p>
+                        </div>
                     </div>
 
 
