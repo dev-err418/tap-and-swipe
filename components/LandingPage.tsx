@@ -198,9 +198,14 @@ const LandingPage = () => {
                         <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Group calls</h2>
                         <p className="mt-4 text-lg text-[#c9c4bc]">Weekly live sessions to unblock your progress.</p>
                     </div>
-                    {/* Placeholder content */}
-                    <div className="flex h-64 items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-8 text-[#c9c4bc]">
-                        Group calls schedule coming soon...
+                    {/* Group Call Image */}
+                    <div className="relative rounded-3xl border border-white/10 bg-white/5 overflow-hidden group">
+                        <img
+                            src="/group-calls.jpg"
+                            alt="Weekly Group Calls"
+                            className="w-full h-auto object-cover opacity-90 transition-opacity duration-500 group-hover:opacity-100"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#2a2725]/50 via-transparent to-transparent pointer-events-none" />
                     </div>
                 </div>
             </section>

@@ -45,12 +45,12 @@ const RevenueScaling = () => {
                     </motion.div>
 
                     {/* Arrow (Desktop) */}
-                    <div className="hidden md:flex justify-center text-[#f4cf8f]/20">
+                    <div className="hidden md:flex justify-center text-[#f4cf8f]">
                         <ArrowRight className="h-8 w-8" />
                     </div>
 
                     {/* Mobile Arrow */}
-                    <div className="md:hidden flex justify-center py-2 text-[#f4cf8f]/20">
+                    <div className="md:hidden flex justify-center py-2 text-[#f4cf8f]">
                         <ArrowRight className="h-8 w-8 rotate-90" />
                     </div>
 
@@ -60,40 +60,21 @@ const RevenueScaling = () => {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2 }}
-                        className="relative group"
+                        className="relative group h-full"
                     >
-                        <div className="absolute -inset-1 rounded-3xl bg-gradient-to-l from-[#f4cf8f]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity blur-lg" />
-                        <div className="relative rounded-3xl bg-[#2a2725] border border-white/10 p-8 h-full min-h-[320px] flex flex-col">
-                            <div className="flex items-center gap-3 mb-8">
+                        <div className="relative h-full min-h-[320px] flex flex-col">
+                            <div className="flex items-center gap-3 mb-8 px-4">
                                 <div className="h-8 w-8 rounded-full bg-[#f4cf8f]/10 flex items-center justify-center text-[#f4cf8f] font-bold text-sm">2</div>
                                 <h3 className="text-xl font-bold text-[#f1ebe2]">Recurring Revenue</h3>
                             </div>
 
                             {/* Visual: MRR Chart */}
-                            <div className="flex-1 flex items-center justify-center">
-                                <div className="w-full bg-[#1e1c1b] rounded-2xl p-6 border border-white/5 shadow-inner relative overflow-hidden">
-                                    <div className="flex justify-between items-end mb-6">
-                                        <div>
-                                            <p className="text-[10px] text-[#c9c4bc] uppercase tracking-wider font-medium">Monthly Revenue</p>
-                                            <p className="text-2xl font-bold text-[#f1ebe2]">$5,842</p>
-                                        </div>
-                                        <div className="flex items-center text-[#34c759] text-xs font-bold bg-[#34c759]/10 px-2 py-1 rounded">
-                                            <TrendingUp className="h-3 w-3 mr-1" />
-                                            +42%
-                                        </div>
-                                    </div>
-
-                                    {/* CSS Chart Bars */}
-                                    <div className="h-24 w-full flex items-end gap-1.5">
-                                        {[30, 45, 35, 50, 65, 55, 75, 80, 70, 90, 85, 100].map((h, i) => (
-                                            <div
-                                                key={i}
-                                                className="flex-1 bg-[#f4cf8f] rounded-t-sm transition-all duration-500 hover:brightness-110"
-                                                style={{ height: `${h}%`, opacity: 0.2 + (i * 0.06) }}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
+                            <div className="flex-1 flex items-center justify-center relative">
+                                <img
+                                    src="/recurring-revenue.jpg"
+                                    alt="Recurring revenue chart"
+                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-[90%]"
+                                />
                             </div>
                         </div>
                     </motion.div>
