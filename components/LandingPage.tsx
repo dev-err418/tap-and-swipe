@@ -3,6 +3,7 @@ import {
     Star
 } from "lucide-react";
 import Roadmap from "./Roadmap";
+import AIFormula from "./AIFormula";
 
 const DiscordIcon = ({ className }: { className?: string }) => (
     <svg
@@ -112,6 +113,9 @@ const LandingPage = () => {
 
             {/* Roadmap Section */}
             <Roadmap />
+
+            {/* AI Formula Section */}
+            <AIFormula />
 
             {/* Testimonials Section (Placeholder) */}
             <section id="testimonials" className="bg-[#2a2725] py-24 border-t border-white/5">
