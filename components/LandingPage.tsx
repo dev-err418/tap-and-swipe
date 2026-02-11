@@ -123,7 +123,7 @@ const LandingPage = () => {
                         </h2>
 
                         <p className="mt-8 text-lg text-[#c9c4bc] leading-relaxed">
-                            This isn't just a video course you'll watch and forget. This is a builder's program designed to take you from a blank screen to your first <strong>$2,000 in revenue</strong>.
+                            This isn't just a video course you'll watch and forget. This is a builder's program designed to take you from a blank screen to your first <strong>revenue</strong>.
                         </p>
 
                         <div className="mt-8 text-left space-y-6">

@@ -70,7 +70,7 @@ const AIFormula = () => {
 
                     {/* Labels row */}
                     <div className="flex items-start justify-center gap-12 mt-4">
-                        <div className="w-24 text-center">
+                        <div className="min-w-24 text-center">
                             <h3 className="text-xl font-bold text-[#f1ebe2]">Your Idea</h3>
                             <p className="text-sm text-[#c9c4bc]">5% Vision</p>
                         </div>
@@ -78,7 +78,7 @@ const AIFormula = () => {
                         {/* Spacer for + */}
                         <div className="w-8" />
 
-                        <div className="w-24 text-center">
+                        <div className="min-w-24 text-center">
                             <AnimatePresence mode="wait">
                                 <motion.h3
                                     key={activeIndex}
@@ -97,7 +97,7 @@ const AIFormula = () => {
                         {/* Spacer for = */}
                         <div className="w-8" />
 
-                        <div className="w-24 text-center">
+                        <div className="min-w-24 text-center">
                             <h3 className="text-xl font-bold text-[#f1ebe2]">Shipped App</h3>
                             <p className="text-sm text-[#c9c4bc]">100% Yours</p>
                         </div>
