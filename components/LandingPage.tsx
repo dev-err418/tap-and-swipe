@@ -204,21 +204,21 @@ const LandingPage = () => {
                             This isn't just a video course you'll watch and forget. This is a builder's program designed to take you from a blank screen to your first <strong>$2,000 in revenue</strong>.
                         </p>
 
-                        <div className="mt-8 text-left bg-[#2a2725] border border-white/5 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
+                        <div className="mt-8 text-left space-y-6">
                             <p className="font-medium text-[#f1ebe2] text-lg">The difference? You get me on calls. Weekly.</p>
 
                             <ul className="space-y-4">
                                 <li className="flex gap-4">
                                     <span className="text-2xl mt-1">📞</span>
                                     <div>
-                                        <strong className="text-[#f1ebe2] block text-lg">Strategy Group Calls</strong>
+                                        <strong className="text-[#f1ebe2] block text-lg">Strategy group calls</strong>
                                         <p className="text-[#c9c4bc]">We hop on a call to dissect your specific roadblocks, look at your code, and fix your strategy.</p>
                                     </div>
                                 </li>
                                 <li className="flex gap-4">
                                     <span className="text-2xl mt-1">👥</span>
                                     <div>
-                                        <strong className="text-[#f1ebe2] block text-lg">Weekly Group Masterminds</strong>
+                                        <strong className="text-[#f1ebe2] block text-lg">Weekly group masterminds</strong>
                                         <p className="text-[#c9c4bc]">Showcase your progress, get live feedback, and solve problems with a community of builders who are in the trenches with you.</p>
                                     </div>
                                 </li>
