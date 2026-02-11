@@ -147,14 +147,22 @@ const toolIcons: Record<string, string> = {
 
 const Roadmap = () => {
     const [activeTab, setActiveTab] = useState(0);
+    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
     useEffect(() => {
+        if (!isAutoPlaying) return;
+
         const timer = setInterval(() => {
             setActiveTab((current) => (current + 1) % steps.length);
         }, 5000); // Change tab every 5 seconds
 
         return () => clearInterval(timer);
-    }, []);
+    }, [isAutoPlaying]);
+
+    const handleTabClick = (index: number) => {
+        setIsAutoPlaying(false);
+        setActiveTab(index);
+    };
 
     return (
         <section id="roadmap" className="bg-[#2a2725] py-24 border-t border-white/5 overflow-hidden">
@@ -171,35 +179,37 @@ const Roadmap = () => {
                 </div>
 
                 {/* 1. Horizontal Simplified Timeline */}
-                <div className="relative mb-20 hidden md:block">
-                    {/* Horizontal Line */}
-                    <div className="absolute top-[5.5rem] left-0 w-full h-px bg-white/10" />
+                <div className="relative mb-20 overflow-x-auto pb-8 -mx-6 px-6 no-scrollbar">
+                    <div className="min-w-[800px] relative">
+                        {/* Horizontal Line */}
+                        <div className="absolute top-[5.5rem] left-0 w-full h-px bg-white/10" />
 
-                    <div className="grid grid-cols-5 gap-4">
-                        {horizontalMilestones.map((step, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.2 }}
-                                className="relative flex flex-col items-center text-center"
-                            >
-                                {/* Emoji */}
-                                <div className="mb-8 p-4 rounded-2xl bg-white/5 border border-white/5 shadow-sm transition-transform hover:scale-110">
-                                    <span className="text-4xl">{step.emoji}</span>
-                                </div>
+                        <div className="grid grid-cols-5 gap-4">
+                            {horizontalMilestones.map((step, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.2 }}
+                                    className="relative flex flex-col items-center text-center"
+                                >
+                                    {/* Emoji */}
+                                    <div className="mb-8 p-4 rounded-2xl bg-white/5 border border-white/5 shadow-sm transition-transform hover:scale-110">
+                                        <span className="text-4xl">{step.emoji}</span>
+                                    </div>
 
-                                {/* Dot on line */}
-                                <div className="absolute top-[5.2rem] left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#2a2725] border-4 border-[#2a2725] z-10">
-                                    <div className="w-full h-full rounded-full bg-[#f4cf8f]" />
-                                </div>
+                                    {/* Dot on line */}
+                                    <div className="absolute top-[5.2rem] left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#2a2725] border-4 border-[#2a2725] z-10">
+                                        <div className="w-full h-full rounded-full bg-[#f4cf8f]" />
+                                    </div>
 
-                                {/* Content */}
-                                <h3 className="text-xl font-bold text-[#f1ebe2] mb-2 font-serif">{step.day}</h3>
-                                <p className="text-[#c9c4bc] text-sm max-w-[220px] leading-relaxed">{step.title}</p>
-                            </motion.div>
-                        ))}
+                                    {/* Content */}
+                                    <h3 className="text-xl font-bold text-[#f1ebe2] mb-2 font-serif">{step.day}</h3>
+                                    <p className="text-[#c9c4bc] text-sm max-w-[220px] leading-relaxed">{step.title}</p>
+                                </motion.div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -225,7 +235,7 @@ const Roadmap = () => {
                             return (
                                 <button
                                     key={step.id}
-                                    onClick={() => setActiveTab(index)}
+                                    onClick={() => handleTabClick(index)}
                                     className={`group flex flex-col items-center gap-3 transition-all duration-300 outline-none cursor-pointer ${isActive ? "text-[#f4cf8f] scale-105" : "text-[#c9c4bc] hover:text-[#f1ebe2]"
                                         }`}
                                 >

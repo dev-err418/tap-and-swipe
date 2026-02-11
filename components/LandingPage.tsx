@@ -70,8 +70,7 @@ const LandingPage = ({
                             className="group flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-semibold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
                         >
                             <DiscordIcon className="h-5 w-5" />
-                            <span className="hidden sm:inline">Join the Community</span>
-                            <span className="inline sm:hidden">Join us</span>
+                            Join the Community
                             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </a>
                     </div>
