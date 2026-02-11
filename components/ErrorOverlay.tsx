@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, X, ArrowRight, RefreshCw, MessageSquare } from "lucide-react";
+import { AlertCircle, X, ArrowRight, RefreshCw, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -123,17 +123,15 @@ const ErrorOverlay = () => {
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.6 }}
-                                    href="https://discord.com/channels/1441431610443694122/1441436739267858502"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    href="mailto:arthurs.dev@gmail.com"
                                     className="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/5 p-4 transition-colors hover:bg-white/10 no-underline"
                                 >
                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f4cf8f]/20">
-                                        <MessageSquare className="h-5 w-5 text-[#f4cf8f]" />
+                                        <Mail className="h-5 w-5 text-[#f4cf8f]" />
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-[#f1ebe2]">Need Help?</h4>
-                                        <p className="text-sm text-[#c9c4bc]">Ask a question in our Discord community.</p>
+                                        <p className="text-sm text-[#c9c4bc]">Shoot me an email and I’ll help you out.</p>
                                     </div>
                                 </motion.a>
                             </div>
