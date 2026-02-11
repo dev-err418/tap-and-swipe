@@ -84,7 +84,8 @@ const Pricing = () => {
                                     className="group flex w-full h-14 items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-lg font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-8 hover:ring-[#f4cf8f]/10 cursor-pointer shadow-lg shadow-[#f4cf8f]/10 mb-6"
                                 >
                                     <DiscordIcon className="h-5 w-5" />
-                                    Join the Community
+                                    <span className="hidden sm:inline">Join the Community</span>
+                                    <span className="inline sm:hidden">Join us</span>
                                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                                 </a>
 

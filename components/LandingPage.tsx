@@ -20,6 +20,7 @@ import { Suspense } from "react";
 import SuccessOverlay from "./SuccessOverlay";
 import ErrorOverlay from "./ErrorOverlay";
 import Pricing from "./Pricing";
+import AnalyticsTracker from "./AnalyticsTracker";
 
 const LandingPage = ({
     searchParams,
@@ -28,6 +29,7 @@ const LandingPage = ({
 }) => {
     return (
         <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30">
+            <AnalyticsTracker />
             <Suspense fallback={null}>
                 <SuccessOverlay />
                 <ErrorOverlay />
@@ -68,7 +70,8 @@ const LandingPage = ({
                             className="group flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-semibold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
                         >
                             <DiscordIcon className="h-5 w-5" />
-                            Join the Community
+                            <span className="hidden sm:inline">Join the Community</span>
+                            <span className="inline sm:hidden">Join us</span>
                             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </a>
                     </div>
