@@ -25,22 +25,20 @@ const RevenueScaling = () => {
                         initial={{ opacity: 0, x: -20 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        className="relative group"
+                        className="relative group h-full"
                     >
-                        <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-[#f4cf8f]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity blur-lg" />
-                        <div className="relative rounded-3xl bg-[#2a2725] border border-white/10 p-8 h-full min-h-[320px] flex flex-col">
-                            <div className="flex items-center gap-3 mb-8">
+                        <div className="relative h-full min-h-[320px] flex flex-col">
+                            <div className="flex items-center gap-3 mb-8 px-4">
                                 <div className="h-8 w-8 rounded-full bg-[#f4cf8f]/10 flex items-center justify-center text-[#f4cf8f] font-bold text-sm">1</div>
                                 <h3 className="text-xl font-bold text-[#f1ebe2]">The First Dollar</h3>
                             </div>
 
                             {/* Visual: Payment Notification */}
                             <div className="flex-1 flex items-center justify-center relative">
-                                <div className="absolute inset-0 bg-gradient-to-b from-[#f4cf8f]/5 to-transparent rounded-2xl" />
                                 <img
-                                    src="/first-sale-optimized.jpg"
+                                    src="/first-sale.png"
                                     alt="First sale notification"
-                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 w-[85%] md:w-[75%]"
+                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-[90%]"
                                 />
                             </div>
                         </div>
