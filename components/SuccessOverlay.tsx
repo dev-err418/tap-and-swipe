@@ -95,16 +95,19 @@ const SuccessOverlay = () => {
                                 </motion.div>
                             </div>
 
-                            <motion.button
+                            <motion.a
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.7 }}
+                                href="https://discord.com/channels/1441431610443694122/1441436739267858502"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 onClick={handleClose}
-                                className="group flex w-full h-14 items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-lg font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-8 hover:ring-[#f4cf8f]/10 cursor-pointer"
+                                className="group flex w-full h-14 items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-lg font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-8 hover:ring-[#f4cf8f]/10 cursor-pointer text-center no-underline"
                             >
-                                Take me to the roadmap
+                                Open Discord
                                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                            </motion.button>
+                            </motion.a>
                         </div>
                     </motion.div>
 
