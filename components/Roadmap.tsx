@@ -178,7 +178,7 @@ const Roadmap = () => {
                 </div>
 
                 {/* AI Formula Visualization */}
-                <div className="mb-20 py-12 border-y border-white/5 bg-white/[0.02]">
+                <div className="mb-20">
                     <AIFormula />
                 </div>
 
