@@ -3,11 +3,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    CreditCard,
-    Lightbulb,
-    Palette,
-    Code,
-    TrendingUp,
     Sparkles,
     CheckCircle2,
 } from "lucide-react";
@@ -49,7 +44,7 @@ type Step = {
     description: string;
     bullets: string[];
     tools: string[];
-    Icon: React.ComponentType<{ className?: string }>;
+    emoji: string;
     timeSaved: string;
 };
 
@@ -66,7 +61,7 @@ const steps: Step[] = [
             "Validate with a 3-day keyword boost",
         ],
         tools: ["Astro", "ChatGPT"],
-        Icon: Lightbulb,
+        emoji: "💡",
         timeSaved: "2 weeks",
     },
     {
@@ -81,7 +76,7 @@ const steps: Step[] = [
             "Make your CTAs impossible to miss",
         ],
         tools: ["Figma", "Mobbin", "Dribbble"],
-        Icon: Palette,
+        emoji: "🎨",
         timeSaved: "1 week",
     },
     {
@@ -96,7 +91,7 @@ const steps: Step[] = [
             "Add Posthog analytics & Supabase backend",
         ],
         tools: ["Expo", "Claude", "Cursor", "Supabase"],
-        Icon: Code,
+        emoji: "💻",
         timeSaved: "4 weeks",
     },
     {
@@ -111,7 +106,7 @@ const steps: Step[] = [
             "Optimize trial length and copy",
         ],
         tools: ["RevenueCat", "Superwall"],
-        Icon: CreditCard,
+        emoji: "💳",
         timeSaved: "1 week",
     },
     {
@@ -126,7 +121,7 @@ const steps: Step[] = [
             "Double down on what works",
         ],
         tools: ["Astro", "Apple Ads", "TikTok"],
-        Icon: TrendingUp,
+        emoji: "📈",
         timeSaved: "Ongoing",
     },
 ];
@@ -194,11 +189,11 @@ const Roadmap = () => {
                                     className={`group flex flex-col items-center gap-3 transition-all duration-300 outline-none cursor-pointer ${isActive ? "text-[#f4cf8f] scale-105" : "text-[#c9c4bc] hover:text-[#f1ebe2]"
                                         }`}
                                 >
-                                    <div className={`p-3 rounded-xl transition-all ${isActive
+                                    <div className={`h-12 w-12 flex items-center justify-center rounded-xl transition-all ${isActive
                                         ? "bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 shadow-[0_0_15px_rgba(244,207,143,0.1)]"
                                         : "bg-white/5 border border-transparent group-hover:bg-white/10"
                                         }`}>
-                                        <step.Icon className="h-6 w-6" />
+                                        <span className="text-2xl">{step.emoji}</span>
                                     </div>
                                     <span className="text-sm font-medium">{step.title}</span>
                                 </button>
