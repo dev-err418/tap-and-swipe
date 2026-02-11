@@ -176,6 +176,12 @@ const Roadmap = () => {
                     </div>
                 </div>
 
+                {/* "The new way to build" heading */}
+                <div className="mb-16 text-center">
+                    <h3 className="text-2xl font-serif font-bold text-[#f1ebe2] sm:text-3xl">The new way to build</h3>
+                    <p className="mt-3 text-[#c9c4bc]">AI writes <span className="text-[#f4cf8f] font-bold">95%</span> of the code. You just provide the vision.</p>
+                </div>
+
                 {/* 2. Tabbed Detailed View */}
                 <div className="max-w-5xl mx-auto">
                     {/* Tabs */}
