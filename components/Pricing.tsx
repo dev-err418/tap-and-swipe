@@ -1,15 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, ArrowRight, Star, ShieldCheck, Zap } from "lucide-react";
+import { Check, ArrowRight, Star, ShieldCheck } from "lucide-react";
 
 const features = [
     { title: "Complete 6-week roadmap", description: "From blank screen to 1,000 users" },
-    { title: "AI-assisted development", description: "Master Claude Code, Cursor, and Codex" },
     { title: "2x Weekly group calls", description: "Direct access to strategy and masterminds" },
     { title: "Revenue scaling systems", description: "Proven monetization and ASO templates" },
     { title: "Private builder community", description: "Collaborate with 41+ other makers" },
-    { title: "Future program updates", description: "Lifetime access to all new content" },
 ];
 
 const Pricing = () => {
@@ -35,11 +33,7 @@ const Pricing = () => {
                         viewport={{ once: true }}
                         className="relative rounded-[40px] border border-white/10 bg-white/5 p-8 md:p-12 shadow-2xl backdrop-blur-sm"
                     >
-                        {/* Popular Badge */}
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-[#f4cf8f] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#2a2725] shadow-lg shadow-[#f4cf8f]/20">
-                            <Zap className="h-3.5 w-3.5" />
-                            Most Popular Choice
-                        </div>
+
 
                         <div className="grid md:grid-cols-2 gap-12 items-center">
                             {/* Left: Features */}
