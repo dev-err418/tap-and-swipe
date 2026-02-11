@@ -145,7 +145,7 @@ const Roadmap = () => {
                 </div>
 
                 {/* 1. Horizontal Simplified Timeline */}
-                <div className="relative mb-32 hidden md:block">
+                <div className="relative mb-20 pb-20 border-b border-white/5 hidden md:block">
                     {/* Horizontal Line */}
                     <div className="absolute top-[5.5rem] left-0 w-full h-px bg-white/10" />
 
