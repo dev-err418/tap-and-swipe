@@ -178,9 +178,15 @@ const Roadmap = () => {
                 </div>
 
                 {/* AI Formula Visualization */}
-                <div className="mb-20 pb-20 border-b border-white/5">
+                <div className="mb-20 pb-20">
                     <AIFormula />
                 </div>
+            </div>
+
+            {/* Full-width divider */}
+            <hr className="border-white/5 mb-0" />
+
+            <div className="mx-auto max-w-7xl px-6">
 
                 {/* 2. Tabbed Detailed View */}
                 <div className="max-w-5xl mx-auto">
