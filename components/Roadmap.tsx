@@ -15,29 +15,29 @@ import {
 // --- Horizontal Timeline Data (matches tabs below) ---
 const horizontalMilestones = [
     {
-        day: "Day 1",
+        day: "Week 1",
         title: "Find a profitable idea",
-        Icon: Lightbulb,
+        emoji: "💡",
     },
     {
-        day: "Day 3",
+        day: "Week 2",
         title: "Design screens that convert",
-        Icon: Palette,
+        emoji: "🎨",
     },
     {
-        day: "Day 5",
+        day: "Week 3-4",
         title: "Build with AI speed",
-        Icon: Code,
+        emoji: "💻",
     },
     {
-        day: "Day 10",
+        day: "Week 5",
         title: "Recurring revenue setup",
-        Icon: CreditCard,
+        emoji: "💳",
     },
     {
-        day: "Day 14",
+        day: "Week 6+",
         title: "Scale to 1,000 users",
-        Icon: TrendingUp,
+        emoji: "📈",
     },
 ];
 
@@ -163,9 +163,9 @@ const Roadmap = () => {
                                 transition={{ delay: i * 0.2 }}
                                 className="relative flex flex-col items-center text-center"
                             >
-                                {/* Icon */}
+                                {/* Emoji */}
                                 <div className="mb-8 p-4 rounded-2xl bg-white/5 border border-white/5 shadow-sm transition-transform hover:scale-110">
-                                    <step.Icon className="h-10 w-10 text-[#f4cf8f]" />
+                                    <span className="text-4xl">{step.emoji}</span>
                                 </div>
 
                                 {/* Dot on line */}
