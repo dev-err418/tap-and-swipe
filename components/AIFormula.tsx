@@ -92,7 +92,7 @@ const AIFormula = () => {
                     {/* Column 5: Result */}
                     <div className="flex flex-col items-center gap-4">
                         <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-[#f4cf8f] to-[#dcb06e] flex items-center justify-center shadow-lg shadow-[#f4cf8f]/20">
-                            <span className="text-4xl">🧑‍💻</span>
+                            <span className="text-4xl">📱</span>
                         </div>
                         <div className="text-center">
                             <h3 className="text-xl font-bold text-[#f1ebe2] whitespace-nowrap">Shipped App</h3>
@@ -151,7 +151,7 @@ const AIFormula = () => {
 
                     <div className="flex flex-col items-center gap-4">
                         <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-[#f4cf8f] to-[#dcb06e] flex items-center justify-center shadow-lg shadow-[#f4cf8f]/20">
-                            <span className="text-4xl">📲</span>
+                            <span className="text-4xl">📱</span>
                         </div>
                         <div className="text-center">
                             <h3 className="text-xl font-bold text-[#f1ebe2]">Shipped App</h3>
