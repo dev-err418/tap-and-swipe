@@ -18,7 +18,7 @@ const Pricing = () => {
 
             <div className="mx-auto max-w-7xl px-6 relative z-10">
                 <div className="mb-16 text-center">
-                    <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl mb-4">
+                    <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
                         Code your idea fast, build your freedom
                     </h2>
                     <p className="mt-4 text-lg text-[#c9c4bc] max-w-2xl mx-auto">
