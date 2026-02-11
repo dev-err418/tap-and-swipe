@@ -277,7 +277,7 @@ const Roadmap = () => {
                                         {steps[activeTab].tools.map((tool) => (
                                             <div key={tool} className="flex items-center gap-3 p-4 rounded-xl bg-[#2a2725] border border-white/5">
                                                 {toolIcons[tool] ? (
-                                                    <img src={toolIcons[tool]} alt={tool} className="h-5 w-5 opacity-80" />
+                                                    <img src={toolIcons[tool]} alt={tool} className="h-5 w-5 rounded-lg opacity-80" />
                                                 ) : (
                                                     <div className="h-2 w-2 rounded-full bg-[#f4cf8f]" />
                                                 )}
