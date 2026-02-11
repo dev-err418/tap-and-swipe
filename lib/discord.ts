@@ -51,6 +51,47 @@ export async function getUser(accessToken: string): Promise<DiscordUser> {
   return res.json();
 }
 
+/**
+ * Add a user to the guild using their OAuth2 access token.
+ * Returns true if the user was added (201) or already in the guild (204).
+ * Returns false if the access token is invalid/expired.
+ */
+export async function addToGuild(
+  discordUserId: string,
+  accessToken: string
+): Promise<boolean> {
+  const res = await fetch(
+    `${DISCORD_API}/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        access_token: accessToken,
+        roles: [process.env.DISCORD_ROLE_ID],
+      }),
+    }
+  );
+
+  if (res.status === 201) {
+    // User was added to the guild (with role)
+    return true;
+  }
+
+  if (res.status === 204) {
+    // User was already in the guild — role not set via this endpoint
+    return true;
+  }
+
+  const text = await res.text();
+  console.warn(
+    `[addToGuild] Failed for user ${discordUserId}: ${res.status} ${text}`
+  );
+  return false;
+}
+
 export async function addRole(discordUserId: string): Promise<boolean> {
   const res = await fetch(
     `${DISCORD_API}/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${process.env.DISCORD_ROLE_ID}`,
@@ -63,7 +104,10 @@ export async function addRole(discordUserId: string): Promise<boolean> {
     }
   );
 
-  if (res.status === 404) return false; // user not in guild
+  if (res.status === 404) {
+    console.warn(`[addRole] Discord returned 404 for user ${discordUserId} — user is not in the guild`);
+    return false;
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Discord addRole failed: ${res.status} ${text}`);
@@ -84,7 +128,10 @@ export async function removeRole(discordUserId: string): Promise<boolean> {
     }
   );
 
-  if (res.status === 404) return false; // user not in guild
+  if (res.status === 404) {
+    console.warn(`[removeRole] Discord returned 404 for user ${discordUserId} — user is not in the guild`);
+    return false;
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Discord removeRole failed: ${res.status} ${text}`);

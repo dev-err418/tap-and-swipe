@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { addRole, removeRole } from "@/lib/discord";
+import { addToGuild, addRole, removeRole } from "@/lib/discord";
 import { sendFraudAlert } from "@/lib/discord-webhook";
 import { isDisposableEmail } from "@/lib/fraud";
 
@@ -39,17 +39,37 @@ export async function POST(request: NextRequest) {
         const discordId = subscription.metadata.discordId;
         if (!discordId) break;
 
+        // Look up the stored access token to add user to guild
+        const dbUser = await prisma.user.findUnique({ where: { discordId } });
+        let roleAdded = false;
+
+        if (dbUser?.discordAccessToken) {
+          const addedToGuild = await addToGuild(discordId, dbUser.discordAccessToken);
+          if (addedToGuild) {
+            // 201 = just joined with role already set, 204 = already in guild, need addRole
+            roleAdded = await addRole(discordId);
+          } else {
+            console.warn(`[checkout.session.completed] addToGuild failed for ${discordId} — token may be expired`);
+            roleAdded = await addRole(discordId);
+          }
+        } else {
+          console.warn(`[checkout.session.completed] No access token stored for ${discordId} — cannot add to guild`);
+          roleAdded = await addRole(discordId);
+        }
+
+        if (!roleAdded) {
+          console.warn(`[checkout.session.completed] addRole returned false for ${discordId} — user may not be in the guild`);
+        }
+
         await prisma.user.update({
           where: { discordId },
           data: {
             subscriptionId: subscription.id,
             subscriptionStatus: subscription.status,
             stripeCustomerId: session.customer as string,
-            roleGranted: true,
+            roleGranted: roleAdded,
           },
         });
-
-        await addRole(discordId);
 
         // Fire DataFast goal for Stripe checkout completed
         const datafastVisitorId = session.metadata?.datafast_visitor_id;
@@ -129,19 +149,23 @@ export async function POST(request: NextRequest) {
 
         const isActive = ["active", "trialing"].includes(subscription.status);
 
+        let roleGranted = false;
+        if (isActive) {
+          roleGranted = await addRole(discordId);
+          if (!roleGranted) {
+            console.warn(`[customer.subscription.updated] addRole returned false for ${discordId} — user may not be in the guild`);
+          }
+        } else {
+          await removeRole(discordId);
+        }
+
         await prisma.user.update({
           where: { discordId },
           data: {
             subscriptionStatus: subscription.status,
-            roleGranted: isActive,
+            roleGranted,
           },
         });
-
-        if (isActive) {
-          await addRole(discordId);
-        } else {
-          await removeRole(discordId);
-        }
         break;
       }
 
@@ -186,6 +210,73 @@ export async function POST(request: NextRequest) {
         });
 
         await removeRole(discordId);
+        break;
+      }
+
+      case "invoice.paid": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subDetails = invoice.parent?.subscription_details;
+        const subscriptionId =
+          typeof subDetails?.subscription === "string"
+            ? subDetails.subscription
+            : subDetails?.subscription?.id;
+        if (!subscriptionId) break;
+
+        const subscription =
+          await stripe.subscriptions.retrieve(subscriptionId);
+        if (!["active", "trialing"].includes(subscription.status)) break;
+
+        const discordId = subscription.metadata.discordId;
+        if (!discordId) break;
+
+        const roleAdded = await addRole(discordId);
+        if (!roleAdded) {
+          console.warn(`[invoice.paid] addRole returned false for ${discordId} — user may not be in the guild`);
+        }
+
+        await prisma.user.update({
+          where: { discordId },
+          data: {
+            subscriptionStatus: subscription.status,
+            roleGranted: roleAdded,
+          },
+        });
+        break;
+      }
+
+      case "checkout.session.async_payment_succeeded": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode !== "subscription" || !session.subscription) break;
+
+        const subscription = await stripe.subscriptions.retrieve(
+          session.subscription as string
+        );
+        const discordId = subscription.metadata.discordId;
+        if (!discordId) break;
+
+        const asyncDbUser = await prisma.user.findUnique({ where: { discordId } });
+        let asyncRoleAdded = false;
+
+        if (asyncDbUser?.discordAccessToken) {
+          await addToGuild(discordId, asyncDbUser.discordAccessToken);
+          asyncRoleAdded = await addRole(discordId);
+        } else {
+          asyncRoleAdded = await addRole(discordId);
+        }
+
+        if (!asyncRoleAdded) {
+          console.warn(`[checkout.session.async_payment_succeeded] addRole returned false for ${discordId} — user may not be in the guild`);
+        }
+
+        await prisma.user.update({
+          where: { discordId },
+          data: {
+            subscriptionId: subscription.id,
+            subscriptionStatus: subscription.status,
+            stripeCustomerId: session.customer as string,
+            roleGranted: asyncRoleAdded,
+          },
+        });
         break;
       }
 

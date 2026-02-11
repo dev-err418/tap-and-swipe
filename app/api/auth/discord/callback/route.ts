@@ -47,17 +47,19 @@ export async function GET(request: NextRequest) {
     // Fetch Discord user profile
     const discordUser = await getUser(tokenData.access_token);
 
-    // Upsert user in database
+    // Upsert user in database (store access token for guild join later)
     const user = await prisma.user.upsert({
       where: { discordId: discordUser.id },
       update: {
         discordUsername: discordUser.global_name || discordUser.username,
         discordAvatar: discordUser.avatar,
+        discordAccessToken: tokenData.access_token,
       },
       create: {
         discordId: discordUser.id,
         discordUsername: discordUser.global_name || discordUser.username,
         discordAvatar: discordUser.avatar,
+        discordAccessToken: tokenData.access_token,
       },
     });
 
