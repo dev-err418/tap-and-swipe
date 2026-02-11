@@ -127,6 +127,23 @@ const steps: Step[] = [
     },
 ];
 
+// Tool name to icon file mapping
+const toolIcons: Record<string, string> = {
+    "Astro": "/icons/astro.svg",
+    "ChatGPT": "/icons/chatgpt.svg",
+    "Figma": "/icons/figma.svg",
+    "Mobbin": "/icons/mobbin.svg",
+    "Dribbble": "/icons/dribbble.svg",
+    "Expo": "/icons/expo.svg",
+    "Claude": "/icons/claude.svg",
+    "Cursor": "/icons/cursor.svg",
+    "Supabase": "/icons/supabase.svg",
+    "RevenueCat": "/icons/revenuecat.svg",
+    "Superwall": "/icons/superwall.svg",
+    "Apple Ads": "/icons/apple.svg",
+    "TikTok": "/icons/tiktok.svg",
+};
+
 const Roadmap = () => {
     const [activeTab, setActiveTab] = useState(0);
 
@@ -259,7 +276,11 @@ const Roadmap = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         {steps[activeTab].tools.map((tool) => (
                                             <div key={tool} className="flex items-center gap-3 p-4 rounded-xl bg-[#2a2725] border border-white/5">
-                                                <div className="h-2 w-2 rounded-full bg-[#f4cf8f]" />
+                                                {toolIcons[tool] ? (
+                                                    <img src={toolIcons[tool]} alt={tool} className="h-5 w-5 opacity-80" />
+                                                ) : (
+                                                    <div className="h-2 w-2 rounded-full bg-[#f4cf8f]" />
+                                                )}
                                                 <span className="font-medium text-[#f1ebe2]">{tool}</span>
                                             </div>
                                         ))}
