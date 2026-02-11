@@ -165,7 +165,7 @@ const Roadmap = () => {
     };
 
     return (
-        <section id="roadmap" className="bg-[#2a2725] py-24 border-t border-white/5 overflow-hidden">
+        <section id="roadmap" data-fast-scroll="scroll_to_roadmap" className="bg-[#2a2725] py-24 border-t border-white/5 overflow-hidden">
             <div className="mx-auto max-w-7xl px-6">
 
                 {/* Section header */}

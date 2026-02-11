@@ -67,6 +67,7 @@ const LandingPage = ({
                     <div className="mt-10 pt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                         <a
                             href="/api/auth/discord"
+                            data-fast-goal="cta_hero_clicked"
                             className="group flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-semibold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
                         >
                             <DiscordIcon className="h-5 w-5" />
@@ -129,7 +130,7 @@ const LandingPage = ({
             <Roadmap />
 
             {/* Group Calls Section */}
-            <section id="group-calls" className="bg-[#2a2725] py-24 border-t border-white/5">
+            <section id="group-calls" data-fast-scroll="scroll_to_group_calls" className="bg-[#2a2725] py-24 border-t border-white/5">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center max-w-3xl mx-auto">
                         <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
@@ -175,7 +176,7 @@ const LandingPage = ({
             </section>
 
             {/* Testimonials Section */}
-            <section id="testimonials" className="bg-[#2a2725] py-24 border-t border-white/5">
+            <section id="testimonials" data-fast-scroll="scroll_to_testimonials" className="bg-[#2a2725] py-24 border-t border-white/5">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center">
                         <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">What makers are saying</h2>
@@ -256,7 +257,7 @@ const LandingPage = ({
             <Pricing />
 
             {/* FAQ Section */}
-            <section id="faq" className="bg-[#2a2725] py-24 border-t border-white/5">
+            <section id="faq" data-fast-scroll="scroll_to_faq" className="bg-[#2a2725] py-24 border-t border-white/5">
                 <div className="mx-auto max-w-4xl px-6">
                     <div className="mb-16 text-center">
                         <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Frequently asked questions</h2>

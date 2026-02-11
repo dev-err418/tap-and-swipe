@@ -32,6 +32,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script id="datafast-queue" dangerouslySetInnerHTML={{ __html: `
+          window.datafast = window.datafast || function() {
+            window.datafast.q = window.datafast.q || [];
+            window.datafast.q.push(arguments);
+          };
+        `}} />
+      </head>
       <body
         className={`${uncutSans.variable} ${crimsonPro.variable} antialiased`}
       >

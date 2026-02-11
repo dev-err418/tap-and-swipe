@@ -60,6 +60,21 @@ export async function GET() {
       cancel_url: `${APP_URL}/app-sprint?status=canceled`,
     });
 
+    // Fire DataFast goal for Stripe checkout shown
+    if (datafastVisitorId && process.env.DATAFAST_API_KEY) {
+      fetch("https://datafa.st/api/v1/goals", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.DATAFAST_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          datafast_visitor_id: datafastVisitorId,
+          name: "stripe_checkout_shown",
+        }),
+      }).catch(() => {}); // fire-and-forget, don't block checkout
+    }
+
     await clearSession();
 
     return NextResponse.redirect(checkoutSession.url!);

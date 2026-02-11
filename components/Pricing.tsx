@@ -24,7 +24,7 @@ const features = [
 
 const Pricing = () => {
     return (
-        <section id="pricing" className="bg-[#2a2725] py-24 border-t border-white/5 relative overflow-hidden">
+        <section id="pricing" data-fast-scroll="scroll_to_pricing" className="bg-[#2a2725] py-24 border-t border-white/5 relative overflow-hidden">
             {/* Background Glow */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[500px] bg-[#f4cf8f]/5 blur-[120px] pointer-events-none" />
 
@@ -81,6 +81,7 @@ const Pricing = () => {
 
                                 <a
                                     href="/api/auth/discord"
+                                    data-fast-goal="cta_pricing_clicked"
                                     className="group flex w-full h-14 items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-lg font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-8 hover:ring-[#f4cf8f]/10 cursor-pointer shadow-lg shadow-[#f4cf8f]/10 mb-6"
                                 >
                                     <DiscordIcon className="h-5 w-5" />

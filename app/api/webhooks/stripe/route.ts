@@ -51,6 +51,22 @@ export async function POST(request: NextRequest) {
 
         await addRole(discordId);
 
+        // Fire DataFast goal for Stripe checkout completed
+        const datafastVisitorId = session.metadata?.datafast_visitor_id;
+        if (datafastVisitorId && process.env.DATAFAST_API_KEY) {
+          fetch("https://datafa.st/api/v1/goals", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.DATAFAST_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              datafast_visitor_id: datafastVisitorId,
+              name: "stripe_checkout_completed",
+            }),
+          }).catch(() => {}); // fire-and-forget, don't block webhook
+        }
+
         // Disposable email check
         const customerEmail = session.customer_details?.email;
         if (customerEmail && isDisposableEmail(customerEmail)) {
