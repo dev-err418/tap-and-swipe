@@ -3,10 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Settings,
-    Server,
     CreditCard,
-    Rocket,
     Lightbulb,
     Palette,
     Code,
@@ -15,27 +12,32 @@ import {
     CheckCircle2,
 } from "lucide-react";
 
-// --- Horizontal Timeline Data ---
+// --- Horizontal Timeline Data (matches tabs below) ---
 const horizontalMilestones = [
     {
         day: "Day 1",
-        title: "Learn the fundamentals of coding",
-        Icon: Settings,
+        title: "Find a profitable idea",
+        Icon: Lightbulb,
     },
     {
-        day: "Day 4",
-        title: "Log in users and save in database",
-        Icon: Server,
+        day: "Day 3",
+        title: "Design screens that convert",
+        Icon: Palette,
     },
     {
-        day: "Day 9",
-        title: "Set up subscription payments",
+        day: "Day 5",
+        title: "Build with AI speed",
+        Icon: Code,
+    },
+    {
+        day: "Day 10",
+        title: "Recurring revenue setup",
         Icon: CreditCard,
     },
     {
         day: "Day 14",
-        title: "Launch your idea!",
-        Icon: Rocket,
+        title: "Scale to 1,000 users",
+        Icon: TrendingUp,
     },
 ];
 
@@ -151,7 +153,7 @@ const Roadmap = () => {
                     {/* Horizontal Line */}
                     <div className="absolute top-[5.5rem] left-0 w-full h-px bg-white/10" />
 
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-5 gap-4">
                         {horizontalMilestones.map((step, i) => (
                             <motion.div
                                 key={i}
