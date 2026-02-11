@@ -22,7 +22,7 @@ const AIFormula = () => {
                 <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
                     {/* Element 1: You */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 1, y: 0 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         className="flex flex-col items-center gap-4"
@@ -38,7 +38,7 @@ const AIFormula = () => {
 
                     {/* Operator: Plus */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0 }}
+                        initial={{ opacity: 1, scale: 1 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2 }}
@@ -48,7 +48,7 @@ const AIFormula = () => {
 
                     {/* Element 2: AI */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 1, y: 0 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.3 }}
@@ -65,7 +65,7 @@ const AIFormula = () => {
 
                     {/* Operator: Equal */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0 }}
+                        initial={{ opacity: 1, scale: 1 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.4 }}
@@ -75,7 +75,7 @@ const AIFormula = () => {
 
                     {/* Element 3: Result */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 1, y: 0 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.5 }}
@@ -93,7 +93,7 @@ const AIFormula = () => {
 
                 {/* Contextual Note */}
                 <motion.div
-                    initial={{ opacity: 0 }}
+                    initial={{ opacity: 1 }}
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.7 }}
