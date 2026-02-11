@@ -196,14 +196,11 @@ const Roadmap = () => {
                 </div>
 
                 {/* Revenue Scaling Visualization */}
-                <div className="mb-20 pb-20 border-b border-white/5">
+                <div className="mb-24">
                     <RevenueScaling />
                 </div>
 
-                {/* AI Formula Visualization */}
-                <div className="mb-8 pb-8">
-                    <AIFormula />
-                </div>
+
             </div>
 
             {/* Full-width divider */}
@@ -302,6 +299,11 @@ const Roadmap = () => {
                             </motion.div>
                         </AnimatePresence>
                     </div>
+                </div>
+
+                {/* AI Formula Visualization */}
+                <div className="mt-24 pt-24 border-t border-white/5">
+                    <AIFormula />
                 </div>
 
             </div>
