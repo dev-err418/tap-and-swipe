@@ -184,9 +184,9 @@ const Roadmap = () => {
             </div>
 
             {/* Full-width divider */}
-            <hr className="border-white/5 mb-0" />
+            <hr className="border-white/5 mb-16" />
 
-            <div className="mx-auto max-w-7xl px-6">
+            <div className="mx-auto max-w-7xl px-6 pt-4">
 
                 {/* 2. Tabbed Detailed View */}
                 <div className="max-w-5xl mx-auto">
