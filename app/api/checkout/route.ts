@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { getSession, clearSession } from "@/lib/session";
@@ -33,6 +34,11 @@ export async function GET() {
       });
     }
 
+    // Read DataFast cookies for attribution
+    const cookieStore = await cookies();
+    const datafastVisitorId = cookieStore.get("datafast_visitor_id")?.value;
+    const datafastSessionId = cookieStore.get("datafast_session_id")?.value;
+
     // Create Checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -43,6 +49,10 @@ export async function GET() {
           quantity: 1,
         },
       ],
+      metadata: {
+        ...(datafastVisitorId && { datafast_visitor_id: datafastVisitorId }),
+        ...(datafastSessionId && { datafast_session_id: datafastSessionId }),
+      },
       subscription_data: {
         metadata: { discordId: session.discordId },
       },
