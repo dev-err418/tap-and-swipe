@@ -85,7 +85,7 @@ const AIFormula = () => {
                         </div>
                         <div className="text-center">
                             <h3 className="text-xl font-bold text-[#f1ebe2]">Shipped App</h3>
-                            <p className="text-sm text-[#c9c4bc]">100% Profit</p>
+                            <p className="text-sm text-[#c9c4bc]">100% Yours</p>
                         </div>
                     </motion.div>
                 </div>
