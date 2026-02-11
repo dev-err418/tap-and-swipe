@@ -19,6 +19,7 @@ const DiscordIcon = ({ className }: { className?: string }) => (
 import { Suspense } from "react";
 import SuccessOverlay from "./SuccessOverlay";
 import ErrorOverlay from "./ErrorOverlay";
+import Pricing from "./Pricing";
 
 const LandingPage = ({
     searchParams,
@@ -248,6 +249,9 @@ const LandingPage = ({
                     </div>
                 </div>
             </section>
+
+            {/* Pricing Section */}
+            <Pricing />
 
             {/* FAQ Section */}
             <section id="faq" className="bg-[#2a2725] py-24 border-t border-white/5">
