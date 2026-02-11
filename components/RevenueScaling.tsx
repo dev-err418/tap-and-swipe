@@ -35,23 +35,13 @@ const RevenueScaling = () => {
                             </div>
 
                             {/* Visual: Payment Notification */}
-                            <div className="flex-1 flex items-center justify-center">
-                                <div className="w-full bg-[#1e1c1b] rounded-2xl p-6 border border-white/5 shadow-inner">
-                                    <div className="flex items-center gap-4 bg-[#2a2725] p-4 rounded-xl border border-white/5 shadow-lg transform rotate-[-2deg] transition-transform group-hover:rotate-0">
-                                        <div className="h-10 w-10 rounded-full bg-[#34c759]/20 flex items-center justify-center flex-shrink-0">
-                                            <DollarSign className="h-5 w-5 text-[#34c759]" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] text-[#c9c4bc] uppercase tracking-wider font-medium">Payment Received</p>
-                                            <p className="text-lg font-bold text-[#f1ebe2]">$9.00</p>
-                                        </div>
-                                        <div className="ml-auto text-[10px] text-[#c9c4bc]">Just now</div>
-                                    </div>
-                                    <div className="mt-4 flex flex-col gap-2 opacity-30">
-                                        <div className="h-2 w-3/4 bg-white/10 rounded-full" />
-                                        <div className="h-2 w-1/2 bg-white/10 rounded-full" />
-                                    </div>
-                                </div>
+                            <div className="flex-1 flex items-center justify-center relative">
+                                <div className="absolute inset-0 bg-gradient-to-b from-[#f4cf8f]/5 to-transparent rounded-2xl" />
+                                <img
+                                    src="/first-sale-optimized.jpg"
+                                    alt="First sale notification"
+                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 w-[85%] md:w-[75%]"
+                                />
                             </div>
                         </div>
                     </motion.div>
