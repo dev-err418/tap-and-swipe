@@ -82,7 +82,7 @@ const AIFormula = () => {
                             <AnimatePresence mode="wait">
                                 <motion.h3
                                     key={activeIndex}
-                                    className="text-xl font-bold text-[#f4cf8f]"
+                                    className="text-xl font-bold text-[#f4cf8f] whitespace-nowrap"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
@@ -139,7 +139,7 @@ const AIFormula = () => {
                             <AnimatePresence mode="wait">
                                 <motion.h3
                                     key={activeIndex}
-                                    className="text-xl font-bold text-[#f4cf8f]"
+                                    className="text-xl font-bold text-[#f4cf8f] whitespace-nowrap"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
