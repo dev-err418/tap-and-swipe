@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Sparkles,
@@ -147,6 +147,14 @@ const toolIcons: Record<string, string> = {
 
 const Roadmap = () => {
     const [activeTab, setActiveTab] = useState(0);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setActiveTab((current) => (current + 1) % steps.length);
+        }, 5000); // Change tab every 5 seconds
+
+        return () => clearInterval(timer);
+    }, []);
 
     return (
         <section id="roadmap" className="bg-[#2a2725] py-24 border-t border-white/5 overflow-hidden">
