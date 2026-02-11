@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, PartyPopper, ArrowRight, MessageSquare } from "lucide-react";
+import { CheckCircle2, ArrowRight, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -91,21 +91,6 @@ const SuccessOverlay = () => {
                                     <div>
                                         <h4 className="font-bold text-[#f1ebe2]">Join the Community</h4>
                                         <p className="text-sm text-[#c9c4bc]">Jump into the Discord to meet 41+ other makers.</p>
-                                    </div>
-                                </motion.div>
-
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.6 }}
-                                    className="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/5 p-4"
-                                >
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f4cf8f]/20">
-                                        <PartyPopper className="h-5 w-5 text-[#f4cf8f]" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-[#f1ebe2]">Check your Email</h4>
-                                        <p className="text-sm text-[#c9c4bc]">We just sent you the induction guide and access links.</p>
                                     </div>
                                 </motion.div>
                             </div>
