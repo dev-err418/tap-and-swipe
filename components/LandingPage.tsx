@@ -297,7 +297,7 @@ const LandingPage = () => {
             <section id="group-calls" className="bg-[#2a2725] py-24 border-t border-white/5">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Group Calls</h2>
+                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Group calls</h2>
                         <p className="mt-4 text-lg text-[#c9c4bc]">Weekly live sessions to unblock your progress.</p>
                     </div>
                     {/* Placeholder content */}
@@ -311,7 +311,7 @@ const LandingPage = () => {
             <section id="faq" className="bg-[#2a2725] py-24 border-t border-white/5">
                 <div className="mx-auto max-w-4xl px-6">
                     <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Frequently Asked Questions</h2>
+                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Frequently asked questions</h2>
                         <p className="mt-4 text-lg text-[#c9c4bc]">Everything you need to know before joining.</p>
                     </div>
 
