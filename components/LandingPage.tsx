@@ -18,6 +18,7 @@ const DiscordIcon = ({ className }: { className?: string }) => (
 
 import { Suspense } from "react";
 import SuccessOverlay from "./SuccessOverlay";
+import ErrorOverlay from "./ErrorOverlay";
 
 const LandingPage = ({
     searchParams,
@@ -28,6 +29,7 @@ const LandingPage = ({
         <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30">
             <Suspense fallback={null}>
                 <SuccessOverlay />
+                <ErrorOverlay />
             </Suspense>
 
             {/* Hero Section */}
