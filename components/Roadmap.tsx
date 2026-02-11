@@ -289,12 +289,7 @@ const Roadmap = () => {
                                         ))}
                                     </div>
 
-                                    {/* Visual Decoration */}
-                                    <div className="mt-8 p-4 rounded-xl bg-[#2a2725]/50 border border-white/5 text-center">
-                                        <p className="text-xs text-[#c9c4bc] italic">
-                                            "This step alone usually takes weeks. We do it in days."
-                                        </p>
-                                    </div>
+
                                 </div>
                             </motion.div>
                         </AnimatePresence>
