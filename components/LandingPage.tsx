@@ -198,14 +198,16 @@ const LandingPage = () => {
                         <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Group calls</h2>
                         <p className="mt-4 text-lg text-[#c9c4bc]">Weekly live sessions to unblock your progress.</p>
                     </div>
-                    {/* Group Call Image */}
-                    <div className="relative rounded-3xl border border-white/10 bg-white/5 overflow-hidden group">
-                        <img
-                            src="/group-calls.jpg"
-                            alt="Weekly Group Calls"
-                            className="w-full h-auto object-cover opacity-90 transition-opacity duration-500 group-hover:opacity-100"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#2a2725]/50 via-transparent to-transparent pointer-events-none" />
+                    {/* Group Call Image: Matches Hero Video Style */}
+                    <div className="flex justify-center">
+                        <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-[#f4cf8f]/10 ring-1 ring-white/10 group">
+                            <img
+                                src="/group-calls.jpg"
+                                alt="Weekly Group Calls"
+                                className="w-full max-w-4xl opacity-90 transition-opacity duration-500 group-hover:opacity-100"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#2a2725]/50 via-transparent to-transparent pointer-events-none" />
+                        </div>
                     </div>
                 </div>
             </section>
