@@ -113,85 +113,7 @@ const LandingPage = () => {
             {/* Roadmap Section */}
             <Roadmap />
 
-            {/* Testimonials Section (Placeholder) */}
-            <section id="testimonials" className="bg-[#2a2725] py-24 border-t border-white/5">
-                <div className="mx-auto max-w-7xl px-6">
-                    <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">What makers are saying</h2>
-                        <p className="mt-4 text-lg text-[#c9c4bc]">Join the community of builders shipping their dreams.</p>
-                    </div>
-                    <div className="columns-1 gap-6 md:columns-2 lg:columns-3 space-y-6">
-                        {[
-                            {
-                                name: "JX_Op",
-                                text: "This is by far the best small community for people wanting to build apps I have been in the community for about 5 days or so I am still in the early stages of building my app but Arthur has helped every step of the way have been on multiple 1on1 calls also there was s a full roadmap to get started and everyone is always building their own thing or helping each other so very like minded couldn’t recommend it enough",
-                                time: "10 days after purchase",
-                                image: "/jx_op.png"
-                            },
-                            {
-                                name: "Luka",
-                                text: "I have been in this community for few days, and overall experience is great. Arthur is very enthusiastic and really helpful, and other members are also nice, willing to help each other improve. I never paid for community before, but this one is definitely worth it. Changing your mind and to pivot is a difficult task to do, and I definitely needed more experienced people to teach me correct approaches. Shortly, this community is awesome, and looking forward to see how it grows.",
-                                time: "8 days after purchase",
-                                image: "/luka.png"
-                            },
-                            {
-                                name: "jesse",
-                                text: "If you’re wanting to build apps this is the clear best community that provides step by step instructions, constant advice and a like minded community.",
-                                time: "7 days after purchase",
-                                image: "/jesse.png"
-                            },
-                            {
-                                name: "Hnythng",
-                                text: "Finally found a community where I can share progress and get feedback or ask questions and get answers from someone that is at another level in the app game, joining this group has been the best investment for my personal app development",
-                                time: "9 days after purchase",
-                                image: "/hnythng.png"
-                            },
-                            {
-                                name: "Ilya",
-                                text: "Found a lot of useful materials and a very supportive community",
-                                time: "8 days after purchase",
-                                image: "/ilya.png"
-                            },
-                            {
-                                name: "user1a1a586904",
-                                text: "Three days in and I already submitted my first app. Arthur’s insane... constant feedback, always jumping on 1:1s, sharing value nonstop. 100% recommend the community, no-code or dev.",
-                                time: "3 days after purchase",
-                                image: "/user1a1a.png"
-                            },
-                            {
-                                name: "raphael adouane",
-                                text: "This Discord guide is complete and covers everything needed to ship your first app. Arthur is super helpful and always there to share his expertise. Highly recommended for aspiring app creators! (The community is also a huge plus for feedback).",
-                                time: "10 days after purchase",
-                                image: "/raphael.png"
-                            }
-                        ].map((testimonial, i) => (
-                            <div key={i} className="break-inside-avoid rounded-3xl border border-white/5 bg-white/5 p-6 shadow-sm transition-all hover:bg-white/10">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <div className="flex text-[#f4cf8f]">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star key={i} className="h-4 w-4 fill-current" />
-                                        ))}
-                                    </div>
-                                </div>
-                                <p className="text-[#f1ebe2] leading-relaxed text-sm mb-6">"{testimonial.text}"</p>
-                                <div className="flex items-center justify-between border-t border-white/5 pt-4">
-                                    <div className="flex items-center gap-3">
-                                        <img
-                                            src={testimonial.image}
-                                            alt={testimonial.name}
-                                            className="h-8 w-8 rounded-full border border-[#f4cf8f]/20 object-cover"
-                                        />
-                                        <span className="font-medium text-sm text-[#f1ebe2]">{testimonial.name}</span>
-                                    </div>
-                                    <span className="text-xs text-[#c9c4bc]">{testimonial.time}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Group Calls Section (Placeholder) */}
+            {/* Group Calls Section */}
             <section id="group-calls" className="bg-[#2a2725] py-24 border-t border-white/5">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center max-w-3xl mx-auto">
@@ -233,6 +155,84 @@ const LandingPage = () => {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-[#2a2725]/50 via-transparent to-transparent pointer-events-none" />
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Testimonials Section */}
+            <section id="testimonials" className="bg-[#2a2725] py-24 border-t border-white/5">
+                <div className="mx-auto max-w-7xl px-6">
+                    <div className="mb-16 text-center">
+                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">What makers are saying</h2>
+                        <p className="mt-4 text-lg text-[#c9c4bc]">Join the community of builders shipping their dreams.</p>
+                    </div>
+                    <div className="columns-1 gap-6 md:columns-2 lg:columns-3 space-y-6">
+                        {[
+                            {
+                                name: "JX_Op",
+                                text: "This is by far the best small community for people wanting to build apps I have been in the community for about 5 days or so I am still in the early stages of building my app but Arthur has helped every step of the way have been on multiple 1on1 calls also there was s a full roadmap to get started and everyone is always building their own thing or helping each other so very like minded couldn't recommend it enough",
+                                time: "10 days after purchase",
+                                image: "/jx_op.png"
+                            },
+                            {
+                                name: "Luka",
+                                text: "I have been in this community for few days, and overall experience is great. Arthur is very enthusiastic and really helpful, and other members are also nice, willing to help each other improve. I never paid for community before, but this one is definitely worth it. Changing your mind and to pivot is a difficult task to do, and I definitely needed more experienced people to teach me correct approaches. Shortly, this community is awesome, and looking forward to see how it grows.",
+                                time: "8 days after purchase",
+                                image: "/luka.png"
+                            },
+                            {
+                                name: "jesse",
+                                text: "If you're wanting to build apps this is the clear best community that provides step by step instructions, constant advice and a like minded community.",
+                                time: "7 days after purchase",
+                                image: "/jesse.png"
+                            },
+                            {
+                                name: "Hnythng",
+                                text: "Finally found a community where I can share progress and get feedback or ask questions and get answers from someone that is at another level in the app game, joining this group has been the best investment for my personal app development",
+                                time: "9 days after purchase",
+                                image: "/hnythng.png"
+                            },
+                            {
+                                name: "Ilya",
+                                text: "Found a lot of useful materials and a very supportive community",
+                                time: "8 days after purchase",
+                                image: "/ilya.png"
+                            },
+                            {
+                                name: "user1a1a586904",
+                                text: "Three days in and I already submitted my first app. Arthur's insane... constant feedback, always jumping on 1:1s, sharing value nonstop. 100% recommend the community, no-code or dev.",
+                                time: "3 days after purchase",
+                                image: "/user1a1a.png"
+                            },
+                            {
+                                name: "raphael adouane",
+                                text: "This Discord guide is complete and covers everything needed to ship your first app. Arthur is super helpful and always there to share his expertise. Highly recommended for aspiring app creators! (The community is also a huge plus for feedback).",
+                                time: "10 days after purchase",
+                                image: "/raphael.png"
+                            }
+                        ].map((testimonial, i) => (
+                            <div key={i} className="break-inside-avoid rounded-3xl border border-white/5 bg-white/5 p-6 shadow-sm transition-all hover:bg-white/10">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="flex text-[#f4cf8f]">
+                                        {[...Array(5)].map((_, i) => (
+                                            <Star key={i} className="h-4 w-4 fill-current" />
+                                        ))}
+                                    </div>
+                                </div>
+                                <p className="text-[#f1ebe2] leading-relaxed text-sm mb-6">"{testimonial.text}"</p>
+                                <div className="flex items-center justify-between border-t border-white/5 pt-4">
+                                    <div className="flex items-center gap-3">
+                                        <img
+                                            src={testimonial.image}
+                                            alt={testimonial.name}
+                                            className="h-8 w-8 rounded-full border border-[#f4cf8f]/20 object-cover"
+                                        />
+                                        <span className="font-medium text-sm text-[#f1ebe2]">{testimonial.name}</span>
+                                    </div>
+                                    <span className="text-xs text-[#c9c4bc]">{testimonial.time}</span>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
