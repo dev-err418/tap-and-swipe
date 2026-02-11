@@ -189,12 +189,12 @@ const Roadmap = () => {
                                 <button
                                     key={step.id}
                                     onClick={() => setActiveTab(index)}
-                                    className={`group flex flex-col items-center gap-3 transition-all duration-300 outline-none ${isActive ? "text-[#f4cf8f] scale-105" : "text-[#c9c4bc] hover:text-[#f1ebe2]"
+                                    className={`group flex flex-col items-center gap-3 transition-all duration-300 outline-none cursor-pointer ${isActive ? "text-[#f4cf8f] scale-105" : "text-[#c9c4bc] hover:text-[#f1ebe2]"
                                         }`}
                                 >
                                     <div className={`p-3 rounded-xl transition-all ${isActive
-                                            ? "bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 shadow-[0_0_15px_rgba(244,207,143,0.1)]"
-                                            : "bg-white/5 border border-transparent group-hover:bg-white/10"
+                                        ? "bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 shadow-[0_0_15px_rgba(244,207,143,0.1)]"
+                                        : "bg-white/5 border border-transparent group-hover:bg-white/10"
                                         }`}>
                                         <step.Icon className="h-6 w-6" />
                                     </div>
