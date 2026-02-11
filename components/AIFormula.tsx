@@ -33,18 +33,26 @@ const AIFormula = () => {
                     </p>
                 </div>
 
-                {/* Desktop: Row of squares with operators aligned, labels below */}
-                <div className="hidden md:flex flex-col items-center">
-                    {/* Squares + Operators row */}
-                    <div className="flex items-center justify-center gap-12">
-                        {/* Square 1: Idea */}
+                {/* Desktop: Grid layout — each element in its own column */}
+                <div className="hidden md:grid grid-cols-5 items-start justify-items-center max-w-3xl mx-auto">
+                    {/* Column 1: Idea */}
+                    <div className="flex flex-col items-center gap-4">
                         <div className="h-24 w-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
                             <span className="text-4xl">💡</span>
                         </div>
+                        <div className="text-center">
+                            <h3 className="text-xl font-bold text-[#f1ebe2] whitespace-nowrap">Your Idea</h3>
+                            <p className="text-sm text-[#c9c4bc]">5% Vision</p>
+                        </div>
+                    </div>
 
+                    {/* Column 2: Plus */}
+                    <div className="flex items-center justify-center h-24">
                         <Plus className="h-8 w-8 text-[#f4cf8f]" />
+                    </div>
 
-                        {/* Square 2: AI Tool (swapping) */}
+                    {/* Column 3: AI Tool */}
+                    <div className="flex flex-col items-center gap-4">
                         <div className="h-24 w-24 rounded-3xl bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 flex items-center justify-center shadow-[0_0_30px_rgba(244,207,143,0.1)] relative overflow-hidden">
                             <AnimatePresence mode="wait">
                                 <motion.img
@@ -59,26 +67,7 @@ const AIFormula = () => {
                                 />
                             </AnimatePresence>
                         </div>
-
-                        <Equal className="h-8 w-8 text-[#f4cf8f]" />
-
-                        {/* Square 3: Result */}
-                        <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-[#f4cf8f] to-[#dcb06e] flex items-center justify-center shadow-lg shadow-[#f4cf8f]/20">
-                            <Rocket className="h-10 w-10 text-[#2a2725]" />
-                        </div>
-                    </div>
-
-                    {/* Labels row */}
-                    <div className="flex items-start justify-center gap-12 mt-4">
-                        <div className="min-w-24 text-center">
-                            <h3 className="text-xl font-bold text-[#f1ebe2]">Your Idea</h3>
-                            <p className="text-sm text-[#c9c4bc]">5% Vision</p>
-                        </div>
-
-                        {/* Spacer for + */}
-                        <div className="w-8" />
-
-                        <div className="min-w-24 text-center">
+                        <div className="text-center">
                             <AnimatePresence mode="wait">
                                 <motion.h3
                                     key={activeIndex}
@@ -93,12 +82,20 @@ const AIFormula = () => {
                             </AnimatePresence>
                             <p className="text-sm text-[#c9c4bc]">95% Execution</p>
                         </div>
+                    </div>
 
-                        {/* Spacer for = */}
-                        <div className="w-8" />
+                    {/* Column 4: Equal */}
+                    <div className="flex items-center justify-center h-24">
+                        <Equal className="h-8 w-8 text-[#f4cf8f]" />
+                    </div>
 
-                        <div className="min-w-24 text-center">
-                            <h3 className="text-xl font-bold text-[#f1ebe2]">Shipped App</h3>
+                    {/* Column 5: Result */}
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-[#f4cf8f] to-[#dcb06e] flex items-center justify-center shadow-lg shadow-[#f4cf8f]/20">
+                            <Rocket className="h-10 w-10 text-[#2a2725]" />
+                        </div>
+                        <div className="text-center">
+                            <h3 className="text-xl font-bold text-[#f1ebe2] whitespace-nowrap">Shipped App</h3>
                             <p className="text-sm text-[#c9c4bc]">100% Yours</p>
                         </div>
                     </div>
@@ -106,7 +103,6 @@ const AIFormula = () => {
 
                 {/* Mobile: Vertical layout */}
                 <div className="flex md:hidden flex-col items-center gap-8">
-                    {/* Element 1: Idea */}
                     <div className="flex flex-col items-center gap-4">
                         <div className="h-24 w-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
                             <span className="text-4xl">💡</span>
@@ -119,7 +115,6 @@ const AIFormula = () => {
 
                     <Plus className="h-8 w-8 text-[#f4cf8f]" />
 
-                    {/* Element 2: AI Tool */}
                     <div className="flex flex-col items-center gap-4">
                         <div className="h-24 w-24 rounded-3xl bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 flex items-center justify-center shadow-[0_0_30px_rgba(244,207,143,0.1)] relative overflow-hidden">
                             <AnimatePresence mode="wait">
@@ -154,7 +149,6 @@ const AIFormula = () => {
 
                     <Equal className="h-8 w-8 text-[#f4cf8f]" />
 
-                    {/* Element 3: Result */}
                     <div className="flex flex-col items-center gap-4">
                         <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-[#f4cf8f] to-[#dcb06e] flex items-center justify-center shadow-lg shadow-[#f4cf8f]/20">
                             <Rocket className="h-10 w-10 text-[#2a2725]" />
