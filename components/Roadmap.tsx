@@ -178,13 +178,13 @@ const Roadmap = () => {
                 </div>
 
                 {/* AI Formula Visualization */}
-                <div className="mb-20 pb-20">
+                <div className="mb-8 pb-8">
                     <AIFormula />
                 </div>
             </div>
 
             {/* Full-width divider */}
-            <hr className="border-white/5 mb-16" />
+            <hr className="border-white/5 mb-24" />
 
             <div className="mx-auto max-w-7xl px-6 pt-4">
 
