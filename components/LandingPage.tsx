@@ -66,7 +66,7 @@ const LandingPage = ({
 
                     <div className="mt-10 pt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                         <a
-                            href="/api/auth/discord"
+                            href="#pricing"
                             data-fast-goal="cta_hero_clicked"
                             className="group flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-semibold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
                         >
