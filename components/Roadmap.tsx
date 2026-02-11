@@ -6,6 +6,7 @@ import {
     Sparkles,
     CheckCircle2,
 } from "lucide-react";
+import AIFormula from "./AIFormula";
 
 // --- Horizontal Timeline Data (matches tabs below) ---
 const horizontalMilestones = [
@@ -176,10 +177,9 @@ const Roadmap = () => {
                     </div>
                 </div>
 
-                {/* "The new way to build" heading */}
-                <div className="mb-16 text-center">
-                    <h3 className="text-2xl font-serif font-bold text-[#f1ebe2] sm:text-3xl">The new way to build</h3>
-                    <p className="mt-3 text-[#c9c4bc]">AI writes <span className="text-[#f4cf8f] font-bold">95%</span> of the code. You just provide the vision.</p>
+                {/* AI Formula Visualization */}
+                <div className="mb-20">
+                    <AIFormula />
                 </div>
 
                 {/* 2. Tabbed Detailed View */}

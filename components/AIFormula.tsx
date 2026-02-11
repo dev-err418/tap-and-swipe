@@ -5,9 +5,8 @@ import { Lightbulb, Plus, Sparkles, Equal, Rocket } from "lucide-react";
 
 const AIFormula = () => {
     return (
-        <section className="bg-[#2a2725] py-24 border-t border-white/5 relative overflow-hidden">
-            {/* Background enhancement */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#f4cf8f]/5 via-[#2a2725] to-[#2a2725]" />
+        <div className="py-16 relative overflow-hidden">
+            {/* Background enhancement - Removed for embedding */}
 
             <div className="mx-auto max-w-7xl px-6 relative z-10">
                 <div className="mb-16 text-center max-w-3xl mx-auto">
@@ -104,7 +103,7 @@ const AIFormula = () => {
                     </div>
                 </motion.div>
             </div>
-        </section>
+        </div>
     );
 };
 
