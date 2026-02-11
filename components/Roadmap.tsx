@@ -61,7 +61,7 @@ const steps: Step[] = [
             "Structure your app name and metadata for ASO",
             "Validate with a 3-day keyword boost",
         ],
-        tools: ["Astro", "ChatGPT"],
+        tools: ["Astro", "Claude"],
         emoji: "💡",
         timeSaved: "2 weeks",
     },
@@ -129,8 +129,8 @@ const steps: Step[] = [
 
 // Tool name to icon file mapping
 const toolIcons: Record<string, string> = {
-    "Astro": "/icons/astro.svg",
-    "ChatGPT": "/icons/chatgpt.svg",
+    "Astro": "/icons/astro.png",
+
     "Figma": "/icons/figma.svg",
     "Mobbin": "/icons/mobbin.svg",
     "Dribbble": "/icons/dribbble.svg",
