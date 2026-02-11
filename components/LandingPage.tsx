@@ -205,8 +205,6 @@ const LandingPage = () => {
                         </p>
 
                         <div className="mt-8 text-left space-y-6">
-                            <p className="font-medium text-[#f1ebe2] text-lg">The difference? You get me on calls. Weekly.</p>
-
                             <ul className="space-y-4">
                                 <li className="flex gap-4">
                                     <span className="text-2xl mt-1">📞</span>
