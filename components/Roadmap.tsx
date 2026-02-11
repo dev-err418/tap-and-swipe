@@ -7,6 +7,7 @@ import {
     CheckCircle2,
 } from "lucide-react";
 import AIFormula from "./AIFormula";
+import RevenueScaling from "./RevenueScaling";
 
 // --- Horizontal Timeline Data (matches tabs below) ---
 const horizontalMilestones = [
@@ -192,6 +193,11 @@ const Roadmap = () => {
                             </motion.div>
                         ))}
                     </div>
+                </div>
+
+                {/* Revenue Scaling Visualization */}
+                <div className="mb-20 pb-20 border-b border-white/5">
+                    <RevenueScaling />
                 </div>
 
                 {/* AI Formula Visualization */}
