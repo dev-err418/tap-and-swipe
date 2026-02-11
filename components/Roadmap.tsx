@@ -131,17 +131,17 @@ const steps: Step[] = [
 const toolIcons: Record<string, string> = {
     "Astro": "/icons/astro.png",
 
-    "Figma": "/icons/figma.svg",
-    "Mobbin": "/icons/mobbin.svg",
-    "Dribbble": "/icons/dribbble.svg",
-    "Expo": "/icons/expo.svg",
-    "Claude": "/icons/claude.svg",
-    "Cursor": "/icons/cursor.svg",
-    "Supabase": "/icons/supabase.svg",
-    "RevenueCat": "/icons/revenuecat.svg",
-    "Superwall": "/icons/superwall.svg",
-    "Apple Ads": "/icons/apple.svg",
-    "TikTok": "/icons/tiktok.svg",
+    "Figma": "/icons/figma.png",
+    "Mobbin": "/icons/mobbin.png",
+    "Dribbble": "/icons/dribbble.png",
+    "Expo": "/icons/expo.png",
+    "Claude": "/icons/claude.png",
+    "Cursor": "/icons/cursor.png",
+    "Supabase": "/icons/supabase.png",
+    "RevenueCat": "/icons/revenuecat.png",
+    "Superwall": "/icons/superwall.png",
+    "Apple Ads": "/icons/apple.png",
+    "TikTok": "/icons/tiktok.png",
 };
 
 const Roadmap = () => {
