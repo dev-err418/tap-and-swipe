@@ -1,12 +1,8 @@
 import {
-    Lightbulb,
-    Palette,
-    Code,
-    CreditCard,
-    TrendingUp,
     ArrowRight,
     Star
 } from "lucide-react";
+import Roadmap from "./Roadmap";
 
 const DiscordIcon = ({ className }: { className?: string }) => (
     <svg
@@ -114,106 +110,8 @@ const LandingPage = () => {
                 </div>
             </header>
 
-            {/* Bento Grid Section */}
-            <section id="curriculum" className="bg-[#2a2725] py-24">
-                <div className="mx-auto max-w-7xl px-6">
-                    <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Everything you need to launch</h2>
-                        <p className="mt-4 text-lg text-[#c9c4bc]">From just an idea to your first paying customer.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4 lg:grid-rows-2">
-
-                        {/* 1. Idea Validation (Large square) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-white/5 p-8 shadow-sm transition-all hover:bg-white/10 hover:shadow-md md:col-span-2 md:row-span-2 border border-white/5">
-                            <div className="absolute top-0 right-0 -mr-8 -mt-8 h-32 w-32 rounded-full bg-[#f4cf8f]/10 blur-3xl"></div>
-                            <div className="relative z-10">
-                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f4cf8f]/10 text-[#f4cf8f] border border-[#f4cf8f]/20">
-                                    <Lightbulb className="h-6 w-6" />
-                                </div>
-                                <h3 className="text-2xl font-bold text-[#f1ebe2]">Idea Validation</h3>
-                                <p className="mt-4 text-[#c9c4bc] leading-relaxed">
-                                    Don't waste time building something nobody wants. Learn how to find profitable niches, interview potential users, and pre-sell your app before writing a single line of code.
-                                </p>
-                                <ul className="mt-8 space-y-3">
-                                    {['Market Research Framework', 'The "Mom Test" Approach', 'Landing Page Testing'].map((item) => (
-                                        <li key={item} className="flex items-center gap-3 text-sm font-medium text-[#f1ebe2]/80">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-[#f4cf8f]"></div>
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-
-                        {/* 2. Design UI & UX (Horizontal rectangle) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-white/5 p-8 shadow-sm transition-all hover:bg-white/10 hover:shadow-md md:col-span-2 border border-white/5">
-                            <div className="absolute bottom-0 right-0 -mb-8 -mr-8 h-40 w-40 rounded-full bg-pink-500/10 blur-3xl"></div>
-                            <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                                <div>
-                                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10 text-pink-500 border border-pink-500/20">
-                                        <Palette className="h-5 w-5" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-[#f1ebe2]">Design UI & UX</h3>
-                                    <p className="mt-2 text-sm text-[#c9c4bc]">Create beautiful, intuitive interfaces that users love.</p>
-                                </div>
-                                {/* Abstract UI representation */}
-                                <div className="flex gap-2">
-                                    <div className="h-16 w-12 rounded-lg bg-white/5 border border-white/10 shadow-sm animate-pulse"></div>
-                                    <div className="h-16 w-12 rounded-lg bg-pink-500/10 border border-pink-500/20 shadow-sm"></div>
-                                    <div className="h-16 w-12 rounded-lg bg-white/5 border border-white/10 shadow-sm"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 3. Development Guide (Vertical rectangle) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-black/40 p-8 shadow-sm transition-all hover:shadow-md md:col-span-1 border border-white/5">
-                            <div className="relative z-10 text-[#f1ebe2]">
-                                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#c9c4bc] border border-white/10">
-                                    <Code className="h-5 w-5" />
-                                </div>
-                                <h3 className="text-lg font-bold">Development</h3>
-                                <p className="mt-2 text-sm text-[#c9c4bc]">React Native / Expo</p>
-                                <div className="mt-8 space-y-2">
-                                    <div className="h-2 w-full rounded-full bg-white/10"></div>
-                                    <div className="h-2 w-3/4 rounded-full bg-white/10"></div>
-                                    <div className="h-2 w-1/2 rounded-full bg-white/5"></div>
-                                </div>
-                                <div className="mt-6 rounded-lg bg-black/50 border border-white/5 p-3 font-mono text-xs text-green-400">
-                                    $ npx create-expo-app
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 4. Paywall (Small square) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-white/5 p-8 shadow-sm transition-all hover:bg-white/10 hover:shadow-md md:col-span-1 border border-white/5">
-                            <div className="absolute top-0 right-0 h-24 w-24 rounded-bl-full bg-green-500/10 opacity-50"></div>
-                            <div className="relative z-10">
-                                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-500 border border-green-500/20">
-                                    <CreditCard className="h-5 w-5" />
-                                </div>
-                                <h3 className="text-lg font-bold text-[#f1ebe2]">Cashing in</h3>
-                                <p className="mt-2 text-sm text-[#c9c4bc]">Stripe & RevenueCat.</p>
-                            </div>
-                        </div>
-
-                        {/* 5. Marketing & Growth (Small square) */}
-                        <div className="group relative overflow-hidden rounded-3xl bg-[#f4cf8f] p-8 shadow-sm transition-all hover:bg-[#eac07e] hover:shadow-md md:col-span-2 border border-[#f4cf8f] text-[#2a2725]">
-                            <div className="relative z-10 flex items-center justify-between">
-                                <div>
-                                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#2a2725]/10 text-[#2a2725] border border-[#2a2725]/10">
-                                        <TrendingUp className="h-5 w-5" />
-                                    </div>
-                                    <h3 className="text-xl font-bold">Marketing & Growth</h3>
-                                    <p className="mt-2 text-sm text-[#2a2725]/80">Scale to your first 1,000 users.</p>
-                                </div>
-                                <div className="text-4xl font-bold opacity-20">10x</div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </section>
+            {/* Roadmap Section */}
+            <Roadmap />
 
             {/* Testimonials Section (Placeholder) */}
             <section id="testimonials" className="bg-[#2a2725] py-24 border-t border-white/5">
