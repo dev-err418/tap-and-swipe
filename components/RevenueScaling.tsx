@@ -11,7 +11,7 @@ const RevenueScaling = () => {
                 {/* Section Header */}
                 <div className="mb-16 text-center max-w-3xl mx-auto">
                     <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
-                        The Ultimate Goal
+                        The ultimate goal
                     </h2>
                     <p className="mt-4 text-lg text-[#c9c4bc]">
                         From your <span className="text-[#f4cf8f] font-bold">first internet dollar</span> to a scalable recurring revenue business.
