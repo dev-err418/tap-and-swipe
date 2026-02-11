@@ -194,13 +194,40 @@ const LandingPage = () => {
             {/* Group Calls Section (Placeholder) */}
             <section id="group-calls" className="bg-[#2a2725] py-24 border-t border-white/5">
                 <div className="mx-auto max-w-7xl px-6">
-                    <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Group calls</h2>
-                        <p className="mt-4 text-lg text-[#c9c4bc]">Weekly live sessions to unblock your progress.</p>
+                    <div className="mb-16 text-center max-w-3xl mx-auto">
+                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
+                            Weekly group calls
+                            <span className="block mt-2 text-xl font-sans font-medium text-[#f4cf8f]">Twice per week</span>
+                        </h2>
+
+                        <p className="mt-8 text-lg text-[#c9c4bc] leading-relaxed">
+                            This isn't just a video course you'll watch and forget. This is a builder's program designed to take you from a blank screen to your first <strong>$2,000 in revenue</strong>.
+                        </p>
+
+                        <div className="mt-8 text-left bg-[#2a2725] border border-white/5 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
+                            <p className="font-medium text-[#f1ebe2] text-lg">The difference? You get me on calls. Weekly.</p>
+
+                            <ul className="space-y-4">
+                                <li className="flex gap-4">
+                                    <span className="text-2xl mt-1">📞</span>
+                                    <div>
+                                        <strong className="text-[#f1ebe2] block text-lg">Strategy Group Calls</strong>
+                                        <p className="text-[#c9c4bc]">We hop on a call to dissect your specific roadblocks, look at your code, and fix your strategy.</p>
+                                    </div>
+                                </li>
+                                <li className="flex gap-4">
+                                    <span className="text-2xl mt-1">👥</span>
+                                    <div>
+                                        <strong className="text-[#f1ebe2] block text-lg">Weekly Group Masterminds</strong>
+                                        <p className="text-[#c9c4bc]">Showcase your progress, get live feedback, and solve problems with a community of builders who are in the trenches with you.</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                     {/* Group Call Image: Matches Hero Video Style */}
                     <div className="flex justify-center">
-                        <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-[#f4cf8f]/10 ring-1 ring-white/10 group">
+                        <div className="relative overflow-hidden rounded-[32px] ring-1 ring-white/10 group">
                             <img
                                 src="/group-calls.jpg"
                                 alt="Weekly Group Calls"
