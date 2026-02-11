@@ -307,6 +307,62 @@ const LandingPage = () => {
                 </div>
             </section>
 
+            {/* FAQ Section */}
+            <section id="faq" className="bg-[#2a2725] py-24 border-t border-white/5">
+                <div className="mx-auto max-w-4xl px-6">
+                    <div className="mb-16 text-center">
+                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Frequently Asked Questions</h2>
+                        <p className="mt-4 text-lg text-[#c9c4bc]">Everything you need to know before joining.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        {[
+                            {
+                                question: "Is this program for me?",
+                                answer: "This is for you if you dream of building your own app but have no idea where to start. If you want to become financially independent through your own ideas, you're ready to learn even the boring stuff, and you want to build something real instead of just dreaming."
+                            },
+                            {
+                                question: "Who should NOT join?",
+                                answer: "If you expect AI to do all the work while you sit back and watch, this isn't for you. Same if you're not willing to do the parts that aren't fun, if freedom and flexibility aren't priorities for you, or if you expect magic results without putting in the work."
+                            },
+                            {
+                                question: "Do I need to know how to code?",
+                                answer: "If you already know how to code, you'll move faster. If you use AI tools like Cursor or Claude Code, that works great too. You don't need to be an expert, but you need to be willing to get your hands dirty and learn as you go."
+                            },
+                            {
+                                question: "What do I need to start?",
+                                answer: "A code editor (IDE), an AI coding tool, an Apple Developer account, and ideally a Mac (it makes everything easier). If you want to earn money from your app, you'll also need a business structure depending on your country."
+                            },
+                            {
+                                question: "How long before my app is live?",
+                                answer: "It depends on you. Some people speed run it in a few weeks, others take their time over a few months. The roadmap is there, the community is there, you set the pace."
+                            }
+                        ].map((faq, i) => (
+                            <details key={i} className="group rounded-3xl border border-white/5 bg-white/5 [&_summary::-webkit-details-marker]:hidden">
+                                <summary className="flex cursor-pointer items-center justify-between gap-1.5 p-6 text-[#f1ebe2] transition hover:bg-white/5 rounded-3xl focus:outline-none">
+                                    <h3 className="font-medium text-lg">{faq.question}</h3>
+                                    <span className="relative h-5 w-5 shrink-0">
+                                        <svg
+                                            className="absolute inset-0 h-5 w-5 opacity-100 transition duration-300 group-open:rotate-180"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </span>
+                                </summary>
+                                <div className="px-6 pb-6 text-[#c9c4bc] leading-relaxed">
+                                    <p>{faq.answer}</p>
+                                </div>
+                            </details>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
             {/* Footer */}
             <footer className="border-t border-white/10 bg-[#2a2725] py-8">
                 <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
