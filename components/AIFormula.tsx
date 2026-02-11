@@ -1,13 +1,28 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Lightbulb, Plus, Sparkles, Equal, Rocket } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Equal, Rocket } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const aiTools = [
+    { name: "Claude Code", logo: "/icons/claude.png" },
+    { name: "Codex", logo: "/icons/openai.png" },
+    { name: "Cursor", logo: "/icons/cursor.png" },
+    { name: "Antigravity", logo: "/icons/antigravity.png" },
+];
 
 const AIFormula = () => {
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setActiveIndex((prev) => (prev + 1) % aiTools.length);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <div className="py-16 relative overflow-hidden">
-            {/* Background enhancement - Removed for embedding */}
-
             <div className="mx-auto max-w-7xl px-6 relative z-10">
                 <div className="mb-16 text-center max-w-3xl mx-auto">
                     <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
@@ -18,68 +33,129 @@ const AIFormula = () => {
                     </p>
                 </div>
 
-                <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
-                    {/* Element 1: You */}
-                    <motion.div
-                        initial={{ opacity: 1, y: 0 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="flex flex-col items-center gap-4"
-                    >
+                {/* Desktop: Row of squares with operators aligned, labels below */}
+                <div className="hidden md:flex flex-col items-center">
+                    {/* Squares + Operators row */}
+                    <div className="flex items-center justify-center gap-12">
+                        {/* Square 1: Idea */}
                         <div className="h-24 w-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
-                            <Lightbulb className="h-10 w-10 text-[#c9c4bc]" />
+                            <span className="text-4xl">💡</span>
+                        </div>
+
+                        <Plus className="h-8 w-8 text-[#f4cf8f]" />
+
+                        {/* Square 2: AI Tool (swapping) */}
+                        <div className="h-24 w-24 rounded-3xl bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 flex items-center justify-center shadow-[0_0_30px_rgba(244,207,143,0.1)] relative overflow-hidden">
+                            <AnimatePresence mode="wait">
+                                <motion.img
+                                    key={activeIndex}
+                                    src={aiTools[activeIndex].logo}
+                                    alt={aiTools[activeIndex].name}
+                                    className="h-10 w-10 rounded-lg object-contain"
+                                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -20, scale: 0.8 }}
+                                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                                />
+                            </AnimatePresence>
+                        </div>
+
+                        <Equal className="h-8 w-8 text-[#f4cf8f]" />
+
+                        {/* Square 3: Result */}
+                        <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-[#f4cf8f] to-[#dcb06e] flex items-center justify-center shadow-lg shadow-[#f4cf8f]/20">
+                            <Rocket className="h-10 w-10 text-[#2a2725]" />
+                        </div>
+                    </div>
+
+                    {/* Labels row */}
+                    <div className="flex items-start justify-center gap-12 mt-4">
+                        <div className="w-24 text-center">
+                            <h3 className="text-xl font-bold text-[#f1ebe2]">Your Idea</h3>
+                            <p className="text-sm text-[#c9c4bc]">5% Vision</p>
+                        </div>
+
+                        {/* Spacer for + */}
+                        <div className="w-8" />
+
+                        <div className="w-24 text-center">
+                            <AnimatePresence mode="wait">
+                                <motion.h3
+                                    key={activeIndex}
+                                    className="text-xl font-bold text-[#f4cf8f]"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    {aiTools[activeIndex].name}
+                                </motion.h3>
+                            </AnimatePresence>
+                            <p className="text-sm text-[#c9c4bc]">95% Execution</p>
+                        </div>
+
+                        {/* Spacer for = */}
+                        <div className="w-8" />
+
+                        <div className="w-24 text-center">
+                            <h3 className="text-xl font-bold text-[#f1ebe2]">Shipped App</h3>
+                            <p className="text-sm text-[#c9c4bc]">100% Yours</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile: Vertical layout */}
+                <div className="flex md:hidden flex-col items-center gap-8">
+                    {/* Element 1: Idea */}
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="h-24 w-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
+                            <span className="text-4xl">💡</span>
                         </div>
                         <div className="text-center">
                             <h3 className="text-xl font-bold text-[#f1ebe2]">Your Idea</h3>
                             <p className="text-sm text-[#c9c4bc]">5% Vision</p>
                         </div>
-                    </motion.div>
+                    </div>
 
-                    {/* Operator: Plus */}
-                    <motion.div
-                        initial={{ opacity: 1, scale: 1 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <Plus className="h-8 w-8 text-[#f4cf8f]" />
-                    </motion.div>
+                    <Plus className="h-8 w-8 text-[#f4cf8f]" />
 
-                    {/* Element 2: AI */}
-                    <motion.div
-                        initial={{ opacity: 1, y: 0 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.3 }}
-                        className="flex flex-col items-center gap-4"
-                    >
-                        <div className="h-24 w-24 rounded-3xl bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 flex items-center justify-center shadow-[0_0_30px_rgba(244,207,143,0.1)]">
-                            <Sparkles className="h-10 w-10 text-[#f4cf8f]" />
+                    {/* Element 2: AI Tool */}
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="h-24 w-24 rounded-3xl bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 flex items-center justify-center shadow-[0_0_30px_rgba(244,207,143,0.1)] relative overflow-hidden">
+                            <AnimatePresence mode="wait">
+                                <motion.img
+                                    key={activeIndex}
+                                    src={aiTools[activeIndex].logo}
+                                    alt={aiTools[activeIndex].name}
+                                    className="h-10 w-10 rounded-lg object-contain"
+                                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -20, scale: 0.8 }}
+                                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                                />
+                            </AnimatePresence>
                         </div>
                         <div className="text-center">
-                            <h3 className="text-xl font-bold text-[#f4cf8f]">AI Tools</h3>
+                            <AnimatePresence mode="wait">
+                                <motion.h3
+                                    key={activeIndex}
+                                    className="text-xl font-bold text-[#f4cf8f]"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    {aiTools[activeIndex].name}
+                                </motion.h3>
+                            </AnimatePresence>
                             <p className="text-sm text-[#c9c4bc]">95% Execution</p>
                         </div>
-                    </motion.div>
+                    </div>
 
-                    {/* Operator: Equal */}
-                    <motion.div
-                        initial={{ opacity: 1, scale: 1 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.4 }}
-                    >
-                        <Equal className="h-8 w-8 text-[#f4cf8f]" />
-                    </motion.div>
+                    <Equal className="h-8 w-8 text-[#f4cf8f]" />
 
                     {/* Element 3: Result */}
-                    <motion.div
-                        initial={{ opacity: 1, y: 0 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.5 }}
-                        className="flex flex-col items-center gap-4"
-                    >
+                    <div className="flex flex-col items-center gap-4">
                         <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-[#f4cf8f] to-[#dcb06e] flex items-center justify-center shadow-lg shadow-[#f4cf8f]/20">
                             <Rocket className="h-10 w-10 text-[#2a2725]" />
                         </div>
@@ -87,21 +163,15 @@ const AIFormula = () => {
                             <h3 className="text-xl font-bold text-[#f1ebe2]">Shipped App</h3>
                             <p className="text-sm text-[#c9c4bc]">100% Yours</p>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
 
                 {/* Contextual Note */}
-                <motion.div
-                    initial={{ opacity: 1 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.7 }}
-                    className="mt-16 text-center"
-                >
+                <div className="mt-16 text-center">
                     <div className="inline-block rounded-full bg-white/5 px-6 py-2 text-sm text-[#c9c4bc] border border-white/5">
-                        <span className="text-[#f4cf8f]">Note:</span> You don't need to be a senior engineer. AI handles the heavy lifting.
+                        <span className="text-[#f4cf8f]">Note:</span> You don&apos;t need to be a senior engineer. AI handles the heavy lifting.
                     </div>
-                </motion.div>
+                </div>
             </div>
         </div>
     );
