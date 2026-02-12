@@ -289,11 +289,7 @@ const AppSprint1on1Funnel = () => {
 // ─── Hero Screen ─────────────────────────────────────────────────────
 const HeroScreen = ({ onStart }: { onStart: () => void }) => (
     <div className="flex flex-col items-center text-center max-w-2xl mx-auto">
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-        >
+        <div>
             <a
                 href="https://www.youtube.com/@ArthurBuildsStuff"
                 target="_blank"
@@ -307,12 +303,9 @@ const HeroScreen = ({ onStart }: { onStart: () => void }) => (
                 />
                 <span className="text-sm font-medium text-[#c9c4bc]">By ArthurBuildsStuff</span>
             </a>
-        </motion.div>
+        </div>
 
-        <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+        <h1
             className="font-serif text-5xl font-bold tracking-tight leading-[1.1] sm:text-6xl md:text-7xl"
         >
             Launch your app{" "}
@@ -332,24 +325,16 @@ const HeroScreen = ({ onStart }: { onStart: () => void }) => (
                     />
                 </svg>
             </span>
-        </motion.h1>
+        </h1>
 
-        <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+        <p
             className="mt-6 text-lg text-[#c9c4bc] sm:text-xl max-w-xl leading-relaxed"
         >
             Personalized coaching, code reviews, and strategy to take your
             app from idea to revenue.
-        </motion.p>
+        </p>
 
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mt-10"
-        >
+        <div className="mt-10">
             <button
                 onClick={onStart}
                 data-fast-goal="1on1_hero_start_quiz"
@@ -358,16 +343,13 @@ const HeroScreen = ({ onStart }: { onStart: () => void }) => (
                 See if you qualify
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
-        </motion.div>
+        </div>
 
-        <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
+        <p
             className="mt-6 text-sm text-[#c9c4bc]/60"
         >
             6 quick questions · Takes 30 seconds
-        </motion.p>
+        </p>
     </div>
 );
 
@@ -394,11 +376,8 @@ const QuestionScreen = ({
 
         <div className="flex flex-col gap-4 w-full max-w-xl">
             {question.answers.map((answer, i) => (
-                <motion.button
+                <button
                     key={i}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 + i * 0.08 }}
                     onClick={() => onAnswer(answer.next, answer.label)}
                     data-fast-goal={`1on1_${stepKey}_answer_${i + 1}`}
                     className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-left transition-all hover:bg-white/10 hover:border-[#f4cf8f]/30 hover:ring-2 hover:ring-[#f4cf8f]/10 cursor-pointer"
@@ -408,7 +387,7 @@ const QuestionScreen = ({
                         {answer.label}
                     </span>
                     <ArrowRight className="h-4 w-4 text-[#c9c4bc] shrink-0 ml-auto opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
-                </motion.button>
+                </button>
             ))}
         </div>
     </div>
@@ -534,40 +513,27 @@ const ResultBooking = ({ budgetRange }: { budgetRange: string }) => {
     return (
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto">
 
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-            >
+            <div>
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#f4cf8f]/20 bg-[#f4cf8f]/5 px-4 py-1.5 text-sm font-medium text-[#f4cf8f] mb-6">
                     <Sparkles className="h-3.5 w-3.5" />
                     You qualify!
                 </span>
-            </motion.div>
+            </div>
 
-            <motion.h2
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+            <h2
                 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-4"
             >
                 You&apos;re exactly who this is built for 🎉
-            </motion.h2>
+            </h2>
 
-            <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+            <p
                 className="text-[#c9c4bc] text-lg leading-relaxed mb-4 max-w-lg"
             >
                 You have the goal, the budget, and the commitment. Let&apos;s map out
                 your app launch strategy together.
-            </motion.p>
+            </p>
 
-            <motion.a
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
+            <a
                 href={calUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -577,7 +543,7 @@ const ResultBooking = ({ budgetRange }: { budgetRange: string }) => {
                 <Calendar className="h-5 w-5" />
                 Book your free call
                 <ExternalLink className="h-4 w-4 opacity-60" />
-            </motion.a>
+            </a>
         </div>
     );
 };
