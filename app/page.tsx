@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+};
+
 export default function Home() {
   return (
     <main className="relative z-10 flex min-h-screen flex-col items-center justify-between bg-[#2a2725] px-4 py-8 text-[#f1ebe2] selection:bg-[#f4cf8f]/30">

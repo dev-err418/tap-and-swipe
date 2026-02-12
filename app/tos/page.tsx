@@ -1,7 +1,12 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Service - Tap & Swipe",
+  title: "Terms of Service",
+  description:
+    "Terms of Service for Tap & Swipe App Sprint — usage rights, refund policy, and governing law.",
+  alternates: {
+    canonical: "/tos",
+  },
 };
 
 export default function TermsPage() {
