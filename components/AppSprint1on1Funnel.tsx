@@ -247,7 +247,7 @@ const AppSprint1on1Funnel = () => {
                 </button>
             )}
 
-            <AnimatePresence mode="wait" custom={direction}>
+            <AnimatePresence mode="wait" custom={direction} initial={false}>
                 <motion.div
                     key={step}
                     custom={direction}
