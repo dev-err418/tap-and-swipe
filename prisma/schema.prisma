@@ -25,3 +25,34 @@ model User {
   @@index([stripeCustomerId])
   @@index([subscriptionId])
 }
+
+model RevenueCatEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  appName     String
+  eventType   String
+  periodType  String?
+  productId   String?
+  appUserId   String?
+  price       Float    @default(0)
+  currency    String   @default("USD")
+  store       String?
+  environment String   @default("PRODUCTION")
+  rawPayload  Json?
+  createdAt   DateTime @default(now())
+
+  @@index([appName, createdAt])
+  @@index([eventType, periodType, createdAt])
+}
+
+model TrialDiscordMessage {
+  id                    String   @id @default(cuid())
+  appName               String
+  appUserId             String
+  originalTransactionId String
+  discordMessageId      String
+  createdAt             DateTime @default(now())
+
+  @@unique([appName, originalTransactionId])
+  @@index([appUserId])
+}
