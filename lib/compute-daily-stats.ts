@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { getFirstOpenCount, type AppName } from "@/lib/firebase-ga4";
+import {
+  getFirstOpenCount,
+  type AppName,
+  type DownloadsByPlatform,
+} from "@/lib/firebase-ga4";
 import type { DiscordEmbed } from "@/lib/revenuecat-discord";
 
 interface AppStats {
-  downloads: number;
+  downloads: DownloadsByPlatform;
   trials: number;
   conversions: number;
   cancellations: number;
@@ -49,7 +53,7 @@ export async function computeDailyStats(): Promise<DiscordEmbed[]> {
       .filter((e) => e.price > 0)
       .reduce((sum, e) => sum + e.price, 0);
 
-    let downloads = 0;
+    let downloads: DownloadsByPlatform = { android: 0, ios: 0, total: 0 };
     try {
       downloads = await getFirstOpenCount(app, "yesterday", "today");
     } catch (err) {
@@ -71,7 +75,7 @@ export async function computeDailyStats(): Promise<DiscordEmbed[]> {
     0
   );
   const totalDownloads = Object.values(results).reduce(
-    (s, r) => s + r.downloads,
+    (s, r) => s + r.downloads.total,
     0
   );
   const totalTrials = Object.values(results).reduce(
@@ -89,8 +93,8 @@ export async function computeDailyStats(): Promise<DiscordEmbed[]> {
   const embeds: DiscordEmbed[] = apps.map((app) => {
     const r = results[app];
     const dlToTrial =
-      r.downloads > 0
-        ? ((r.trials / r.downloads) * 100).toFixed(1) + "%"
+      r.downloads.total > 0
+        ? ((r.trials / r.downloads.total) * 100).toFixed(1) + "%"
         : "N/A";
     const trialToConv =
       r.trials > 0
@@ -102,7 +106,9 @@ export async function computeDailyStats(): Promise<DiscordEmbed[]> {
       description: `**${dateStr}**`,
       color: 0x3498db,
       fields: [
-        { name: "Downloads", value: `${r.downloads}`, inline: true },
+        { name: "\u{1F4F1} iOS", value: `${r.downloads.ios}`, inline: true },
+        { name: "\u{1F916} Android", value: `${r.downloads.android}`, inline: true },
+        { name: "Total DL", value: `${r.downloads.total}`, inline: true },
         { name: "Trials", value: `${r.trials}`, inline: true },
         { name: "Conversions", value: `${r.conversions}`, inline: true },
         { name: "Cancellations", value: `${r.cancellations}`, inline: true },
