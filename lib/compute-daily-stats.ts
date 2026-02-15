@@ -79,7 +79,14 @@ export async function computeDailyStats(): Promise<DiscordEmbed[]> {
     0
   );
 
-  const fields = apps.flatMap((app) => {
+  const dateStr = now.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const embeds: DiscordEmbed[] = apps.map((app) => {
     const r = results[app];
     const dlToTrial =
       r.downloads > 0
@@ -90,41 +97,35 @@ export async function computeDailyStats(): Promise<DiscordEmbed[]> {
         ? ((r.conversions / r.trials) * 100).toFixed(1) + "%"
         : "N/A";
 
-    return [
-      { name: `${app}`, value: "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500", inline: false },
-      { name: "Downloads", value: `${r.downloads}`, inline: true },
-      { name: "Trials", value: `${r.trials}`, inline: true },
-      { name: "Conversions", value: `${r.conversions}`, inline: true },
-      { name: "Cancellations", value: `${r.cancellations}`, inline: true },
-      { name: "Renewals", value: `${r.renewals}`, inline: true },
-      { name: "Revenue", value: `$${r.revenue.toFixed(2)}`, inline: true },
-      { name: "DL\u2192Trial", value: dlToTrial, inline: true },
-      { name: "Trial\u2192Conv", value: trialToConv, inline: true },
-    ];
+    return {
+      title: `\u{1F4CA} [${app}] Daily Stats`,
+      description: `**${dateStr}**`,
+      color: 0x3498db,
+      fields: [
+        { name: "Downloads", value: `${r.downloads}`, inline: true },
+        { name: "Trials", value: `${r.trials}`, inline: true },
+        { name: "Conversions", value: `${r.conversions}`, inline: true },
+        { name: "Cancellations", value: `${r.cancellations}`, inline: true },
+        { name: "Renewals", value: `${r.renewals}`, inline: true },
+        { name: "Revenue", value: `$${r.revenue.toFixed(2)}`, inline: true },
+        { name: "DL\u2192Trial", value: dlToTrial, inline: true },
+        { name: "Trial\u2192Conv", value: trialToConv, inline: true },
+      ],
+      timestamp: now.toISOString(),
+    };
   });
 
-  const embed: DiscordEmbed = {
-    title: "\u{1F4CA} Daily Stats Report",
-    description: `**${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}**`,
-    color: 0x3498db,
+  embeds.push({
+    title: `\u{1F4CA} [Total] Daily Stats`,
+    color: 0x2ecc71,
     fields: [
-      ...fields,
-      { name: "\u200B", value: "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500", inline: false },
-      {
-        name: "Total Revenue",
-        value: `$${totalRevenue.toFixed(2)}`,
-        inline: true,
-      },
-      {
-        name: "Total Downloads",
-        value: `${totalDownloads}`,
-        inline: true,
-      },
-      { name: "Total Trials", value: `${totalTrials}`, inline: true },
+      { name: "Revenue", value: `$${totalRevenue.toFixed(2)}`, inline: true },
+      { name: "Downloads", value: `${totalDownloads}`, inline: true },
+      { name: "Trials", value: `${totalTrials}`, inline: true },
     ],
     timestamp: now.toISOString(),
     footer: { text: "Tap & Swipe Daily Stats" },
-  };
+  });
 
-  return [embed];
+  return embeds;
 }
