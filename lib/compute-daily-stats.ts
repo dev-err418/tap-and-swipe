@@ -15,7 +15,7 @@ interface AppStats {
   revenue: number;
 }
 
-export async function computeDailyStats(): Promise<DiscordEmbed[]> {
+export async function computeDailyStats(): Promise<DiscordEmbed[][]> {
   const now = new Date();
   const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
@@ -70,19 +70,6 @@ export async function computeDailyStats(): Promise<DiscordEmbed[]> {
     };
   }
 
-  const totalRevenue = Object.values(results).reduce(
-    (s, r) => s + r.revenue,
-    0
-  );
-  const totalDownloads = Object.values(results).reduce(
-    (s, r) => s + r.downloads.total,
-    0
-  );
-  const totalTrials = Object.values(results).reduce(
-    (s, r) => s + r.trials,
-    0
-  );
-
   const dateStr = now.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -90,7 +77,7 @@ export async function computeDailyStats(): Promise<DiscordEmbed[]> {
     day: "numeric",
   });
 
-  const embeds: DiscordEmbed[] = apps.map((app) => {
+  const messages: DiscordEmbed[][] = apps.map((app) => {
     const r = results[app];
     const dlToTrial =
       r.downloads.total > 0
@@ -101,37 +88,28 @@ export async function computeDailyStats(): Promise<DiscordEmbed[]> {
         ? ((r.conversions / r.trials) * 100).toFixed(1) + "%"
         : "N/A";
 
-    return {
-      title: `\u{1F4CA} [${app}] Daily Stats`,
-      description: `**${dateStr}**`,
-      color: 0x3498db,
-      fields: [
-        { name: "\u{1F4F1} iOS", value: `${r.downloads.ios}`, inline: true },
-        { name: "\u{1F916} Android", value: `${r.downloads.android}`, inline: true },
-        { name: "Total DL", value: `${r.downloads.total}`, inline: true },
-        { name: "Trials", value: `${r.trials}`, inline: true },
-        { name: "Conversions", value: `${r.conversions}`, inline: true },
-        { name: "Cancellations", value: `${r.cancellations}`, inline: true },
-        { name: "Renewals", value: `${r.renewals}`, inline: true },
-        { name: "Revenue", value: `$${r.revenue.toFixed(2)}`, inline: true },
-        { name: "DL\u2192Trial", value: dlToTrial, inline: true },
-        { name: "Trial\u2192Conv", value: trialToConv, inline: true },
-      ],
-      timestamp: now.toISOString(),
-    };
+    return [
+      {
+        title: `\u{1F4CA} [${app}] Daily Stats`,
+        description: `**${dateStr}**`,
+        color: 0x3498db,
+        fields: [
+          { name: "\u{1F4F1} iOS", value: `${r.downloads.ios}`, inline: true },
+          { name: "\u{1F916} Android", value: `${r.downloads.android}`, inline: true },
+          { name: "Total DL", value: `${r.downloads.total}`, inline: true },
+          { name: "Trials", value: `${r.trials}`, inline: true },
+          { name: "Conversions", value: `${r.conversions}`, inline: true },
+          { name: "Cancellations", value: `${r.cancellations}`, inline: true },
+          { name: "Renewals", value: `${r.renewals}`, inline: true },
+          { name: "Revenue", value: `$${r.revenue.toFixed(2)}`, inline: true },
+          { name: "DL\u2192Trial", value: dlToTrial, inline: true },
+          { name: "Trial\u2192Conv", value: trialToConv, inline: true },
+        ],
+        timestamp: now.toISOString(),
+        footer: { text: "Tap & Swipe Daily Stats" },
+      },
+    ];
   });
 
-  embeds.push({
-    title: `\u{1F4CA} [Total] Daily Stats`,
-    color: 0x2ecc71,
-    fields: [
-      { name: "Revenue", value: `$${totalRevenue.toFixed(2)}`, inline: true },
-      { name: "Downloads", value: `${totalDownloads}`, inline: true },
-      { name: "Trials", value: `${totalTrials}`, inline: true },
-    ],
-    timestamp: now.toISOString(),
-    footer: { text: "Tap & Swipe Daily Stats" },
-  });
-
-  return embeds;
+  return messages;
 }

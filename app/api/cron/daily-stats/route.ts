@@ -9,8 +9,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const embeds = await computeDailyStats();
-    await sendRevenueCatEmbed(embeds);
+    const messages = await computeDailyStats();
+    for (const embeds of messages) {
+      await sendRevenueCatEmbed(embeds);
+    }
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Daily stats cron error:", err);

@@ -36,16 +36,25 @@ export async function POST(request: NextRequest) {
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
     if (interaction.data.name === "stats") {
       after(async () => {
-        const embeds = await computeDailyStats();
+        const messages = await computeDailyStats();
         const applicationId = process.env.DISCORD_CLIENT_ID!;
-        await fetch(
-          `https://discord.com/api/v10/webhooks/${applicationId}/${interaction.token}/messages/@original`,
-          {
-            method: "PATCH",
+        const webhookUrl = `https://discord.com/api/v10/webhooks/${applicationId}/${interaction.token}`;
+
+        // Edit the deferred response with the first app
+        await fetch(`${webhookUrl}/messages/@original`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ embeds: messages[0] }),
+        });
+
+        // Send follow-up messages for remaining apps
+        for (let i = 1; i < messages.length; i++) {
+          await fetch(webhookUrl, {
+            method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ embeds }),
-          }
-        );
+            body: JSON.stringify({ embeds: messages[i] }),
+          });
+        }
       });
 
       return NextResponse.json({
