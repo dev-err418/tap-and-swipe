@@ -47,11 +47,9 @@ export default function RoadmapHeader({
   return (
     <header className="border-b border-white/5 bg-[#2a2725]">
       <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-4">
-        <h1 className="text-xl font-serif font-bold text-[#f1ebe2]">
-          Roadmap
-        </h1>
+        <div className="w-40 hidden sm:block" />
 
-        <div className="flex-1 max-w-xs mx-auto hidden sm:block">
+        <div className="flex-1 max-w-xs hidden sm:block">
           <div className="flex items-center gap-3">
             <ProgressBar completed={completedVideos} total={totalVideos} />
             <span className="text-xs text-[#c9c4bc] whitespace-nowrap">
