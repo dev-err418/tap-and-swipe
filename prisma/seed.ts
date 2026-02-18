@@ -48,7 +48,7 @@ const lessons: Lesson[] = [
     title: "ASO basics: pick keywords that get you discovered",
     description: "Use keyword research to validate demand before building",
     type: "video",
-    youtubeUrl: null,
+    youtubeUrl: "https://youtu.be/xqvQHfgc5fg",
     order: 2,
   },
   {
