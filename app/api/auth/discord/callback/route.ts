@@ -33,11 +33,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${APP_URL}/app-sprint?error=invalid_state`);
   }
 
+  let statePayload: Record<string, unknown>;
   try {
-    await jwtVerify(savedState, SECRET);
+    const { payload } = await jwtVerify(savedState, SECRET);
+    statePayload = payload as Record<string, unknown>;
   } catch {
     return NextResponse.redirect(`${APP_URL}/app-sprint?error=expired_state`);
   }
+
+  const isRoadmapRedirect = statePayload.redirect === "roadmap";
 
   try {
     // Exchange code for access token
@@ -79,7 +83,27 @@ export async function GET(request: NextRequest) {
       }).catch(() => {}); // fire-and-forget, don't block auth flow
     }
 
-    // If already actively subscribed, skip checkout
+    // Roadmap redirect flow
+    if (isRoadmapRedirect) {
+      if (user.subscriptionStatus !== "active") {
+        return NextResponse.redirect(
+          `${APP_URL}/app-sprint?error=not_subscribed`
+        );
+      }
+
+      await createSession(
+        {
+          discordId: discordUser.id,
+          discordUsername: discordUser.global_name || discordUser.username,
+          discordAvatar: discordUser.avatar,
+        },
+        "7d"
+      );
+
+      return NextResponse.redirect(`${APP_URL}/app-sprint/roadmap`);
+    }
+
+    // Default checkout flow
     if (user.subscriptionStatus === "active") {
       return NextResponse.redirect(
         `${APP_URL}/app-sprint?status=already_subscribed`

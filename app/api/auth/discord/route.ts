@@ -1,13 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 
 const STATE_COOKIE = "discord_oauth_state";
 const SECRET = new TextEncoder().encode(process.env.SESSION_SECRET!);
 
-export async function GET() {
-  // Generate CSRF state as a signed JWT
-  const state = await new SignJWT({})
+export async function GET(request: NextRequest) {
+  const redirect = request.nextUrl.searchParams.get("redirect");
+
+  // Generate CSRF state as a signed JWT, encoding the redirect target
+  const claims: Record<string, unknown> = {};
+  if (redirect === "roadmap") {
+    claims.redirect = "roadmap";
+  }
+
+  const state = await new SignJWT(claims)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("5m")
