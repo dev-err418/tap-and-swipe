@@ -128,11 +128,11 @@ const lessons: Lesson[] = [
 
 ---
 
-## Sentry — crash monitoring
+## Sentry (crash monitoring)
 
 Tracks every crash and error in your app. You'll see exactly what broke, on which device, and why. Without this, users just silently delete your app and you never know what happened.
 
-Set it up early. Don't wait until you have users — you want to catch bugs during development too.
+Set it up early. Don't wait until you have users, you want to catch bugs during development too.
 
 Go to [sentry.io](https://sentry.io) and create a free account (huge free tier).
 
@@ -140,29 +140,29 @@ A user in Brazil crashes on a screen you never tested. Without Sentry, you'd nev
 
 ---
 
-## PostHog — analytics & AB testing
+## PostHog (analytics & AB testing)
 
 Two things in one tool.
 
-**Analytics** — see what users actually do in your app. Which screens they visit, where they drop off, how long they stay. You stop guessing and start knowing.
+**Analytics:** see what users actually do in your app. Which screens they visit, where they drop off, how long they stay. You stop guessing and start knowing.
 
-**AB testing** — test different versions of your paywall, onboarding, features — anything. Show version A to half your users and version B to the other half. See which one converts better. We'll go deep on this in the AB testing video.
+**AB testing:** test different versions of your paywall, onboarding, features, anything. Show version A to half your users and version B to the other half. See which one converts better. We'll go deep on this in the AB testing video.
 
-Go to [posthog.com](https://posthog.com) and create a free account (huge free tier — 1M events/month).
+Go to [posthog.com](https://posthog.com) and create a free account (huge free tier, 1M events/month).
 
 **What to track from day one:**
 
-- \`app_opened\` — basic usage
-- \`onboarding_completed\` — are users finishing onboarding?
-- \`paywall_viewed\` — are users seeing your paywall?
-- \`trial_started\` — are users starting trials?
-- \`subscription_activated\` — are users paying?
+- \`app_opened\` for basic usage
+- \`onboarding_completed\` to see if users finish onboarding
+- \`paywall_viewed\` to see if users are seeing your paywall
+- \`trial_started\` to track trial starts
+- \`subscription_activated\` to track paying users
 
 This gives you a funnel. You'll see exactly where users drop off.
 
 ---
 
-## Supabase — database & auth (only if you need it)
+## Supabase (database & auth, only if you need it)
 
 Gives you a database and user authentication. If your app needs to store data in the cloud or have user accounts, use Supabase.
 
@@ -175,9 +175,9 @@ Not every app needs this. A simple widget app or offline tracker might not need 
 - You need to store data server-side
 - Your app has any social or shared features
 
-Go to [supabase.com](https://supabase.com) and create a free account (big free tier — 2 projects). Gives you a Postgres database, authentication, file storage, and real-time subscriptions out of the box.
+Go to [supabase.com](https://supabase.com) and create a free account (big free tier, 2 projects). Gives you a Postgres database, authentication, file storage, and real-time subscriptions out of the box.
 
-If you're not sure whether you need it — you probably don't yet. Skip it and come back when you need cloud features.
+If you're not sure whether you need it, you probably don't yet. Skip it and come back when you need cloud features.
 
 ---
 
@@ -199,7 +199,7 @@ Set up Sentry and PostHog now. Add Supabase only if your app needs it. All free,
     title: "Set up subscriptions with RevenueCat",
     description: "Configure in-app subscriptions and manage entitlements",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder8",
+    youtubeUrl: "https://www.youtube.com/watch?v=bhF0Pbu_ROc",
     order: 1,
   },
   {
@@ -223,43 +223,62 @@ Set up Sentry and PostHog now. Add Supabase only if your app needs it. All free,
     title: "Price smarter: localized pricing with PriceLocalize",
     description: "Maximize revenue by adapting prices per region",
     type: "markdown",
-    markdownContent: `Most indie developers set one price worldwide and leave money on the table. Localized pricing can increase revenue 30-50% without changing anything else.
+    markdownContent: `By default, Apple auto-converts your US price to other currencies. Sounds convenient. It's actually leaving money on the table.
 
-## Why localize pricing?
+## The problem
 
-$9.99/month is nothing in the US but expensive in Brazil or India. If you charge the same everywhere:
+$4.99/week in the US is reasonable. But that same price auto-converted to Brazilian Real, Indian Rupee, or Turkish Lira? It's unaffordable for most users in those countries. They see the price, they leave. You just lost a customer who would've paid if the price made sense for their market.
 
-- You lose users in lower-income markets who would have paid a lower price
-- You miss out on volume that drives App Store rankings
+## The solution: purchasing power parity
 
-## How PriceLocalize works
+[PriceLocalize](https://pricelocalize.com/) is a Mac app that helps you set prices based on purchasing power parity (PPP), using the Netflix Index. The idea is simple: charge what people can actually afford in each country, relative to their local economy.
 
-[PriceLocalize](https://pricelocalize.com) analyzes purchasing power and competitor pricing per country, then recommends optimal price tiers.
+It has a great free trial, try it before you commit.
 
-### Setup
-1. Connect your RevenueCat account
-2. Select which products to optimize
-3. Review the recommended price tiers per region
-4. Apply the pricing to your App Store Connect / Google Play Console
+## How it works
 
-## Recommended pricing tiers
+1. Set your base US price (this is your anchor)
+2. PriceLocalize calculates adjusted prices for every country Apple supports
+3. You review and apply the suggested prices in App Store Connect
 
-| Region | Multiplier | Example |
-|--------|-----------|---------|
-| US, UK, Australia | 1.0x | $9.99/mo |
-| Western Europe | 0.8x | $7.99/mo |
-| Eastern Europe | 0.5x | $4.99/mo |
-| Latin America, SE Asia | 0.3x | $2.99/mo |
-| India, Africa | 0.1x | $0.99/mo |
+That's it. You end up with prices that feel fair in every market instead of prices that only make sense in the US.
 
-## Key rules
+## Why it matters
 
-1. **Always use local currency** — users convert better when they see their own currency
-2. **Use charm pricing** — $9.99 beats $10.00 everywhere
-3. **Test in batches** — roll out to 2-3 countries at a time and measure
-4. **Check competitors** — see what top apps charge in each market
+- **More conversions worldwide.** Users in lower-income countries actually subscribe instead of bouncing.
+- **More total revenue.** 100 users paying $1.99 in India beats 0 users paying $4.99 in India.
+- **Better rankings.** More downloads and conversions = better App Store ranking in those countries = more organic traffic.
 
-> **Pro tip:** Start with just US pricing, then add 5 key markets (UK, Germany, Brazil, India, Japan) once you have baseline conversion data.`,
+## Real example
+
+Your US price: **$4.99/week**
+
+Without PriceLocalize (Apple auto-convert):
+- Brazil: R$24.90/week, too expensive for most users
+- India: \u20B9449/week, way out of range
+- Norway: 49 kr/week, actually fine, strong economy
+
+With PriceLocalize (PPP-adjusted):
+- Brazil: R$12.90/week, reasonable, converts
+- India: \u20B9149/week, affordable, users subscribe
+- Norway: 49 kr/week, stays the same
+
+You're not discounting. You're pricing intelligently.
+
+## When to do this
+
+Set your localized prices **before launch** if possible. If your app is already live, do it now. You'll see the impact almost immediately in countries where you had high impressions but low conversions.
+
+## Quick steps
+
+1. Download PriceLocalize from [pricelocalize.com](https://pricelocalize.com/)
+2. Enter your base US subscription prices
+3. Review the PPP-adjusted suggestions
+4. Go to App Store Connect > your app > Subscriptions > Pricing
+5. Manually set each country's price to match PriceLocalize's recommendations
+6. Save and submit
+
+$5/week feels different than 40kr/week. Price for the market, not just for the US. It's one of the easiest wins you'll ever get.`,
     order: 4,
   },
 
@@ -277,7 +296,7 @@ $9.99/month is nothing in the US but expensive in Brazil or India. If you charge
     title: "Apple Ads: your first campaign setup",
     description: "Set up Apple Search Ads to drive targeted installs",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder12",
+    youtubeUrl: "https://www.youtube.com/watch?v=3OtfqONYR80",
     order: 2,
   },
   {
@@ -285,47 +304,54 @@ $9.99/month is nothing in the US but expensive in Brazil or India. If you charge
     title: "Target any country on TikTok with a VPN",
     description: "Reach international audiences by geo-targeting your TikTok content",
     type: "markdown",
-    markdownContent: `TikTok shows your content primarily to users in your own country. But if your app is global, you want to reach users everywhere. Here's how to use a VPN to post content that targets specific countries.
+    markdownContent: `TikTok shows your content to users in your region. If you're in France and want to reach the US market, you need a VPN. Here's how to set it up properly so TikTok actually thinks you're in your target country.
 
-## Why this matters
+I have two detailed Notion guides for setting up your own VPN:
 
-TikTok's algorithm distributes your videos based on where it thinks you are. If you're in the US, your content goes to US users first. But some markets are way less competitive — your video might blow up in Germany or Brazil where fewer creators are posting about apps.
+- **Hostinger setup:** [Notion guide](https://capable-oak-5a9.notion.site/Set-up-your-own-Tiktok-VPN-on-Mac-For-beginners-3006f6d8ab3d802b9dd0f4bba07e1a2e)
+- **DigitalOcean setup:** [Notion guide](https://separate-quart-3d6.notion.site/TikTok-USA-VPN-via-DigitalOcean-306806fd6a11801c94bbf8bb454f2083)
 
-## Step-by-step
+Both are more advanced setups but give you full control over your VPN. Below is the summary of what you need to know.
 
-### 1. Get a VPN with the right locations
-Use a VPN that has servers in your target countries. Good options:
-- NordVPN
-- Surfshark
-- ExpressVPN
+---
 
-### 2. Create a fresh TikTok account per region
-- Connect to the target country's VPN server
-- Create a new TikTok account (use a new email)
-- Set the language to that country's language
-- Fill out the profile completely
+## Before downloading TikTok
 
-### 3. Warm up the account (see next lesson)
+This is critical. Do these steps BEFORE you install TikTok. If you install first and then set up the VPN, TikTok already knows your real location. Start clean.
 
-### 4. Post localized content
-- Use captions and hashtags in the local language
-- Reference local trends or pain points
-- Post during that country's peak hours
+I use a spare iPhone that I factory reset. Create a brand new iCloud account, set the region to your target country, and install TikTok fresh on it. This way everything is clean from the start.
 
-## Best countries to target for app promotion
+1. **Use a device without a SIM card** or take the SIM out. TikTok uses your carrier info to detect your country.
+2. **Activate your VPN connection** and connect to a server in your target country (e.g., US).
+3. **Change your device's location settings** to match your target country.
+4. **Set your device's time zone** to match your target location (e.g., EST for US East Coast).
 
-| Country | Why |
-|---------|-----|
-| US | Highest ad revenue, biggest market |
-| UK | English-speaking, high purchasing power |
-| Germany | Largest EU market, less competition |
-| Brazil | Huge TikTok user base, growing app market |
-| Japan | High app spending per user |
+Everything on the device should scream "I'm in the US" (or whatever country you're targeting).
 
-## Tips
-- Keep your VPN on while browsing TikTok too — this trains the algorithm
-- Engage with local creators' content before posting your own
-- One account per country, don't switch VPN locations on the same account`,
+---
+
+## Creating your account
+
+1. **Install TikTok from scratch.** If it was previously installed, delete it completely and reinstall.
+2. **When the phone number field appears,** verify the country code matches your target region. This is a dead giveaway if it's wrong.
+3. **Sign up with an email address.** Do NOT use a phone number, phone numbers are tied to your real country.
+4. **Check your For You Page.** It should display content from your target region. If you see content from your real country, something went wrong, start over.
+
+---
+
+## Quick checklist
+
+Before you create the account, verify ALL of these:
+
+- [ ] SIM card removed or no SIM device
+- [ ] VPN connected to target country
+- [ ] Device region set to target country
+- [ ] Device timezone set to target location
+- [ ] TikTok freshly installed (not carried over)
+- [ ] Signing up with email, not phone number
+- [ ] Country code on phone field matches target
+
+If your For You Page shows local content from your target country, you're good. Move on to the account warmup guide.`,
     order: 3,
   },
   {
@@ -333,52 +359,106 @@ Use a VPN that has servers in your target countries. Good options:
     title: "Warm up a fresh TikTok account",
     description: "Build trust with the algorithm before posting content",
     type: "markdown",
-    markdownContent: `A brand new TikTok account that starts posting immediately gets very low reach. You need to "warm up" the account so TikTok's algorithm trusts it and distributes your content.
+    markdownContent: `TikTok tracks new accounts hard. If you start posting, liking, and following on day one, you'll get flagged as a bot and shadowbanned. Your videos will get zero views and you won't even know why.
 
-## Why warm up?
+The fix: act like a real human for a week. Here's the exact day-by-day plan.
 
-TikTok flags new accounts that immediately start posting as potential spam or bots. Warming up signals that you're a real user, which means better distribution when you do start posting.
+---
 
-## The 7-day warm-up schedule
+## Day 1: watch only
 
-### Days 1-2: Just browse
-- Scroll through the For You Page for 15-20 minutes
-- Like 10-15 videos in your niche (app development, productivity, tech)
-- Follow 5-10 creators in your space
-- Do NOT post anything
+- **NO** follows, likes, or comments
+- **Don't touch your profile** yet, no bio, no picture
+- Just **search your niche** and watch content
+- The algorithm learns what you're into based on your searches
+- Spend 15-20 minutes browsing naturally
 
-### Days 3-4: Start engaging
-- Watch videos fully (don't skip)
-- Leave genuine comments on 5-10 videos
-- Share 2-3 videos
-- Follow a few more creators
-- Still no posting
+TikTok is watching how a brand new account behaves. Real users browse before they engage. Bots start spamming immediately. Don't be a bot.
 
-### Days 5-6: Light activity
-- Continue browsing and engaging
-- Search for hashtags you plan to use
-- Save videos for inspiration
-- Optional: go live for a few minutes (even just to test)
+---
 
-### Day 7: First post
-- Post your first video
-- Keep it simple — introduce yourself or your app
-- Use 3-5 relevant hashtags
-- Post during peak hours for your target audience
+## Day 2: still watching
 
-## Key rules
+- Keep searching and watching content in your niche
+- **Now you can set your profile picture and bio**
+- Still **no engagement**, no likes, no follows, no comments
+- Watch videos fully, don't skip around
 
-1. **Don't rush it** — 7 days of warming up saves weeks of low reach
-2. **Be consistent** — log in every day during warm-up
-3. **Stay in your niche** — only engage with content related to your topic
-4. **One account per device/VPN** — don't switch between accounts constantly
-5. **Complete your profile first** — bio, profile picture, and username before you start
+You're building a browsing history. TikTok is getting more confident you're a real user interested in a specific niche.
 
-## After warm-up
+---
 
-Once your account is warmed up, aim to post 1-2 times per day for the first 2 weeks. Consistency matters more than quality at this stage — the algorithm rewards accounts that post regularly.
+## Day 3: light engagement
 
-> **Pro tip:** Your first 5 videos won't perform well and that's normal. The algorithm is still learning who to show your content to. Keep posting.`,
+- **Like and follow 5 accounts** in your niche
+- Keep watching content naturally
+- Watch videos all the way through
+- You can start saving videos you like
+
+---
+
+## Day 4: a bit more
+
+- **Like and follow 10 more accounts** in your niche
+- Continue watching full videos
+- You can start leaving short, genuine comments (nothing spammy)
+
+---
+
+## Day 5: first post
+
+- **Follow 10 more niche accounts**
+- **Drop your first video**
+- **NO promotion in this video**, no "download my app" or links
+- Reaction content with strong hooks performs best for first posts
+- Keep engaging with other accounts naturally
+
+---
+
+## Day 6: keep going
+
+- Post again if you have content ready
+- Engage naturally with likes, comments, follows
+- Still no hard promotion yet
+- Watch how your first video performed
+
+---
+
+## Day 7+: you're warmed up
+
+After day 6, your account is warmed up. Now you can:
+
+- Post consistently (1-2 times per day is ideal)
+- Engage naturally with your community
+- Start introducing your app in content (soft sells first)
+- Use trending sounds and hooks in your niche
+
+---
+
+## The rules (don't break these)
+
+- **Never follow/unfollow in bulk.** TikTok flags mass actions instantly.
+- **Never use bots or automation tools.** Instant shadowban.
+- **Always watch videos fully.** Skipping around signals bot behavior.
+- **Keep your VPN on** if you're targeting a different country.
+- **Don't post and ghost.** After posting, stay on the app for 15-20 min engaging with content. TikTok rewards active users.
+- **Be patient.** 6 days of warmup saves you from months of shadowban recovery.
+
+---
+
+## Quick reference
+
+| Day | Actions | Post? |
+|-----|---------|-------|
+| 1 | Search + watch only. No profile setup. | No |
+| 2 | Search + watch. Set profile pic + bio. | No |
+| 3 | Like/follow 5 niche accounts. | No |
+| 4 | Like/follow 10 more. Light comments. | No |
+| 5 | Follow 10 more. First video (no promo). | Yes |
+| 6 | Post again. Engage naturally. | Yes |
+| 7+ | Warmed up. Post consistently. | Yes |
+
+That's it. One week of patience = an account that actually reaches people. Skip this and you'll wonder why nobody sees your videos.`,
     order: 4,
   },
 ];
