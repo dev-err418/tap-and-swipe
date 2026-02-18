@@ -19,7 +19,7 @@ const lessons: Lesson[] = [
   // Getting Started
   {
     category: "getting-started",
-    title: "Welcome to App Sprint",
+    title: "Welcome to the roadmap",
     description: "What you'll learn and how the course works",
     type: "video",
     youtubeUrl: "https://www.youtube.com/watch?v=placeholder-welcome",
@@ -27,8 +27,8 @@ const lessons: Lesson[] = [
   },
   {
     category: "getting-started",
-    title: "Tools & Accounts Setup",
-    description: "Everything you need before you start",
+    title: "Tools & setup",
+    description: "Everything you need before you start building",
     type: "video",
     youtubeUrl: "https://www.youtube.com/watch?v=placeholder-tools",
     order: 2,
@@ -37,248 +37,349 @@ const lessons: Lesson[] = [
   // Find Your Idea
   {
     category: "find-your-idea",
-    title: "Finding Profitable App Ideas",
-    description: "How to identify app ideas with real demand",
+    title: "How to find app ideas that actually make money",
+    description: "Identify app ideas with real demand and revenue potential",
     type: "video",
     youtubeUrl: "https://www.youtube.com/watch?v=placeholder1",
     order: 1,
   },
   {
     category: "find-your-idea",
-    title: "Keyword Research with Astro",
-    description: "Use Astro to find high-traffic keywords",
+    title: "ASO basics: pick keywords that get you discovered",
+    description: "Use keyword research to validate demand before building",
     type: "video",
     youtubeUrl: "https://www.youtube.com/watch?v=placeholder2",
     order: 2,
   },
   {
     category: "find-your-idea",
-    title: "Competitor Revenue Analysis",
-    description: "Check if competitors are making money",
+    title: "How to structure your app name & subtitle",
+    description: "Craft a name and subtitle that rank and convert",
     type: "video",
     youtubeUrl: "https://www.youtube.com/watch?v=placeholder3",
     order: 3,
+  },
+  {
+    category: "find-your-idea",
+    title: "The 3-day validation test",
+    description: "Validate your idea in 3 days before writing any code",
+    type: "video",
+    youtubeUrl: "https://www.youtube.com/watch?v=placeholder4",
+    order: 4,
   },
 
   // Design
   {
     category: "design",
-    title: "Designing in Figma with AI",
-    description: "Speed up your design workflow with AI tools",
+    title: "Design your app without being a designer",
+    description: "Use AI and reference apps to create pro-level designs",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder4",
+    youtubeUrl: "https://www.youtube.com/watch?v=placeholder5",
     order: 1,
   },
   {
     category: "design",
-    title: "Studying Top Apps on Mobbin",
-    description: "Learn from the best UI patterns",
+    title: "Design an onboarding that converts",
+    description: "Build an onboarding flow that turns new users into paying customers",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder5",
+    youtubeUrl: "https://www.youtube.com/watch?v=sHzbhQaHIOw",
     order: 2,
   },
   {
     category: "design",
-    title: "Design Principles for Mobile",
-    description: "Key principles that make apps feel premium",
-    type: "markdown",
-    markdownContent: `# Design Principles for Mobile
-
-Great design is what separates apps that convert from apps that get deleted.
-
-## The 3-second rule
-
-Users decide whether to keep your app within 3 seconds. Your first screen must:
-
-- Clearly communicate what the app does
-- Look polished and professional
-- Have an obvious call-to-action
-
-## Key principles
-
-### 1. Hierarchy
-Guide the user's eye. Use size, color, and spacing to create a clear visual hierarchy.
-
-### 2. Consistency
-Use the same colors, fonts, and spacing throughout. Inconsistency = unprofessional.
-
-### 3. White space
-Don't cram everything together. Breathing room makes your app feel premium.
-
-### 4. Thumb-friendly
-Keep primary actions within thumb reach (bottom half of screen). Navigation should be effortless.
-
-## Color psychology
-
-| Color | Feeling | Best for |
-|-------|---------|----------|
-| Blue | Trust | Finance, health |
-| Green | Growth | Fitness, money |
-| Orange | Energy | Social, gaming |
-| Purple | Premium | Luxury, creative |
-
-## Resources
-
-- [Mobbin](https://mobbin.com) — browse top app designs
-- [Figma Community](https://figma.com/community) — free templates
-- [Apple HIG](https://developer.apple.com/design/) — official guidelines`,
+    title: "Your first App Store screenshot is everything",
+    description: "Design screenshots that stop the scroll and convert",
+    type: "video",
+    youtubeUrl: "https://www.youtube.com/watch?v=placeholder6",
     order: 3,
   },
 
   // Build
   {
     category: "build",
-    title: "Setting Up Expo & React Native",
-    description: "Get your dev environment ready",
+    title: "From zero to running app with Expo + AI tools",
+    description: "Set up your dev environment and build your first screen",
     type: "video",
     youtubeUrl: "https://www.youtube.com/watch?v=placeholder7",
     order: 1,
   },
   {
     category: "build",
-    title: "Building with AI Coding Tools",
-    description: "Use Claude and Cursor to move 10x faster",
+    title: "App Store Connect setup",
+    description: "Configure your app in App Store Connect before submitting",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder8",
+    youtubeUrl: "https://www.youtube.com/watch?v=vK2sJO6TrUk",
     order: 2,
   },
   {
     category: "build",
-    title: "Crash Monitoring with Sentry",
-    description: "Set up error tracking from day one",
+    title: "Submitting your first build to TestFlight",
+    description: "Get your app on a real device through TestFlight",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder9",
+    youtubeUrl: "https://www.youtube.com/watch?v=qMoPSXUm6LQ",
     order: 3,
   },
   {
     category: "build",
-    title: "Analytics & Backend Setup",
-    description: "PostHog analytics and Supabase backend",
-    type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder10",
+    title: "Set up Sentry, PostHog & Supabase",
+    description: "Add crash monitoring, analytics, and a backend in one go",
+    type: "markdown",
+    markdownContent: `Your app is taking shape. Before you ship, set up these three tools. They're all free, no credit card needed, and they'll save you when things go wrong (and they will).
+
+---
+
+## Sentry — crash monitoring
+
+Tracks every crash and error in your app. You'll see exactly what broke, on which device, and why. Without this, users just silently delete your app and you never know what happened.
+
+Set it up early. Don't wait until you have users — you want to catch bugs during development too.
+
+Go to [sentry.io](https://sentry.io) and create a free account (huge free tier).
+
+A user in Brazil crashes on a screen you never tested. Without Sentry, you'd never know. With Sentry, you see it instantly and fix it before more users hit the same bug.
+
+---
+
+## PostHog — analytics & AB testing
+
+Two things in one tool.
+
+**Analytics** — see what users actually do in your app. Which screens they visit, where they drop off, how long they stay. You stop guessing and start knowing.
+
+**AB testing** — test different versions of your paywall, onboarding, features — anything. Show version A to half your users and version B to the other half. See which one converts better. We'll go deep on this in the AB testing video.
+
+Go to [posthog.com](https://posthog.com) and create a free account (huge free tier — 1M events/month).
+
+**What to track from day one:**
+
+- \`app_opened\` — basic usage
+- \`onboarding_completed\` — are users finishing onboarding?
+- \`paywall_viewed\` — are users seeing your paywall?
+- \`trial_started\` — are users starting trials?
+- \`subscription_activated\` — are users paying?
+
+This gives you a funnel. You'll see exactly where users drop off.
+
+---
+
+## Supabase — database & auth (only if you need it)
+
+Gives you a database and user authentication. If your app needs to store data in the cloud or have user accounts, use Supabase.
+
+Not every app needs this. A simple widget app or offline tracker might not need any backend. If your app works entirely on-device, skip this.
+
+**You need Supabase if:**
+
+- Users create accounts or log in
+- Data syncs across devices
+- You need to store data server-side
+- Your app has any social or shared features
+
+Go to [supabase.com](https://supabase.com) and create a free account (big free tier — 2 projects). Gives you a Postgres database, authentication, file storage, and real-time subscriptions out of the box.
+
+If you're not sure whether you need it — you probably don't yet. Skip it and come back when you need cloud features.
+
+---
+
+## Quick summary
+
+| Tool | Purpose | Free tier | Credit card |
+|------|---------|-----------|-------------|
+| Sentry | Crash monitoring | Huge | No |
+| PostHog | Analytics + AB testing | 1M events/mo | No |
+| Supabase | Database + auth | 2 projects | No |
+
+Set up Sentry and PostHog now. Add Supabase only if your app needs it. All free, all essential.`,
     order: 4,
   },
 
   // Monetize
   {
     category: "monetize",
-    title: "RevenueCat & Superwall Setup",
-    description: "Set up your paywall infrastructure",
+    title: "Set up subscriptions with RevenueCat",
+    description: "Configure in-app subscriptions and manage entitlements",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder11",
+    youtubeUrl: "https://www.youtube.com/watch?v=placeholder8",
     order: 1,
   },
   {
     category: "monetize",
-    title: "Pricing Strategy Guide",
-    description: "How to price your app for maximum revenue",
-    type: "markdown",
-    markdownContent: `# Pricing Strategy Guide
-
-Getting your pricing right can 2-3x your revenue without changing anything else.
-
-## Pricing models
-
-### Free trial + subscription
-Best for most apps. Give users 3-7 days to experience value, then charge.
-
-### Freemium
-Free basic features, paid premium. Works well for utility apps.
-
-### One-time purchase
-Simple, but harder to build a business on. Consider for simple tools.
-
-## Localized pricing
-
-**This is the #1 overlooked revenue lever.** Price differently per region:
-
-- **US/UK/AU**: Full price ($9.99/mo)
-- **Europe**: Slightly lower ($7.99/mo)
-- **Latin America/SE Asia**: Much lower ($2.99/mo)
-- **India**: Lowest ($0.99/mo)
-
-RevenueCat makes this easy with price experiments.
-
-## A/B testing your paywall
-
-Always test:
-1. **Price points** — try 3 different prices
-2. **Trial length** — 3 days vs 7 days
-3. **Layout** — feature list vs social proof
-4. **CTA copy** — "Start Free Trial" vs "Try Free for 7 Days"
-
-> **Rule of thumb:** Your first paywall will convert at ~2%. After optimization, aim for 5-8%.`,
+    title: "Paywall strategy: the 3-step onboarding that converts",
+    description: "Design an onboarding flow that leads to purchases",
+    type: "video",
+    youtubeUrl: "https://www.youtube.com/watch?v=placeholder9",
     order: 2,
   },
   {
     category: "monetize",
-    title: "A/B Testing Paywalls",
-    description: "Optimize for maximum conversion",
+    title: "AB test everything",
+    description: "Run experiments on pricing, copy, and layout",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder13",
+    youtubeUrl: "https://www.youtube.com/watch?v=placeholder10",
     order: 3,
+  },
+  {
+    category: "monetize",
+    title: "Price smarter: localized pricing with PriceLocalize",
+    description: "Maximize revenue by adapting prices per region",
+    type: "markdown",
+    markdownContent: `Most indie developers set one price worldwide and leave money on the table. Localized pricing can increase revenue 30-50% without changing anything else.
+
+## Why localize pricing?
+
+$9.99/month is nothing in the US but expensive in Brazil or India. If you charge the same everywhere:
+
+- You lose users in lower-income markets who would have paid a lower price
+- You miss out on volume that drives App Store rankings
+
+## How PriceLocalize works
+
+[PriceLocalize](https://pricelocalize.com) analyzes purchasing power and competitor pricing per country, then recommends optimal price tiers.
+
+### Setup
+1. Connect your RevenueCat account
+2. Select which products to optimize
+3. Review the recommended price tiers per region
+4. Apply the pricing to your App Store Connect / Google Play Console
+
+## Recommended pricing tiers
+
+| Region | Multiplier | Example |
+|--------|-----------|---------|
+| US, UK, Australia | 1.0x | $9.99/mo |
+| Western Europe | 0.8x | $7.99/mo |
+| Eastern Europe | 0.5x | $4.99/mo |
+| Latin America, SE Asia | 0.3x | $2.99/mo |
+| India, Africa | 0.1x | $0.99/mo |
+
+## Key rules
+
+1. **Always use local currency** — users convert better when they see their own currency
+2. **Use charm pricing** — $9.99 beats $10.00 everywhere
+3. **Test in batches** — roll out to 2-3 countries at a time and measure
+4. **Check competitors** — see what top apps charge in each market
+
+> **Pro tip:** Start with just US pricing, then add 5 key markets (UK, Germany, Brazil, India, Japan) once you have baseline conversion data.`,
+    order: 4,
   },
 
   // Launch & Grow
   {
     category: "launch-and-grow",
-    title: "ASO Keyword Optimization",
-    description: "Rank higher in the App Store",
+    title: "ASO after launch",
+    description: "Optimize your listing based on real data",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder14",
+    youtubeUrl: "https://www.youtube.com/watch?v=placeholder11",
     order: 1,
   },
   {
     category: "launch-and-grow",
-    title: "Launch Checklist",
-    description: "Everything you need before hitting publish",
-    type: "markdown",
-    markdownContent: `# Launch Checklist
-
-Use this checklist before submitting your app to the App Store.
-
-## App Store listing
-- [ ] App name includes primary keyword
-- [ ] Subtitle uses secondary keywords
-- [ ] Description is compelling and keyword-rich
-- [ ] Screenshots show key features with captions
-- [ ] App preview video (optional but recommended)
-- [ ] Privacy policy URL is set
-- [ ] Support URL is set
-
-## Technical
-- [ ] Crash-free rate > 99%
-- [ ] App loads in under 2 seconds
-- [ ] All analytics events are firing
-- [ ] RevenueCat products are configured
-- [ ] Paywall displays correctly
-- [ ] Push notification permissions work
-- [ ] Deep links work (if applicable)
-
-## Marketing
-- [ ] Landing page is live
-- [ ] Social media accounts created
-- [ ] Launch day post scheduled
-- [ ] Apple Search Ads campaign ready
-- [ ] First week of content planned
-
-## Post-launch (week 1)
-- [ ] Monitor crash reports daily
-- [ ] Respond to all reviews
-- [ ] Track conversion funnel
-- [ ] Start A/B testing paywall
-- [ ] Analyze keyword rankings
-
-> **Pro tip:** Submit to App Review 2-3 days before your planned launch date. Reviews can take 24-48 hours.`,
+    title: "Apple Ads: your first campaign setup",
+    description: "Set up Apple Search Ads to drive targeted installs",
+    type: "video",
+    youtubeUrl: "https://www.youtube.com/watch?v=placeholder12",
     order: 2,
   },
   {
     category: "launch-and-grow",
-    title: "TikTok & Social Marketing",
-    description: "Viral reach with social media marketing",
-    type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder16",
+    title: "Target any country on TikTok with a VPN",
+    description: "Reach international audiences by geo-targeting your TikTok content",
+    type: "markdown",
+    markdownContent: `TikTok shows your content primarily to users in your own country. But if your app is global, you want to reach users everywhere. Here's how to use a VPN to post content that targets specific countries.
+
+## Why this matters
+
+TikTok's algorithm distributes your videos based on where it thinks you are. If you're in the US, your content goes to US users first. But some markets are way less competitive — your video might blow up in Germany or Brazil where fewer creators are posting about apps.
+
+## Step-by-step
+
+### 1. Get a VPN with the right locations
+Use a VPN that has servers in your target countries. Good options:
+- NordVPN
+- Surfshark
+- ExpressVPN
+
+### 2. Create a fresh TikTok account per region
+- Connect to the target country's VPN server
+- Create a new TikTok account (use a new email)
+- Set the language to that country's language
+- Fill out the profile completely
+
+### 3. Warm up the account (see next lesson)
+
+### 4. Post localized content
+- Use captions and hashtags in the local language
+- Reference local trends or pain points
+- Post during that country's peak hours
+
+## Best countries to target for app promotion
+
+| Country | Why |
+|---------|-----|
+| US | Highest ad revenue, biggest market |
+| UK | English-speaking, high purchasing power |
+| Germany | Largest EU market, less competition |
+| Brazil | Huge TikTok user base, growing app market |
+| Japan | High app spending per user |
+
+## Tips
+- Keep your VPN on while browsing TikTok too — this trains the algorithm
+- Engage with local creators' content before posting your own
+- One account per country, don't switch VPN locations on the same account`,
     order: 3,
+  },
+  {
+    category: "launch-and-grow",
+    title: "Warm up a fresh TikTok account",
+    description: "Build trust with the algorithm before posting content",
+    type: "markdown",
+    markdownContent: `A brand new TikTok account that starts posting immediately gets very low reach. You need to "warm up" the account so TikTok's algorithm trusts it and distributes your content.
+
+## Why warm up?
+
+TikTok flags new accounts that immediately start posting as potential spam or bots. Warming up signals that you're a real user, which means better distribution when you do start posting.
+
+## The 7-day warm-up schedule
+
+### Days 1-2: Just browse
+- Scroll through the For You Page for 15-20 minutes
+- Like 10-15 videos in your niche (app development, productivity, tech)
+- Follow 5-10 creators in your space
+- Do NOT post anything
+
+### Days 3-4: Start engaging
+- Watch videos fully (don't skip)
+- Leave genuine comments on 5-10 videos
+- Share 2-3 videos
+- Follow a few more creators
+- Still no posting
+
+### Days 5-6: Light activity
+- Continue browsing and engaging
+- Search for hashtags you plan to use
+- Save videos for inspiration
+- Optional: go live for a few minutes (even just to test)
+
+### Day 7: First post
+- Post your first video
+- Keep it simple — introduce yourself or your app
+- Use 3-5 relevant hashtags
+- Post during peak hours for your target audience
+
+## Key rules
+
+1. **Don't rush it** — 7 days of warming up saves weeks of low reach
+2. **Be consistent** — log in every day during warm-up
+3. **Stay in your niche** — only engage with content related to your topic
+4. **One account per device/VPN** — don't switch between accounts constantly
+5. **Complete your profile first** — bio, profile picture, and username before you start
+
+## After warm-up
+
+Once your account is warmed up, aim to post 1-2 times per day for the first 2 weeks. Consistency matters more than quality at this stage — the algorithm rewards accounts that post regularly.
+
+> **Pro tip:** Your first 5 videos won't perform well and that's normal. The algorithm is still learning who to show your content to. Keep posting.`,
+    order: 4,
   },
 ];
 

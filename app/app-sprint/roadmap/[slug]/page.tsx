@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { CATEGORIES } from "@/lib/roadmap";
 import LessonCard from "@/components/roadmap/LessonCard";
 import ProgressBar from "@/components/roadmap/ProgressBar";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default async function CategoryPage({
@@ -39,6 +39,9 @@ export default async function CategoryPage({
 
   const completedLessonIds = new Set(progress.map((p) => p.lessonId));
   const completedCount = completedLessonIds.size;
+
+  const currentIndex = CATEGORIES.findIndex((c) => c.slug === slug);
+  const nextCategory = CATEGORIES[currentIndex + 1] ?? null;
 
   return (
     <div className="pt-8">
@@ -83,6 +86,18 @@ export default async function CategoryPage({
           />
         ))}
       </div>
+
+      {nextCategory && (
+        <div className="flex justify-end mt-8">
+          <Link
+            href={`/app-sprint/roadmap/${nextCategory.slug}`}
+            className="inline-flex items-center gap-2 text-sm text-[#c9c4bc] hover:text-[#f1ebe2] transition-colors"
+          >
+            Next: {nextCategory.title}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

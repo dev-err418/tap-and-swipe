@@ -11,7 +11,7 @@ const components: Components = {
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-xl font-bold text-[#f1ebe2] mb-3 mt-5">{children}</h2>
+    <h2 className="text-xl font-bold text-[#f4cf8f] mb-3 mt-5">{children}</h2>
   ),
   h3: ({ children }) => (
     <h3 className="text-lg font-semibold text-[#f1ebe2] mb-2 mt-4">

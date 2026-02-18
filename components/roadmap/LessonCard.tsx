@@ -115,9 +115,12 @@ export default function LessonCard({
           )}
         </button>
 
-        <div className="flex-1 min-w-0">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex-1 min-w-0 text-left cursor-pointer"
+        >
           <div className="flex items-center gap-2">
-            <span className="text-xs text-[#c9c4bc]/60 font-medium">
+            <span className="text-[#c9c4bc]/60 font-medium">
               {order}.
             </span>
             <h3
@@ -135,7 +138,7 @@ export default function LessonCard({
               {description}
             </p>
           )}
-        </div>
+        </button>
 
         <button
           onClick={() => setExpanded(!expanded)}
