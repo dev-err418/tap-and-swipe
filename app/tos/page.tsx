@@ -57,9 +57,9 @@ export default function TermsPage() {
               3. Refund Policy
             </h2>
             <p className="mt-2">
-              If you are not satisfied with the course, you may request a full
-              refund within 7 days of purchase. To request a refund, contact us
-              at{" "}
+              Full refunds are available within 7 days of purchase if less than
+              10% of the course has been completed. To request a refund, contact
+              us at{" "}
               <a
                 href="mailto:arthurs.dev@gmail.com"
                 className="text-[#f4cf8f] underline hover:text-[#f4cf8f]/80"

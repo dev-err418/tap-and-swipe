@@ -12,19 +12,23 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const users = await prisma.user.findMany({
-    where: { subscriptionStatus: "active" },
-    select: {
-      discordUsername: true,
-      videoProgress: {
-        select: {
-          completedAt: true,
-          video: { select: { category: true } },
+  const [users, totalVideos] = await Promise.all([
+    prisma.user.findMany({
+      where: { subscriptionStatus: "active" },
+      select: {
+        discordId: true,
+        discordUsername: true,
+        videoProgress: {
+          select: {
+            completedAt: true,
+            video: { select: { category: true } },
+          },
         },
       },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.video.count(),
+  ]);
 
   const result = users.map((u) => {
     const byCategory: Record<string, number> = {};
@@ -38,6 +42,7 @@ export async function GET() {
     }
 
     return {
+      discordId: u.discordId,
       discordUsername: u.discordUsername,
       totalCompleted: u.videoProgress.length,
       byCategory,
@@ -45,5 +50,5 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json({ users: result });
+  return NextResponse.json({ users: result, totalVideos });
 }
