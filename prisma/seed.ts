@@ -10,8 +10,8 @@ interface Lesson {
   title: string;
   description: string;
   type: "video" | "markdown";
-  youtubeUrl?: string;
-  markdownContent?: string;
+  youtubeUrl?: string | null;
+  markdownContent?: string | null;
   order: number;
 }
 
@@ -22,7 +22,7 @@ const lessons: Lesson[] = [
     title: "Welcome to the roadmap",
     description: "What you'll learn and how the course works",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder-welcome",
+    youtubeUrl: "https://youtu.be/Zq37It_smAk",
     order: 1,
   },
   {
@@ -30,7 +30,7 @@ const lessons: Lesson[] = [
     title: "Tools & setup",
     description: "Everything you need before you start building",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder-tools",
+    youtubeUrl: "https://youtu.be/Bd1WvyJEEuU",
     order: 2,
   },
 
@@ -40,7 +40,7 @@ const lessons: Lesson[] = [
     title: "How to find app ideas that actually make money",
     description: "Identify app ideas with real demand and revenue potential",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder1",
+    youtubeUrl: null,
     order: 1,
   },
   {
@@ -48,7 +48,7 @@ const lessons: Lesson[] = [
     title: "ASO basics: pick keywords that get you discovered",
     description: "Use keyword research to validate demand before building",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder2",
+    youtubeUrl: null,
     order: 2,
   },
   {
@@ -56,7 +56,7 @@ const lessons: Lesson[] = [
     title: "How to structure your app name & subtitle",
     description: "Craft a name and subtitle that rank and convert",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder3",
+    youtubeUrl: null,
     order: 3,
   },
   {
@@ -64,7 +64,7 @@ const lessons: Lesson[] = [
     title: "The 3-day validation test",
     description: "Validate your idea in 3 days before writing any code",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder4",
+    youtubeUrl: null,
     order: 4,
   },
 
@@ -74,7 +74,7 @@ const lessons: Lesson[] = [
     title: "Design your app without being a designer",
     description: "Use AI and reference apps to create pro-level designs",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder5",
+    youtubeUrl: null,
     order: 1,
   },
   {
@@ -90,7 +90,7 @@ const lessons: Lesson[] = [
     title: "Your first App Store screenshot is everything",
     description: "Design screenshots that stop the scroll and convert",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder6",
+    youtubeUrl: null,
     order: 3,
   },
 
@@ -100,7 +100,7 @@ const lessons: Lesson[] = [
     title: "From zero to running app with Expo + AI tools",
     description: "Set up your dev environment and build your first screen",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder7",
+    youtubeUrl: null,
     order: 1,
   },
   {
@@ -207,7 +207,7 @@ Set up Sentry and PostHog now. Add Supabase only if your app needs it. All free,
     title: "Paywall strategy: the 3-step onboarding that converts",
     description: "Design an onboarding flow that leads to purchases",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder9",
+    youtubeUrl: null,
     order: 2,
   },
   {
@@ -215,7 +215,7 @@ Set up Sentry and PostHog now. Add Supabase only if your app needs it. All free,
     title: "AB test everything",
     description: "Run experiments on pricing, copy, and layout",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder10",
+    youtubeUrl: null,
     order: 3,
   },
   {
@@ -288,7 +288,7 @@ $5/week feels different than 40kr/week. Price for the market, not just for the U
     title: "ASO after launch",
     description: "Optimize your listing based on real data",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=placeholder11",
+    youtubeUrl: null,
     order: 1,
   },
   {
@@ -354,6 +354,16 @@ Before you create the account, verify ALL of these:
 If your For You Page shows local content from your target country, you're good. Move on to the account warmup guide.`,
     order: 3,
   },
+  // Weekly Call Replays
+  {
+    category: "weekly-calls",
+    title: "How to use Posthog and create AB tests",
+    description: "Learn how to set up Posthog analytics and run AB tests",
+    type: "video",
+    youtubeUrl: "https://youtu.be/6uV_F1A97G4",
+    order: 1,
+  },
+
   {
     category: "launch-and-grow",
     title: "Warm up a fresh TikTok account",

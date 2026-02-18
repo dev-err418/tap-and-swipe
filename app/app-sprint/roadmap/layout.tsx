@@ -21,11 +21,17 @@ export default async function RoadmapLayout({
     redirect("/app-sprint?error=not_subscribed");
   }
 
-  // Count global progress for header
+  // Count global progress for header (exclude weekly-calls replays)
   const [totalLessons, completedLessons] = await Promise.all([
-    prisma.lesson.count(),
+    prisma.lesson.count({
+      where: { category: { not: "weekly-calls" } },
+    }),
     prisma.lessonProgress.count({
-      where: { userId: user.id, uncheckedAt: null },
+      where: {
+        userId: user.id,
+        uncheckedAt: null,
+        lesson: { category: { not: "weekly-calls" } },
+      },
     }),
   ]);
 

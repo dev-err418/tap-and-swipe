@@ -59,6 +59,7 @@ export default async function RoadmapPage() {
             totalLessons={cat.totalLessons}
             completedLessons={cat.completedLessons}
             index={i}
+            hideProgress={cat.slug === "weekly-calls"}
           />
         ))}
       </div>

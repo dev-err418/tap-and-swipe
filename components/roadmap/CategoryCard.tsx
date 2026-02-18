@@ -12,6 +12,7 @@ export default function CategoryCard({
   totalLessons,
   completedLessons,
   index,
+  hideProgress,
 }: {
   slug: string;
   title: string;
@@ -19,8 +20,10 @@ export default function CategoryCard({
   totalLessons: number;
   completedLessons: number;
   index: number;
+  hideProgress?: boolean;
 }) {
-  const isComplete = totalLessons > 0 && completedLessons === totalLessons;
+  const isComplete =
+    !hideProgress && totalLessons > 0 && completedLessons === totalLessons;
 
   return (
     <motion.div
@@ -43,13 +46,17 @@ export default function CategoryCard({
 
         <h3 className="text-lg font-bold text-[#f1ebe2] mb-2">{title}</h3>
 
-        <div className="mb-3">
-          <ProgressBar completed={completedLessons} total={totalLessons} />
-        </div>
+        {!hideProgress && (
+          <div className="mb-3">
+            <ProgressBar completed={completedLessons} total={totalLessons} />
+          </div>
+        )}
 
         <div className="flex items-center justify-between">
           <span className="text-sm text-[#c9c4bc]">
-            {completedLessons}/{totalLessons} lessons
+            {hideProgress
+              ? `${totalLessons} replay${totalLessons !== 1 ? "s" : ""}`
+              : `${completedLessons}/${totalLessons} lessons`}
           </span>
           <ArrowRight className="h-4 w-4 text-[#c9c4bc] transition-transform group-hover:translate-x-1 group-hover:text-[#f4cf8f]" />
         </div>

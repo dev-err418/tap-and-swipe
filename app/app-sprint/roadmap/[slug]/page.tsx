@@ -40,6 +40,7 @@ export default async function CategoryPage({
   const completedLessonIds = new Set(progress.map((p) => p.lessonId));
   const completedCount = completedLessonIds.size;
 
+  const hideProgress = slug === "weekly-calls";
   const currentIndex = CATEGORIES.findIndex((c) => c.slug === slug);
   const nextCategory = CATEGORIES[currentIndex + 1] ?? null;
 
@@ -60,14 +61,16 @@ export default async function CategoryPage({
             {category.title}
           </h1>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex-1 max-w-xs">
-            <ProgressBar completed={completedCount} total={lessons.length} />
+        {!hideProgress && (
+          <div className="flex items-center gap-4">
+            <div className="flex-1 max-w-xs">
+              <ProgressBar completed={completedCount} total={lessons.length} />
+            </div>
+            <span className="text-sm text-[#c9c4bc]">
+              {completedCount}/{lessons.length} completed
+            </span>
           </div>
-          <span className="text-sm text-[#c9c4bc]">
-            {completedCount}/{lessons.length} completed
-          </span>
-        </div>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -83,6 +86,7 @@ export default async function CategoryPage({
             order={lesson.order}
             completed={completedLessonIds.has(lesson.id)}
             index={i}
+            hideProgress={hideProgress}
           />
         ))}
       </div>

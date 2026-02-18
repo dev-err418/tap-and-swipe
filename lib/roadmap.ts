@@ -5,6 +5,7 @@ export const CATEGORIES = [
   { slug: "build", title: "Build", emoji: "💻", order: 4 },
   { slug: "monetize", title: "Monetize", emoji: "💳", order: 5 },
   { slug: "launch-and-grow", title: "Launch & grow", emoji: "📈", order: 6 },
+  { slug: "weekly-calls", title: "Weekly call replays", emoji: "🎙️", order: 7 },
 ] as const;
 
 export type CategorySlug = (typeof CATEGORIES)[number]["slug"];
