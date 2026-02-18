@@ -41,7 +41,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${APP_URL}/app-sprint?error=expired_state`);
   }
 
-  const isRoadmapRedirect = statePayload.redirect === "roadmap";
+  const rawRedirect = typeof statePayload.redirect === "string" ? statePayload.redirect as string : null;
+  const isRoadmapRedirect = !!rawRedirect?.startsWith("roadmap");
+  // Sanitize: only allow alphanumeric, hyphens, and slashes to prevent path traversal
+  const redirectTarget = isRoadmapRedirect
+    ? rawRedirect!.replace(/[^a-zA-Z0-9\-/]/g, "")
+    : null;
 
   try {
     // Exchange code for access token
@@ -100,7 +105,7 @@ export async function GET(request: NextRequest) {
         "7d"
       );
 
-      return NextResponse.redirect(`${APP_URL}/app-sprint/roadmap`);
+      return NextResponse.redirect(`${APP_URL}/app-sprint/${redirectTarget}`);
     }
 
     // Default checkout flow

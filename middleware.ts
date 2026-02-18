@@ -6,10 +6,11 @@ const SESSION_COOKIE = "discord_session";
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
+  const redirectPath = request.nextUrl.pathname.replace("/app-sprint/", "");
 
   if (!token) {
     return NextResponse.redirect(
-      new URL("/api/auth/discord?redirect=roadmap", request.url)
+      new URL(`/api/auth/discord?redirect=${encodeURIComponent(redirectPath)}`, request.url)
     );
   }
 
@@ -18,7 +19,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   } catch {
     return NextResponse.redirect(
-      new URL("/api/auth/discord?redirect=roadmap", request.url)
+      new URL(`/api/auth/discord?redirect=${encodeURIComponent(redirectPath)}`, request.url)
     );
   }
 }

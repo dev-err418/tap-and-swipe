@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
 
   // Generate CSRF state as a signed JWT, encoding the redirect target
   const claims: Record<string, unknown> = {};
-  if (redirect === "roadmap") {
-    claims.redirect = "roadmap";
+  if (redirect?.startsWith("roadmap")) {
+    claims.redirect = redirect;
   }
 
   const state = await new SignJWT(claims)
