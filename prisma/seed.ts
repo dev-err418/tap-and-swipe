@@ -40,7 +40,7 @@ const lessons: Lesson[] = [
     title: "How to find app ideas that actually make money",
     description: "Identify app ideas with real demand and revenue potential",
     type: "video",
-    youtubeUrl: null,
+    youtubeUrl: "https://youtu.be/QkPxS-2tzXk",
     order: 1,
   },
   {
