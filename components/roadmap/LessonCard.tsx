@@ -104,7 +104,7 @@ export default function LessonCard({
     >
       <div className="flex items-center gap-4 p-5">
         <button
-          onClick={toggleComplete}
+          onClick={() => toggleComplete()}
           disabled={isPending}
           className="shrink-0 cursor-pointer"
         >
