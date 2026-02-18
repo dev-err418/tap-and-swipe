@@ -12,23 +12,28 @@ export default async function RoadmapPage() {
     select: { id: true },
   });
 
-  const [videos, progress] = await Promise.all([
-    prisma.video.findMany({ orderBy: [{ category: "asc" }, { order: "asc" }] }),
-    prisma.videoProgress.findMany({ where: { userId: user!.id } }),
+  const [lessons, progress] = await Promise.all([
+    prisma.lesson.findMany({
+      orderBy: [{ category: "asc" }, { order: "asc" }],
+    }),
+    prisma.lessonProgress.findMany({
+      where: { userId: user!.id, uncheckedAt: null },
+    }),
   ]);
 
-  const completedVideoIds = new Set(progress.map((p) => p.videoId));
+  const completedLessonIds = new Set(progress.map((p) => p.lessonId));
 
   const isAdmin = session.discordId === process.env.ADMIN_DISCORD_ID;
 
-  // Group videos by category
   const categoryData = CATEGORIES.map((cat) => {
-    const catVideos = videos.filter((v) => v.category === cat.slug);
-    const completed = catVideos.filter((v) => completedVideoIds.has(v.id)).length;
+    const catLessons = lessons.filter((l) => l.category === cat.slug);
+    const completed = catLessons.filter((l) =>
+      completedLessonIds.has(l.id)
+    ).length;
     return {
       ...cat,
-      totalVideos: catVideos.length,
-      completedVideos: completed,
+      totalLessons: catLessons.length,
+      completedLessons: completed,
     };
   });
 
@@ -51,8 +56,8 @@ export default async function RoadmapPage() {
             slug={cat.slug}
             title={cat.title}
             emoji={cat.emoji}
-            totalVideos={cat.totalVideos}
-            completedVideos={cat.completedVideos}
+            totalLessons={cat.totalLessons}
+            completedLessons={cat.completedLessons}
             index={i}
           />
         ))}

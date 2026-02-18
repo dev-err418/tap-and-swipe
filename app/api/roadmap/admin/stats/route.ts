@@ -12,43 +12,61 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [users, totalVideos] = await Promise.all([
+  const [users, totalLessons] = await Promise.all([
     prisma.user.findMany({
       where: { subscriptionStatus: "active" },
       select: {
         discordId: true,
         discordUsername: true,
-        videoProgress: {
+        lessonProgress: {
           select: {
             completedAt: true,
-            video: { select: { category: true } },
+            uncheckedAt: true,
+            lesson: { select: { category: true } },
           },
         },
       },
       orderBy: { updatedAt: "desc" },
     }),
-    prisma.video.count(),
+    prisma.lesson.count(),
   ]);
 
   const result = users.map((u) => {
-    const byCategory: Record<string, number> = {};
+    const currentByCategory: Record<string, number> = {};
+    const everByCategory: Record<string, number> = {};
+    let currentCompleted = 0;
     let lastActivity: Date | null = null;
 
-    for (const p of u.videoProgress) {
-      byCategory[p.video.category] = (byCategory[p.video.category] || 0) + 1;
+    for (const p of u.lessonProgress) {
+      const cat = p.lesson.category;
+
+      // Ever completed: all rows (row existence = ever completed)
+      everByCategory[cat] = (everByCategory[cat] || 0) + 1;
+
+      // Current completed: only where uncheckedAt is null
+      if (!p.uncheckedAt) {
+        currentByCategory[cat] = (currentByCategory[cat] || 0) + 1;
+        currentCompleted++;
+      }
+
       if (!lastActivity || p.completedAt > lastActivity) {
         lastActivity = p.completedAt;
       }
     }
 
+    const everCompleted = u.lessonProgress.length;
+
     return {
       discordId: u.discordId,
       discordUsername: u.discordUsername,
-      totalCompleted: u.videoProgress.length,
-      byCategory,
+      currentCompleted,
+      everCompleted,
+      hasDiscrepancy: currentCompleted !== everCompleted,
+      currentByCategory,
+      everByCategory,
       lastActivity: lastActivity?.toISOString() ?? null,
     };
   });
 
-  return NextResponse.json({ users: result, totalVideos });
+  return NextResponse.json({ users: result, totalLessons });
 }

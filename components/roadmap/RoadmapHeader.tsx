@@ -9,14 +9,14 @@ export default function RoadmapHeader({
   discordUsername,
   discordAvatar,
   discordId,
-  totalVideos,
-  completedVideos,
+  totalLessons,
+  completedLessons,
 }: {
   discordUsername: string;
   discordAvatar: string | null;
   discordId: string;
-  totalVideos: number;
-  completedVideos: number;
+  totalLessons: number;
+  completedLessons: number;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -27,7 +27,7 @@ export default function RoadmapHeader({
     : null;
 
   const percent =
-    totalVideos === 0 ? 0 : Math.round((completedVideos / totalVideos) * 100);
+    totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -51,7 +51,7 @@ export default function RoadmapHeader({
 
         <div className="flex-1 max-w-xs hidden sm:block">
           <div className="flex items-center gap-3">
-            <ProgressBar completed={completedVideos} total={totalVideos} />
+            <ProgressBar completed={completedLessons} total={totalLessons} />
             <span className="text-xs text-[#c9c4bc] whitespace-nowrap">
               {percent}%
             </span>

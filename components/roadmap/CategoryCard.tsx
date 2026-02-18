@@ -9,18 +9,18 @@ export default function CategoryCard({
   slug,
   title,
   emoji,
-  totalVideos,
-  completedVideos,
+  totalLessons,
+  completedLessons,
   index,
 }: {
   slug: string;
   title: string;
   emoji: string;
-  totalVideos: number;
-  completedVideos: number;
+  totalLessons: number;
+  completedLessons: number;
   index: number;
 }) {
-  const isComplete = totalVideos > 0 && completedVideos === totalVideos;
+  const isComplete = totalLessons > 0 && completedLessons === totalLessons;
 
   return (
     <motion.div
@@ -44,12 +44,12 @@ export default function CategoryCard({
         <h3 className="text-lg font-bold text-[#f1ebe2] mb-2">{title}</h3>
 
         <div className="mb-3">
-          <ProgressBar completed={completedVideos} total={totalVideos} />
+          <ProgressBar completed={completedLessons} total={totalLessons} />
         </div>
 
         <div className="flex items-center justify-between">
           <span className="text-sm text-[#c9c4bc]">
-            {completedVideos}/{totalVideos} videos
+            {completedLessons}/{totalLessons} lessons
           </span>
           <ArrowRight className="h-4 w-4 text-[#c9c4bc] transition-transform group-hover:translate-x-1 group-hover:text-[#f4cf8f]" />
         </div>

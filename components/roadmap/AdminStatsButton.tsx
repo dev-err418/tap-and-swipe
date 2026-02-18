@@ -2,13 +2,23 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart3, X, Loader2, Search, ArrowUpDown } from "lucide-react";
+import {
+  BarChart3,
+  X,
+  Loader2,
+  Search,
+  ArrowUpDown,
+  AlertTriangle,
+} from "lucide-react";
 
 interface UserStat {
   discordId: string;
   discordUsername: string;
-  totalCompleted: number;
-  byCategory: Record<string, number>;
+  currentCompleted: number;
+  everCompleted: number;
+  hasDiscrepancy: boolean;
+  currentByCategory: Record<string, number>;
+  everByCategory: Record<string, number>;
   lastActivity: string | null;
 }
 
@@ -18,7 +28,7 @@ export default function AdminStatsButton() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<UserStat[] | null>(null);
-  const [totalVideos, setTotalVideos] = useState(0);
+  const [totalLessons, setTotalLessons] = useState(0);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("recent");
 
@@ -30,7 +40,7 @@ export default function AdminStatsButton() {
       if (res.ok) {
         const data = await res.json();
         setStats(data.users);
-        setTotalVideos(data.totalVideos ?? 0);
+        setTotalLessons(data.totalLessons ?? 0);
       }
     } finally {
       setLoading(false);
@@ -52,7 +62,7 @@ export default function AdminStatsButton() {
 
     if (sortBy === "progress") {
       result = [...result].sort(
-        (a, b) => b.totalCompleted - a.totalCompleted
+        (a, b) => b.currentCompleted - a.currentCompleted
       );
     }
 
@@ -144,9 +154,9 @@ export default function AdminStatsButton() {
                   )}
                   {filtered.map((user) => {
                     const pct =
-                      totalVideos > 0
+                      totalLessons > 0
                         ? Math.round(
-                            (user.totalCompleted / totalVideos) * 100
+                            (user.currentCompleted / totalLessons) * 100
                           )
                         : 0;
                     return (
@@ -163,21 +173,56 @@ export default function AdminStatsButton() {
                               {user.discordId}
                             </p>
                           </div>
-                          <span className="text-sm text-[#c9c4bc]">
-                            {user.totalCompleted}/{totalVideos} ({pct}%)
-                          </span>
+                          <div className="text-right">
+                            <span className="text-sm text-[#c9c4bc]">
+                              {user.currentCompleted}/{totalLessons} ({pct}%)
+                            </span>
+                            {user.hasDiscrepancy && (
+                              <div className="flex items-center gap-1 justify-end mt-0.5">
+                                <AlertTriangle className="h-3 w-3 text-amber-400" />
+                                <span className="text-xs text-amber-400">
+                                  Ever completed: {user.everCompleted}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex flex-wrap gap-2 mb-2">
-                          {Object.entries(user.byCategory).map(
-                            ([cat, count]) => (
+                          {Object.entries(user.currentByCategory).map(
+                            ([cat, count]) => {
+                              const everCount =
+                                user.everByCategory[cat] ?? count;
+                              const catDiscrepancy =
+                                (count as number) !== everCount;
+                              return (
+                                <span
+                                  key={cat}
+                                  className={`rounded-full bg-white/5 px-2.5 py-0.5 text-xs ${
+                                    catDiscrepancy
+                                      ? "text-amber-400"
+                                      : "text-[#c9c4bc]"
+                                  }`}
+                                >
+                                  {cat}: {count as number}
+                                  {catDiscrepancy && ` (was ${everCount})`}
+                                </span>
+                              );
+                            }
+                          )}
+                          {/* Show categories that were fully unchecked */}
+                          {Object.entries(user.everByCategory)
+                            .filter(
+                              ([cat]) =>
+                                !(cat in user.currentByCategory)
+                            )
+                            .map(([cat, count]) => (
                               <span
                                 key={cat}
-                                className="rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-[#c9c4bc]"
+                                className="rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-amber-400"
                               >
-                                {cat}: {count as number}
+                                {cat}: 0 (was {count as number})
                               </span>
-                            )
-                          )}
+                            ))}
                         </div>
                         {user.lastActivity && (
                           <p className="text-xs text-[#c9c4bc]/50">

@@ -22,9 +22,11 @@ export default async function RoadmapLayout({
   }
 
   // Count global progress for header
-  const [totalVideos, completedVideos] = await Promise.all([
-    prisma.video.count(),
-    prisma.videoProgress.count({ where: { userId: user.id } }),
+  const [totalLessons, completedLessons] = await Promise.all([
+    prisma.lesson.count(),
+    prisma.lessonProgress.count({
+      where: { userId: user.id, uncheckedAt: null },
+    }),
   ]);
 
   return (
@@ -33,8 +35,8 @@ export default async function RoadmapLayout({
         discordUsername={session.discordUsername}
         discordAvatar={session.discordAvatar}
         discordId={session.discordId}
-        totalVideos={totalVideos}
-        completedVideos={completedVideos}
+        totalLessons={totalLessons}
+        completedLessons={completedLessons}
       />
       <main className="mx-auto max-w-7xl px-6 pb-24">{children}</main>
     </div>

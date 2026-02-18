@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES } from "@/lib/roadmap";
-import VideoCard from "@/components/roadmap/VideoCard";
+import LessonCard from "@/components/roadmap/LessonCard";
 import ProgressBar from "@/components/roadmap/ProgressBar";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -23,18 +23,22 @@ export default async function CategoryPage({
     select: { id: true },
   });
 
-  const [videos, progress] = await Promise.all([
-    prisma.video.findMany({
+  const [lessons, progress] = await Promise.all([
+    prisma.lesson.findMany({
       where: { category: slug },
       orderBy: { order: "asc" },
     }),
-    prisma.videoProgress.findMany({
-      where: { userId: user!.id, video: { category: slug } },
+    prisma.lessonProgress.findMany({
+      where: {
+        userId: user!.id,
+        lesson: { category: slug },
+        uncheckedAt: null,
+      },
     }),
   ]);
 
-  const completedVideoIds = new Set(progress.map((p) => p.videoId));
-  const completedCount = completedVideoIds.size;
+  const completedLessonIds = new Set(progress.map((p) => p.lessonId));
+  const completedCount = completedLessonIds.size;
 
   return (
     <div className="pt-8">
@@ -55,24 +59,26 @@ export default async function CategoryPage({
         </div>
         <div className="flex items-center gap-4">
           <div className="flex-1 max-w-xs">
-            <ProgressBar completed={completedCount} total={videos.length} />
+            <ProgressBar completed={completedCount} total={lessons.length} />
           </div>
           <span className="text-sm text-[#c9c4bc]">
-            {completedCount}/{videos.length} completed
+            {completedCount}/{lessons.length} completed
           </span>
         </div>
       </div>
 
       <div className="space-y-4">
-        {videos.map((video, i) => (
-          <VideoCard
-            key={video.id}
-            id={video.id}
-            title={video.title}
-            description={video.description}
-            youtubeUrl={video.youtubeUrl}
-            order={video.order}
-            completed={completedVideoIds.has(video.id)}
+        {lessons.map((lesson, i) => (
+          <LessonCard
+            key={lesson.id}
+            id={lesson.id}
+            title={lesson.title}
+            description={lesson.description}
+            type={lesson.type}
+            youtubeUrl={lesson.youtubeUrl}
+            markdownContent={lesson.markdownContent}
+            order={lesson.order}
+            completed={completedLessonIds.has(lesson.id)}
             index={i}
           />
         ))}

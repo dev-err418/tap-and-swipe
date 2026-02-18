@@ -18,30 +18,30 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { videoId, completed } = body as {
-    videoId: string;
+  const { lessonId, completed } = body as {
+    lessonId: string;
     completed: boolean;
   };
 
-  if (!videoId || typeof completed !== "boolean") {
+  if (!lessonId || typeof completed !== "boolean") {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  // Validate videoId exists
-  const video = await prisma.video.findUnique({ where: { id: videoId } });
-  if (!video) {
-    return NextResponse.json({ error: "Video not found" }, { status: 404 });
+  const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
+  if (!lesson) {
+    return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
   }
 
   if (completed) {
-    await prisma.videoProgress.upsert({
-      where: { userId_videoId: { userId: user.id, videoId } },
-      update: {},
-      create: { userId: user.id, videoId },
+    await prisma.lessonProgress.upsert({
+      where: { userId_lessonId: { userId: user.id, lessonId } },
+      update: { uncheckedAt: null },
+      create: { userId: user.id, lessonId },
     });
   } else {
-    await prisma.videoProgress.deleteMany({
-      where: { userId: user.id, videoId },
+    await prisma.lessonProgress.updateMany({
+      where: { userId: user.id, lessonId },
+      data: { uncheckedAt: new Date() },
     });
   }
 

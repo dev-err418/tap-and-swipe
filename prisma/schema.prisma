@@ -19,7 +19,7 @@ model User {
   subscriptionId     String?         @unique
   subscriptionStatus String?
   roleGranted        Boolean         @default(false)
-  videoProgress      VideoProgress[]
+  lessonProgress     LessonProgress[]
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 
@@ -27,30 +27,35 @@ model User {
   @@index([subscriptionId])
 }
 
-model Video {
-  id          String          @id @default(cuid())
-  category    String
-  title       String
-  description String?
-  youtubeUrl  String
-  order       Int
-  progress    VideoProgress[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+model Lesson {
+  id              String           @id @default(cuid())
+  category        String
+  title           String
+  description     String?
+  type            String           @default("video")
+  youtubeUrl      String?
+  markdownContent String?
+  order           Int
+  progress        LessonProgress[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([category, order])
+  @@map("Video")
 }
 
-model VideoProgress {
-  id          String   @id @default(cuid())
+model LessonProgress {
+  id          String    @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  videoId     String
-  video       Video    @relation(fields: [videoId], references: [id])
-  completedAt DateTime @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+  lessonId    String    @map("videoId")
+  lesson      Lesson    @relation(fields: [lessonId], references: [id])
+  completedAt DateTime  @default(now())
+  uncheckedAt DateTime?
 
-  @@unique([userId, videoId])
-  @@index([userId])
+  @@unique([userId, lessonId], map: "VideoProgress_userId_videoId_key")
+  @@index([userId], map: "VideoProgress_userId_idx")
+  @@map("VideoProgress")
 }
 
 model RevenueCatEvent {
