@@ -363,6 +363,14 @@ If your For You Page shows local content from your target country, you're good. 
     youtubeUrl: "https://youtu.be/6uV_F1A97G4",
     order: 1,
   },
+  {
+    category: "weekly-calls",
+    title: "ASO (AppStore Search Optimization) and Open Claw chat",
+    description: "Deep dive into ASO strategies and open Q&A session",
+    type: "video",
+    youtubeUrl: "https://youtu.be/lEznPnBjn0E",
+    order: 2,
+  },
 
   {
     category: "launch-and-grow",
