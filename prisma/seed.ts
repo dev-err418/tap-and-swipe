@@ -110,6 +110,7 @@ Even 1-2 paid conversions means you're on the right track. Zero conversions mean
     description: "Design screenshots that stop the scroll and convert",
     type: "video",
     youtubeUrl: null,
+    markdownContent: `Figma template for screenshots: [App Store Screenshots Template](https://www.figma.com/community/file/1165594034578098226)`,
     order: 3,
   },
 
