@@ -42,6 +42,7 @@ const lessons: Lesson[] = [
     description: "Identify app ideas with real demand and revenue potential",
     type: "video",
     youtubeUrl: "https://youtu.be/QkPxS-2tzXk",
+    markdownContent: `Check revenue on [appstoretracker.com](https://appstoretracker.com). You want decent MRR with a good MRR-to-downloads ratio. If a basic app makes money in a niche, the niche works.`,
     order: 1,
   },
   {
