@@ -78,7 +78,7 @@ Never repeat the same keywords in title and subtitle. Use different ones in each
     title: "The 3-day validation test",
     description: "Validate your idea in 3 days before writing any code",
     type: "video",
-    youtubeUrl: null,
+    youtubeUrl: "https://youtu.be/wyPI__lwxn0",
     markdownContent: `Apple gives you roughly 3 days of visibility boost when you launch.
 
 If keywords + onboarding + real need are solid, expect 10-15 trial signups in those 3 days.
@@ -93,7 +93,7 @@ Even 1-2 paid conversions means you're on the right track. Zero conversions mean
     title: "Design your app without being a designer",
     description: "Use AI and reference apps to create pro-level designs",
     type: "video",
-    youtubeUrl: null,
+    youtubeUrl: "https://youtu.be/Wt2Pcxw3JaY",
     order: 1,
   },
   {
