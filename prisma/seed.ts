@@ -31,6 +31,9 @@ const lessons: Lesson[] = [
     description: "Everything you need before you start building",
     type: "video",
     youtubeUrl: "https://youtu.be/Bd1WvyJEEuU",
+    markdownContent: `Get **20% off Astro** (the best React Native boilerplate) using code **WELCOMEBACK** through this link:
+
+[Download Astro](https://tryastro.app/?aff=GPEbM)`,
     order: 2,
   },
 

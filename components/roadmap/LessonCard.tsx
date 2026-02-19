@@ -207,6 +207,14 @@ export default function LessonCard({
         </div>
       )}
 
+      {expanded && isVideo && markdownContent && (
+        <div className="px-5 pb-5">
+          <div className="rounded-xl bg-black/10 p-6">
+            <MarkdownContent content={markdownContent} />
+          </div>
+        </div>
+      )}
+
       {expanded && !isVideo && markdownContent && (
         <div className="px-5 pb-5">
           <div className="rounded-xl bg-black/10 p-6">
