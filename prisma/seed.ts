@@ -56,7 +56,7 @@ const lessons: Lesson[] = [
     title: "How to structure your app name & subtitle",
     description: "Craft a name and subtitle that rank and convert",
     type: "video",
-    youtubeUrl: null,
+    youtubeUrl: "https://youtu.be/nd5WYlCBTSo",
     order: 3,
   },
   {
