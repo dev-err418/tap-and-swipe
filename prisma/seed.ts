@@ -332,8 +332,8 @@ $5/week feels different than 40kr/week. Price for the market, not just for the U
 
 Detailed Notion walkthroughs:
 
-- Mac setup (beginner friendly): [Notion guide](https://capable-oak-5a9.notion.site/Set-up-your-own-Tiktok-VPN-on-Mac-For-beginners-3006f6d8ab3d802b9dd0f4bba07e1a2e)
-- DigitalOcean setup (more advanced): [Notion guide](https://separate-quart-3d6.notion.site/TikTok-USA-VPN-via-DigitalOcean-306806fd6a11801c94bbf8bb454f2083)
+- Hostinger setup: [Notion guide](https://capable-oak-5a9.notion.site/Set-up-your-own-Tiktok-VPN-on-Mac-For-beginners-3006f6d8ab3d802b9dd0f4bba07e1a2e)
+- DigitalOcean setup (beginner friendly): [Notion guide](https://separate-quart-3d6.notion.site/TikTok-USA-VPN-via-DigitalOcean-306806fd6a11801c94bbf8bb454f2083)
 
 ---
 
