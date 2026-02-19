@@ -27,11 +27,17 @@ const ErrorOverlay = () => {
                 type: "cancel",
             });
         } else if (error) {
+            let title = "Oops! Something went wrong";
             let message = "Something went wrong during checkout. Please try again or reach out if the issue persists.";
-            if (error === "session_expired") message = "Your session has expired. Please log in again to continue.";
+            if (error === "session_expired") {
+                message = "Your session has expired. Please log in again to continue.";
+            } else if (error === "not_subscribed") {
+                title = "Subscription required";
+                message = "You need an active subscription to access the course roadmap. Subscribe below to get started.";
+            }
 
             setErrorData({
-                title: "Oops! Something went wrong",
+                title,
                 message,
                 icon: <AlertCircle className="h-12 w-12 text-red-400" />,
                 type: "error",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -9,7 +9,6 @@ import {
   BookOpen,
   ChevronDown,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import MarkdownContent from "./MarkdownContent";
 
 export default function LessonCard({
@@ -24,6 +23,7 @@ export default function LessonCard({
   index,
   isLast,
   hideProgress,
+  onToggle,
 }: {
   id: string;
   title: string;
@@ -36,11 +36,11 @@ export default function LessonCard({
   index: number;
   isLast?: boolean;
   hideProgress?: boolean;
+  onToggle?: (lessonId: string, completed: boolean) => void;
 }) {
   const [completed, setCompleted] = useState(initialCompleted);
   const [expanded, setExpanded] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
+  const [isPending, setIsPending] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Listen for "open this card" event from previous card's Done button
@@ -65,6 +65,8 @@ export default function LessonCard({
   async function toggleComplete(openNext = false) {
     const newCompleted = !completed;
     setCompleted(newCompleted);
+    onToggle?.(id, newCompleted);
+    setIsPending(true);
 
     try {
       const res = await fetch("/api/roadmap/progress", {
@@ -75,6 +77,7 @@ export default function LessonCard({
 
       if (!res.ok) {
         setCompleted(!newCompleted);
+        onToggle?.(id, !newCompleted);
         return;
       }
 
@@ -88,12 +91,11 @@ export default function LessonCard({
           }, 100);
         }
       }
-
-      startTransition(() => {
-        router.refresh();
-      });
     } catch {
       setCompleted(!newCompleted);
+      onToggle?.(id, !newCompleted);
+    } finally {
+      setIsPending(false);
     }
   }
 

@@ -2,9 +2,8 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES } from "@/lib/roadmap";
-import LessonCard from "@/components/roadmap/LessonCard";
-import ProgressBar from "@/components/roadmap/ProgressBar";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import LessonListClient from "@/components/roadmap/LessonListClient";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default async function CategoryPage({
@@ -37,12 +36,21 @@ export default async function CategoryPage({
     }),
   ]);
 
-  const completedLessonIds = new Set(progress.map((p) => p.lessonId));
-  const completedCount = completedLessonIds.size;
+  const completedLessonIds = progress.map((p) => p.lessonId);
 
   const hideProgress = slug === "weekly-calls";
   const currentIndex = CATEGORIES.findIndex((c) => c.slug === slug);
   const nextCategory = CATEGORIES[currentIndex + 1] ?? null;
+
+  const serializedLessons = lessons.map((l) => ({
+    id: l.id,
+    title: l.title,
+    description: l.description,
+    type: l.type,
+    youtubeUrl: l.youtubeUrl,
+    markdownContent: l.markdownContent,
+    order: l.order,
+  }));
 
   return (
     <div className="pt-8">
@@ -61,47 +69,17 @@ export default async function CategoryPage({
             {category.title}
           </h1>
         </div>
-        {!hideProgress && (
-          <div className="flex items-center gap-4">
-            <div className="flex-1 max-w-xs">
-              <ProgressBar completed={completedCount} total={lessons.length} />
-            </div>
-            <span className="text-sm text-[#c9c4bc]">
-              {completedCount}/{lessons.length} completed
-            </span>
-          </div>
-        )}
       </div>
 
-      <div className="space-y-4">
-        {lessons.map((lesson, i) => (
-          <LessonCard
-            key={lesson.id}
-            id={lesson.id}
-            title={lesson.title}
-            description={lesson.description}
-            type={lesson.type}
-            youtubeUrl={lesson.youtubeUrl}
-            markdownContent={lesson.markdownContent}
-            order={lesson.order}
-            completed={completedLessonIds.has(lesson.id)}
-            index={i}
-            hideProgress={hideProgress}
-          />
-        ))}
-      </div>
-
-      {nextCategory && (
-        <div className="flex justify-end mt-8">
-          <Link
-            href={`/app-sprint/roadmap/${nextCategory.slug}`}
-            className="inline-flex items-center gap-2 text-sm text-[#c9c4bc] hover:text-[#f1ebe2] transition-colors"
-          >
-            Next: {nextCategory.title}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      )}
+      <LessonListClient
+        lessons={serializedLessons}
+        initialCompletedIds={completedLessonIds}
+        hideProgress={hideProgress}
+        slug={slug}
+        nextCategory={
+          nextCategory ? { slug: nextCategory.slug, title: nextCategory.title } : null
+        }
+      />
     </div>
   );
 }

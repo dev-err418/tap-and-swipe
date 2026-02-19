@@ -3,6 +3,12 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import RoadmapHeader from "@/components/roadmap/RoadmapHeader";
 
+const WHITELISTED_DISCORD_IDS = new Set([
+  process.env.ADMIN_DISCORD_ID,
+  "372167828964376577",
+  "1295748700429357148",
+]);
+
 export default async function RoadmapLayout({
   children,
 }: {
@@ -13,11 +19,24 @@ export default async function RoadmapLayout({
     redirect("/api/auth/discord?redirect=roadmap");
   }
 
-  const user = await prisma.user.findUnique({
+  const isWhitelisted = WHITELISTED_DISCORD_IDS.has(session.discordId);
+
+  let user = await prisma.user.findUnique({
     where: { discordId: session.discordId },
   });
 
-  if (!user || user.subscriptionStatus !== "active") {
+  if (!user && isWhitelisted) {
+    user = await prisma.user.create({
+      data: {
+        discordId: session.discordId,
+        discordUsername: session.discordUsername,
+        discordAvatar: session.discordAvatar,
+        subscriptionStatus: "active",
+      },
+    });
+  }
+
+  if (!user || (user.subscriptionStatus !== "active" && !isWhitelisted)) {
     redirect("/app-sprint?error=not_subscribed");
   }
 
