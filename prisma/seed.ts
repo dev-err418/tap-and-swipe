@@ -31,7 +31,9 @@ const lessons: Lesson[] = [
     description: "Everything you need before you start building",
     type: "video",
     youtubeUrl: "https://youtu.be/Bd1WvyJEEuU",
-    markdownContent: `Get **20% off [Astro](https://tryastro.app/?aff=GPEbM)** (the ASO tool) using code **WELCOMEBACK** through this link!`,
+    markdownContent: `Get **20% off [Astro](https://tryastro.app/?aff=GPEbM)** (the ASO tool) using code **WELCOMEBACK** through this link!
+
+Apply for the [Apple Small Business Program](https://developer.apple.com/app-store/small-business-program/) immediately. Apple takes 15% instead of 30%. Free money.`,
     order: 2,
   },
 
