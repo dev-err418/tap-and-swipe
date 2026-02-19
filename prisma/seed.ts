@@ -79,6 +79,11 @@ Never repeat the same keywords in title and subtitle. Use different ones in each
     description: "Validate your idea in 3 days before writing any code",
     type: "video",
     youtubeUrl: null,
+    markdownContent: `Apple gives you roughly 3 days of visibility boost when you launch.
+
+If keywords + onboarding + real need are solid, expect 10-15 trial signups in those 3 days.
+
+Even 1-2 paid conversions means you're on the right track. Zero conversions means the idea doesn't work or your onboarding needs fixing.`,
     order: 4,
   },
 
