@@ -27,6 +27,25 @@ function extractDiscord(data: Record<string, unknown>): {
   return null;
 }
 
+async function fetchDiscordFromWhop(
+  membershipId: string
+): Promise<{ id: string; username: string } | null> {
+  const res = await fetch(
+    `https://api.whop.com/api/v2/memberships/${membershipId}`,
+    {
+      headers: { Authorization: `Bearer ${process.env.WHOP_API_KEY}` },
+    }
+  );
+  if (!res.ok) {
+    console.warn(
+      `[whop] fetchDiscordFromWhop failed — status=${res.status} membership=${membershipId}`
+    );
+    return null;
+  }
+  const json = await res.json();
+  return extractDiscord(json as Record<string, unknown>);
+}
+
 export async function POST(request: NextRequest) {
   const bodyText = await request.text();
   const headers = Object.fromEntries(request.headers);
@@ -42,7 +61,12 @@ export async function POST(request: NextRequest) {
   try {
     // The discord field exists on the actual payload but isn't in the SDK types
     const data = webhookData.data as unknown as Record<string, unknown>;
-    const discord = extractDiscord(data);
+    let discord = extractDiscord(data);
+
+    // Fallback: fetch from Whop API when webhook payload lacks discord data
+    if (!discord) {
+      discord = await fetchDiscordFromWhop(String(data.id));
+    }
 
     switch (webhookData.type) {
       case "membership.activated": {
