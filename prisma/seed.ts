@@ -64,11 +64,11 @@ Get **20% off [Astro](https://tryastro.app/?aff=GPEbM)** (the ASO tool) using co
     description: "Craft a name and subtitle that rank and convert",
     type: "video",
     youtubeUrl: "https://youtu.be/nd5WYlCBTSo",
-    markdownContent: `**Title formula:** [Main keyword] - [App name]. Example: "Daily Affirmations - Glow"
+    markdownContent: `**Title formula:** \`[Main keyword] - [App name]\`. Example: "Daily Affirmations - Glow"
 
 The keyword part is what gets you found in search. The brand name is optional.
 
-**Subtitle:** your next best keywords. String together 2-3 phrases that describe your app's value.
+**Subtitle:** your next best keywords. 2-4 keywords that describe your app's value.
 
 Never repeat the same keywords in title and subtitle. Use different ones in each to double your coverage.`,
     order: 3,
