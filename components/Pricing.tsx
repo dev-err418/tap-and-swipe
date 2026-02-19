@@ -8,7 +8,7 @@ const features = [
     { title: "Complete 6-week roadmap", description: "From blank screen to 1,000 users" },
     { title: "2x Weekly group calls", description: "Direct access to strategy and masterminds" },
     { title: "Revenue scaling systems", description: "Proven monetization and ASO templates" },
-    { title: "Private builder community", description: "Collaborate with 41+ other makers" },
+    { title: "Private builder community", description: "Collaborate with 51+ other makers" },
 ];
 
 const Pricing = () => {

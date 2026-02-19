@@ -18,7 +18,7 @@ const RevenueScaling = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 items-center max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 items-center max-w-6xl mx-auto">
 
                     {/* Step 1: First Dollar */}
                     <motion.div
@@ -38,7 +38,7 @@ const RevenueScaling = () => {
                                 <img
                                     src="/first-sale.png"
                                     alt="First sale notification"
-                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-[90%]"
+                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-full"
                                 />
                             </div>
                         </div>
@@ -73,7 +73,7 @@ const RevenueScaling = () => {
                                 <img
                                     src="/recurring-revenue.jpg"
                                     alt="Recurring revenue chart"
-                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-[90%]"
+                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-full"
                                 />
                             </div>
                         </div>

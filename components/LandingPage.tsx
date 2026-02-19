@@ -4,7 +4,6 @@ import {
 } from "lucide-react";
 import Roadmap from "./Roadmap";
 
-
 import { Suspense } from "react";
 import SuccessOverlay from "./SuccessOverlay";
 import ErrorOverlay from "./ErrorOverlay";
@@ -50,7 +49,7 @@ const LandingPage = ({
                         </span>
                     </h1>
                     <p className="mx-auto mt-8 max-w-2xl text-lg text-[#c9c4bc] sm:text-xl">
-                        Stop dreaming and start shipping. The complete guide to validating, designing, building, and scaling your own mobile app business.
+                        Stop dreaming and start shipping. The complete roadmap to validating, designing, building, and scaling your own mobile app business.
                     </p>
 
                     <div className="mt-10 pt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -92,7 +91,7 @@ const LandingPage = ({
                                 ))}
                             </div>
                             <p className="text-sm font-medium text-[#c9c4bc]">
-                                <span className="font-bold text-[#f1ebe2]">41</span> makers building together
+                                <span className="font-bold text-[#f1ebe2]">51</span> makers building together
                             </p>
                         </div>
                     </div>

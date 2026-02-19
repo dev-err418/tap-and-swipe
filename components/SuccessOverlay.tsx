@@ -90,7 +90,7 @@ const SuccessOverlay = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-[#f1ebe2]">Join the Community</h4>
-                                        <p className="text-sm text-[#c9c4bc]">Jump into the Discord to meet 41+ other makers.</p>
+                                        <p className="text-sm text-[#c9c4bc]">Jump into the Discord to meet 51+ other makers.</p>
                                     </div>
                                 </motion.div>
                             </div>

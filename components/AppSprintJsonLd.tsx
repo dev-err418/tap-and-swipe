@@ -4,7 +4,7 @@ export default function AppSprintJsonLd() {
     "@type": "Course",
     name: "App Sprint",
     description:
-      "A 6-week program to build and launch your own mobile app using Expo, React Native, and AI tools. Includes weekly group calls, 1-on-1 support, and a private Discord community of 41+ makers.",
+      "A 6-week program to build and launch your own mobile app using Expo, React Native, and AI tools. Includes weekly group calls, 1-on-1 support, and a private Discord community of 51+ makers.",
     url: "https://tap-and-swipe.com/app-sprint",
     provider: {
       "@type": "Organization",

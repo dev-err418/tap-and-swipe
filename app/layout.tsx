@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     template: "%s | Tap & Swipe",
   },
   description:
-    "Build and launch your own mobile app with App Sprint — the 6-week program for indie makers using Expo, React Native, and AI. Join 41+ builders shipping real apps.",
+    "Build and launch your own mobile app with App Sprint — the 6-week program for indie makers using Expo, React Native, and AI. Join 51+ builders shipping real apps.",
   keywords: [
     "build a mobile app",
     "mobile app builder",

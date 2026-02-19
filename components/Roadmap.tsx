@@ -9,152 +9,98 @@ import {
 import AIFormula from "./AIFormula";
 import RevenueScaling from "./RevenueScaling";
 
-// --- Horizontal Timeline Data (matches tabs below) ---
-const horizontalMilestones = [
-    {
-        day: "Week 1",
-        title: "Find a profitable idea",
-        emoji: "💡",
-    },
-    {
-        day: "Week 2",
-        title: "Design screens that convert",
-        emoji: "🎨",
-    },
-    {
-        day: "Week 3-4",
-        title: "Build with AI speed",
-        emoji: "💻",
-    },
-    {
-        day: "Week 5",
-        title: "Recurring revenue setup",
-        emoji: "💳",
-    },
-    {
-        day: "Week 6+",
-        title: "Scale to 1,000 users",
-        emoji: "📈",
-    },
-];
-
-// --- Detailed Steps Data ---
-type Step = {
+// --- Real course categories from seed data ---
+type Category = {
     id: string;
     title: string;
-    subtitle: string;
-    description: string;
-    bullets: string[];
-    tools: string[];
     emoji: string;
-    timeSaved: string;
+    description: string;
+    lessons: string[];
 };
 
-const steps: Step[] = [
+const categories: Category[] = [
     {
-        id: "idea",
-        title: "Idea & Validation",
-        subtitle: "Find a profitable idea",
-        description: "Before you write a single line of code, make sure people actually want what you're building. Use data, not gut feelings.",
-        bullets: [
-            "Find high-traffic keywords with Astro",
-            "Check competitor revenue to validate demand",
-            "Structure your app name and metadata for ASO",
-            "Validate with a 3-day keyword boost",
+        id: "getting-started",
+        title: "Getting started",
+        emoji: "🚀",
+        description: "Set the right foundations before you build anything. Understand the roadmap, install the tools, and get ready to move fast.",
+        lessons: [
+            "Welcome to the roadmap",
+            "Tools & setup",
         ],
-        tools: ["Astro", "Claude"],
+    },
+    {
+        id: "find-your-idea",
+        title: "Find your idea",
         emoji: "💡",
-        timeSaved: "2 weeks",
+        description: "Before you write a single line of code, make sure people actually want what you're building. Use data, not gut feelings.",
+        lessons: [
+            "How to find app ideas that actually make money",
+            "ASO basics: pick keywords that get you discovered",
+            "How to structure your app name & subtitle",
+            "The 3-day validation test",
+        ],
     },
     {
         id: "design",
-        title: "Design UI/UX",
-        subtitle: "Design screens that convert",
-        description: "Great apps don't just look pretty — they guide users toward a purchase. Study what works, then make it yours.",
-        bullets: [
-            "Design in Figma with AI-assisted workflows",
-            "Study top-performing apps on Mobbin",
-            "Use proven UI patterns that convert",
-            "Make your CTAs impossible to miss",
-        ],
-        tools: ["Figma", "Mobbin", "Dribbble"],
+        title: "Design",
         emoji: "🎨",
-        timeSaved: "1 week",
+        description: "Great apps don't just look pretty — they guide users toward a purchase. Study what works, then make it yours.",
+        lessons: [
+            "Design your app without being a designer",
+            "Design an onboarding that converts",
+            "Your first App Store screenshot is everything",
+        ],
     },
     {
-        id: "dev",
-        title: "Development",
-        subtitle: "Build with AI speed",
-        description: "You don't need to be a 10x developer. With AI tools and the right stack, you can build production-quality apps fast.",
-        bullets: [
-            "Build with Expo & React Native",
-            "Use AI coding tools to move 10x faster",
-            "Set up Sentry for crash monitoring",
-            "Add Posthog analytics & Supabase backend",
-        ],
-        tools: ["Expo", "Claude", "Cursor", "Supabase"],
+        id: "build",
+        title: "Build",
         emoji: "💻",
-        timeSaved: "4 weeks",
+        description: "You don't need to be a 10x developer. With AI tools and the right stack, you can build production-quality apps fast.",
+        lessons: [
+            "From zero to running app with Expo + AI tools",
+            "App Store Connect setup",
+            "Submitting your first build to TestFlight",
+            "Set up Sentry, PostHog & Supabase",
+        ],
     },
     {
-        id: "paywall",
-        title: "Monetization",
-        subtitle: "Recurring revenue setup",
-        description: "The difference between a hobby project and a business is a paywall. Set it up right from day one.",
-        bullets: [
-            "Set up RevenueCat & Superwall paywalls",
-            "Localize pricing with PriceLocalize",
-            "A/B test paywalls for maximum conversion",
-            "Optimize trial length and copy",
-        ],
-        tools: ["RevenueCat", "Superwall"],
+        id: "monetize",
+        title: "Monetize",
         emoji: "💳",
-        timeSaved: "1 week",
+        description: "The difference between a hobby project and a business is a paywall. Set it up right from day one.",
+        lessons: [
+            "Set up subscriptions with RevenueCat",
+            "Paywall strategy: the 3-step onboarding that converts",
+            "AB test everything",
+            "Price smarter: localized pricing with PriceLocalize",
+        ],
     },
     {
-        id: "growth",
-        title: "Marketing",
-        subtitle: "Scale to 1,000 users",
-        description: "Organic traffic gets you started. Paid acquisition and viral loops scale you up. Learn both.",
-        bullets: [
-            "ASO with Astro keyword tracking",
-            "Apple Search Ads for targeted installs",
-            "TikTok geo-targeting for viral reach",
-            "Double down on what works",
-        ],
-        tools: ["Astro", "Apple Ads", "TikTok"],
+        id: "launch-and-grow",
+        title: "Launch & grow",
         emoji: "📈",
-        timeSaved: "Ongoing",
+        description: "Organic traffic gets you started. Paid acquisition and viral loops scale you up. Learn both.",
+        lessons: [
+            "ASO after launch",
+            "Apple Ads: your first campaign setup",
+            "Target any country on TikTok with a VPN",
+            "Warm up a fresh TikTok account",
+        ],
     },
 ];
-
-// Tool name to icon file mapping
-const toolIcons: Record<string, string> = {
-    "Astro": "/icons/astro.png",
-
-    "Figma": "/icons/figma.png",
-    "Mobbin": "/icons/mobbin.png",
-    "Dribbble": "/icons/dribbble.png",
-    "Expo": "/icons/expo.png",
-    "Claude": "/icons/claude.png",
-    "Cursor": "/icons/cursor.png",
-    "Supabase": "/icons/supabase.png",
-    "RevenueCat": "/icons/revenuecat.png",
-    "Superwall": "/icons/superwall.png",
-    "Apple Ads": "/icons/apple.png",
-    "TikTok": "/icons/tiktok.png",
-};
 
 const Roadmap = () => {
     const [activeTab, setActiveTab] = useState(0);
     const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+    const [showPreview, setShowPreview] = useState(false);
 
     useEffect(() => {
         if (!isAutoPlaying) return;
 
         const timer = setInterval(() => {
-            setActiveTab((current) => (current + 1) % steps.length);
-        }, 5000); // Change tab every 5 seconds
+            setActiveTab((current) => (current + 1) % categories.length);
+        }, 5000);
 
         return () => clearInterval(timer);
     }, [isAutoPlaying]);
@@ -168,35 +114,25 @@ const Roadmap = () => {
         <section id="roadmap" data-fast-scroll="scroll_to_roadmap" className="bg-[#2a2725] py-24 border-t border-white/5 overflow-hidden">
             <div className="mx-auto max-w-7xl px-6">
 
-                {/* Section header */}
-                <div className="mb-20 text-center">
-                    <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
-                        Everything you need to launch
-                    </h2>
-                    <p className="mt-4 text-lg text-[#c9c4bc]">
-                        From idea to first dollar. 5 steps, all doable with AI.
-                    </p>
-                </div>
-
                 {/* 1. Horizontal Simplified Timeline */}
                 <div className="relative mb-20 overflow-x-auto pb-8 -mx-6 px-6 no-scrollbar">
-                    <div className="min-w-[800px] relative">
+                    <div className="min-w-[860px] mx-auto relative">
                         {/* Horizontal Line */}
                         <div className="absolute top-[5.5rem] left-0 w-full h-px bg-white/10" />
 
-                        <div className="grid grid-cols-5 gap-4">
-                            {horizontalMilestones.map((step, i) => (
+                        <div className="grid grid-cols-6 gap-4">
+                            {categories.map((cat, i) => (
                                 <motion.div
-                                    key={i}
+                                    key={cat.id}
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
-                                    transition={{ delay: i * 0.2 }}
+                                    transition={{ delay: i * 0.1 }}
                                     className="relative flex flex-col items-center text-center"
                                 >
                                     {/* Emoji */}
-                                    <div className="mb-8 p-4 rounded-2xl bg-white/5 border border-white/5 shadow-sm transition-transform hover:scale-110">
-                                        <span className="text-4xl">{step.emoji}</span>
+                                    <div className="mb-8 p-4 rounded-2xl bg-white/5 border border-white/5 shadow-sm">
+                                        <span className="text-4xl">{cat.emoji}</span>
                                     </div>
 
                                     {/* Dot on line */}
@@ -205,8 +141,12 @@ const Roadmap = () => {
                                     </div>
 
                                     {/* Content */}
-                                    <h3 className="text-xl font-bold text-[#f1ebe2] mb-2 font-serif">{step.day}</h3>
-                                    <p className="text-[#c9c4bc] text-sm max-w-[220px] leading-relaxed">{step.title}</p>
+                                    <h3 className="text-lg font-bold text-[#f1ebe2] mb-1 font-serif">
+                                        {i + 1}. {cat.title}
+                                    </h3>
+                                    <p className="text-[#c9c4bc] text-xs max-w-[140px] leading-relaxed">
+                                        {cat.lessons.length} lesson{cat.lessons.length !== 1 ? "s" : ""}
+                                    </p>
                                 </motion.div>
                             ))}
                         </div>
@@ -226,15 +166,28 @@ const Roadmap = () => {
 
             <div className="mx-auto max-w-7xl px-6 pt-4">
 
+                {/* Section header */}
+                <div className="mb-16 text-center">
+                    <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
+                        The full App Sprint roadmap
+                    </h2>
+                    <p className="mt-4 text-lg text-[#c9c4bc]">
+                        6 modules, 21 lessons — from first idea to first revenue on the App Store
+                    </p>
+                    <p className="mt-3 text-sm text-[#c9c4bc]/70">
+                        Here&apos;s exactly what you get when you join.
+                    </p>
+                </div>
+
                 {/* 2. Tabbed Detailed View */}
                 <div className="max-w-5xl mx-auto">
                     {/* Tabs */}
-                    <div className="flex flex-wrap justify-center gap-4 md:gap-12 mb-12 border-b border-white/10 pb-8">
-                        {steps.map((step, index) => {
+                    <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-12 border-b border-white/10 pb-8">
+                        {categories.map((cat, index) => {
                             const isActive = activeTab === index;
                             return (
                                 <button
-                                    key={step.id}
+                                    key={cat.id}
                                     onClick={() => handleTabClick(index)}
                                     className={`group flex flex-col items-center gap-3 transition-all duration-300 outline-none cursor-pointer ${isActive ? "text-[#f4cf8f] scale-105" : "text-[#c9c4bc] hover:text-[#f1ebe2]"
                                         }`}
@@ -243,9 +196,9 @@ const Roadmap = () => {
                                         ? "bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 shadow-[0_0_15px_rgba(244,207,143,0.1)]"
                                         : "bg-white/5 border border-transparent group-hover:bg-white/10"
                                         }`}>
-                                        <span className="text-2xl">{step.emoji}</span>
+                                        <span className="text-2xl">{cat.emoji}</span>
                                     </div>
-                                    <span className="text-sm font-medium">{step.title}</span>
+                                    <span className="text-sm font-medium">{cat.title}</span>
                                 </button>
                             );
                         })}
@@ -260,58 +213,80 @@ const Roadmap = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                                 transition={{ duration: 0.3 }}
-                                className="grid md:grid-cols-2 gap-12 items-start"
+                                className="max-w-xl mx-auto"
                             >
-                                {/* Left: Content */}
                                 <div>
                                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 text-[#f4cf8f] text-xs font-bold uppercase tracking-wider mb-6">
                                         <Sparkles className="h-3 w-3" />
-                                        Step {activeTab + 1}
+                                        {categories[activeTab].lessons.length} lesson{categories[activeTab].lessons.length !== 1 ? "s" : ""}
                                     </div>
 
                                     <h3 className="text-3xl font-serif font-bold text-[#f1ebe2] mb-4">
-                                        {steps[activeTab].title}
+                                        {categories[activeTab].title}
                                     </h3>
                                     <p className="text-[#c9c4bc] text-lg leading-relaxed mb-8">
-                                        {steps[activeTab].description}
+                                        {categories[activeTab].description}
                                     </p>
 
                                     <div className="space-y-4">
-                                        {steps[activeTab].bullets.map((bullet, i) => (
+                                        {categories[activeTab].lessons.map((lesson, i) => (
                                             <div key={i} className="flex items-start gap-3">
                                                 <CheckCircle2 className="h-5 w-5 text-[#f4cf8f] shrink-0 mt-0.5" />
-                                                <span className="text-[#f1ebe2]/90">{bullet}</span>
+                                                <span className="text-[#f1ebe2]/90">{lesson}</span>
                                             </div>
                                         ))}
                                     </div>
-
-                                    <div className="mt-8 pt-8 border-t border-white/10 flex items-center gap-2 text-[#f4cf8f]">
-                                        <span className="text-sm font-medium text-[#c9c4bc]">Time saved:</span>
-                                        <span className="font-bold">{steps[activeTab].timeSaved}</span>
-                                    </div>
-                                </div>
-
-                                {/* Right: Tools & Visuals (Placeholder like the image style) */}
-                                <div className="bg-white/5 rounded-3xl border border-white/5 p-8 h-full flex flex-col justify-center">
-                                    <h4 className="text-sm font-medium text-[#c9c4bc] uppercase tracking-wider mb-6">Tools we use</h4>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {steps[activeTab].tools.map((tool) => (
-                                            <div key={tool} className="flex items-center gap-3 p-4 rounded-xl bg-[#2a2725] border border-white/5">
-                                                {toolIcons[tool] ? (
-                                                    <img src={toolIcons[tool]} alt={tool} className="h-5 w-5 rounded-lg opacity-80" />
-                                                ) : (
-                                                    <div className="h-2 w-2 rounded-full bg-[#f4cf8f]" />
-                                                )}
-                                                <span className="font-medium text-[#f1ebe2]">{tool}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-
-
                                 </div>
                             </motion.div>
                         </AnimatePresence>
                     </div>
+
+                    {/* Watch a preview button */}
+                    <div className="mt-12 flex justify-center">
+                        <button
+                            onClick={() => setShowPreview(true)}
+                            className="group flex items-center gap-2 rounded-full bg-[#f4cf8f] px-6 py-3 text-sm font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
+                        >
+                            <span className="text-lg">👀</span>
+                            Watch a preview
+                        </button>
+                    </div>
+
+                    {/* Video modal */}
+                    <AnimatePresence>
+                        {showPreview && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+                                onClick={() => setShowPreview(false)}
+                            >
+                                <motion.div
+                                    initial={{ scale: 0.9, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    exit={{ scale: 0.9, opacity: 0 }}
+                                    transition={{ type: "spring", duration: 0.4 }}
+                                    className="relative w-full max-w-4xl aspect-video rounded-2xl overflow-hidden"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <iframe
+                                        src="https://www.youtube.com/embed/Zq37It_smAk?autoplay=1"
+                                        title="Welcome to the roadmap"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                        className="absolute inset-0 h-full w-full"
+                                    />
+                                    <button
+                                        onClick={() => setShowPreview(false)}
+                                        className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 cursor-pointer"
+                                    >
+                                        ✕
+                                    </button>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* AI Formula Visualization */}
