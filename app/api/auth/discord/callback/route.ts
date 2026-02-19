@@ -89,8 +89,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Roadmap redirect flow
+    const WHITELISTED_DISCORD_IDS = new Set([
+      process.env.ADMIN_DISCORD_ID,
+      "372167828964376577",
+      "1295748700429357148",
+    ]);
+    const isWhitelisted = WHITELISTED_DISCORD_IDS.has(discordUser.id);
+
     if (isRoadmapRedirect) {
-      if (user.subscriptionStatus !== "active") {
+      if (user.subscriptionStatus !== "active" && !isWhitelisted) {
         return NextResponse.redirect(
           `${APP_URL}/app-sprint?error=not_subscribed`
         );
