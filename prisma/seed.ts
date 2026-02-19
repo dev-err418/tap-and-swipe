@@ -324,52 +324,113 @@ $5/week feels different than 40kr/week. Price for the market, not just for the U
     title: "Target any country on TikTok with a VPN",
     description: "Reach international audiences by geo-targeting your TikTok content",
     type: "markdown",
-    markdownContent: `TikTok shows your content to users in your region. If you're in France and want to reach the US market, you need a VPN. Here's how to set it up properly so TikTok actually thinks you're in your target country.
-
-I have two detailed Notion guides for setting up your own VPN:
-
-- **Hostinger setup:** [Notion guide](https://capable-oak-5a9.notion.site/Set-up-your-own-Tiktok-VPN-on-Mac-For-beginners-3006f6d8ab3d802b9dd0f4bba07e1a2e)
-- **DigitalOcean setup:** [Notion guide](https://separate-quart-3d6.notion.site/TikTok-USA-VPN-via-DigitalOcean-306806fd6a11801c94bbf8bb454f2083)
-
-Both are more advanced setups but give you full control over your VPN. Below is the summary of what you need to know.
+    markdownContent: `TikTok decides which country you belong to based on two things: your ASN (who owns your internet connection) and your GEO (which country your IP resolves to). Get either wrong and your content gets shown to the wrong audience, or worse, gets suppressed entirely.
 
 ---
 
-## Before downloading TikTok
+## Setup guides
 
-This is critical. Do these steps BEFORE you install TikTok. If you install first and then set up the VPN, TikTok already knows your real location. Start clean.
+Detailed Notion walkthroughs:
 
-I use a spare iPhone that I factory reset. Create a brand new iCloud account, set the region to your target country, and install TikTok fresh on it. This way everything is clean from the start.
+- Mac setup (beginner friendly): [Notion guide](https://capable-oak-5a9.notion.site/Set-up-your-own-Tiktok-VPN-on-Mac-For-beginners-3006f6d8ab3d802b9dd0f4bba07e1a2e)
+- DigitalOcean setup (more advanced): [Notion guide](https://separate-quart-3d6.notion.site/TikTok-USA-VPN-via-DigitalOcean-306806fd6a11801c94bbf8bb454f2083)
 
-1. **Use a device without a SIM card** or take the SIM out. TikTok uses your carrier info to detect your country.
-2. **Activate your VPN connection** and connect to a server in your target country (e.g., US).
-3. **Change your device's location settings** to match your target country.
-4. **Set your device's time zone** to match your target location (e.g., EST for US East Coast).
+---
 
-Everything on the device should scream "I'm in the US" (or whatever country you're targeting).
+## What TikTok actually checks
+
+Most people think a VPN is enough. It's not. TikTok cross-checks multiple signals.
+
+ASN (Autonomous System Number) is who owns your internet connection. Think of it as your digital passport. If your ASN says "French telecom provider" but your content targets the US, TikTok notices.
+
+GEO is the country your IP resolves to. This is your face at the border. TikTok checks both, and if they don't match, you're flagged.
+
+How to verify before opening TikTok:
+- GEO + ASN check: [geo.brdtest.com/mygeo.json](https://geo.brdtest.com/mygeo.json)
+- ISP verification: [bgp.he.net](https://bgp.he.net/)
+
+Both must show your target country. If either is wrong, fix your connection first. Never "test anyway."
+
+---
+
+## Device preparation (before installing TikTok)
+
+This must happen BEFORE TikTok touches your device. If you install first, TikTok already fingerprinted your real location.
+
+Remove your SIM card (or use a device without one). TikTok uses carrier info to detect your real country.
+
+Set your device region to match your target country (Settings > General > Language & Region).
+
+Set your timezone to match your target location. If targeting US, use Eastern Time or Pacific Time. TikTok weighs posting timing and engagement timing against your timezone.
+
+Set language to English (or your target country's language).
+
+Connect your proxy/VPN and verify ASN + GEO are correct using the tools above.
+
+Only then download TikTok. The app must be installed while your connection is already clean.
 
 ---
 
 ## Creating your account
 
-1. **Install TikTok from scratch.** If it was previously installed, delete it completely and reinstall.
-2. **When the phone number field appears,** verify the country code matches your target region. This is a dead giveaway if it's wrong.
-3. **Sign up with an email address.** Do NOT use a phone number, phone numbers are tied to your real country.
-4. **Check your For You Page.** It should display content from your target region. If you see content from your real country, something went wrong, start over.
+Install TikTok fresh. If previously installed, delete completely and reinstall.
+
+Verify the country code when the phone number field appears. It must match your target region. This is a dead giveaway if it's wrong.
+
+Sign up with email, not phone number. Phone numbers are tied to your real country and harder to match with your target GEO. If you're on iPhone, "Sign in with Apple" is even better (higher trust, device-verified identity).
+
+Check your For You Page. It should show content from your target region in the right language. If you see content from your real country, something is wrong. Start over.
+
+Don't touch your profile yet. No bio, no picture, no username changes. We'll do that during warmup.
+
+---
+
+## IP fraud scores: ignore them
+
+You might see people obsess over tools like IPQualityScore, Scamalytics, or IPFighter. From large-scale testing: high fraud score does NOT equal low reach. Low fraud score does NOT equal high reach. Zero correlation with virality.
+
+These tools were built for payment fraud detection, not content distribution. TikTok doesn't use them. Don't rotate or discard IPs based on fraud scores.
+
+What matters is ASN + GEO consistency. That's it.
+
+---
+
+## Red flags TikTok watches for
+
+Immediate red flags: non-target GEO + target country content, posting during your target country's sleep hours (2-5 AM), device timezone mismatch, rapid IP changes, switching GEO mid-lifecycle.
+
+Silent killers: correct IP but wrong browsing patterns (scrolling non-target content), mixed language For You Page, local creators from your real country dominating your feed.
+
+If you see mixed language content or local creators from your real country, your account is mis-trained. Fix it during warmup or reset.
+
+---
+
+## Posting windows (US FYP)
+
+If targeting the US, these windows have been tested repeatedly:
+
+- 7-9 AM Eastern
+- 11 AM-1 PM Eastern
+- 6-9 PM Eastern
+
+Avoid posting between 2-5 AM Eastern. If you're consistently getting under 300 views outside these windows, re-align your posting schedule.
 
 ---
 
 ## Quick checklist
 
-Before you create the account, verify ALL of these:
+Before creating your account, verify ALL of these:
 
-- [ ] SIM card removed or no SIM device
-- [ ] VPN connected to target country
+- [ ] SIM card removed (or no-SIM device)
 - [ ] Device region set to target country
 - [ ] Device timezone set to target location
-- [ ] TikTok freshly installed (not carried over)
-- [ ] Signing up with email, not phone number
-- [ ] Country code on phone field matches target
+- [ ] Device language set correctly
+- [ ] Proxy/VPN connected and active
+- [ ] ASN verified on bgp.he.net (matches target country)
+- [ ] GEO verified on geo.brdtest.com/mygeo.json (matches target country)
+- [ ] TikTok freshly installed AFTER proxy was active
+- [ ] Signing up with email or Sign in with Apple (not phone number)
+- [ ] For You Page shows target country content
 
 If your For You Page shows local content from your target country, you're good. Move on to the account warmup guide.`,
     order: 3,
