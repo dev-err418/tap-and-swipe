@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, LifeBuoy, Mail, MessageCircle } from "lucide-react";
 import ProgressBar from "./ProgressBar";
 
 export default function RoadmapHeader({
@@ -80,7 +80,27 @@ export default function RoadmapHeader({
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-40 rounded-xl border border-white/10 bg-[#2a2725] shadow-xl overflow-hidden z-50">
+            <div className="absolute right-0 mt-2 w-44 rounded-xl border border-white/10 bg-[#2a2725] shadow-xl overflow-hidden z-50">
+              <div className="px-4 py-2 text-xs font-medium text-[#c9c4bc]/50 uppercase tracking-wider">
+                Support
+              </div>
+              <a
+                href="https://discord.com/users/1261628273465626725"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#c9c4bc] hover:bg-white/10 transition-colors"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Discord DM
+              </a>
+              <a
+                href="mailto:arthurs.dev@gmail.com?subject=App Sprint Support"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#c9c4bc] hover:bg-white/10 transition-colors"
+              >
+                <Mail className="h-4 w-4" />
+                Email
+              </a>
+              <div className="border-t border-white/5" />
               <button
                 onClick={handleLogout}
                 className="flex w-full items-center gap-2 px-4 py-3 text-sm text-[#c9c4bc] hover:bg-white/10 transition-colors cursor-pointer"

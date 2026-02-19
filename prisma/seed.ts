@@ -292,11 +292,9 @@ Set your localized prices **before launch** if possible. If your app is already 
 ## Quick steps
 
 1. Download PriceLocalize from [pricelocalize.com](https://pricelocalize.com/)
-2. Enter your base US subscription prices
-3. Review the PPP-adjusted suggestions
-4. Go to App Store Connect > your app > Subscriptions > Pricing
-5. Manually set each country's price to match PriceLocalize's recommendations
-6. Save and submit
+2. Connect your App Store Connect account
+3. Enter your base US subscription prices
+4. PriceLocalize automatically updates all country prices based on the Netflix Index
 
 $5/week feels different than 40kr/week. Price for the market, not just for the US. It's one of the easiest wins you'll ever get.`,
     order: 4,
@@ -560,15 +558,6 @@ If you're stuck, you probably skipped a step.`,
 ];
 
 async function main() {
-  console.log("Cleaning up old seed data...");
-
-  await prisma.lessonProgress.deleteMany({
-    where: { lessonId: { startsWith: "seed-" } },
-  });
-  await prisma.lesson.deleteMany({
-    where: { id: { startsWith: "seed-" } },
-  });
-
   console.log("Seeding lessons...");
 
   for (const lesson of lessons) {
