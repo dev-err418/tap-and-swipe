@@ -458,106 +458,103 @@ If your For You Page shows local content from your target country, you're good. 
     title: "Warm up a fresh TikTok account",
     description: "Build trust with the algorithm before posting content",
     type: "markdown",
-    markdownContent: `TikTok tracks new accounts hard. If you start posting, liking, and following on day one, you'll get flagged as a bot and shadowbanned. Your videos will get zero views and you won't even know why.
+    markdownContent: `TikTok profiles your account before it rewards you. Every scroll, every like, every search teaches TikTok who you are. If you skip warmup and start posting immediately, TikTok has no data about you. Your content gets tested in the wrong bucket, gets suppressed, and the account never recovers.
 
-The fix: act like a real human for a week. Here's the exact day-by-day plan.
-
----
-
-## Day 1: watch only
-
-- **NO** follows, likes, or comments
-- **Don't touch your profile** yet, no bio, no picture
-- Just **search your niche** and watch content
-- The algorithm learns what you're into based on your searches
-- Spend 15-20 minutes browsing naturally
-
-TikTok is watching how a brand new account behaves. Real users browse before they engage. Bots start spamming immediately. Don't be a bot.
+Warmup is not about reach. Warmup is about trust calibration.
 
 ---
 
-## Day 2: still watching
+## Why you can't just start posting
 
-- Keep searching and watching content in your niche
-- **Now you can set your profile picture and bio**
-- Still **no engagement**, no likes, no follows, no comments
-- Watch videos fully, don't skip around
+New accounts have zero trust. When you post immediately, TikTok has no persona data on you, your content is tested against the wrong audience, early failures poison your account's graph permanently, and you get inconsistent reach that never stabilizes.
 
-You're building a browsing history. TikTok is getting more confident you're a real user interested in a specific niche.
+Accounts that survive long term move slowly early and build consistent signals. Accounts that die rush posting, rush engagement, rush promotion.
 
 ---
 
-## Day 3: light engagement
+## Phase 0: the lurker (Days 1-2)
 
-- **Like and follow 5 accounts** in your niche
-- Keep watching content naturally
-- Watch videos all the way through
-- You can start saving videos you like
+Goal: establish who this account represents without producing any content.
 
----
+Open TikTok 3-4 times per day. Scroll for 10-15 minutes per session. No posting, no commenting, no profile edits (no bio, no picture yet), no DMs.
 
-## Day 4: a bit more
+Scroll like a real user in your target country. Pause on content related to your niche. Watch 80-100% of videos you're interested in. Skip irrelevant content quickly but naturally. Let some videos auto-loop. Rewatch clips you genuinely find interesting.
 
-- **Like and follow 10 more accounts** in your niche
-- Continue watching full videos
-- You can start leaving short, genuine comments (nothing spammy)
+Watch time matters more than likes. TikTok weighs watch completion heavily. Complete videos. Rewatch some. Let videos loop occasionally. This tells TikTok what you care about far more than tapping a heart.
 
----
+Follow limits: 5-10 follows per day maximum, spread across your sessions (not all at once). Don't follow only big accounts. Don't unfollow anyone during warmup.
 
-## Day 5: first post
-
-- **Follow 10 more niche accounts**
-- **Drop your first video**
-- **NO promotion in this video**, no "download my app" or links
-- Reaction content with strong hooks performs best for first posts
-- Keep engaging with other accounts naturally
+If after Day 2 your For You Page consistently shows non-target language content, or your niche feed is completely mixed with unrelated stuff, or ads dominate your feed abnormally: reset the account and start over. Don't "wait and see." Bad signals compound silently.
 
 ---
 
-## Day 6: keep going
+## Phase 1: training the algorithm (Days 3-5)
 
-- Post again if you have content ready
-- Engage naturally with likes, comments, follows
-- Still no hard promotion yet
-- Watch how your first video performed
+Goal: reinforce your persona and lock in your niche. Still no posting.
 
----
+2-3 scrolling sessions per day. Targeted engagement only. Light commenting (see below).
 
-## Day 7+: you're warmed up
+Use search actively. Search is one of the strongest signals you can send TikTok. Search niche keywords manually ("daily affirmations," "self care routine," "morning motivation," whatever your app's niche is). Click multiple results. Watch top performing videos all the way through. Don't search trending generic stuff or random curiosity topics. Stay in your niche.
 
-After day 6, your account is warmed up. Now you can:
+Start commenting carefully. Comments train your persona faster than likes. 1-2 comments per session maximum. Short, neutral comments. No emoji spam. No controversial takes yet. Good comments: "this makes sense," "never thought about it this way," "this explains a lot." Bad comments: long replies, jokes, hot takes, anything with lots of emojis.
 
-- Post consistently (1-2 times per day is ideal)
-- Engage naturally with your community
-- Start introducing your app in content (soft sells first)
-- Use trending sounds and hooks in your niche
+Move to Phase 2 when your FYP is roughly 70% niche-aligned, creators are mostly from your target country, and language and tone match your target audience. If this isn't the case by Day 5, keep doing Phase 1.
 
 ---
 
-## The rules (don't break these)
+## Phase 2: first posts (Days 5-7)
 
-- **Never follow/unfollow in bulk.** TikTok flags mass actions instantly.
-- **Never use bots or automation tools.** Instant shadowban.
-- **Always watch videos fully.** Skipping around signals bot behavior.
-- **Keep your VPN on** if you're targeting a different country.
-- **Don't post and ghost.** After posting, stay on the app for 15-20 min engaging with content. TikTok rewards active users.
-- **Be patient.** 6 days of warmup saves you from months of shadowban recovery.
+Set up your profile now. Upload a profile picture (neutral, no logos, no stock photos). Write a generic bio. No selling, no links, no emoji spam. Something like "sharing thoughts on [niche]" or "interested in [topic]." Don't mention your app.
+
+Image slideshows work best for first posts. They're low risk, generate natural watch time, and reduce production friction. Save the fancy videos for later. Post 2-3 pieces of content. Simple, niche-relevant, value-driven.
+
+### The 700-view health test
+
+Wait 24-48 hours after posting and check your views.
+
+700+ views: your account is healthy. Keep going.
+300-700 views: inconclusive. Post a few more and re-evaluate.
+Under 300 views: your account is likely compromised. If 3+ posts all land under 300, consider starting fresh.
+
+Most people think their account is dead when really their content just isn't hitting. Content failure: some formats work, new hooks still get tested, reach returns when you change approach. Account failure: everything stalls, even proven formats get under 300 views, no recovery after multiple tests.
+
+---
+
+## After warmup: ongoing rules
+
+1-2 posts per day per account. Maximum 3 during expansion phases when something is working. Post during target country's active hours (7-9 AM, 11 AM-1 PM, 6-9 PM Eastern for US).
+
+Don't change your bio, username, or profile photo frequently. Don't add links until you have consistent traction (and ideally 1000+ followers for the link-in-bio feature).
+
+Pause posting if you see consecutive low views, your FYP shifts to a different audience, or engagement drops suddenly. Pausing preserves account health. Pushing harder when things aren't working makes it worse.
+
+Every content format has a lifecycle: early signal, expansion, saturation, decay. When a format stops working (6+ consecutive posts under your baseline), stop using it. Switch to something new. Formats are disposable.
+
+Always post natively through the TikTok app. Don't use third-party scheduling tools for posting. They create metadata inconsistencies that TikTok detects. Vary your captions slightly between posts. Don't copy-paste identical descriptions or hashtags.
+
+Don't push calls to action in your first seconds. Don't repeat CTAs every post. If you notice reach dropping after adding CTAs, remove them. Let curiosity drive installs. "What app is this?" comments are more powerful than any CTA.
+
+---
+
+## Recovery: when things go wrong
+
+If views drop suddenly: stop posting that format, check your connection (ASN + GEO still correct?), wait 48 hours, test a completely different format.
+
+For struggling accounts: stop posting for 48 hours, go back to Phase 1 behavior (scroll, search, comment in niche), post 1 simple slideshow, wait 24 hours, repeat up to 3 posts. If views bounce back, continue. If not, it might be time to start fresh.
+
+Give up on an account when recovery has failed twice, your connection setup is clean, and the same content works on other accounts. Time is more valuable than sentiment. Keep going when at least one post shows improvement, your GEO is correct, and new formats still get tested by TikTok.
 
 ---
 
 ## Quick reference
 
-| Day | Actions | Post? |
-|-----|---------|-------|
-| 1 | Search + watch only. No profile setup. | No |
-| 2 | Search + watch. Set profile pic + bio. | No |
-| 3 | Like/follow 5 niche accounts. | No |
-| 4 | Like/follow 10 more. Light comments. | No |
-| 5 | Follow 10 more. First video (no promo). | Yes |
-| 6 | Post again. Engage naturally. | Yes |
-| 7+ | Warmed up. Post consistently. | Yes |
+During warmup (Days 1-5): 2-3 scroll sessions (10-15 min each), watch niche content fully, 5-10 follows max spread across sessions, 1-2 short neutral comments per session (Phase 1 only), no posting, no DMs, no profile changes, only during target country active hours.
 
-That's it. One week of patience = an account that actually reaches people. Skip this and you'll wonder why nobody sees your videos.`,
+After warmup (Day 5+): 1-2 posts per day natively through the app, continue engaging with niche content between posts, post during peak hours (7-9 AM, 11 AM-1 PM, 6-9 PM ET for US), monitor the 700-view baseline, rotate formats before they decay, don't add links or CTAs until you have consistent traction.
+
+The lifecycle to keep in mind: setup > trust > test > scale > decay > rotate.
+
+If you're stuck, you probably skipped a step.`,
     order: 4,
   },
 ];
