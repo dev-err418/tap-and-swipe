@@ -357,31 +357,22 @@ Both must show your target country. If either is wrong, fix your connection firs
 
 This must happen BEFORE TikTok touches your device. If you install first, TikTok already fingerprinted your real location.
 
-Remove your SIM card (or use a device without one). TikTok uses carrier info to detect your real country.
-
-Set your device region to match your target country (Settings > General > Language & Region).
-
-Set your timezone to match your target location. If targeting US, use Eastern Time or Pacific Time. TikTok weighs posting timing and engagement timing against your timezone.
-
-Set language to English (or your target country's language).
-
-Connect your proxy/VPN and verify ASN + GEO are correct using the tools above.
-
-Only then download TikTok. The app must be installed while your connection is already clean.
+1. Remove your SIM card (or use a device without one). TikTok uses carrier info to detect your real country.
+2. Set your device region to match your target country (Settings > General > Language & Region).
+3. Set your timezone to match your target location. If targeting US, use Eastern Time or Pacific Time. TikTok weighs posting timing and engagement timing against your timezone.
+4. Set language to English (or your target country's language).
+5. Connect your proxy/VPN and verify ASN + GEO are correct using the tools above.
+6. Only then download TikTok. The app must be installed while your connection is already clean.
 
 ---
 
 ## Creating your account
 
-Install TikTok fresh. If previously installed, delete completely and reinstall.
-
-Verify the country code when the phone number field appears. It must match your target region. This is a dead giveaway if it's wrong.
-
-Sign up with email, not phone number. Phone numbers are tied to your real country and harder to match with your target GEO. If you're on iPhone, "Sign in with Apple" is even better (higher trust, device-verified identity).
-
-Check your For You Page. It should show content from your target region in the right language. If you see content from your real country, something is wrong. Start over.
-
-Don't touch your profile yet. No bio, no picture, no username changes. We'll do that during warmup.
+1. Install TikTok fresh. If previously installed, delete completely and reinstall.
+2. Verify the country code when the phone number field appears. It must match your target region. This is a dead giveaway if it's wrong.
+3. Sign up with email, not phone number. Phone numbers are tied to your real country and harder to match with your target GEO. If you're on iPhone, "Sign in with Apple" is even better (higher trust, device-verified identity).
+4. Check your For You Page. It should show content from your target region in the right language. If you see content from your real country, something is wrong. Start over.
+5. Don't touch your profile yet. No bio, no picture, no username changes. We'll do that during warmup.
 
 ---
 
@@ -504,9 +495,9 @@ Move to Phase 2 when your FYP is roughly 70% niche-aligned, creators are mostly 
 
 ## Phase 2: first posts (Days 5-7)
 
-Set up your profile now. Upload a profile picture (neutral, no logos, no stock photos). Write a generic bio. No selling, no links, no emoji spam. Something like "sharing thoughts on [niche]" or "interested in [topic]." Don't mention your app.
-
-Image slideshows work best for first posts. They're low risk, generate natural watch time, and reduce production friction. Save the fancy videos for later. Post 2-3 pieces of content. Simple, niche-relevant, value-driven.
+1. Upload a profile picture (neutral, no logos, no stock photos).
+2. Write a generic bio. No selling, no links, no emoji spam. Something like "sharing thoughts on [niche]" or "interested in [topic]." Don't mention your app.
+3. Post 2-3 pieces of content. Image slideshows work best for first posts. They're low risk, generate natural watch time, and reduce production friction. Save the fancy videos for later. Simple, niche-relevant, value-driven.
 
 ### The 700-view health test
 
@@ -538,9 +529,18 @@ Don't push calls to action in your first seconds. Don't repeat CTAs every post. 
 
 ## Recovery: when things go wrong
 
-If views drop suddenly: stop posting that format, check your connection (ASN + GEO still correct?), wait 48 hours, test a completely different format.
+If views drop suddenly:
+1. Stop posting that format
+2. Check your connection (ASN + GEO still correct?)
+3. Wait 48 hours
+4. Test a completely different format
 
-For struggling accounts: stop posting for 48 hours, go back to Phase 1 behavior (scroll, search, comment in niche), post 1 simple slideshow, wait 24 hours, repeat up to 3 posts. If views bounce back, continue. If not, it might be time to start fresh.
+For struggling accounts:
+1. Stop posting for 48 hours
+2. Go back to Phase 1 behavior (scroll, search, comment in niche)
+3. Post 1 simple slideshow
+4. Wait 24 hours
+5. Repeat up to 3 posts. If views bounce back, continue. If not, it might be time to start fresh.
 
 Give up on an account when recovery has failed twice, your connection setup is clean, and the same content works on other accounts. Time is more valuable than sentiment. Keep going when at least one post shows improvement, your GEO is correct, and new formats still get tested by TikTok.
 
