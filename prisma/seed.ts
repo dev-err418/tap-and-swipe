@@ -53,7 +53,9 @@ Apply for the [Apple Small Business Program](https://developer.apple.com/app-sto
     description: "Use keyword research to validate demand before building",
     type: "video",
     youtubeUrl: "https://youtu.be/xqvQHfgc5fg",
-    markdownContent: `Get **20% off [Astro](https://tryastro.app/?aff=GPEbM)** (the ASO tool) using code **WELCOMEBACK** through this link!`,
+    markdownContent: `Find keywords with popularity above 20 and difficulty below 50 (US).
+
+Get **20% off [Astro](https://tryastro.app/?aff=GPEbM)** (the ASO tool) using code **WELCOMEBACK** through this link!`,
     order: 2,
   },
   {
