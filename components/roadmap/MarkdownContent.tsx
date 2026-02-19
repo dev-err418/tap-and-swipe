@@ -22,12 +22,12 @@ const components: Components = {
     <p className="text-[#c9c4bc] leading-relaxed mb-4">{children}</p>
   ),
   ul: ({ children }) => (
-    <ul className="list-disc list-inside text-[#c9c4bc] mb-4 space-y-1">
+    <ul className="list-disc pl-5 text-[#c9c4bc] mb-4 space-y-1">
       {children}
     </ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal list-inside text-[#c9c4bc] mb-4 space-y-1">
+    <ol className="list-decimal pl-5 text-[#c9c4bc] mb-4 space-y-1">
       {children}
     </ol>
   ),

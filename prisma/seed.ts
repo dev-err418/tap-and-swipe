@@ -94,6 +94,10 @@ Even 1-2 paid conversions means you're on the right track. Zero conversions mean
     description: "Use AI and reference apps to create pro-level designs",
     type: "video",
     youtubeUrl: "https://youtu.be/Wt2Pcxw3JaY",
+    markdownContent: `Tools mentioned in this video:
+
+- [Screens Design](https://screensdesign.com/create)
+- [Stitch by Google](https://stitch.withgoogle.com/)`,
     order: 1,
   },
   {
@@ -109,8 +113,11 @@ Even 1-2 paid conversions means you're on the right track. Zero conversions mean
     title: "Your first App Store screenshot is everything",
     description: "Design screenshots that stop the scroll and convert",
     type: "video",
-    youtubeUrl: null,
-    markdownContent: `Figma template for screenshots: [App Store Screenshots Template](https://www.figma.com/community/file/1165594034578098226)`,
+    youtubeUrl: "https://youtu.be/JpGDFBlkdd8",
+    markdownContent: `Tools mentioned in this video:
+
+- [The App Launchpad](https://theapplaunchpad.com/projects)
+- [App Store Screenshots Template (Figma)](https://www.figma.com/community/file/1165594034578098226)`,
     order: 3,
   },
 
@@ -227,7 +234,7 @@ Set up Sentry and PostHog now. Add Supabase only if your app needs it. All free,
     title: "Paywall strategy: the 3-step onboarding that converts",
     description: "Design an onboarding flow that leads to purchases",
     type: "video",
-    youtubeUrl: null,
+    youtubeUrl: "https://youtu.be/OH4U5jTMNks",
     order: 2,
   },
   {
@@ -306,7 +313,7 @@ $5/week feels different than 40kr/week. Price for the market, not just for the U
     title: "ASO after launch",
     description: "Optimize your listing based on real data",
     type: "video",
-    youtubeUrl: null,
+    youtubeUrl: "https://youtu.be/ujwN2dGdUmU",
     order: 1,
   },
   {
