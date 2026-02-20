@@ -306,6 +306,7 @@ const LandingPage = ({
                     <div className="flex gap-6">
                         <a href="/tos" className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]">Terms of Service</a>
                         <a href="/privacy" className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]">Privacy Policy</a>
+                        <a href="/tos#refund" className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]">Refund Policy</a>
                     </div>
                 </div>
             </footer>

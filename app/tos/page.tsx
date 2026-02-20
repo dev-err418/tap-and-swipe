@@ -49,17 +49,20 @@ export default function TermsPage() {
                 Discord community access is provided on a best-effort basis, with
                 group support available during community hours.
               </li>
+              <li>
+                If a refund is requested after more than 10% of the course has
+                been completed, access to the course materials will be revoked.
+              </li>
             </ul>
           </section>
 
-          <section>
+          <section id="refund">
             <h2 className="text-xl font-semibold text-[#f1ebe2]">
               3. Refund Policy
             </h2>
             <p className="mt-2">
-              Full refunds are available within 7 days of purchase if less than
-              10% of the course has been completed. To request a refund, contact
-              us at{" "}
+              Full refunds are available within 14 days of purchase, no questions
+              asked. To request a refund, contact us at{" "}
               <a
                 href="mailto:arthurs.dev@gmail.com"
                 className="text-[#f4cf8f] underline hover:text-[#f4cf8f]/80"
