@@ -80,7 +80,7 @@ const Pricing = () => {
                                 <div className="flex flex-col gap-3 w-full">
                                     <div className="flex items-center justify-center gap-2 text-xs text-[#c9c4bc]">
                                         <ShieldCheck className="h-4 w-4 text-[#f4cf8f]" />
-                                        Secure payment with Stripe
+                                        Secure payment with Paddle
                                     </div>
                                     <div className="flex items-center justify-center gap-2 text-xs text-[#c9c4bc]">
                                         <div className="flex text-[#f4cf8f]">

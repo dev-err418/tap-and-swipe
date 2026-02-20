@@ -115,8 +115,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${APP_URL}/app-sprint/${redirectTarget}`);
     }
 
-    // Default checkout flow
-    if (user.subscriptionStatus === "active") {
+    // Default checkout flow (skip for admin to allow testing)
+    if (user.subscriptionStatus === "active" && !isWhitelisted) {
       return NextResponse.redirect(
         `${APP_URL}/app-sprint?status=already_subscribed`
       );
@@ -129,8 +129,8 @@ export async function GET(request: NextRequest) {
       discordAvatar: discordUser.avatar,
     });
 
-    // Redirect to checkout
-    return NextResponse.redirect(`${APP_URL}/api/checkout`);
+    // Redirect to Paddle checkout
+    return NextResponse.redirect(`${APP_URL}/api/checkout/paddle`);
   } catch (err) {
     console.error("Discord callback error:", err);
     return NextResponse.redirect(`${APP_URL}/app-sprint?error=auth_failed`);

@@ -16,6 +16,8 @@ model User {
   discordAvatar      String?
   discordAccessToken String?
   stripeCustomerId   String?         @unique
+  paddleCustomerId   String?         @unique
+  paymentProvider    String?         // "stripe" | "paddle" | "whop"
   subscriptionId     String?         @unique
   subscriptionStatus String?
   roleGranted        Boolean         @default(false)
@@ -24,6 +26,7 @@ model User {
   updatedAt          DateTime        @updatedAt
 
   @@index([stripeCustomerId])
+  @@index([paddleCustomerId])
   @@index([subscriptionId])
 }
 
