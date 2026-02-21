@@ -17,14 +17,6 @@ export default function LuaPage() {
       <div />
 
       <section className="flex flex-col items-center justify-center text-center">
-        <a
-          href="/"
-          className="mb-8 text-sm font-medium transition-opacity hover:opacity-70"
-          style={{ color: "#9B9BAB" }}
-        >
-          ← Tap &amp; Swipe
-        </a>
-
         <h1
           className="font-serif text-6xl font-semibold tracking-tight sm:text-7xl md:text-8xl lg:text-9xl"
           style={{ color: "#D6779A" }}
@@ -69,9 +61,11 @@ export default function LuaPage() {
       <footer className="w-full text-center text-sm" style={{ color: "#9B9BAB" }}>
         <p className="font-semibold" style={{ color: "#2D2D3A" }}>TAP &amp; SWIPE</p>
         <p className="mt-1">
-          <a href="/privacy" className="underline hover:opacity-70">Privacy</a>
+          <a href="/lua/privacy" className="underline hover:opacity-70">Privacy</a>
           {" · "}
-          <a href="/tos" className="underline hover:opacity-70">Terms</a>
+          <a href="/lua/terms" className="underline hover:opacity-70">Terms</a>
+          {" · "}
+          <a href="/lua/support" className="underline hover:opacity-70">Support</a>
         </p>
       </footer>
     </main>
