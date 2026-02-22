@@ -115,11 +115,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${APP_URL}/app-sprint/${redirectTarget}`);
     }
 
-    // Default checkout flow (skip for admin to allow testing)
+    // Already-subscribed user: create session and send to roadmap
     if (user.subscriptionStatus === "active" && !isWhitelisted) {
-      return NextResponse.redirect(
-        `${APP_URL}/app-sprint?status=already_subscribed`
+      await createSession(
+        {
+          discordId: discordUser.id,
+          discordUsername: discordUser.global_name || discordUser.username,
+          discordAvatar: discordUser.avatar,
+        },
+        "7d"
       );
+      return NextResponse.redirect(`${APP_URL}/app-sprint/roadmap`);
     }
 
     // Set session cookie with Discord identity for checkout
