@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
@@ -39,12 +39,28 @@ const slideVariants = {
 const TOTAL_STEPS_FULL = 11; // 9 questions + optin + buffer
 const TOTAL_STEPS_SKIP = 10; // 8 questions (skip Q3) + optin + buffer
 
+function trackEvent(type: string, sessionId: string) {
+  fetch("/api/quiz-event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, sessionId }),
+  }).catch(() => {});
+}
+
 export default function QuizFunnel() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<QuizStep>("hero");
   const [direction, setDirection] = useState(1);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [firstName, setFirstName] = useState("");
+  const sessionIdRef = useRef(
+    typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36),
+  );
+
+  // Track page view on mount
+  useEffect(() => {
+    trackEvent("page_view", sessionIdRef.current);
+  }, []);
 
   // Debug: ?step=waiting or ?step=result-dev-indie or ?step=result-entreprise
   useEffect(() => {
@@ -80,7 +96,11 @@ export default function QuizFunnel() {
     const newAnswers = { ...answers, [questionKey]: answerIndex };
     setAnswers(newAnswers);
     setDirection(1);
-    setStep(getNextQuestion(questionKey, newAnswers));
+    const next = getNextQuestion(questionKey, newAnswers);
+    if (next === "optin") {
+      trackEvent("quiz_complete", sessionIdRef.current);
+    }
+    setStep(next);
   }
 
   function goBack() {
@@ -151,6 +171,7 @@ export default function QuizFunnel() {
           {step === "hero" && (
             <HeroScreen
               onStart={() => {
+                trackEvent("quiz_start", sessionIdRef.current);
                 setDirection(1);
                 setStep("q1");
               }}
@@ -179,6 +200,7 @@ export default function QuizFunnel() {
             <ResultDevIndie
               firstName={firstName}
               answers={answers}
+              onBookingClick={() => trackEvent("booking_click", sessionIdRef.current)}
             />
           )}
 
@@ -186,6 +208,7 @@ export default function QuizFunnel() {
             <ResultEntreprise
               firstName={firstName}
               answers={answers}
+              onBookingClick={() => trackEvent("booking_click", sessionIdRef.current)}
             />
           )}
         </motion.div>

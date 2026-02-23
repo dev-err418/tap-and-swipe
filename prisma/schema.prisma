@@ -80,6 +80,34 @@ model RevenueCatEvent {
   @@index([eventType, periodType, createdAt])
 }
 
+model QuizLead {
+  id          String   @id @default(cuid())
+  firstName   String
+  email       String
+  phone       String
+  countryCode String   @default("+33")
+  profileType String   // "dev-indie" | "entreprise"
+  answers     Json     // { q1: 0, q2: 2, ... } index-based
+  source      String?  // UTM source
+  country     String?  // Vercel geo
+  city        String?  // Vercel geo
+  createdAt   DateTime @default(now())
+
+  @@index([email])
+  @@index([profileType])
+  @@index([createdAt])
+}
+
+model QuizEvent {
+  id        String   @id @default(cuid())
+  type      String   // "page_view" | "quiz_start" | "quiz_complete" | "booking_click"
+  sessionId String
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, type])
+  @@index([type, createdAt])
+}
+
 model TrialDiscordMessage {
   id                    String   @id @default(cuid())
   appName               String

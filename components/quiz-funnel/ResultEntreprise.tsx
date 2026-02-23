@@ -56,9 +56,11 @@ const TIMELINE = [
 export default function ResultEntreprise({
   firstName,
   answers,
+  onBookingClick,
 }: {
   firstName: string;
   answers: Record<string, number>;
+  onBookingClick?: () => void;
 }) {
   const blocker = getBlockageLabel(answers.q4 ?? 0);
   const displayName = firstName || "you";
@@ -131,6 +133,7 @@ export default function ResultEntreprise({
           href={CAL_URL}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={onBookingClick}
           data-fast-goal="quiz_result_entreprise_cta"
           className="group inline-flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
         >
