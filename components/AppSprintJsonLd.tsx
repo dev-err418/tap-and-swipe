@@ -24,7 +24,7 @@ export default function AppSprintJsonLd() {
     },
     offers: {
       "@type": "Offer",
-      price: "127",
+      price: "117",
       priceCurrency: "EUR",
       availability: "https://schema.org/LimitedAvailability",
       url: "https://tap-and-swipe.com/app-sprint#pricing",

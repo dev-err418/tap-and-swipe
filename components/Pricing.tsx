@@ -63,7 +63,7 @@ const Pricing = () => {
                             <div className="flex flex-col items-center justify-center p-8 rounded-3xl bg-white/5 border border-white/5 text-center">
                                 <span className="text-sm font-medium text-[#c9c4bc] mb-2 uppercase tracking-widest">App Sprint Membership</span>
                                 <div className="flex items-baseline gap-1 mb-1">
-                                    <span className="text-5xl font-extrabold text-[#f1ebe2]">137€</span>
+                                    <span className="text-5xl font-extrabold text-[#f1ebe2]">117€</span>
                                     <span className="text-xl text-[#c9c4bc]">/mo</span>
                                 </div>
                                 <div className="mb-8" />
