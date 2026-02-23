@@ -84,16 +84,28 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        const existingUser = await prisma.user.findUnique({
+          where: { discordId: discord.id },
+        });
+        const isActiveElsewhere =
+          existingUser &&
+          existingUser.paymentProvider !== "whop" &&
+          existingUser.paymentProvider !== null &&
+          existingUser.subscriptionStatus === "active";
+
         await prisma.user.upsert({
           where: { discordId: discord.id },
           update: {
             subscriptionStatus: "active",
             roleGranted,
+            // Only claim paymentProvider if they don't have an active sub elsewhere
+            ...(!isActiveElsewhere && { paymentProvider: "whop" }),
           },
           create: {
             discordId: discord.id,
             discordUsername: discord.username,
             subscriptionStatus: "active",
+            paymentProvider: "whop",
             roleGranted,
           },
         });
@@ -116,23 +128,39 @@ export async function POST(request: NextRequest) {
           where: { discordId: discord.id },
         });
 
-        if (user) {
-          await prisma.user.update({
-            where: { discordId: discord.id },
-            data: {
-              subscriptionStatus: "canceled",
-              roleGranted: false,
-            },
-          });
-          await removeRole(discord.id);
-          console.log(
-            `[whop] membership.deactivated — discordId=${discord.id} role removed`
-          );
-        } else {
+        if (!user) {
           console.warn(
             `[whop] membership.deactivated — user not found for discordId=${discord.id}`
           );
+          break;
         }
+
+        // If the user paid via Stripe/Paddle, Whop doesn't control their access
+        if (user.paymentProvider && user.paymentProvider !== "whop") {
+          console.log(
+            `[whop] membership.deactivated — skipping revocation, user pays via ${user.paymentProvider} (discordId=${discord.id})`
+          );
+          break;
+        }
+
+        await prisma.user.update({
+          where: { discordId: discord.id },
+          data: {
+            subscriptionStatus: "canceled",
+            roleGranted: false,
+          },
+        });
+        await removeRole(discord.id);
+        console.log(
+          `[whop] membership.deactivated — discordId=${discord.id} role removed`
+        );
+        break;
+      }
+
+      case "membership.cancel_at_period_end_changed": {
+        console.log(
+          `[whop] membership.cancel_at_period_end_changed — membership=${data.id} (still active until period end)`
+        );
         break;
       }
     }
