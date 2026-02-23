@@ -361,6 +361,24 @@ function StatCard({ label, value, sub }: { label: string; value: number; sub?: s
   );
 }
 
+const SOURCE_LABELS: Record<string, string> = {
+  vid1: "🎬 Video 1",
+  vid2: "🎬 Video 2",
+  vid3: "🎬 Video 3",
+  vid4: "🎬 Video 4",
+  vid5: "🎬 Video 5",
+  vid6: "🎬 Video 6",
+  vid7: "🎬 Video 7",
+  vid8: "🎬 Video 8",
+  vid9: "🎬 Video 9",
+  vid10: "🎬 Video 10",
+};
+
+function formatSource(source: string | null): string {
+  if (!source) return "Direct / unknown";
+  return SOURCE_LABELS[source] || source;
+}
+
 function SourceTable({
   title,
   rows,
@@ -393,7 +411,7 @@ function SourceTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.source ?? "__direct"} className="border-b border-white/5">
-              <td className="py-2">{row.source || "Direct / unknown"}</td>
+              <td className="py-2">{formatSource(row.source)}</td>
               <td className="py-2 text-right tabular-nums">{row.count}</td>
               <td className="py-2 text-right tabular-nums text-[#c9c4bc]">
                 {total > 0 ? Math.round((row.count / total) * 100) : 0}%
