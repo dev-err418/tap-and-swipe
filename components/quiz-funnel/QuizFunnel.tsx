@@ -48,7 +48,7 @@ function trackEvent(type: string, sessionId: string, source?: string) {
   }).catch(() => {});
 }
 
-export default function QuizFunnel({ serverReferrer }: { serverReferrer?: string }) {
+export default function QuizFunnel({ serverReferrer, serverAppSource }: { serverReferrer?: string; serverAppSource?: string }) {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<QuizStep>("hero");
   const [direction, setDirection] = useState(1);
@@ -69,11 +69,11 @@ export default function QuizFunnel({ serverReferrer }: { serverReferrer?: string
     if (utm) {
       sourceRef.current = utm;
     } else {
-      // Try client-side referrer first, fall back to server-side header
+      // Try client-side referrer first, fall back to server-side header, then UA-detected app
       let host: string | undefined;
       if (document.referrer) {
         try {
-          host = new URL(document.referrer).hostname;
+          host = new URL(document.referrer).hostname.replace(/^www\./, "");
         } catch {
           // invalid referrer URL
         }
@@ -82,10 +82,12 @@ export default function QuizFunnel({ serverReferrer }: { serverReferrer?: string
         sourceRef.current = host;
       } else if (serverReferrer && serverReferrer !== window.location.hostname) {
         sourceRef.current = serverReferrer;
+      } else if (serverAppSource) {
+        sourceRef.current = serverAppSource;
       }
     }
     trackEvent("page_view", sessionIdRef.current, sourceRef.current);
-  }, [searchParams, serverReferrer]);
+  }, [searchParams, serverReferrer, serverAppSource]);
 
   // Debug: ?step=waiting or ?step=result-dev-indie or ?step=result-entreprise
   useEffect(() => {

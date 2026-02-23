@@ -30,21 +30,44 @@ export const metadata: Metadata = {
   },
 };
 
+const UA_APP_PATTERNS: [RegExp, string][] = [
+  [/YouTube/i, "youtube.com"],
+  [/Instagram/i, "instagram.com"],
+  [/FBAN|FBAV/i, "facebook.com"],
+  [/Twitter/i, "x.com"],
+  [/TikTok|BytedanceWebview/i, "tiktok.com"],
+  [/LinkedInApp/i, "linkedin.com"],
+  [/Pinterest/i, "pinterest.com"],
+  [/Snapchat/i, "snapchat.com"],
+];
+
 export default async function AppSprintQuizPage() {
   const h = await headers();
   const referer = h.get("referer") || "";
   let serverReferrer: string | undefined;
   if (referer) {
     try {
-      serverReferrer = new URL(referer).hostname;
+      serverReferrer = new URL(referer).hostname.replace(/^www\./, "");
     } catch {
       // invalid URL
     }
   }
 
+  // Fallback: detect in-app browsers from User-Agent when no referer
+  let serverAppSource: string | undefined;
+  if (!serverReferrer) {
+    const ua = h.get("user-agent") || "";
+    for (const [pattern, source] of UA_APP_PATTERNS) {
+      if (pattern.test(ua)) {
+        serverAppSource = source;
+        break;
+      }
+    }
+  }
+
   return (
     <Suspense>
-      <QuizFunnel serverReferrer={serverReferrer} />
+      <QuizFunnel serverReferrer={serverReferrer} serverAppSource={serverAppSource} />
     </Suspense>
   );
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendDiscordNotification } from "@/lib/discord-webhook";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -49,6 +50,19 @@ export async function POST(request: NextRequest) {
         city: city ? decodeURIComponent(city) : null,
       },
     });
+
+    sendDiscordNotification(
+      "🎯 [App Sprint] New lead",
+      undefined,
+      [
+        { name: "Name", value: firstName.trim(), inline: true },
+        { name: "Email", value: email.trim().toLowerCase(), inline: true },
+        { name: "Phone", value: `${countryCode || "+33"} ${phone.trim()}`, inline: false },
+        { name: "Profile", value: profileType, inline: true },
+        { name: "Source", value: source || "Direct", inline: true },
+        { name: "Location", value: [city ? decodeURIComponent(city) : null, country].filter(Boolean).join(", ") || "Unknown", inline: true },
+      ]
+    ).catch(() => {});
 
     return NextResponse.json({ success: true, id: lead.id });
   } catch (err) {
