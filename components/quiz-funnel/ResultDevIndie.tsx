@@ -32,6 +32,10 @@ const BENEFITS = [
     desc: "Connect with other indie devs who are building. You're no longer alone.",
   },
   {
+    title: "24/7 support via WhatsApp & Discord",
+    desc: "Got a question? Stuck on something? Message me anytime — I'm here whenever you need.",
+  },
+  {
     title: "Results guarantee",
     desc: "If you don't reach $3,000/month in 6 months, I keep working with you for free until you do.",
   },

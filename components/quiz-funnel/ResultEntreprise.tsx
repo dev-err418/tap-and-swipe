@@ -36,6 +36,10 @@ const BENEFITS = [
     desc: "From ideation to scaling — the entire process, step by step.",
   },
   {
+    title: "24/7 support via WhatsApp & Discord",
+    desc: "Got a question? Stuck on something? Message me anytime — I'm here whenever you need.",
+  },
+  {
     title: "Results guarantee",
     desc: "If you don't have a live MVP in 90 days, I keep working with you for free.",
   },
