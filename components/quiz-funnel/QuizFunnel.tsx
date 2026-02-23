@@ -36,8 +36,8 @@ const slideVariants = {
   }),
 };
 
-const TOTAL_STEPS_FULL = 11; // 9 questions + optin + buffer
-const TOTAL_STEPS_SKIP = 10; // 8 questions (skip Q3) + optin + buffer
+const TOTAL_STEPS_FULL = 10; // 8 questions + optin + buffer
+const TOTAL_STEPS_SKIP = 9; // 7 questions (skip Q3) + optin + buffer
 
 function trackEvent(type: string, sessionId: string, source?: string) {
   if (process.env.NODE_ENV === "development") return;

@@ -24,7 +24,7 @@ const BENEFITS = [
   },
   {
     title: "Complete video course",
-    desc: "From ideation to scaling — the entire process, step by step.",
+    desc: "From ideation to scaling, the entire process, step by step.",
   },
   {
     title: "Active Discord community",
@@ -32,7 +32,7 @@ const BENEFITS = [
   },
   {
     title: "24/7 support via WhatsApp & Discord",
-    desc: "Got a question? Stuck on something? Message me anytime — I'm here whenever you need.",
+    desc: "Got a question? Stuck on something? Message me anytime. I'm here whenever you need.",
   },
   {
     title: "Results guarantee",
@@ -82,7 +82,7 @@ export default function ResultDevIndie({
       </motion.div>
 
       {/* VSL */}
-      <motion.div {...fadeInUp} className="mb-12">
+      <motion.div {...fadeInUp} className="mb-20">
         <div className="aspect-video rounded-2xl overflow-hidden border border-white/5">
           <iframe
             src="https://www.youtube.com/embed/Zq37It_smAk"
@@ -95,25 +95,25 @@ export default function ResultDevIndie({
       </motion.div>
 
       {/* Explanation */}
-      <motion.div {...fadeInUp} className="mb-12">
-        <h2 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+      <motion.div {...fadeInUp} className="pt-20 mb-20">
+        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-4 text-center">
           Why this program is built for you
         </h2>
         <p className="text-[#c9c4bc] leading-relaxed mb-4">
           You&apos;re an ambitious developer who wants to build your own apps and make a living from them.
           The problem is that without structure and feedback, you end up spinning your wheels
-          for months — trial and error, wrong decisions, wasted time.
+          for months. Trial and error, wrong decisions, wasted time.
         </p>
         <p className="text-[#c9c4bc] leading-relaxed">
           The Indie Dev program gives you speed, confidence, and direct access to someone who&apos;s
-          done it. Weekly calls, code reviews, and a clear strategy — I&apos;m your co-pilot from
+          done it. Weekly calls, code reviews, and a clear strategy. I&apos;m your co-pilot from
           zero to a live, monetized app. And I stay until it works.
         </p>
       </motion.div>
 
       {/* Benefits */}
-      <motion.div {...fadeInUp} className="mb-12">
-        <h2 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-6">
+      <motion.div {...fadeInUp} className="pt-20 mb-20">
+        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-6 text-center">
           What you get with App Sprint
         </h2>
         <div className="space-y-4">
@@ -130,7 +130,7 @@ export default function ResultDevIndie({
       </motion.div>
 
       {/* CTA #1 */}
-      <motion.div {...fadeInUp} className="text-center mb-16">
+      <motion.div {...fadeInUp} className="text-center mb-24">
         <a
           href={calUrl}
           target="_blank"
@@ -144,16 +144,49 @@ export default function ResultDevIndie({
           <ExternalLink className="h-4 w-4 opacity-60" />
         </a>
         <p className="mt-3 text-sm text-[#c9c4bc]/60">
-          Limited spots — I only mentor 5 people at a time.
+          Limited spots. I only mentor 5 people at a time.
         </p>
       </motion.div>
 
+      {/* About Arthur */}
+      <motion.div {...fadeInUp} className="pt-20 mb-24">
+        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-4 text-center">
+          Who is Arthur?
+        </h2>
+        <div className="flex flex-col items-center text-center">
+          <img
+            src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
+            alt="Arthur"
+            className="h-20 w-20 rounded-full border border-white/10 mb-6"
+          />
+          <p className="text-lg text-[#c9c4bc] leading-relaxed max-w-2xl mb-4">
+            I built a profitable startup, created two apps with recurring revenue, and
+            shared every step publicly on YouTube. Building was fun, but somewhere along
+            the way, shipping alone started to feel empty.
+          </p>
+          <p className="text-lg text-[#c9c4bc] leading-relaxed max-w-2xl mb-6">
+            Then I started helping others launch their own apps. Watching someone go from
+            an idea to their first dollar changed everything for me. That&apos;s where
+            the meaning came back. Today, I&apos;ve helped 40+ people make their first
+            revenue as indie app founders. Honestly, their wins feel bigger than mine.
+          </p>
+          <p className="text-lg text-[#f1ebe2] font-medium leading-relaxed max-w-2xl">
+            This program exists because I wish someone had done the same for me.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-[#c9c4bc] mt-8">
+            <span>👥 40+ devs mentored</span>
+            <span>⭐ 5/5 satisfaction</span>
+            <span>📱 4 published apps</span>
+          </div>
+        </div>
+      </motion.div>
+
       {/* How it works - Timeline */}
-      <motion.div {...fadeInUp} className="mb-16">
-        <h2 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-8 text-center">
+      <motion.div {...fadeInUp} className="pt-20 mb-24">
+        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-8 text-center">
           How it works
         </h2>
-        <div className="space-y-6 relative">
+        <div className="space-y-6 relative max-w-md mx-auto">
           <div className="absolute left-[18px] top-2 bottom-2 w-px bg-white/10" />
           {TIMELINE.map((item, i) => (
             <div key={i} className="flex gap-4 relative">
@@ -172,39 +205,9 @@ export default function ResultDevIndie({
         </div>
       </motion.div>
 
-      {/* About Arthur */}
-      <motion.div {...fadeInUp} className="mb-16">
-        <h2 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-4 text-center">
-          Who is Arthur?
-        </h2>
-        <div className="flex flex-col items-center text-center">
-          <img
-            src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
-            alt="Arthur"
-            className="h-20 w-20 rounded-full border border-white/10 mb-4"
-          />
-          <p className="text-[#c9c4bc] leading-relaxed max-w-lg">
-            I&apos;m Arthur, an indie mobile developer. I build and monetize mobile apps with
-            Expo/React Native. I have 3 published apps generating recurring revenue, and
-            I share everything transparently on my YouTube channel (18K subscribers). My real
-            numbers, my mistakes, my strategies — everything is public. This program is
-            exactly the shortcut I wish I had when I started.
-          </p>
-        </div>
-      </motion.div>
-
-      {/* More social proof */}
-      <motion.div {...fadeInUp} className="mb-16 text-center">
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-[#c9c4bc]">
-          <span>👥 40+ devs mentored</span>
-          <span>⭐ 5/5 satisfaction</span>
-          <span>📱 3 published apps</span>
-        </div>
-      </motion.div>
-
       {/* Final CTA */}
-      <motion.div {...fadeInUp} className="text-center pb-12">
-        <h2 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+      <motion.div {...fadeInUp} className="pt-20 text-center pb-12">
+        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-4 text-center">
           All these results started with a simple 15-minute call.
         </h2>
         <p className="text-[#c9c4bc] mb-6 max-w-md mx-auto">

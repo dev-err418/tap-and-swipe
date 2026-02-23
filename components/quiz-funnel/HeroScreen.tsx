@@ -19,30 +19,24 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
         <span className="text-sm font-medium text-[#c9c4bc]">By ArthurBuildsStuff</span>
       </a>
 
-      <h1 className="text-5xl font-extrabold tracking-tight leading-[0.9] sm:text-7xl">
+      <h1 className="text-5xl font-extrabold tracking-tight leading-[1] sm:text-7xl">
         Launch a{" "}
         profitable app{" "}
-        <span className="relative inline-block text-[#f4cf8f]">
+        <span
+          className="text-[#f4cf8f] box-decoration-clone px-2 -mx-2"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`,
+            backgroundSize: "100% 100%",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
           without the guesswork
-          <svg
-            className="absolute -bottom-2 left-0 w-full"
-            viewBox="0 0 100 10"
-            preserveAspectRatio="none"
-          >
-            <path
-              d="M0 5 Q 50 10 100 5"
-              stroke="currentColor"
-              strokeWidth="2"
-              fill="none"
-              className="text-[#f4cf8f]/50"
-            />
-          </svg>
         </span>
       </h1>
 
       <p className="text-[#c9c4bc] text-lg sm:text-xl mt-4">
         Take this 2-minute quiz to discover what type of app creator you are
-        and get a personalized action plan to go from zero to a live, monetized app.
+        and get a personalized action plan to go from zero to a live, monetized and profitable app.
       </p>
 
       <div className="mt-10">
@@ -59,7 +53,7 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
       <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#c9c4bc]/70">
         <span>📊 100% personalized results</span>
         <span>👥 40+ devs already building with me</span>
-        <span>🚀 Your expert co-pilot from zero to launch</span>
+        <span>🚀 Your expert co-pilot from zero to launch to scale</span>
       </div>
     </div>
   );

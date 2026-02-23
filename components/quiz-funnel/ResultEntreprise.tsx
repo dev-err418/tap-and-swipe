@@ -16,7 +16,7 @@ const CAL_BASE = "https://cal.com/arthur-builds-stuff/app-sprint-application";
 const BENEFITS = [
   {
     title: "Production-ready boilerplate",
-    desc: "No need to hire a mobile dev. Payments, analytics, attribution — everything is wired up.",
+    desc: "No need to hire a mobile dev. Payments, analytics, attribution... everything is wired up.",
   },
   {
     title: "Weekly 1:1 calls with me",
@@ -32,11 +32,11 @@ const BENEFITS = [
   },
   {
     title: "Complete video course + boilerplate",
-    desc: "From ideation to scaling — the entire process, step by step.",
+    desc: "From ideation to scaling, the entire process, step by step.",
   },
   {
     title: "24/7 support via WhatsApp & Discord",
-    desc: "Got a question? Stuck on something? Message me anytime — I'm here whenever you need.",
+    desc: "Got a question? Stuck on something? Message me anytime. I'm here whenever you need.",
   },
   {
     title: "Results guarantee",
@@ -89,7 +89,7 @@ export default function ResultEntreprise({
       </motion.div>
 
       {/* VSL */}
-      <motion.div {...fadeInUp} className="mb-12">
+      <motion.div {...fadeInUp} className="mb-20">
         <div className="aspect-video rounded-2xl overflow-hidden border border-white/5">
           <iframe
             src="https://www.youtube.com/embed/Zq37It_smAk"
@@ -102,25 +102,25 @@ export default function ResultEntreprise({
       </motion.div>
 
       {/* Explanation */}
-      <motion.div {...fadeInUp} className="mb-12">
-        <h2 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+      <motion.div {...fadeInUp} className="pt-20 mb-20">
+        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-4 text-center">
           Why this program is built for you
         </h2>
         <p className="text-[#c9c4bc] leading-relaxed mb-4">
           You&apos;re an entrepreneur who wants to launch a mobile product for your business.
-          You need speed — skip the trial and error. Confidence — know you&apos;re doing it right
-          at every step. And access — having someone who&apos;s done it, right there with you.
+          You need speed, so you skip the trial and error. Confidence, so you know you&apos;re doing it right
+          at every step. And access to someone who&apos;s done it, right there with you.
         </p>
         <p className="text-[#c9c4bc] leading-relaxed">
           The Enterprise program is your expert co-pilot for 90 days. Business strategy,
-          technical execution, monetization — I&apos;m with you the whole way from zero to a
+          technical execution, monetization. I&apos;m with you the whole way from zero to a
           live, monetized app. And I stay until it works.
         </p>
       </motion.div>
 
       {/* Benefits */}
-      <motion.div {...fadeInUp} className="mb-12">
-        <h2 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-6">
+      <motion.div {...fadeInUp} className="pt-20 mb-20">
+        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-6 text-center">
           What you get with App Sprint
         </h2>
         <div className="space-y-4">
@@ -137,7 +137,7 @@ export default function ResultEntreprise({
       </motion.div>
 
       {/* CTA #1 */}
-      <motion.div {...fadeInUp} className="text-center mb-16">
+      <motion.div {...fadeInUp} className="text-center mb-24">
         <a
           href={calUrl}
           target="_blank"
@@ -155,12 +155,47 @@ export default function ResultEntreprise({
         </p>
       </motion.div>
 
+      {/* About Arthur */}
+      <motion.div {...fadeInUp} className="pt-20 mb-24">
+        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-4 text-center">
+          Who is Arthur?
+        </h2>
+        <div className="flex flex-col items-center text-center">
+          <img
+            src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
+            alt="Arthur"
+            className="h-20 w-20 rounded-full border border-white/10 mb-6"
+          />
+          <p className="text-lg text-[#c9c4bc] leading-relaxed max-w-2xl mb-4">
+            I built and scaled a profitable startup, created two apps with recurring
+            revenue, and shared every step publicly on YouTube. Building was fun, but
+            somewhere along the way, shipping alone started to feel empty.
+          </p>
+          <p className="text-lg text-[#c9c4bc] leading-relaxed max-w-2xl mb-6">
+            Then I started helping entrepreneurs launch their own mobile products. Watching
+            someone go from an idea to a live, revenue-generating app changed everything
+            for me. That&apos;s where the meaning came back. Today, I&apos;ve helped 40+
+            people make their first revenue as app founders. Honestly, their wins
+            feel bigger than mine.
+          </p>
+          <p className="text-lg text-[#f1ebe2] font-medium leading-relaxed max-w-2xl">
+            This program exists because I wish someone had done the same for me.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-[#c9c4bc] mt-8">
+            <span>🏢 Startups mentored</span>
+            <span>⭐ 5/5 satisfaction</span>
+            <span>⚡ 90 days to launch</span>
+            <span>💰 Fast ROI</span>
+          </div>
+        </div>
+      </motion.div>
+
       {/* How it works - Timeline */}
-      <motion.div {...fadeInUp} className="mb-16">
-        <h2 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-8 text-center">
+      <motion.div {...fadeInUp} className="pt-20 mb-24">
+        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-8 text-center">
           The program in 4 phases
         </h2>
-        <div className="space-y-6 relative">
+        <div className="space-y-6 relative max-w-md mx-auto">
           <div className="absolute left-[18px] top-2 bottom-2 w-px bg-white/10" />
           {TIMELINE.map((item, i) => (
             <div key={i} className="flex gap-4 relative">
@@ -179,38 +214,9 @@ export default function ResultEntreprise({
         </div>
       </motion.div>
 
-      {/* About Arthur */}
-      <motion.div {...fadeInUp} className="mb-16">
-        <h2 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-4 text-center">
-          Who is Arthur?
-        </h2>
-        <div className="flex flex-col items-center text-center">
-          <img
-            src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
-            alt="Arthur"
-            className="h-20 w-20 rounded-full border border-white/10 mb-4"
-          />
-          <p className="text-[#c9c4bc] leading-relaxed max-w-lg">
-            Indie mobile developer with 3 published apps.
-            Creator of the YouTube channel ArthurBuildsStuff (40+ devs mentored).
-            I help entrepreneurs launch profitable mobile products, fast.
-          </p>
-        </div>
-      </motion.div>
-
-      {/* More social proof */}
-      <motion.div {...fadeInUp} className="mb-16 text-center">
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-[#c9c4bc]">
-          <span>🏢 Startups mentored</span>
-          <span>⭐ 5/5 satisfaction</span>
-          <span>⚡ 90 days to launch</span>
-          <span>💰 Fast ROI</span>
-        </div>
-      </motion.div>
-
       {/* Final CTA */}
-      <motion.div {...fadeInUp} className="text-center pb-12">
-        <h2 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+      <motion.div {...fadeInUp} className="pt-20 text-center pb-12">
+        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-4 text-center">
           Ready to launch your mobile product?
         </h2>
         <p className="text-[#c9c4bc] mb-6 max-w-md mx-auto">

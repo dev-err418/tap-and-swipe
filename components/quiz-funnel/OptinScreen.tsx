@@ -80,7 +80,7 @@ export default function OptinScreen({
 
   return (
     <div className="flex flex-col items-center text-center max-w-lg mx-auto w-full">
-      <h2 className="text-4xl font-extrabold tracking-tight leading-tight sm:text-5xl mb-3">
+      <h2 className="text-4xl font-extrabold tracking-tight leading-tight sm:text-5xl mb-3 w-[120%]">
         Last step before getting your personalized action plan 👇
       </h2>
 
@@ -140,7 +140,7 @@ export default function OptinScreen({
           type="submit"
           disabled={loading}
           data-fast-goal="quiz_optin_submit"
-          className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-4"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />

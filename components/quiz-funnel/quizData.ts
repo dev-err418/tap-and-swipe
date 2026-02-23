@@ -9,7 +9,6 @@ export type QuizStep =
   | "q6"
   | "q7"
   | "q8"
-  | "q9"
   | "optin"
   | "waiting"
   | "result-dev-indie"
@@ -23,8 +22,7 @@ export type QuestionKey =
   | "q5"
   | "q6"
   | "q7"
-  | "q8"
-  | "q9";
+  | "q8";
 
 export interface AnswerOption {
   emoji: string;
@@ -47,7 +45,6 @@ export const questionOrder: QuestionKey[] = [
   "q6",
   "q7",
   "q8",
-  "q9",
 ];
 
 // ─── Questions ──────────────────────────────────────────────────────
@@ -130,17 +127,6 @@ export const questions: Record<QuestionKey, QuestionConfig> = {
       { emoji: "💎", label: "Yes, if it's the right program, I'm ready to invest" },
       { emoji: "🤔", label: "Maybe — depends on the format and price" },
       { emoji: "🆓", label: "No, I prefer learning on my own for now" },
-    ],
-  },
-  q9: {
-    title: "How did you discover Arthur / Arthur Builds Stuff?",
-    subtitle: "",
-    answers: [
-      { emoji: "📺", label: "YouTube" },
-      { emoji: "📸", label: "Instagram" },
-      { emoji: "🗣️", label: "Word of mouth / referral" },
-      { emoji: "🔍", label: "Google search" },
-      { emoji: "🌐", label: "Other" },
     ],
   },
 };
