@@ -87,10 +87,16 @@ export default function ResultEntreprise({
         </p>
       </motion.div>
 
-      {/* VSL Placeholder */}
+      {/* VSL */}
       <motion.div {...fadeInUp} className="mb-12">
-        <div className="aspect-video bg-[#3a3735] rounded-2xl flex items-center justify-center border border-white/5">
-          <span className="text-[#c9c4bc]/50 text-sm">Presentation video</span>
+        <div className="aspect-video rounded-2xl overflow-hidden border border-white/5">
+          <iframe
+            src="https://www.youtube.com/embed/Zq37It_smAk"
+            title="Presentation video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full"
+          />
         </div>
       </motion.div>
 
