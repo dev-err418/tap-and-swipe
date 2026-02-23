@@ -137,7 +137,10 @@ export default function ResultEntreprise({
           href={calUrl}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={onBookingClick}
+          onClick={() => {
+            if (leadId) localStorage.setItem("quiz_lead_id", leadId);
+            onBookingClick?.();
+          }}
           data-fast-goal="quiz_result_entreprise_cta"
           className="group inline-flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
         >

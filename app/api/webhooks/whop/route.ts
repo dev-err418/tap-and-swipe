@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Whop from "@whop/sdk";
 import { prisma } from "@/lib/prisma";
-import { addRole, removeRole } from "@/lib/discord";
+import { addRole } from "@/lib/discord";
 
 const whopsdk = new Whop({
   apiKey: process.env.WHOP_API_KEY,
@@ -117,42 +117,11 @@ export async function POST(request: NextRequest) {
       }
 
       case "membership.deactivated": {
-        if (!discord) {
-          console.warn(
-            `[whop] membership.deactivated — no Discord ID found, skipping. membership=${data.id}`
-          );
-          break;
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { discordId: discord.id },
-        });
-
-        if (!user) {
-          console.warn(
-            `[whop] membership.deactivated — user not found for discordId=${discord.id}`
-          );
-          break;
-        }
-
-        // If the user paid via Stripe/Paddle, Whop doesn't control their access
-        if (user.paymentProvider && user.paymentProvider !== "whop") {
-          console.log(
-            `[whop] membership.deactivated — skipping revocation, user pays via ${user.paymentProvider} (discordId=${discord.id})`
-          );
-          break;
-        }
-
-        await prisma.user.update({
-          where: { discordId: discord.id },
-          data: {
-            subscriptionStatus: "canceled",
-            roleGranted: false,
-          },
-        });
-        await removeRole(discord.id);
+        // Never revoke access from Whop deactivation — Whop can fire this
+        // for old membership cycles while the user still has an active one.
+        // Access is managed manually or via Stripe/Paddle webhooks only.
         console.log(
-          `[whop] membership.deactivated — discordId=${discord.id} role removed`
+          `[whop] membership.deactivated — ignored (no auto-revocation from Whop). membership=${data.id} discordId=${discord?.id ?? "unknown"}`
         );
         break;
       }

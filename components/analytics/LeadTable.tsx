@@ -11,12 +11,23 @@ interface Lead {
   phone: string;
   countryCode: string;
   profileType: string;
+  status: string;
   answers: Record<string, number> | null;
   source: string | null;
   country: string | null;
   city: string | null;
   createdAt: string;
 }
+
+const STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
+  new: { label: "New", classes: "bg-white/10 text-[#c9c4bc]" },
+  abandoned: { label: "Abandoned", classes: "bg-red-500/10 text-red-400" },
+  booked: { label: "Booked", classes: "bg-green-500/10 text-green-400" },
+  whatsapp_sent: { label: "WA Sent", classes: "bg-blue-500/10 text-blue-400" },
+  got_answered: { label: "Answered", classes: "bg-purple-500/10 text-purple-400" },
+  show: { label: "Show", classes: "bg-[#f4cf8f]/10 text-[#f4cf8f]" },
+  no_show: { label: "No Show", classes: "bg-red-500/10 text-red-400" },
+};
 
 function getAnswerLabel(questionKey: string, answerIndex: number): string {
   const q = questions[questionKey as QuestionKey];
@@ -44,6 +55,18 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
     }
   }
 
+  async function handleStatusChange(id: string, status: string) {
+    const res = await fetch(`/api/quiz-lead/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) {
+      setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)));
+      if (selected?.id === id) setSelected((s) => s && { ...s, status });
+    }
+  }
+
   return (
     <>
       <div className="overflow-x-auto rounded-2xl border border-white/10">
@@ -55,49 +78,60 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Email</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Phone</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Profile</th>
+              <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Status</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Location</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Source</th>
             </tr>
           </thead>
           <tbody>
-            {leads.map((lead) => (
-              <tr
-                key={lead.id}
-                onClick={() => setSelected(lead)}
-                className="border-b border-white/5 hover:bg-white/5 cursor-pointer"
-              >
-                <td className="px-4 py-3 whitespace-nowrap text-[#c9c4bc]">
-                  {new Date(lead.createdAt).toLocaleDateString("en-US")}{" "}
-                  {new Date(lead.createdAt).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </td>
-                <td className="px-4 py-3">{lead.firstName}</td>
-                <td className="px-4 py-3 text-[#c9c4bc]">{lead.email}</td>
-                <td className="px-4 py-3 text-[#c9c4bc]">
-                  {lead.countryCode} {lead.phone}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                      lead.profileType === "entreprise"
-                        ? "bg-blue-500/10 text-blue-400"
-                        : "bg-[#f4cf8f]/10 text-[#f4cf8f]"
-                    }`}
-                  >
-                    {lead.profileType}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-[#c9c4bc] text-xs">
-                  {[lead.city, lead.country].filter(Boolean).join(", ") || "\u2014"}
-                </td>
-                <td className="px-4 py-3 text-[#c9c4bc]">{lead.source || "\u2014"}</td>
-              </tr>
-            ))}
+            {leads.map((lead) => {
+              const sc = STATUS_CONFIG[lead.status] || STATUS_CONFIG.new;
+              return (
+                <tr
+                  key={lead.id}
+                  onClick={() => setSelected(lead)}
+                  className="border-b border-white/5 hover:bg-white/5 cursor-pointer"
+                >
+                  <td className="px-4 py-3 whitespace-nowrap text-[#c9c4bc]">
+                    {new Date(lead.createdAt).toLocaleDateString("en-US")}{" "}
+                    {new Date(lead.createdAt).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </td>
+                  <td className="px-4 py-3">{lead.firstName}</td>
+                  <td className="px-4 py-3 text-[#c9c4bc]">{lead.email}</td>
+                  <td className="px-4 py-3 text-[#c9c4bc]">
+                    {lead.countryCode} {lead.phone}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                        lead.profileType === "entreprise"
+                          ? "bg-blue-500/10 text-blue-400"
+                          : "bg-[#f4cf8f]/10 text-[#f4cf8f]"
+                      }`}
+                    >
+                      {lead.profileType}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${sc.classes}`}
+                    >
+                      {sc.label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-[#c9c4bc] text-xs">
+                    {[lead.city, lead.country].filter(Boolean).join(", ") || "\u2014"}
+                  </td>
+                  <td className="px-4 py-3 text-[#c9c4bc]">{lead.source || "\u2014"}</td>
+                </tr>
+              );
+            })}
             {leads.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-[#c9c4bc]">
+                <td colSpan={8} className="px-4 py-8 text-center text-[#c9c4bc]">
                   No leads yet
                 </td>
               </tr>
@@ -148,6 +182,20 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
                 >
                   {selected.profileType}
                 </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[#c9c4bc]">Status</span>
+                <select
+                  value={selected.status}
+                  onChange={(e) => handleStatusChange(selected.id, e.target.value)}
+                  className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-[#f1ebe2] outline-none focus:border-[#f4cf8f]/50 cursor-pointer"
+                >
+                  {Object.entries(STATUS_CONFIG).map(([value, { label }]) => (
+                    <option key={value} value={value} className="bg-[#2a2725]">
+                      {label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#c9c4bc]">Location</span>

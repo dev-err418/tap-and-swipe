@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import PhoneInput from "./PhoneInput";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,8 +39,8 @@ export default function OptinScreen({
       return;
     }
     const phoneDigits = phone.replace(/\D/g, "");
-    if (phoneDigits.length < 7 || phoneDigits.length > 15) {
-      setError("Please enter a valid phone number (7-15 digits)");
+    if (!isValidPhoneNumber(countryCode + phoneDigits)) {
+      setError("Please enter a valid phone number");
       return;
     }
     if (!consent) {
@@ -56,7 +57,7 @@ export default function OptinScreen({
         body: JSON.stringify({
           firstName: firstName.trim(),
           email: email.trim(),
-          phone: phone.trim(),
+          phone: phone.replace(/\D/g, ""),
           countryCode,
           profileType,
           answers,
