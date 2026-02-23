@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
 import QuizFunnel from "@/components/quiz-funnel/QuizFunnel";
 
@@ -29,10 +30,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AppSprintQuizPage() {
+export default async function AppSprintQuizPage() {
+  const h = await headers();
+  const referer = h.get("referer") || "";
+  let serverReferrer: string | undefined;
+  if (referer) {
+    try {
+      serverReferrer = new URL(referer).hostname;
+    } catch {
+      // invalid URL
+    }
+  }
+
   return (
     <Suspense>
-      <QuizFunnel />
+      <QuizFunnel serverReferrer={serverReferrer} />
     </Suspense>
   );
 }

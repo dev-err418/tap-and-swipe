@@ -161,6 +161,10 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
                 <span className="text-[#c9c4bc]">Date</span>
                 <span>{new Date(selected.createdAt).toLocaleString("en-US")}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-[#c9c4bc]">Lead ID (Cal.com)</span>
+                <span className="font-mono text-xs">{selected.id}</span>
+              </div>
             </div>
 
             {/* Answers */}

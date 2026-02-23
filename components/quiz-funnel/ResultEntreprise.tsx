@@ -40,7 +40,7 @@ const BENEFITS = [
   },
   {
     title: "Results guarantee",
-    desc: "If you don't have a live MVP in 90 days, I keep working with you for free.",
+    desc: "If your app isn't live and generating revenue, I keep working with you until it is.",
   },
 ];
 
@@ -82,8 +82,9 @@ export default function ResultEntreprise({
 
         <p className="text-[#c9c4bc] text-lg leading-relaxed max-w-xl mx-auto">
           You already have a running business. A mobile app is the obvious growth lever,
-          but you don&apos;t want to waste 6 months and $20K with an agency. You want to move fast,
-          do it right, and stay in control. Your main blocker: {blocker}.
+          but you don&apos;t want to burn €20K on an agency or waste 6 months figuring it out alone.
+          You want to launch fast, launch right, and stay in control. Your main blocker: {blocker}.
+          That&apos;s exactly why you need an expert co-pilot by your side the whole way.
         </p>
       </motion.div>
 
@@ -107,13 +108,13 @@ export default function ResultEntreprise({
         </h2>
         <p className="text-[#c9c4bc] leading-relaxed mb-4">
           You&apos;re an entrepreneur who wants to launch a mobile product for your business.
-          You need to move fast, make the right technical choices from day one,
-          and have a clear monetization strategy.
+          You need speed — skip the trial and error. Confidence — know you&apos;re doing it right
+          at every step. And access — having someone who&apos;s done it, right there with you.
         </p>
         <p className="text-[#c9c4bc] leading-relaxed">
-          The Enterprise program is an intensive 3-month mentorship with
-          a business focus: ROI, speed of execution, and scaling. We build
-          a profitable product together in 90 days.
+          The Enterprise program is your expert co-pilot for 90 days. Business strategy,
+          technical execution, monetization — I&apos;m with you the whole way from zero to a
+          live, monetized app. And I stay until it works.
         </p>
       </motion.div>
 

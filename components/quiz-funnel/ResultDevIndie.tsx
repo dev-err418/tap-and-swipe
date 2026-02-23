@@ -36,7 +36,7 @@ const BENEFITS = [
   },
   {
     title: "Results guarantee",
-    desc: "If you don't reach $3,000/month in 6 months, I keep working with you for free until you do.",
+    desc: "If your app isn't live and generating revenue, I keep working with you until it is.",
   },
 ];
 
@@ -74,10 +74,10 @@ export default function ResultDevIndie({
 
         <p className="text-[#c9c4bc] text-lg leading-relaxed max-w-xl mx-auto">
           All your answers have been taken into account. You have the technical foundation but
-          you&apos;re missing a structured framework to turn your skills into recurring revenue.
-          Your main blocker: {blocker}. The good news: this is exactly the kind of
-          situation where structured mentorship makes the difference between a side project that
-          stalls and an app that generates $3,000/month.
+          you&apos;re missing a structured framework to launch the right way without wasting months
+          figuring it out alone. Your main blocker: {blocker}. The good news: this is exactly
+          where having an expert co-pilot makes the difference between a side project that stalls
+          and an app that&apos;s live and generating revenue.
         </p>
       </motion.div>
 
@@ -102,11 +102,12 @@ export default function ResultDevIndie({
         <p className="text-[#c9c4bc] leading-relaxed mb-4">
           You&apos;re an ambitious developer who wants to build your own apps and make a living from them.
           The problem is that without structure and feedback, you end up spinning your wheels
-          for months.
+          for months — trial and error, wrong decisions, wasted time.
         </p>
         <p className="text-[#c9c4bc] leading-relaxed">
-          The Indie Dev program is a 6-month mentorship with weekly calls,
-          code reviews, and a clear strategy to go from idea to MRR. We work together, every week.
+          The Indie Dev program gives you speed, confidence, and direct access to someone who&apos;s
+          done it. Weekly calls, code reviews, and a clear strategy — I&apos;m your co-pilot from
+          zero to a live, monetized app. And I stay until it works.
         </p>
       </motion.div>
 

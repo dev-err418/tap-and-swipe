@@ -40,6 +40,7 @@ const TOTAL_STEPS_FULL = 11; // 9 questions + optin + buffer
 const TOTAL_STEPS_SKIP = 10; // 8 questions (skip Q3) + optin + buffer
 
 function trackEvent(type: string, sessionId: string, source?: string) {
+  if (process.env.NODE_ENV === "development") return;
   fetch("/api/quiz-event", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -47,7 +48,7 @@ function trackEvent(type: string, sessionId: string, source?: string) {
   }).catch(() => {});
 }
 
-export default function QuizFunnel() {
+export default function QuizFunnel({ serverReferrer }: { serverReferrer?: string }) {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<QuizStep>("hero");
   const [direction, setDirection] = useState(1);
@@ -67,18 +68,24 @@ export default function QuizFunnel() {
       searchParams.get("source");
     if (utm) {
       sourceRef.current = utm;
-    } else if (document.referrer) {
-      try {
-        const host = new URL(document.referrer).hostname;
-        if (host && host !== window.location.hostname) {
-          sourceRef.current = host;
+    } else {
+      // Try client-side referrer first, fall back to server-side header
+      let host: string | undefined;
+      if (document.referrer) {
+        try {
+          host = new URL(document.referrer).hostname;
+        } catch {
+          // invalid referrer URL
         }
-      } catch {
-        // invalid referrer URL — ignore
+      }
+      if (host && host !== window.location.hostname) {
+        sourceRef.current = host;
+      } else if (serverReferrer && serverReferrer !== window.location.hostname) {
+        sourceRef.current = serverReferrer;
       }
     }
     trackEvent("page_view", sessionIdRef.current, sourceRef.current);
-  }, [searchParams]);
+  }, [searchParams, serverReferrer]);
 
   // Debug: ?step=waiting or ?step=result-dev-indie or ?step=result-entreprise
   useEffect(() => {

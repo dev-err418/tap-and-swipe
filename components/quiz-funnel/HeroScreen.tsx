@@ -20,11 +20,10 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
       </a>
 
       <h1 className="text-5xl font-extrabold tracking-tight leading-[0.9] sm:text-7xl">
-        Get your{" "}
-        action plan{" "}
-        to reach{" "}
+        Launch a{" "}
+        profitable app{" "}
         <span className="relative inline-block text-[#f4cf8f]">
-          $3K MRR
+          without the guesswork
           <svg
             className="absolute -bottom-2 left-0 w-full"
             viewBox="0 0 100 10"
@@ -43,7 +42,7 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
 
       <p className="text-[#c9c4bc] text-lg sm:text-xl mt-4">
         Take this 2-minute quiz to discover what type of app creator you are
-        and get a step-by-step plan to hit $3,000/month in recurring revenue.
+        and get a personalized action plan to go from zero to a live, monetized app.
       </p>
 
       <div className="mt-10">
@@ -60,7 +59,7 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
       <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#c9c4bc]/70">
         <span>📊 100% personalized results</span>
         <span>👥 40+ devs already building with me</span>
-        <span>📱 3 published & profitable apps</span>
+        <span>🚀 Your expert co-pilot from zero to launch</span>
       </div>
     </div>
   );
