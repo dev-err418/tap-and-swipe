@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Calendar, ExternalLink, CheckCircle, Sparkles } from "lucide-react";
+import { Calendar, ExternalLink, CheckCircle } from "lucide-react";
 import { getBlockageLabel } from "./quizData";
 
 const fadeInUp = {
@@ -45,10 +45,10 @@ const BENEFITS = [
 ];
 
 const TIMELINE = [
-  { step: "Week 1-2", title: "Audit & Strategy", desc: "We analyze your market, your competition, and define the perfect MVP." },
-  { step: "Week 3-4", title: "Architecture & Development", desc: "We build the technical foundations with an architecture that scales." },
-  { step: "Week 5-8", title: "MVP & Validation", desc: "We launch the MVP, validate with real users, and iterate." },
-  { step: "Week 9-12", title: "Monetization & Launch", desc: "We implement monetization, onboarding, and officially launch." },
+  { step: "Week 1", title: "Audit & Strategy", desc: "We analyze your market, your competition, and define the perfect MVP." },
+  { step: "Week 2-5", title: "Architecture & Development", desc: "We build the technical foundations with an architecture that scales." },
+  { step: "Week 6", title: "MVP & Validation", desc: "We launch the MVP, validate with real users, and iterate." },
+  { step: "Week 7-12", title: "Monetization & Launch", desc: "We implement monetization, onboarding, and officially launch." },
 ];
 
 
@@ -71,11 +71,6 @@ export default function ResultEntreprise({
     <div className="max-w-3xl mx-auto">
       {/* Header */}
       <motion.div {...fadeInUp} className="text-center mb-12">
-        <span className="inline-flex items-center gap-2 rounded-full border border-[#f4cf8f]/20 bg-[#f4cf8f]/5 px-4 py-1.5 text-sm font-medium text-[#f4cf8f] mb-6">
-          <Sparkles className="h-3.5 w-3.5" />
-          Entrepreneur Ready to Scale
-        </span>
-
         <h1 className="font-serif text-4xl font-bold tracking-tight leading-tight sm:text-5xl mb-4">
           Congratulations {displayName}!
         </h1>
@@ -181,12 +176,7 @@ export default function ResultEntreprise({
           <p className="text-lg text-[#f1ebe2] font-medium leading-relaxed max-w-2xl">
             This program exists because I wish someone had done the same for me.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-[#c9c4bc] mt-8">
-            <span>🏢 Startups mentored</span>
-            <span>⭐ 5/5 satisfaction</span>
-            <span>⚡ 90 days to launch</span>
-            <span>💰 Fast ROI</span>
-          </div>
+
         </div>
       </motion.div>
 

@@ -173,11 +173,7 @@ export default function ResultDevIndie({
           <p className="text-lg text-[#f1ebe2] font-medium leading-relaxed max-w-2xl">
             This program exists because I wish someone had done the same for me.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-[#c9c4bc] mt-8">
-            <span>👥 40+ devs mentored</span>
-            <span>⭐ 5/5 satisfaction</span>
-            <span>📱 4 published apps</span>
-          </div>
+
         </div>
       </motion.div>
 
