@@ -13,7 +13,7 @@ export default function OptinScreen({
 }: {
   answers: Record<string, number>;
   profileType: "dev-indie" | "entreprise";
-  onSuccess: (firstName: string) => void;
+  onSuccess: (firstName: string, leadId: string) => void;
 }) {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
@@ -61,14 +61,14 @@ export default function OptinScreen({
         }),
       });
 
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         setError(data.error || "Something went wrong");
         setLoading(false);
         return;
       }
 
-      onSuccess(firstName.trim());
+      onSuccess(firstName.trim(), data.id);
     } catch {
       setError("Something went wrong, please try again");
       setLoading(false);

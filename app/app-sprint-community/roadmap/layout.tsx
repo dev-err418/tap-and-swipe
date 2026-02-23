@@ -37,7 +37,7 @@ export default async function RoadmapLayout({
   }
 
   if (!user || (user.subscriptionStatus !== "active" && !isWhitelisted)) {
-    redirect("/app-sprint?error=not_subscribed");
+    redirect("/app-sprint-community?error=not_subscribed");
   }
 
   // Count global progress for header (exclude weekly-calls replays)

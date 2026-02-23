@@ -6,7 +6,7 @@ const SESSION_COOKIE = "discord_session";
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  const redirectPath = request.nextUrl.pathname.replace("/app-sprint/", "");
+  const redirectPath = request.nextUrl.pathname.replace("/app-sprint-community/", "");
 
   if (!token) {
     return NextResponse.redirect(
@@ -25,5 +25,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/app-sprint/roadmap/:path*",
+  matcher: "/app-sprint-community/roadmap/:path*",
 };

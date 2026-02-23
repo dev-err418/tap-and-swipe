@@ -5,7 +5,7 @@ export default function ReviewsJsonLd() {
     name: "App Sprint",
     description:
       "A complete program to build and launch your own mobile app in weeks, not months.",
-    url: "https://tap-and-swipe.com/app-sprint",
+    url: "https://tap-and-swipe.com/app-sprint-community",
     brand: {
       "@type": "Brand",
       name: "Tap & Swipe",

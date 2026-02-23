@@ -41,7 +41,7 @@ export default function RoadmapHeader({
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/app-sprint");
+    router.push("/app-sprint-community");
   }
 
   return (

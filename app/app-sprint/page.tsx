@@ -1,51 +1,38 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import LandingPage from "@/components/LandingPage";
-import AppSprintJsonLd from "@/components/AppSprintJsonLd";
-import FaqJsonLd from "@/components/FaqJsonLd";
-import ReviewsJsonLd from "@/components/ReviewsJsonLd";
+import QuizFunnel from "@/components/quiz-funnel/QuizFunnel";
 
 export const metadata: Metadata = {
-  title: "App Sprint — Build a Mobile App in Weeks, Not Months",
+  title: "App Sprint — Discover Your Personalized Action Plan",
   description:
-    "Join the 6-week App Sprint program to build and launch your own mobile app with Expo, React Native, and AI. 51+ makers, weekly group calls, 5/5 rating. €117/mo.",
+    "Answer 10 questions to get your personalized action plan and launch your mobile app. 1:1 mentorship with Arthur — coaching, code review, and strategy.",
   keywords: [
+    "mobile app mentorship",
+    "developer coaching",
+    "launch an app",
     "app sprint",
+    "mobile development mentorship",
     "build a mobile app",
-    "mobile app course",
-    "expo react native course",
-    "app development program",
-    "indie app maker",
-    "launch mobile app",
-    "learn to build apps",
-    "mobile app builder course",
-    "app building community",
   ],
   openGraph: {
-    title: "App Sprint — Build a Mobile App in Weeks, Not Months",
+    title: "App Sprint — Discover Your Personalized Action Plan",
     description:
-      "Join the 6-week App Sprint program to build and launch your own mobile app with Expo, React Native, and AI. 51+ makers, weekly group calls, 5/5 rating.",
+      "Answer 10 questions to get your personalized action plan and launch your mobile app.",
   },
   twitter: {
-    title: "App Sprint — Build a Mobile App in Weeks, Not Months",
+    title: "App Sprint — Discover Your Personalized Action Plan",
     description:
-      "Join the 6-week App Sprint program to build and launch your own mobile app with Expo, React Native, and AI. 51+ makers, weekly group calls, 5/5 rating.",
+      "Answer 10 questions to get your personalized action plan and launch your mobile app.",
   },
   alternates: {
     canonical: "/app-sprint",
   },
 };
 
-export default function AppSprintPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ status?: string }>;
-}) {
+export default function AppSprintQuizPage() {
   return (
-    <>
-      <AppSprintJsonLd />
-      <FaqJsonLd />
-      <ReviewsJsonLd />
-      <LandingPage searchParams={searchParams} />
-    </>
+    <Suspense>
+      <QuizFunnel />
+    </Suspense>
   );
 }

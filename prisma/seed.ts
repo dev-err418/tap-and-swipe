@@ -362,12 +362,14 @@ Both must show your target country. If either is wrong, fix your connection firs
 
 This must happen BEFORE TikTok touches your device. If you install first, TikTok already fingerprinted your real location.
 
-1. Remove your SIM card (or use a device without one). TikTok uses carrier info to detect your real country.
-2. Set your device region to match your target country (Settings > General > Language & Region).
-3. Set your timezone to match your target location. If targeting US, use Eastern Time or Pacific Time. TikTok weighs posting timing and engagement timing against your timezone.
-4. Set language to English (or your target country's language).
-5. Connect your proxy/VPN and verify ASN + GEO are correct using the tools above.
-6. Only then download TikTok. The app must be installed while your connection is already clean.
+1. Factory reset your phone (Settings > General > Transfer or Reset iPhone > Erase All Content and Settings). You need a completely blank device with no previous location data.
+2. Create a brand new iCloud account during setup. Don't sign in with your existing one — Apple ties location history to your iCloud account.
+3. Remove your SIM card (or use a device without one). TikTok uses carrier info to detect your real country.
+4. Set your device region to match your target country (Settings > General > Language & Region).
+5. Set your timezone to match your target location. If targeting US, use Eastern Time or Pacific Time. TikTok weighs posting timing and engagement timing against your timezone.
+6. Set language to English (or your target country's language).
+7. Connect your proxy/VPN and verify ASN + GEO are correct using the tools above.
+8. Only then download TikTok. The app must be installed while your connection is already clean.
 
 ---
 

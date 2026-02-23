@@ -11,8 +11,7 @@ const fadeInUp = {
   transition: { duration: 0.5 },
 };
 
-const CAL_URL =
-  "https://cal.com/arthur-builds-stuff/app-sprint-discovery";
+const CAL_BASE = "https://cal.com/arthur-builds-stuff/app-sprint-application";
 
 const BENEFITS = [
   {
@@ -53,13 +52,16 @@ const TIMELINE = [
 export default function ResultDevIndie({
   firstName,
   answers,
+  leadId,
   onBookingClick,
 }: {
   firstName: string;
   answers: Record<string, number>;
+  leadId?: string;
   onBookingClick?: () => void;
 }) {
   const blocker = getBlockageLabel(answers.q4 ?? 0);
+  const calUrl = leadId ? `${CAL_BASE}?utm_notes=${leadId}` : CAL_BASE;
   const displayName = firstName || "you";
 
   return (
@@ -123,7 +125,7 @@ export default function ResultDevIndie({
       {/* CTA #1 */}
       <motion.div {...fadeInUp} className="text-center mb-16">
         <a
-          href={CAL_URL}
+          href={calUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={onBookingClick}
@@ -131,7 +133,7 @@ export default function ResultDevIndie({
           className="group inline-flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
         >
           <Calendar className="h-4 w-4" />
-          Book your free discovery call (15 min)
+          Book your free call (30 min)
           <ExternalLink className="h-4 w-4 opacity-60" />
         </a>
         <p className="mt-3 text-sm text-[#c9c4bc]/60">
@@ -202,14 +204,14 @@ export default function ResultDevIndie({
           Book your slot now and let&apos;s talk about your project.
         </p>
         <a
-          href={CAL_URL}
+          href={calUrl}
           target="_blank"
           rel="noopener noreferrer"
           data-fast-goal="quiz_result_dev_indie_cta_final"
           className="group inline-flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
         >
           <Calendar className="h-4 w-4" />
-          Book your free discovery call
+          Book your free call
           <ExternalLink className="h-4 w-4 opacity-60" />
         </a>
       </motion.div>

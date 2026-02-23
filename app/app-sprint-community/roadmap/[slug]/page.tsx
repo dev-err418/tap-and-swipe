@@ -55,7 +55,7 @@ export default async function CategoryPage({
   return (
     <div className="pt-8">
       <Link
-        href="/app-sprint/roadmap"
+        href="/app-sprint-community/roadmap"
         className="inline-flex items-center gap-2 text-sm text-[#c9c4bc] hover:text-[#f1ebe2] transition-colors mb-8"
       >
         <ArrowLeft className="h-4 w-4" />

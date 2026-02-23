@@ -10,7 +10,7 @@ export async function GET() {
   const session = await getSession();
 
   if (!session) {
-    return NextResponse.redirect(`${APP_URL}/app-sprint?error=session_expired`);
+    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=session_expired`);
   }
 
   try {
@@ -59,8 +59,8 @@ export async function GET() {
       subscription_data: {
         metadata: { discordId: session.discordId },
       },
-      success_url: `${APP_URL}/app-sprint?status=success`,
-      cancel_url: `${APP_URL}/app-sprint?status=canceled`,
+      success_url: `${APP_URL}/app-sprint-community?status=success`,
+      cancel_url: `${APP_URL}/app-sprint-community?status=canceled`,
     });
 
     // Fire DataFast goal for Stripe checkout shown
@@ -83,6 +83,6 @@ export async function GET() {
     return NextResponse.redirect(checkoutSession.url!);
   } catch (err) {
     console.error("Checkout error:", err);
-    return NextResponse.redirect(`${APP_URL}/app-sprint?error=checkout_failed`);
+    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=checkout_failed`);
   }
 }

@@ -9,7 +9,7 @@ export async function GET() {
   const session = await getSession();
 
   if (!session) {
-    return NextResponse.redirect(`${APP_URL}/app-sprint?error=session_expired`);
+    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=session_expired`);
   }
 
   try {
@@ -25,7 +25,7 @@ export async function GET() {
         discordId: session.discordId,
       },
       checkout: {
-        url: `${APP_URL}/app-sprint?status=success`,
+        url: `${APP_URL}/app-sprint-community?status=success`,
       },
     });
 
@@ -54,7 +54,7 @@ export async function GET() {
     if (!checkoutUrl) {
       console.error("Paddle transaction created but no checkout URL returned");
       return NextResponse.redirect(
-        `${APP_URL}/app-sprint?error=checkout_failed`
+        `${APP_URL}/app-sprint-community?error=checkout_failed`
       );
     }
 
@@ -62,7 +62,7 @@ export async function GET() {
   } catch (err) {
     console.error("Paddle checkout error:", err);
     return NextResponse.redirect(
-      `${APP_URL}/app-sprint?error=checkout_failed`
+      `${APP_URL}/app-sprint-community?error=checkout_failed`
     );
   }
 }

@@ -15,6 +15,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
+      url: "https://tap-and-swipe.com/app-sprint-community",
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: "https://tap-and-swipe.com/privacy",
       lastModified: new Date(),
       changeFrequency: "yearly",

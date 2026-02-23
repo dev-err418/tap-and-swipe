@@ -32,7 +32,7 @@ export default function CategoryCard({
       transition={{ delay: index * 0.1, duration: 0.4 }}
     >
       <Link
-        href={`/app-sprint/roadmap/${slug}`}
+        href={`/app-sprint-community/roadmap/${slug}`}
         className="group block rounded-3xl border border-white/5 bg-white/5 p-6 transition-all hover:bg-white/10 hover:border-white/10"
       >
         <div className="mb-4 flex items-center justify-between">

@@ -5,7 +5,7 @@ export default function AppSprintJsonLd() {
     name: "App Sprint",
     description:
       "A 6-week program to build and launch your own mobile app using Expo, React Native, and AI tools. Includes weekly group calls, 1-on-1 support, and a private Discord community of 51+ makers.",
-    url: "https://tap-and-swipe.com/app-sprint",
+    url: "https://tap-and-swipe.com/app-sprint-community",
     provider: {
       "@type": "Organization",
       name: "Tap & Swipe",
@@ -27,7 +27,7 @@ export default function AppSprintJsonLd() {
       price: "117",
       priceCurrency: "EUR",
       availability: "https://schema.org/LimitedAvailability",
-      url: "https://tap-and-swipe.com/app-sprint#pricing",
+      url: "https://tap-and-swipe.com/app-sprint-community#pricing",
     },
     aggregateRating: {
       "@type": "AggregateRating",

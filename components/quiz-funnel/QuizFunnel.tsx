@@ -53,6 +53,7 @@ export default function QuizFunnel() {
   const [direction, setDirection] = useState(1);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [firstName, setFirstName] = useState("");
+  const [leadId, setLeadId] = useState("");
   const sessionIdRef = useRef(
     typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36),
   );
@@ -108,8 +109,9 @@ export default function QuizFunnel() {
     setStep(getPrevQuestion(step as QuestionKey | "optin", answers));
   }
 
-  function goToWaiting(name: string) {
+  function goToWaiting(name: string, id: string) {
     setFirstName(name);
+    setLeadId(id);
     setDirection(1);
     setStep("waiting");
   }
@@ -200,6 +202,7 @@ export default function QuizFunnel() {
             <ResultDevIndie
               firstName={firstName}
               answers={answers}
+              leadId={leadId}
               onBookingClick={() => trackEvent("booking_click", sessionIdRef.current)}
             />
           )}
@@ -208,6 +211,7 @@ export default function QuizFunnel() {
             <ResultEntreprise
               firstName={firstName}
               answers={answers}
+              leadId={leadId}
               onBookingClick={() => trackEvent("booking_click", sessionIdRef.current)}
             />
           )}
