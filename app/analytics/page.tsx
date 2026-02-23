@@ -100,7 +100,7 @@ export default async function AnalyticsPage({
       benchmark: "complete",
     },
     {
-      label: "Optins (email)",
+      label: "Optins",
       count: optins,
       rate: quizCompletes > 0 ? Math.round((optins / quizCompletes) * 100) : 0,
       benchmark: "optin",
