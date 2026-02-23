@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import LeadTable from "@/components/analytics/LeadTable";
+import ExpandableGroup from "@/components/analytics/ExpandableGroup";
 
 export const dynamic = "force-dynamic";
 
@@ -361,23 +362,83 @@ function StatCard({ label, value, sub }: { label: string; value: number; sub?: s
   );
 }
 
-const SOURCE_LABELS: Record<string, string> = {
-  vid1: "🎬 Video 1",
-  vid2: "🎬 Video 2",
-  vid3: "🎬 Video 3",
-  vid4: "🎬 Video 4",
-  vid5: "🎬 Video 5",
-  vid6: "🎬 Video 6",
-  vid7: "🎬 Video 7",
-  vid8: "🎬 Video 8",
-  vid9: "🎬 Video 9",
-  vid10: "🎬 Video 10",
+type SourceGroup = "youtube" | "instagram" | "facebook";
+
+const SOURCE_GROUPS: Record<string, { label: string; group: SourceGroup }> = {
+  vid1: { label: "Video 1", group: "youtube" },
+  vid2: { label: "Video 2", group: "youtube" },
+  vid3: { label: "Video 3", group: "youtube" },
+  vid4: { label: "Video 4", group: "youtube" },
+  vid5: { label: "Video 5", group: "youtube" },
+  vid6: { label: "Video 6", group: "youtube" },
+  vid7: { label: "Video 7", group: "youtube" },
+  vid8: { label: "Video 8", group: "youtube" },
+  vid9: { label: "Video 9", group: "youtube" },
+  vid10: { label: "Video 10", group: "youtube" },
+  "video 1": { label: "Video 1", group: "youtube" },
+  "video 2": { label: "Video 2", group: "youtube" },
+  "video 3": { label: "Video 3", group: "youtube" },
+  "video 4": { label: "Video 4", group: "youtube" },
+  "video 5": { label: "Video 5", group: "youtube" },
+  "video 6": { label: "Video 6", group: "youtube" },
+  "video 7": { label: "Video 7", group: "youtube" },
+  "video 8": { label: "Video 8", group: "youtube" },
+  "video 9": { label: "Video 9", group: "youtube" },
+  "video 10": { label: "Video 10", group: "youtube" },
+  ytb_bio: { label: "Bio link", group: "youtube" },
+  "youtube.com": { label: "Organic", group: "youtube" },
+  ig: { label: "ig", group: "instagram" },
+  "instagram.com": { label: "Organic", group: "instagram" },
+  fb: { label: "fb", group: "facebook" },
+  "facebook.com": { label: "Organic", group: "facebook" },
+  "m.facebook.com": { label: "Mobile", group: "facebook" },
+  "l.facebook.com": { label: "Link shim", group: "facebook" },
+  "lm.facebook.com": { label: "Mobile link shim", group: "facebook" },
 };
 
-function formatSource(source: string | null): string {
-  if (!source) return "Direct / unknown";
-  return SOURCE_LABELS[source] || source;
+const GROUP_META: Record<string, string> = {
+  youtube: "YouTube",
+  instagram: "Instagram",
+  facebook: "Facebook",
+};
+
+function YouTubeIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="inline-block mr-1.5 -mt-0.5">
+      <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.5 15.5V8.5l6.3 3.5-6.3 3.5z" />
+    </svg>
+  );
 }
+
+function InstagramIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="inline-block mr-1.5 -mt-0.5">
+      <path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zM12 0C8.7 0 8.3 0 7.1.1 5.8.1 4.9.3 4.1.6c-.8.3-1.5.7-2.2 1.4C1.3 2.6.9 3.3.6 4.1.3 4.9.1 5.8.1 7.1 0 8.3 0 8.7 0 12s0 3.7.1 4.9c.1 1.3.2 2.2.6 2.9.3.8.7 1.5 1.4 2.2.7.7 1.4 1.1 2.2 1.4.8.3 1.6.5 2.9.6 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c1.3-.1 2.2-.2 2.9-.6.8-.3 1.5-.7 2.2-1.4.7-.7 1.1-1.4 1.4-2.2.3-.8.5-1.6.6-2.9.1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.1-1.3-.2-2.2-.6-2.9-.3-.8-.7-1.5-1.4-2.2-.7-.7-1.4-1.1-2.2-1.4C19.1.3 18.2.1 16.9.1 15.7 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 1 0 0 12.4 6.2 6.2 0 0 0 0-12.4zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-10.8a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8z" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="inline-block mr-1.5 -mt-0.5">
+      <path d="M24 12c0-6.627-5.373-12-12-12S0 5.373 0 12c0 5.99 4.388 10.954 10.125 11.854V15.47H7.078V12h3.047V9.356c0-3.007 1.792-4.668 4.533-4.668 1.312 0 2.686.234 2.686.234v2.953H15.83c-1.491 0-1.956.925-1.956 1.875V12h3.328l-.532 3.47h-2.796v8.384C19.612 22.954 24 17.99 24 12z" />
+    </svg>
+  );
+}
+
+function DirectIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="inline-block mr-1.5 -mt-0.5">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+    </svg>
+  );
+}
+
+const GROUP_ICONS: Record<string, () => React.JSX.Element> = {
+  youtube: YouTubeIcon,
+  instagram: InstagramIcon,
+  facebook: FacebookIcon,
+};
 
 function SourceTable({
   title,
@@ -397,6 +458,26 @@ function SourceTable({
     );
   }
 
+  // Bucket rows into groups
+  const groups: Record<string, { source: string | null; label: string; count: number }[]> = {};
+  const ungrouped: { source: string | null; count: number }[] = [];
+
+  for (const row of rows) {
+    const cfg = row.source ? SOURCE_GROUPS[row.source] : null;
+    if (cfg) {
+      if (!groups[cfg.group]) groups[cfg.group] = [];
+      groups[cfg.group].push({ source: row.source, label: cfg.label, count: row.count });
+    } else {
+      ungrouped.push(row);
+    }
+  }
+
+  // Sort groups by total count descending
+  const sortedGroupKeys = Object.keys(groups).sort(
+    (a, b) =>
+      groups[b].reduce((s, r) => s + r.count, 0) - groups[a].reduce((s, r) => s + r.count, 0),
+  );
+
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
       <h3 className="text-lg font-bold mb-3">{title}</h3>
@@ -409,9 +490,49 @@ function SourceTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
+          {sortedGroupKeys.map((groupKey) => {
+            const groupRows = groups[groupKey];
+            const groupTotal = groupRows.reduce((s, r) => s + r.count, 0);
+            const Icon = GROUP_ICONS[groupKey];
+
+            // Single sub-source: render as a flat row with group icon + name
+            if (groupRows.length === 1) {
+              return (
+                <tr key={groupKey} className="border-b border-white/5">
+                  <td className="py-2">
+                    <span className="flex items-center">
+                      {Icon && <Icon />}
+                      {GROUP_META[groupKey] ?? groupKey}
+                    </span>
+                  </td>
+                  <td className="py-2 text-right tabular-nums">{groupTotal}</td>
+                  <td className="py-2 text-right tabular-nums text-[#c9c4bc]">
+                    {total > 0 ? Math.round((groupTotal / total) * 100) : 0}%
+                  </td>
+                </tr>
+              );
+            }
+
+            return (
+              <ExpandableGroup
+                key={groupKey}
+                icon={Icon ? <Icon /> : null}
+                label={GROUP_META[groupKey] ?? groupKey}
+                count={groupTotal}
+                pct={total > 0 ? Math.round((groupTotal / total) * 100) : 0}
+                subRows={groupRows}
+                total={total}
+              />
+            );
+          })}
+          {ungrouped.map((row) => (
             <tr key={row.source ?? "__direct"} className="border-b border-white/5">
-              <td className="py-2">{formatSource(row.source)}</td>
+              <td className="py-2">
+                <span className="flex items-center">
+                  {!row.source && <DirectIcon />}
+                  {row.source ?? "Direct"}
+                </span>
+              </td>
               <td className="py-2 text-right tabular-nums">{row.count}</td>
               <td className="py-2 text-right tabular-nums text-[#c9c4bc]">
                 {total > 0 ? Math.round((row.count / total) * 100) : 0}%
