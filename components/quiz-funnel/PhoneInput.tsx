@@ -49,17 +49,23 @@ export default function PhoneInput({
 }) {
   return (
     <div className="flex gap-2">
-      <select
-        value={country}
-        onChange={(e) => onCountryChange(e.target.value as Country)}
-        className="w-[130px] shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-[#f1ebe2] outline-none focus:border-[#f4cf8f]/50 focus:ring-1 focus:ring-[#f4cf8f]/20"
-      >
-        {COUNTRIES.map((c) => (
-          <option key={c.iso2} value={c.iso2} className="bg-[#2a2725]">
-            {countryToFlag(c.iso2)} {c.label} (+{getCountryCallingCode(c.iso2)})
-          </option>
-        ))}
-      </select>
+      <div className="relative shrink-0">
+        <div className="pointer-events-none flex h-full items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-[#f1ebe2]">
+          <span>{countryToFlag(country)}</span>
+          <span>{country} (+{getCountryCallingCode(country)})</span>
+        </div>
+        <select
+          value={country}
+          onChange={(e) => onCountryChange(e.target.value as Country)}
+          className="absolute inset-0 w-full cursor-pointer opacity-0"
+        >
+          {COUNTRIES.map((c) => (
+            <option key={c.iso2} value={c.iso2}>
+              {countryToFlag(c.iso2)} {c.label} (+{getCountryCallingCode(c.iso2)})
+            </option>
+          ))}
+        </select>
+      </div>
       <PhoneInputLib
         country={country}
         value={value}

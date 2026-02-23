@@ -45,7 +45,7 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
           data-fast-goal="quiz_hero_start"
           className="group flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
         >
-          Start the quiz (2 min)
+          Let&apos;s start!
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </button>
       </div>
