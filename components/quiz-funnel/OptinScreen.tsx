@@ -9,10 +9,12 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function OptinScreen({
   answers,
   profileType,
+  source,
   onSuccess,
 }: {
   answers: Record<string, number>;
   profileType: "dev-indie" | "entreprise";
+  source?: string;
   onSuccess: (firstName: string, leadId: string) => void;
 }) {
   const [firstName, setFirstName] = useState("");
@@ -58,6 +60,7 @@ export default function OptinScreen({
           countryCode,
           profileType,
           answers,
+          source: source || undefined,
         }),
       });
 

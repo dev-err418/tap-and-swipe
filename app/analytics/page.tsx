@@ -66,6 +66,8 @@ export default async function AnalyticsPage({
     devIndieCount,
     entrepriseCount,
     leads,
+    eventSourceGroups,
+    leadSourceGroups,
   ] = await Promise.all([
     prisma.quizEvent.count({ where: { type: "page_view", ...where } }),
     prisma.quizEvent.count({ where: { type: "quiz_start", ...where } }),
@@ -78,6 +80,18 @@ export default async function AnalyticsPage({
       where,
       orderBy: { createdAt: "desc" },
       take: 100,
+    }),
+    prisma.quizEvent.groupBy({
+      by: ["source"],
+      where: { type: "page_view", ...where },
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
+    }),
+    prisma.quizLead.groupBy({
+      by: ["source"],
+      where,
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
     }),
   ]);
 
@@ -153,6 +167,20 @@ export default async function AnalyticsPage({
           <StatCard label="Dev Indie" value={devIndieCount} sub={`${devIndiePercent}%`} />
           <StatCard label="Enterprise" value={entrepriseCount} sub={`${entreprisePercent}%`} />
           <StatCard label="Booking clicks" value={bookingClicks} />
+        </div>
+
+        {/* Traffic sources */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          <SourceTable
+            title="Traffic sources (page views)"
+            rows={eventSourceGroups.map((g) => ({ source: g.source, count: g._count.id }))}
+            total={pageViews}
+          />
+          <SourceTable
+            title="Lead sources"
+            rows={leadSourceGroups.map((g) => ({ source: g.source, count: g._count.id }))}
+            total={optins}
+          />
         </div>
 
         {/* Leads table */}
@@ -329,6 +357,51 @@ function StatCard({ label, value, sub }: { label: string; value: number; sub?: s
         {value}
         {sub && <span className="text-sm text-[#c9c4bc] font-normal ml-1">({sub})</span>}
       </div>
+    </div>
+  );
+}
+
+function SourceTable({
+  title,
+  rows,
+  total,
+}: {
+  title: string;
+  rows: { source: string | null; count: number }[];
+  total: number;
+}) {
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <h3 className="text-lg font-bold mb-3">{title}</h3>
+        <p className="text-sm text-[#c9c4bc]">No data yet</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+      <h3 className="text-lg font-bold mb-3">{title}</h3>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-[#c9c4bc] border-b border-white/10">
+            <th className="text-left pb-2 font-medium">Source</th>
+            <th className="text-right pb-2 font-medium">Count</th>
+            <th className="text-right pb-2 font-medium">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.source ?? "__direct"} className="border-b border-white/5">
+              <td className="py-2">{row.source || "Direct / unknown"}</td>
+              <td className="py-2 text-right tabular-nums">{row.count}</td>
+              <td className="py-2 text-right tabular-nums text-[#c9c4bc]">
+                {total > 0 ? Math.round((row.count / total) * 100) : 0}%
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

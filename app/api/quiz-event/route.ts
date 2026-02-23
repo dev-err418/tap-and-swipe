@@ -5,9 +5,10 @@ const VALID_TYPES = ["page_view", "quiz_start", "quiz_complete", "booking_click"
 
 export async function POST(request: NextRequest) {
   try {
-    const { type, sessionId } = (await request.json()) as {
+    const { type, sessionId, source } = (await request.json()) as {
       type: string;
       sessionId: string;
+      source?: string;
     };
 
     if (!VALID_TYPES.includes(type) || !sessionId) {
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
     // Upsert to deduplicate — one event per session per type
     await prisma.quizEvent.upsert({
       where: { sessionId_type: { sessionId, type } },
-      create: { type, sessionId },
+      create: { type, sessionId, source: source || null },
       update: {},
     });
 

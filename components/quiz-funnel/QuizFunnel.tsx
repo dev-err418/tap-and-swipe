@@ -39,11 +39,11 @@ const slideVariants = {
 const TOTAL_STEPS_FULL = 11; // 9 questions + optin + buffer
 const TOTAL_STEPS_SKIP = 10; // 8 questions (skip Q3) + optin + buffer
 
-function trackEvent(type: string, sessionId: string) {
+function trackEvent(type: string, sessionId: string, source?: string) {
   fetch("/api/quiz-event", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type, sessionId }),
+    body: JSON.stringify({ type, sessionId, source: source || undefined }),
   }).catch(() => {});
 }
 
@@ -57,11 +57,28 @@ export default function QuizFunnel() {
   const sessionIdRef = useRef(
     typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36),
   );
+  const sourceRef = useRef<string | undefined>(undefined);
 
-  // Track page view on mount
+  // Capture UTM / referrer source on mount
   useEffect(() => {
-    trackEvent("page_view", sessionIdRef.current);
-  }, []);
+    const utm =
+      searchParams.get("utm") ||
+      searchParams.get("utm_source") ||
+      searchParams.get("source");
+    if (utm) {
+      sourceRef.current = utm;
+    } else if (document.referrer) {
+      try {
+        const host = new URL(document.referrer).hostname;
+        if (host && host !== window.location.hostname) {
+          sourceRef.current = host;
+        }
+      } catch {
+        // invalid referrer URL — ignore
+      }
+    }
+    trackEvent("page_view", sessionIdRef.current, sourceRef.current);
+  }, [searchParams]);
 
   // Debug: ?step=waiting or ?step=result-dev-indie or ?step=result-entreprise
   useEffect(() => {
@@ -99,7 +116,7 @@ export default function QuizFunnel() {
     setDirection(1);
     const next = getNextQuestion(questionKey, newAnswers);
     if (next === "optin") {
-      trackEvent("quiz_complete", sessionIdRef.current);
+      trackEvent("quiz_complete", sessionIdRef.current, sourceRef.current);
     }
     setStep(next);
   }
@@ -173,7 +190,7 @@ export default function QuizFunnel() {
           {step === "hero" && (
             <HeroScreen
               onStart={() => {
-                trackEvent("quiz_start", sessionIdRef.current);
+                trackEvent("quiz_start", sessionIdRef.current, sourceRef.current);
                 setDirection(1);
                 setStep("q1");
               }}
@@ -192,6 +209,7 @@ export default function QuizFunnel() {
             <OptinScreen
               answers={answers}
               profileType={getProfileType(answers.q1 ?? 0)}
+              source={sourceRef.current}
               onSuccess={goToWaiting}
             />
           )}
@@ -203,7 +221,7 @@ export default function QuizFunnel() {
               firstName={firstName}
               answers={answers}
               leadId={leadId}
-              onBookingClick={() => trackEvent("booking_click", sessionIdRef.current)}
+              onBookingClick={() => trackEvent("booking_click", sessionIdRef.current, sourceRef.current)}
             />
           )}
 
@@ -212,7 +230,7 @@ export default function QuizFunnel() {
               firstName={firstName}
               answers={answers}
               leadId={leadId}
-              onBookingClick={() => trackEvent("booking_click", sessionIdRef.current)}
+              onBookingClick={() => trackEvent("booking_click", sessionIdRef.current, sourceRef.current)}
             />
           )}
         </motion.div>
