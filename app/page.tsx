@@ -1,6 +1,30 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  title: "Tap & Swipe — Indie Developer Building Mobile Apps",
+  description:
+    "Indie developer studio building mobile apps and helping others do the same. Makers of Versy, Lua, Glow, and the App Sprint program.",
+  keywords: [
+    "Tap & Swipe",
+    "indie maker",
+    "ArthurBuildsStuff",
+    "mobile app studio",
+    "react native",
+    "expo",
+    "indie app developer",
+    "mobile apps",
+    "app development",
+  ],
+  openGraph: {
+    title: "Tap & Swipe — Indie Developer Building Mobile Apps",
+    description:
+      "Indie developer studio building mobile apps and helping others do the same. Makers of Versy, Lua, Glow, and the App Sprint program.",
+  },
+  twitter: {
+    title: "Tap & Swipe — Indie Developer Building Mobile Apps",
+    description:
+      "Indie developer studio building mobile apps and helping others do the same. Makers of Versy, Lua, Glow, and the App Sprint program.",
+  },
   alternates: {
     canonical: "/",
   },

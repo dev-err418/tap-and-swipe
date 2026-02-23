@@ -4,14 +4,59 @@ export const metadata: Metadata = {
   title: "Glow — Daily Affirmations",
   description:
     "Start your day with positive affirmations, journaling, and mood tracking. Download Glow on the App Store.",
+  keywords: [
+    "affirmations app",
+    "daily affirmations",
+    "mood tracker app",
+    "gratitude journal app",
+    "self care app",
+    "positive affirmations",
+    "journaling app",
+    "mental health app",
+    "mindfulness app",
+    "wellness app",
+    "morning routine app",
+    "self improvement app",
+  ],
+  openGraph: {
+    title: "Glow — Daily Affirmations",
+    description:
+      "Start your day with positive affirmations, journaling, and mood tracking. Download Glow on the App Store.",
+  },
+  twitter: {
+    title: "Glow — Daily Affirmations",
+    description:
+      "Start your day with positive affirmations, journaling, and mood tracking. Download Glow on the App Store.",
+  },
   alternates: {
     canonical: "/glow",
   },
 };
 
+const glowJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Glow — Daily Affirmations",
+  description:
+    "Start your day with positive affirmations, journaling, and mood tracking.",
+  applicationCategory: "HealthApplication",
+  operatingSystem: "iOS",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  downloadUrl: "https://apps.apple.com/app/id6753347459",
+};
+
 export default function GlowPage() {
   return (
-    <main className="relative z-10 flex min-h-screen flex-col items-center justify-between px-4 py-8 selection:bg-[#f54e08]/20"
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(glowJsonLd) }}
+      />
+      <main className="relative z-10 flex min-h-screen flex-col items-center justify-between px-4 py-8 selection:bg-[#f54e08]/20"
       style={{ backgroundColor: "#FFF8F3", color: "#2C3E5B" }}
     >
       <div />
@@ -69,5 +114,6 @@ export default function GlowPage() {
         </p>
       </footer>
     </main>
+    </>
   );
 }

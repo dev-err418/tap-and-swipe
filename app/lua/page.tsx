@@ -4,14 +4,59 @@ export const metadata: Metadata = {
   title: "Lua — Pregnancy Tracker",
   description:
     "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more. Download Lua on the App Store.",
+  keywords: [
+    "pregnancy tracker app",
+    "kick counter app",
+    "contraction timer",
+    "baby size tracker",
+    "due date calculator",
+    "pregnancy week by week",
+    "pregnancy app",
+    "baby tracker app",
+    "pregnancy journal",
+    "prenatal app",
+    "expecting mom app",
+    "pregnancy countdown",
+  ],
+  openGraph: {
+    title: "Lua — Pregnancy Tracker",
+    description:
+      "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more. Download Lua on the App Store.",
+  },
+  twitter: {
+    title: "Lua — Pregnancy Tracker",
+    description:
+      "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more. Download Lua on the App Store.",
+  },
   alternates: {
     canonical: "/lua",
   },
 };
 
+const luaJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Lua — Pregnancy Tracker",
+  description:
+    "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more.",
+  applicationCategory: "HealthApplication",
+  operatingSystem: "iOS",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  downloadUrl: "https://apps.apple.com/app/id6759303663",
+};
+
 export default function LuaPage() {
   return (
-    <main className="relative z-10 flex min-h-screen flex-col items-center justify-between px-4 py-8 selection:bg-[#D6779A]/20"
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(luaJsonLd) }}
+      />
+      <main className="relative z-10 flex min-h-screen flex-col items-center justify-between px-4 py-8 selection:bg-[#D6779A]/20"
       style={{ backgroundColor: "#FFF8F2", color: "#2D2D3A" }}
     >
       <div />
@@ -69,5 +114,6 @@ export default function LuaPage() {
         </p>
       </footer>
     </main>
+    </>
   );
 }

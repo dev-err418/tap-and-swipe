@@ -4,14 +4,59 @@ export const metadata: Metadata = {
   title: "Versy — Bible Verse Widget & Prayer",
   description:
     "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your home screen. Download Versy on the App Store.",
+  keywords: [
+    "bible verse app",
+    "bible verse widget",
+    "prayer app",
+    "devotional app",
+    "bible widget iPhone",
+    "daily bible verse",
+    "scripture app",
+    "bible verse of the day",
+    "christian app",
+    "bible app widget",
+    "morning devotional",
+    "prayer journal app",
+  ],
+  openGraph: {
+    title: "Versy — Bible Verse Widget & Prayer",
+    description:
+      "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your home screen. Download Versy on the App Store.",
+  },
+  twitter: {
+    title: "Versy — Bible Verse Widget & Prayer",
+    description:
+      "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your home screen. Download Versy on the App Store.",
+  },
   alternates: {
     canonical: "/versy",
   },
 };
 
+const versyJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Versy — Bible Verse Widget & Prayer",
+  description:
+    "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your home screen.",
+  applicationCategory: "LifestyleApplication",
+  operatingSystem: "iOS",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  downloadUrl: "https://apps.apple.com/app/id6756516842",
+};
+
 export default function VersyPage() {
   return (
-    <main className="relative z-10 flex min-h-screen flex-col items-center justify-between px-4 py-8 selection:bg-[#d4a860]/20"
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(versyJsonLd) }}
+      />
+      <main className="relative z-10 flex min-h-screen flex-col items-center justify-between px-4 py-8 selection:bg-[#d4a860]/20"
       style={{ backgroundColor: "#f0ebe3", color: "#292a2b" }}
     >
       <div />
@@ -69,5 +114,6 @@ export default function VersyPage() {
         </p>
       </footer>
     </main>
+    </>
   );
 }

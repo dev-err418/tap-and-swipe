@@ -89,10 +89,10 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
     trackEvent("page_view", sessionIdRef.current, sourceRef.current);
   }, [searchParams, serverReferrer, serverAppSource]);
 
-  // Debug: ?step=waiting or ?step=result-dev-indie or ?step=result-entreprise
+  // Debug: ?step=optin or ?step=waiting or ?step=result-dev-indie or ?step=result-entreprise
   useEffect(() => {
     const debugStep = searchParams.get("step") as QuizStep | null;
-    if (debugStep && ["waiting", "result-dev-indie", "result-entreprise"].includes(debugStep)) {
+    if (debugStep && ["optin", "waiting", "result-dev-indie", "result-entreprise"].includes(debugStep)) {
       setFirstName("Debug");
       setStep(debugStep);
     }
@@ -192,7 +192,7 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
           transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
           className={
             isScrollable
-              ? "min-h-screen px-6 py-16"
+              ? "min-h-screen px-6 pt-36 pb-16"
               : "flex min-h-screen items-center justify-center px-6 py-16 overflow-hidden"
           }
         >

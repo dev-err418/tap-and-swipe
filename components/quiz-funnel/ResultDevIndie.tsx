@@ -207,7 +207,7 @@ export default function ResultDevIndie({
       {/* Final CTA */}
       <motion.div {...fadeInUp} className="pt-20 text-center pb-12">
         <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-4 text-center">
-          All these results started with a simple 15-minute call.
+          All these results started with a simple 30-minute call.
         </h2>
         <p className="text-[#c9c4bc] mb-6 max-w-md mx-auto">
           Book your slot now and let&apos;s talk about your project.

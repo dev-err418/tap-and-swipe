@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
-import { isValidPhoneNumber } from "libphonenumber-js";
+import { isValidPhoneNumber, parsePhoneNumber } from "react-phone-number-input";
+import type { Country } from "react-phone-number-input";
+import type { E164Number } from "libphonenumber-js/core";
 import PhoneInput from "./PhoneInput";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,8 +22,8 @@ export default function OptinScreen({
 }) {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
-  const [countryCode, setCountryCode] = useState("+1");
-  const [phone, setPhone] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState<Country>("US");
+  const [phoneValue, setPhoneValue] = useState<E164Number | undefined>();
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,8 +40,7 @@ export default function OptinScreen({
       setError("Please enter a valid email address");
       return;
     }
-    const phoneDigits = phone.replace(/\D/g, "");
-    if (!isValidPhoneNumber(countryCode + phoneDigits)) {
+    if (!phoneValue || !isValidPhoneNumber(phoneValue)) {
       setError("Please enter a valid phone number");
       return;
     }
@@ -51,14 +52,15 @@ export default function OptinScreen({
     setLoading(true);
 
     try {
+      const parsed = parsePhoneNumber(phoneValue);
       const res = await fetch("/api/quiz-lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           firstName: firstName.trim(),
           email: email.trim(),
-          phone: phone.replace(/\D/g, ""),
-          countryCode,
+          phone: parsed?.nationalNumber || "",
+          countryCode: parsed ? `+${parsed.countryCallingCode}` : "+1",
           profileType,
           answers,
           source: source || undefined,
@@ -107,10 +109,10 @@ export default function OptinScreen({
         />
 
         <PhoneInput
-          countryCode={countryCode}
-          phone={phone}
-          onCountryCodeChange={setCountryCode}
-          onPhoneChange={setPhone}
+          country={phoneCountry}
+          value={phoneValue}
+          onCountryChange={setPhoneCountry}
+          onChange={setPhoneValue}
         />
 
         <label className="flex items-start gap-3 text-left cursor-pointer">
