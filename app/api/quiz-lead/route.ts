@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         { name: "Source", value: source || "Direct", inline: true },
         { name: "Location", value: [city ? decodeURIComponent(city) : null, country].filter(Boolean).join(", ") || "Unknown", inline: true },
       ]
-    ).catch(() => {});
+    ).catch((err) => console.error("Discord notification failed:", err));
 
     return NextResponse.json({ success: true, id: lead.id });
   } catch (err) {

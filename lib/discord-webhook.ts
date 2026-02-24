@@ -16,7 +16,7 @@ export async function sendDiscordNotification(
     return;
   }
 
-  await fetch(url, {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -31,6 +31,11 @@ export async function sendDiscordNotification(
       ],
     }),
   });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error(`Discord webhook failed (${res.status}): ${text}`);
+  }
 }
 
 export async function sendFraudAlert(
@@ -44,7 +49,7 @@ export async function sendFraudAlert(
     return;
   }
 
-  await fetch(url, {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -59,4 +64,9 @@ export async function sendFraudAlert(
       ],
     }),
   });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error(`Discord fraud alert webhook failed (${res.status}): ${text}`);
+  }
 }

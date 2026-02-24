@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         { name: "Source", value: lead.source || "Direct", inline: true },
       ],
       0x5865f2,
-    ).catch(() => {});
+    ).catch((err) => console.error("Discord booking notification failed:", err));
 
     return NextResponse.json({ ok: true });
   } catch (err) {
