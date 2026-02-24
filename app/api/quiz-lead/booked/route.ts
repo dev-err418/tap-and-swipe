@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    sendDiscordNotification(
+    await sendDiscordNotification(
       "\u{1F4C5} [App Sprint] Call booked",
       undefined,
       [

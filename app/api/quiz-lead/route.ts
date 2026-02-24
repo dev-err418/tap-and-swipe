@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    sendDiscordNotification(
+    await sendDiscordNotification(
       "🎯 [App Sprint] New lead",
       undefined,
       [
