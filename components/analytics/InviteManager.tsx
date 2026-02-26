@@ -49,6 +49,20 @@ export default function InviteManager({ initialInvites }: { initialInvites: Invi
     }
   }
 
+  async function deleteInvite(id: string) {
+    try {
+      const res = await fetch("/api/admin/invite", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error("Failed to delete invite");
+      setInvites((prev) => prev.filter((inv) => inv.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   function copyUrl(invite: Invite) {
     navigator.clipboard.writeText(invite.url);
     setCopiedId(invite.id);
@@ -123,14 +137,22 @@ export default function InviteManager({ initialInvites }: { initialInvites: Invi
                   {new Date(inv.createdAt).toLocaleDateString()}
                 </td>
                 <td className="py-2 text-right">
-                  {!inv.used && (
+                  <div className="flex items-center justify-end gap-1.5">
+                    {!inv.used && (
+                      <button
+                        onClick={() => copyUrl(inv)}
+                        className="rounded-lg bg-white/10 px-3 py-1 text-xs font-medium text-[#f1ebe2] transition-colors hover:bg-white/20"
+                      >
+                        {copiedId === inv.id ? "Copied!" : "Copy"}
+                      </button>
+                    )}
                     <button
-                      onClick={() => copyUrl(inv)}
-                      className="rounded-lg bg-white/10 px-3 py-1 text-xs font-medium text-[#f1ebe2] transition-colors hover:bg-white/20"
+                      onClick={() => deleteInvite(inv.id)}
+                      className="rounded-lg bg-red-500/10 px-3 py-1 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/20"
                     >
-                      {copiedId === inv.id ? "Copied!" : "Copy"}
+                      Delete
                     </button>
-                  )}
+                  </div>
                 </td>
               </tr>
             ))}

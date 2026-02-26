@@ -29,6 +29,22 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ id: invite.id, token, url, tier });
 }
 
+export async function DELETE(request: NextRequest) {
+  const session = await requireAdmin();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await request.json().catch(() => ({ id: null }));
+  if (!id) {
+    return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  }
+
+  await prisma.inviteLink.delete({ where: { id } });
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function GET() {
   const session = await requireAdmin();
   if (!session) {
