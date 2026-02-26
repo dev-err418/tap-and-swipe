@@ -313,37 +313,6 @@ Done. You can now clone repos, push code, and use Git anywhere on your Mac.`,
   },
   {
     category: "build-with-boilerplate",
-    title: "How to setup App Sprint's boilerplate?",
-    description: "Step-by-step setup of the boilerplate for your project",
-    type: "video",
-    youtubeUrl: "https://youtu.be/GJrtl5IfTfU",
-    order: 5,
-  },
-  {
-    category: "build-with-boilerplate",
-    title: "How to use Claude Code with the boilerplate?",
-    description: "Use AI-assisted coding to build features faster",
-    type: "video",
-    youtubeUrl: "https://youtu.be/iK2slCBbNsQ",
-    markdownContent: `## Install Claude Code
-
-Open Terminal and run:
-
-\`\`\`bash
-curl -fsSL https://claude.ai/install.sh | bash
-\`\`\`
-
-Wait for it to finish. Verify it worked:
-
-\`\`\`bash
-claude --version
-\`\`\`
-
-That's it. You can now run \`claude\` in any project folder to start coding with AI.`,
-    order: 6,
-  },
-  {
-    category: "build-with-boilerplate",
     title: "RevenueCat setup (+ link it to App Store Connect)",
     description: "Set up in-app subscriptions and entitlements",
     type: "video",
@@ -881,8 +850,21 @@ async function main() {
 
   // Clean up orphaned build lessons (old build-5 through build-16)
   for (let order = 5; order <= 16; order++) {
+    await prisma.lessonProgress
+      .deleteMany({ where: { lessonId: `seed-build-${order}` } })
+      .catch(() => {});
     await prisma.lesson
       .delete({ where: { id: `seed-build-${order}` } })
+      .catch(() => {});
+  }
+
+  // Clean up removed build-with-boilerplate lessons (orders 5 and 6)
+  for (const order of [5, 6]) {
+    await prisma.lessonProgress
+      .deleteMany({ where: { lessonId: `seed-build-with-boilerplate-${order}` } })
+      .catch(() => {});
+    await prisma.lesson
+      .delete({ where: { id: `seed-build-with-boilerplate-${order}` } })
       .catch(() => {});
   }
 
