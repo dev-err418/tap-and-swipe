@@ -1,17 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
 
 const STATE_COOKIE = "discord_oauth_state";
 const SECRET = new TextEncoder().encode(process.env.SESSION_SECRET!);
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
 export async function GET(request: NextRequest) {
   const redirect = request.nextUrl.searchParams.get("redirect");
+  const invite = request.nextUrl.searchParams.get("invite");
 
   // Generate CSRF state as a signed JWT, encoding the redirect target
   const claims: Record<string, unknown> = {};
   if (redirect?.startsWith("roadmap")) {
     claims.redirect = redirect;
+  }
+
+  // Validate invite token if provided
+  if (invite) {
+    const inviteLink = await prisma.inviteLink.findUnique({
+      where: { token: invite },
+    });
+    if (!inviteLink || inviteLink.usedAt) {
+      return NextResponse.redirect(`${APP_URL}/invite/invalid`);
+    }
+    claims.invite = invite;
   }
 
   const state = await new SignJWT(claims)
@@ -31,7 +45,7 @@ export async function GET(request: NextRequest) {
 
   const params = new URLSearchParams({
     client_id: process.env.DISCORD_CLIENT_ID!,
-    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/discord/callback`,
+    redirect_uri: `${APP_URL}/api/auth/discord/callback`,
     response_type: "code",
     scope: "identify guilds.join",
     state,

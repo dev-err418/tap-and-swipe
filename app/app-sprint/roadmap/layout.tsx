@@ -46,7 +46,16 @@ export default async function RoadmapLayout({
     }
   }
 
-  if (!isDev && (!user || (user.subscriptionStatus !== "active" && !WHITELISTED_DISCORD_IDS.has(session!.discordId)))) {
+  const premiumUser = session
+    ? await prisma.premiumUser.findUnique({ where: { discordId: session.discordId } })
+    : null;
+
+  const hasAccess =
+    user?.subscriptionStatus === "active" ||
+    WHITELISTED_DISCORD_IDS.has(session!.discordId) ||
+    !!premiumUser;
+
+  if (!isDev && (!user || !hasAccess)) {
     redirect("/app-sprint-community?error=not_subscribed");
   }
 

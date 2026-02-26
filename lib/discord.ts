@@ -116,6 +116,123 @@ export async function addRole(discordUserId: string): Promise<boolean> {
   return true;
 }
 
+/**
+ * Add a user to the guild with multiple roles.
+ * If user is already in guild (204), falls back to assigning each role individually.
+ */
+export async function addToGuildWithRoles(
+  discordUserId: string,
+  accessToken: string,
+  roleIds: string[]
+): Promise<boolean> {
+  const res = await fetch(
+    `${DISCORD_API}/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        access_token: accessToken,
+        roles: roleIds,
+      }),
+    }
+  );
+
+  if (res.status === 201) return true;
+
+  if (res.status === 204) {
+    // Already in guild — assign roles individually
+    await Promise.all(roleIds.map((id) => addRoleById(discordUserId, id)));
+    return true;
+  }
+
+  const text = await res.text();
+  console.warn(`[addToGuildWithRoles] Failed for user ${discordUserId}: ${res.status} ${text}`);
+  return false;
+}
+
+export async function addRoleById(
+  discordUserId: string,
+  roleId: string
+): Promise<boolean> {
+  const res = await fetch(
+    `${DISCORD_API}/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${roleId}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (res.status === 404) {
+    console.warn(`[addRoleById] Discord returned 404 for user ${discordUserId} role ${roleId}`);
+    return false;
+  }
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Discord addRoleById failed: ${res.status} ${text}`);
+  }
+  return true;
+}
+
+/**
+ * Create a private text channel under the SUPPORT category.
+ * Only the admin and the target user can see it.
+ */
+export async function createPrivateChannel(
+  discordUserId: string,
+  channelName: string
+): Promise<string> {
+  const guildId = process.env.DISCORD_GUILD_ID!;
+  const categoryId = process.env.DISCORD_SUPPORT_CATEGORY_ID!;
+  const adminId = process.env.ADMIN_DISCORD_ID!;
+
+  // @everyone role ID equals the guild ID in Discord
+  const everyoneRoleId = guildId;
+
+  const res = await fetch(`${DISCORD_API}/guilds/${guildId}/channels`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: channelName,
+      type: 0, // text channel
+      parent_id: categoryId,
+      permission_overwrites: [
+        {
+          id: everyoneRoleId,
+          type: 0, // role
+          deny: "1024", // VIEW_CHANNEL
+        },
+        {
+          id: adminId,
+          type: 1, // member
+          allow: "68608", // VIEW_CHANNEL | SEND_MESSAGES | READ_MESSAGE_HISTORY
+        },
+        {
+          id: discordUserId,
+          type: 1, // member
+          allow: "68608",
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Discord createPrivateChannel failed: ${res.status} ${text}`);
+  }
+
+  const channel = await res.json();
+  return channel.id;
+}
+
 export async function removeRole(discordUserId: string): Promise<boolean> {
   const res = await fetch(
     `${DISCORD_API}/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${process.env.DISCORD_ROLE_ID}`,

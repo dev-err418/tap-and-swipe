@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { exchangeCode, getUser } from "@/lib/discord";
+import { exchangeCode, getUser, addToGuildWithRoles, createPrivateChannel } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/session";
 
@@ -48,6 +48,8 @@ export async function GET(request: NextRequest) {
     ? rawRedirect!.replace(/[^a-zA-Z0-9\-/]/g, "")
     : null;
 
+  const inviteToken = typeof statePayload.invite === "string" ? statePayload.invite : null;
+
   try {
     // Exchange code for access token
     const redirectUri = `${APP_URL}/api/auth/discord/callback`;
@@ -88,7 +90,65 @@ export async function GET(request: NextRequest) {
       }).catch(() => {}); // fire-and-forget, don't block auth flow
     }
 
-    // Roadmap redirect flow
+    // --- Invite redemption flow ---
+    if (inviteToken) {
+      // Re-validate invite (race condition guard)
+      const invite = await prisma.inviteLink.findUnique({
+        where: { token: inviteToken },
+      });
+
+      if (!invite || invite.usedAt) {
+        return NextResponse.redirect(`${APP_URL}/invite/invalid`);
+      }
+
+      // Mark invite as used
+      await prisma.inviteLink.update({
+        where: { id: invite.id },
+        data: { usedAt: new Date(), discordId: discordUser.id },
+      });
+
+      // Add to guild with Student + Launcher roles
+      const roleIds = [
+        process.env.DISCORD_ROLE_ID!,
+        process.env.DISCORD_LAUNCHER_ROLE_ID!,
+      ];
+      await addToGuildWithRoles(discordUser.id, tokenData.access_token, roleIds);
+
+      // Create private support channel
+      const channelName = `support-${(discordUser.global_name || discordUser.username).toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
+      try {
+        await createPrivateChannel(discordUser.id, channelName);
+      } catch (err) {
+        console.error("[invite] Failed to create support channel:", err);
+      }
+
+      // Upsert PremiumUser with the invite's tier
+      await prisma.premiumUser.upsert({
+        where: { discordId: discordUser.id },
+        update: { tier: invite.tier },
+        create: { discordId: discordUser.id, tier: invite.tier },
+      });
+
+      // Set subscription status active so existing guards work
+      await prisma.user.update({
+        where: { discordId: discordUser.id },
+        data: { subscriptionStatus: "active" },
+      });
+
+      // Create 7-day session and redirect to roadmap
+      await createSession(
+        {
+          discordId: discordUser.id,
+          discordUsername: discordUser.global_name || discordUser.username,
+          discordAvatar: discordUser.avatar,
+        },
+        "7d"
+      );
+
+      return NextResponse.redirect(`${APP_URL}/app-sprint/roadmap`);
+    }
+
+    // --- Standard flows ---
     const WHITELISTED_DISCORD_IDS = new Set([
       process.env.ADMIN_DISCORD_ID,
       "372167828964376577",
@@ -97,7 +157,12 @@ export async function GET(request: NextRequest) {
     const isWhitelisted = WHITELISTED_DISCORD_IDS.has(discordUser.id);
 
     if (isRoadmapRedirect) {
-      if (user.subscriptionStatus !== "active" && !isWhitelisted) {
+      // Check subscription, PremiumUser, or whitelist
+      const premiumUser = await prisma.premiumUser.findUnique({
+        where: { discordId: discordUser.id },
+      });
+
+      if (user.subscriptionStatus !== "active" && !premiumUser && !isWhitelisted) {
         return NextResponse.redirect(
           `${APP_URL}/app-sprint-community?error=not_subscribed`
         );

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import LeadTable from "@/components/analytics/LeadTable";
+import InviteManager from "@/components/analytics/InviteManager";
 import ExpandableGroup from "@/components/analytics/ExpandableGroup";
 
 export const dynamic = "force-dynamic";
@@ -69,6 +70,7 @@ export default async function AnalyticsPage({
     leads,
     eventSourceGroups,
     leadSourceGroups,
+    inviteLinks,
   ] = await Promise.all([
     prisma.quizEvent.count({ where: { type: "page_view", ...where } }),
     prisma.quizEvent.count({ where: { type: "quiz_start", ...where } }),
@@ -93,6 +95,9 @@ export default async function AnalyticsPage({
       where,
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
+    }),
+    prisma.inviteLink.findMany({
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
@@ -129,6 +134,17 @@ export default async function AnalyticsPage({
   ];
 
   const maxCount = Math.max(...funnel.map((f) => f.count), 1);
+
+  const serializedInvites = inviteLinks.map((inv) => ({
+    id: inv.id,
+    token: inv.token,
+    tier: inv.tier,
+    url: `https://tap-and-swipe.com/invite/${inv.token}`,
+    used: !!inv.usedAt,
+    usedAt: inv.usedAt?.toISOString() ?? null,
+    discordId: inv.discordId,
+    createdAt: inv.createdAt.toISOString(),
+  }));
 
   const serializedLeads = leads.map((l) => ({
     ...l,
@@ -182,6 +198,11 @@ export default async function AnalyticsPage({
             rows={leadSourceGroups.map((g) => ({ source: g.source, count: g._count.id }))}
             total={optins}
           />
+        </div>
+
+        {/* Invite links */}
+        <div className="mb-10">
+          <InviteManager initialInvites={serializedInvites} />
         </div>
 
         {/* Leads table */}

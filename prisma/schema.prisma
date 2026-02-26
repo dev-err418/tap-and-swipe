@@ -121,6 +121,15 @@ model PremiumUser {
   createdAt DateTime @default(now())
 }
 
+model InviteLink {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  tier      String    @default("boilerplate")
+  usedAt    DateTime?
+  discordId String?
+  createdAt DateTime  @default(now())
+}
+
 model TrialDiscordMessage {
   id                    String   @id @default(cuid())
   appName               String
