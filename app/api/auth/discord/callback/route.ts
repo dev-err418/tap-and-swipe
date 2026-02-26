@@ -115,7 +115,8 @@ export async function GET(request: NextRequest) {
       await addToGuildWithRoles(discordUser.id, tokenData.access_token, roleIds);
 
       // Create private support channel
-      const channelName = `support-${(discordUser.global_name || discordUser.username).toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
+      const username = (discordUser.global_name || discordUser.username).toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      const channelName = `🕯️・support-${username}`;
       try {
         await createPrivateChannel(discordUser.id, channelName);
       } catch (err) {
