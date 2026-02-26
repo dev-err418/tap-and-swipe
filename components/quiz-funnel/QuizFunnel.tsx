@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
-import AnalyticsTracker from "../AnalyticsTracker";
 import {
   type QuizStep,
   type QuestionKey,
@@ -157,8 +156,6 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
 
   return (
     <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30 relative">
-      <AnalyticsTracker />
-
       {/* Background glow */}
       <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#f4cf8f]/[0.03] blur-[120px]" />
 

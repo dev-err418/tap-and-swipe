@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { paddle } from "@/lib/paddle";
 import { getSession, clearSession } from "@/lib/session";
 
@@ -28,25 +27,6 @@ export async function GET() {
         url: `${APP_URL}/app-sprint-community?status=success`,
       },
     });
-
-    // Read DataFast cookies for attribution
-    const cookieStore = await cookies();
-    const datafastVisitorId = cookieStore.get("datafast_visitor_id")?.value;
-
-    // Fire DataFast goal for Paddle checkout shown
-    if (datafastVisitorId && process.env.DATAFAST_API_KEY) {
-      fetch("https://datafa.st/api/v1/goals", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.DATAFAST_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          datafast_visitor_id: datafastVisitorId,
-          name: "paddle_checkout_shown",
-        }),
-      }).catch(() => {}); // fire-and-forget
-    }
 
     await clearSession();
 

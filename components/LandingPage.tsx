@@ -8,7 +8,6 @@ import { Suspense } from "react";
 import SuccessOverlay from "./SuccessOverlay";
 import ErrorOverlay from "./ErrorOverlay";
 import Pricing from "./Pricing";
-import AnalyticsTracker from "./AnalyticsTracker";
 
 const LandingPage = ({
     searchParams,
@@ -17,7 +16,6 @@ const LandingPage = ({
 }) => {
     return (
         <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30">
-            <AnalyticsTracker />
             <Suspense fallback={null}>
                 <SuccessOverlay />
                 <ErrorOverlay />

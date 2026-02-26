@@ -74,22 +74,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Fire DataFast goal for Discord auth completion
-    const datafastVisitorId = cookieStore.get("datafast_visitor_id")?.value;
-    if (datafastVisitorId && process.env.DATAFAST_API_KEY) {
-      fetch("https://datafa.st/api/v1/goals", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.DATAFAST_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          datafast_visitor_id: datafastVisitorId,
-          name: "discord_auth_completed",
-        }),
-      }).catch(() => {}); // fire-and-forget, don't block auth flow
-    }
-
     // --- Invite redemption flow ---
     if (inviteToken) {
       // Re-validate invite (race condition guard)

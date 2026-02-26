@@ -107,23 +107,6 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // Fire DataFast goal
-        const datafastVisitorId = (sub.customData as Record<string, string>)
-          ?.datafast_visitor_id;
-        if (datafastVisitorId && process.env.DATAFAST_API_KEY) {
-          fetch("https://datafa.st/api/v1/goals", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${process.env.DATAFAST_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              datafast_visitor_id: datafastVisitorId,
-              name: "paddle_checkout_completed",
-            }),
-          }).catch(() => {});
-        }
-
         // Discord notification (best-effort, never blocks webhook)
         try {
           let countryCode: string | undefined;

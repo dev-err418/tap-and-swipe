@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { Analytics } from "@vercel/analytics/react";
-import Script from "next/script";
 import "./globals.css";
 
 const crimsonPro = localFont({
@@ -105,24 +103,11 @@ export default function RootLayout({
             __html: JSON.stringify(organizationJsonLd),
           }}
         />
-        <script id="datafast-queue" dangerouslySetInnerHTML={{ __html: `
-          window.datafast = window.datafast || function() {
-            window.datafast.q = window.datafast.q || [];
-            window.datafast.q.push(arguments);
-          };
-        `}} />
       </head>
       <body
         className={`${uncutSans.variable} ${crimsonPro.variable} antialiased`}
       >
         {children}
-        <Analytics />
-        <Script
-          src="https://datafa.st/js/script.js"
-          data-website-id="dfid_fqRTu2yRpBPRr2oQQzUig"
-          data-domain="tap-and-swipe.com"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );

@@ -140,30 +140,6 @@ async function main() {
   });
   console.log(`DB updated: roleGranted=${roleAdded}`);
 
-  // 5. Fire DataFast goal if configured
-  if (process.env.DATAFAST_API_KEY) {
-    try {
-      const res = await fetch("https://datafa.st/api/v1/goals", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.DATAFAST_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "stripe_checkout_completed",
-          metadata: { discordId: user.discordId, manual: true },
-        }),
-      });
-      if (res.ok) {
-        console.log("DataFast goal fired");
-      } else {
-        console.warn(`DataFast goal failed: ${res.status}`);
-      }
-    } catch (e) {
-      console.warn("DataFast goal error:", e);
-    }
-  }
-
   console.log("Done.");
 }
 
