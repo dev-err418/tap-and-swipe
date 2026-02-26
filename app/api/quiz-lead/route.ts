@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendDiscordNotification } from "@/lib/discord-webhook";
+import { generateLeadMessage } from "@/lib/quiz-lead-message";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,6 +52,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const { temperature, message: leadMessage, whatsappUrl } = generateLeadMessage({
+      firstName: firstName.trim(),
+      countryCode: countryCode || "+33",
+      phone: phone.trim(),
+      answers,
+      booked: false,
+    });
+
     await sendDiscordNotification(
       "🎯 [App Sprint] New lead",
       undefined,
@@ -61,6 +70,8 @@ export async function POST(request: NextRequest) {
         { name: "Profile", value: profileType, inline: true },
         { name: "Source", value: source || "Direct", inline: true },
         { name: "Location", value: [city ? decodeURIComponent(city) : null, country].filter(Boolean).join(", ") || "Unknown", inline: true },
+        { name: "Lead Score", value: temperature, inline: true },
+        { name: "WhatsApp", value: `[Open in WhatsApp](${whatsappUrl})`, inline: true },
       ]
     ).catch((err) => console.error("Discord notification failed:", err));
 

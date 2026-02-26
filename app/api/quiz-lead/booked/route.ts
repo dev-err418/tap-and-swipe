@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendDiscordNotification } from "@/lib/discord-webhook";
+import { generateLeadMessage } from "@/lib/quiz-lead-message";
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,6 +33,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const { temperature, message: leadMessage, whatsappUrl } = generateLeadMessage({
+      firstName: lead.firstName,
+      countryCode: lead.countryCode,
+      phone: lead.phone,
+      answers: lead.answers as Record<string, number>,
+      booked: true,
+    });
+
     await sendDiscordNotification(
       "\u{1F4C5} [App Sprint] Call booked",
       undefined,
@@ -45,6 +54,8 @@ export async function POST(request: NextRequest) {
         },
         { name: "Profile", value: lead.profileType, inline: true },
         { name: "Source", value: lead.source || "Direct", inline: true },
+        { name: "Lead Score", value: temperature, inline: true },
+        { name: "WhatsApp", value: `[Open in WhatsApp](${whatsappUrl})`, inline: true },
       ],
       0x5865f2,
     ).catch((err) => console.error("Discord booking notification failed:", err));
