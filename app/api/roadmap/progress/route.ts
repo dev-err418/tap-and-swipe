@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { getUserTier, getCategoryAccess } from "@/lib/premium";
 
 const WHITELISTED_DISCORD_IDS = new Set([
   process.env.ADMIN_DISCORD_ID,
@@ -38,6 +39,13 @@ export async function POST(request: NextRequest) {
   const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
   if (!lesson) {
     return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+  }
+
+  // Guard: only allow progress on unlocked categories
+  const tier = await getUserTier(session.discordId);
+  const access = getCategoryAccess(tier, lesson.category);
+  if (access !== "unlocked") {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 
   if (completed) {

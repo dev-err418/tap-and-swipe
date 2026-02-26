@@ -57,7 +57,7 @@ const components: Components = {
       );
     }
     return (
-      <code className="bg-white/10 rounded px-1.5 py-0.5 text-sm text-[#f4cf8f] font-mono">
+      <code className="bg-white/10 rounded px-1.5 py-0.5 text-sm text-[#f4cf8f]">
         {children}
       </code>
     );

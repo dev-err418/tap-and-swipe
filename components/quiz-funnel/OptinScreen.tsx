@@ -18,7 +18,7 @@ export default function OptinScreen({
   answers: Record<string, number>;
   profileType: "dev-indie" | "entreprise";
   source?: string;
-  onSuccess: (firstName: string, leadId: string) => void;
+  onSuccess: (firstName: string, leadId: string, email: string, phone: string) => void;
 }) {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
@@ -74,7 +74,7 @@ export default function OptinScreen({
         return;
       }
 
-      onSuccess(firstName.trim(), data.id);
+      onSuccess(firstName.trim(), data.id, email.trim(), phoneValue || "");
     } catch {
       setError("Something went wrong, please try again");
       setLoading(false);

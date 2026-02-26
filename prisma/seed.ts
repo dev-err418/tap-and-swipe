@@ -12,6 +12,7 @@ interface Lesson {
   type: "video" | "markdown";
   youtubeUrl?: string | null;
   markdownContent?: string | null;
+  sectionType?: string | null;
   order: number;
 }
 
@@ -121,11 +122,11 @@ Even 1-2 paid conversions means you're on the right track. Zero conversions mean
     order: 3,
   },
 
-  // Build
+  // Build (basic — no boilerplate required)
   {
     category: "build",
     title: "From zero to running app with Expo + AI tools",
-    description: "Set up your dev environment and build your first screen",
+    description: "Set up your dev environment and create your first Expo app",
     type: "video",
     youtubeUrl: null,
     order: 1,
@@ -133,91 +134,364 @@ Even 1-2 paid conversions means you're on the right track. Zero conversions mean
   {
     category: "build",
     title: "App Store Connect setup",
-    description: "Configure your app in App Store Connect before submitting",
+    description: "Configure your app in App Store Connect for submission",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=vK2sJO6TrUk",
+    youtubeUrl: "https://youtu.be/vK2sJO6TrUk",
     order: 2,
   },
   {
     category: "build",
     title: "Submitting your first build to TestFlight",
-    description: "Get your app on a real device through TestFlight",
+    description: "Build, upload, and test your app via TestFlight",
     type: "video",
-    youtubeUrl: "https://www.youtube.com/watch?v=qMoPSXUm6LQ",
+    youtubeUrl: "https://youtu.be/qMoPSXUm6LQ",
     order: 3,
   },
   {
     category: "build",
     title: "Set up Sentry, PostHog & Supabase",
-    description: "Add crash monitoring, analytics, and a backend in one go",
+    description: "Add crash monitoring, analytics, and a backend to your app",
     type: "markdown",
-    markdownContent: `Your app is taking shape. Before you ship, set up these three tools. They're all free, no credit card needed, and they'll save you when things go wrong (and they will).
+    markdownContent: `Three services you should set up before launch: **Sentry** for crash monitoring, **PostHog** for analytics and AB testing, and **Supabase** for your backend.
 
 ---
 
-## Sentry (crash monitoring)
+## Sentry — crash monitoring
 
-Tracks every crash and error in your app. You'll see exactly what broke, on which device, and why. Without this, users just silently delete your app and you never know what happened.
+Go to [sentry.io](https://sentry.io) and create a free account. Create a new project, select **React Native**, and follow the setup wizard.
 
-Set it up early. Don't wait until you have users, you want to catch bugs during development too.
+Sentry catches crashes and errors in production so you know what's breaking before users complain.
 
-Go to [sentry.io](https://sentry.io) and create a free account (huge free tier).
+\`\`\`bash
+npx expo install @sentry/react-native
+\`\`\`
 
-A user in Brazil crashes on a screen you never tested. Without Sentry, you'd never know. With Sentry, you see it instantly and fix it before more users hit the same bug.
-
----
-
-## PostHog (analytics & AB testing)
-
-Two things in one tool.
-
-**Analytics:** see what users actually do in your app. Which screens they visit, where they drop off, how long they stay. You stop guessing and start knowing.
-
-**AB testing:** test different versions of your paywall, onboarding, features, anything. Show version A to half your users and version B to the other half. See which one converts better. We'll go deep on this in the AB testing video.
-
-Go to [posthog.com](https://posthog.com) and create a free account (huge free tier, 1M events/month).
-
-**What to track from day one:**
-
-- \`app_opened\` for basic usage
-- \`onboarding_completed\` to see if users finish onboarding
-- \`paywall_viewed\` to see if users are seeing your paywall
-- \`trial_started\` to track trial starts
-- \`subscription_activated\` to track paying users
-
-This gives you a funnel. You'll see exactly where users drop off.
+Wrap your app entry with \`Sentry.init()\` using your DSN from the Sentry dashboard. That's the minimum setup — you'll get crash reports immediately.
 
 ---
 
-## Supabase (database & auth, only if you need it)
+## PostHog — analytics & AB testing
 
-Gives you a database and user authentication. If your app needs to store data in the cloud or have user accounts, use Supabase.
+Go to [posthog.com](https://posthog.com) and create a free account (generous free tier: 1M events/month).
 
-Not every app needs this. A simple widget app or offline tracker might not need any backend. If your app works entirely on-device, skip this.
+\`\`\`bash
+npx expo install posthog-react-native
+\`\`\`
 
-**You need Supabase if:**
+Initialize PostHog with your project API key and instance URL. Then track events with \`posthog.capture('event_name')\`.
 
-- Users create accounts or log in
-- Data syncs across devices
-- You need to store data server-side
-- Your app has any social or shared features
-
-Go to [supabase.com](https://supabase.com) and create a free account (big free tier, 2 projects). Gives you a Postgres database, authentication, file storage, and real-time subscriptions out of the box.
-
-If you're not sure whether you need it, you probably don't yet. Skip it and come back when you need cloud features.
+PostHog also supports **feature flags** and **AB tests** out of the box — you can test different paywalls, onboarding flows, and pricing without shipping new builds.
 
 ---
 
-## Quick summary
+## Supabase — backend & database
 
-| Tool | Purpose | Free tier | Credit card |
-|------|---------|-----------|-------------|
-| Sentry | Crash monitoring | Huge | No |
-| PostHog | Analytics + AB testing | 1M events/mo | No |
-| Supabase | Database + auth | 2 projects | No |
+Go to [supabase.com](https://supabase.com) and create a free account (big free tier, 2 projects). Click **New Project**, pick a name and a region close to your users, set a database password (save it somewhere), and hit **Create**.
 
-Set up Sentry and PostHog now. Add Supabase only if your app needs it. All free, all essential.`,
+Wait a minute for the project to spin up.
+
+### Set up the database
+
+From the left sidebar, click **SQL Editor**. Paste the following and hit **Run**:
+
+\`\`\`sql
+-- Onboarding responses table
+create table onboarding_responses (
+  id bigint generated always as identity primary key,
+  revenuecat_user_id text not null unique,
+  name text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Feedback table
+create table feedback (
+  id bigint generated always as identity primary key,
+  revenuecat_user_id text not null,
+  comment text,
+  context jsonb,
+  created_at timestamptz default now()
+);
+
+-- Auto-update updated_at on onboarding_responses
+create or replace function update_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger onboarding_responses_updated_at
+  before update on onboarding_responses
+  for each row execute function update_updated_at();
+
+-- Enable RLS
+alter table onboarding_responses enable row level security;
+alter table feedback enable row level security;
+
+-- Allow inserts/upserts from anon key
+create policy "Allow anon insert" on onboarding_responses for all using (true) with check (true);
+create policy "Allow anon insert" on feedback for all using (true) with check (true);
+\`\`\`
+
+### Get your API keys
+
+Go back to the Supabase dashboard home page. Click on the **Connect** button under your project name at the top. Select the **API Keys** tab.
+
+You need two values for your app:
+
+- **Project URL** — looks like \`https://xxxxx.supabase.co\`
+- **Anon Key** — the long JWT string (this is safe to embed in your app, RLS protects your data)
+
+Copy both into your app's environment variables. That's it, your backend is ready.`,
     order: 4,
+  },
+
+  // Build with the boilerplate (premium)
+  {
+    category: "build-with-boilerplate",
+    title: "What is App Sprint's boilerplate?",
+    description: "An overview of the boilerplate and how it accelerates your launch",
+    type: "video",
+    youtubeUrl: "https://youtu.be/m10gr6S05yA",
+    order: 1,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "Connect your GitHub account",
+    description: "Link your GitHub to get access to the private boilerplate repository",
+    type: "markdown",
+    sectionType: "github-connect",
+    order: 2,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "How to setup YOUR Github repository",
+    description: "Clone the boilerplate and configure it for your app",
+    type: "video",
+    youtubeUrl: "https://youtu.be/k-WnuXjg9yg",
+    markdownContent: `## Install Git on Mac
+
+Open Terminal and run:
+
+\`\`\`bash
+xcode-select --install
+\`\`\`
+
+A popup appears. Click **Install**. Wait for it to finish (a few minutes).
+
+Verify it worked:
+
+\`\`\`bash
+git --version
+\`\`\`
+
+You should see something like \`git version 2.x.x\`. That's it, Git is ready.
+
+---
+
+## Configure Git (one time)
+
+Tell Git who you are. Use the same email as your GitHub account:
+
+\`\`\`bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+\`\`\`
+
+Done. You can now clone repos, push code, and use Git anywhere on your Mac.`,
+    order: 3,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "How to setup App Store Connect",
+    description: "Configure your app in App Store Connect for submission",
+    type: "video",
+    youtubeUrl: "https://youtu.be/XIffw1V3XD0",
+    order: 4,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "How to setup App Sprint's boilerplate?",
+    description: "Step-by-step setup of the boilerplate for your project",
+    type: "video",
+    youtubeUrl: "https://youtu.be/GJrtl5IfTfU",
+    order: 5,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "How to use Claude Code with the boilerplate?",
+    description: "Use AI-assisted coding to build features faster",
+    type: "video",
+    youtubeUrl: "https://youtu.be/iK2slCBbNsQ",
+    markdownContent: `## Install Claude Code
+
+Open Terminal and run:
+
+\`\`\`bash
+curl -fsSL https://claude.ai/install.sh | bash
+\`\`\`
+
+Wait for it to finish. Verify it worked:
+
+\`\`\`bash
+claude --version
+\`\`\`
+
+That's it. You can now run \`claude\` in any project folder to start coding with AI.`,
+    order: 6,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "RevenueCat setup (+ link it to App Store Connect)",
+    description: "Set up in-app subscriptions and entitlements",
+    type: "video",
+    youtubeUrl: "https://youtu.be/xXAJJD_F8fg",
+    order: 7,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "Sentry setup",
+    description: "Add crash monitoring and error tracking",
+    type: "video",
+    youtubeUrl: "https://youtu.be/Dg9_gvYCRVQ",
+    order: 8,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "PostHog setup",
+    description: "Add analytics and AB testing to your app",
+    type: "video",
+    youtubeUrl: null,
+    order: 9,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "Tenjin setup (+ link it to RevenueCat)",
+    description: "Add attribution tracking for your ad campaigns",
+    type: "video",
+    youtubeUrl: "https://youtu.be/zfPpXfqzY7w",
+    markdownContent: `# Testing Tenjin Attribution
+
+## 1. Build on a real device
+
+Tenjin requires a physical device — it won't work on the simulator.
+
+\`\`\`bash
+# Generate native iOS project
+npx expo prebuild -p ios
+
+# Open in Xcode
+xed ios
+\`\`\`
+
+In Xcode:
+1. Select your physical device in the device dropdown
+2. Set your signing team under **Signing & Capabilities**
+3. Hit **Cmd+R** to build and run
+
+## 2. Get your device IDFV
+
+Once the app is running on your device:
+
+1. Complete onboarding
+2. Go to **Settings → Show Device IDs**
+3. Copy the IDFV from the alert or the terminal log: \`[Device ID] IDFV: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX\`
+
+## 3. Register as a test device in Tenjin
+
+1. Go to [Tenjin Dashboard → Diagnose → Test Devices](https://dashboard.tenjin.com/dashboard/debug_app_users)
+2. Click **Add Test Device**
+3. Select your app
+4. Give it any name (e.g. "My iPhone")
+5. Select **iOS** as the device type
+6. Select **IDFV** as the ID type
+7. Paste the IDFV from the logs
+
+## 4. Send a test event
+
+In the app:
+
+1. Go to **Settings → Send Tenjin Test Event**
+2. Check the terminal for: \`[Tenjin] Sent test_event_from_settings\`
+
+## 5. Verify in Tenjin Dashboard
+
+1. Go to [Diagnose → SDK Live Data](https://dashboard.tenjin.com/dashboard/sdk_diagnostics)
+2. You should see \`test_event_from_settings\` from your device
+3. It may take a few minutes to appear
+
+## Troubleshooting
+
+- **No events appearing**: Check that ATT permission was granted (Settings → ATT Status). Tenjin needs tracking permission on iOS 14.5+.
+- **SDK not initialized**: Tenjin initializes after RevenueCat is ready. Check terminal for \`Tenjin SDK initialized and connected\`.
+- **Wrong API key**: Verify \`EXPO_PUBLIC_TENJIN_API_KEY\` in your \`.env\` file matches the Tenjin dashboard.`,
+    order: 10,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "Firebase setup (+ link it to RevenueCat)",
+    description: "Add push notifications and remote config",
+    type: "video",
+    youtubeUrl: "https://youtu.be/PGSJ1VmtN_I",
+    order: 11,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "Supabase setup",
+    description: "Add a database, auth, and real-time backend",
+    type: "video",
+    youtubeUrl: "https://youtu.be/GWdkZ6Ov1L4",
+    markdownContent: `\`\`\`sql
+-- Onboarding responses table
+create table onboarding_responses (
+  id bigint generated always as identity primary key,
+  revenuecat_user_id text not null unique,
+  name text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Feedback table
+create table feedback (
+  id bigint generated always as identity primary key,
+  revenuecat_user_id text not null,
+  comment text,
+  context jsonb,
+  created_at timestamptz default now()
+);
+
+-- Auto-update updated_at on onboarding_responses
+create or replace function update_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger onboarding_responses_updated_at
+  before update on onboarding_responses
+  for each row execute function update_updated_at();
+
+-- Enable RLS
+alter table onboarding_responses enable row level security;
+alter table feedback enable row level security;
+
+-- Allow inserts/upserts from anon key
+create policy "Allow anon insert" on onboarding_responses for all using (true) with check (true);
+create policy "Allow anon insert" on feedback for all using (true) with check (true);
+\`\`\``,
+    order: 12,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "Checking your installation",
+    description: "Verify everything is properly configured before moving on",
+    type: "video",
+    youtubeUrl: "https://youtu.be/_fe6wyflDhw",
+    order: 13,
   },
 
   // Monetize
@@ -433,24 +707,6 @@ Before creating your account, verify ALL of these:
 If your For You Page shows local content from your target country, you're good. Move on to the account warmup guide.`,
     order: 3,
   },
-  // Weekly Call Replays
-  {
-    category: "weekly-calls",
-    title: "How to use Posthog and create AB tests",
-    description: "Learn how to set up Posthog analytics and run AB tests",
-    type: "video",
-    youtubeUrl: "https://youtu.be/6uV_F1A97G4",
-    order: 1,
-  },
-  {
-    category: "weekly-calls",
-    title: "ASO (AppStore Search Optimization) and Open Claw chat",
-    description: "Deep dive into ASO strategies and open Q&A session",
-    type: "video",
-    youtubeUrl: "https://youtu.be/lEznPnBjn0E",
-    order: 2,
-  },
-
   {
     category: "launch-and-grow",
     title: "Warm up a fresh TikTok account",
@@ -564,6 +820,33 @@ The lifecycle to keep in mind: setup > trust > test > scale > decay > rotate.
 If you're stuck, you probably skipped a step.`,
     order: 4,
   },
+
+  // Scaling (empty — placeholder)
+  // No lessons for this category
+
+  // Weekly Call Replays
+  {
+    category: "weekly-calls",
+    title: "How to use Posthog and create AB tests",
+    description: "Learn how to set up Posthog analytics and run AB tests",
+    type: "video",
+    youtubeUrl: "https://youtu.be/6uV_F1A97G4",
+    order: 1,
+  },
+  {
+    category: "weekly-calls",
+    title: "ASO (AppStore Search Optimization) and Open Claw chat",
+    description: "Deep dive into ASO strategies and open Q&A session",
+    type: "video",
+    youtubeUrl: "https://youtu.be/lEznPnBjn0E",
+    order: 2,
+  },
+];
+
+const PREMIUM_DISCORD_IDS = [
+  process.env.ADMIN_DISCORD_ID!,
+  "372167828964376577",
+  "1295748700429357148",
 ];
 
 async function main() {
@@ -580,6 +863,7 @@ async function main() {
         type: lesson.type,
         youtubeUrl: lesson.youtubeUrl ?? null,
         markdownContent: lesson.markdownContent ?? null,
+        sectionType: lesson.sectionType ?? null,
       },
       create: {
         id: `seed-${lesson.category}-${lesson.order}`,
@@ -589,12 +873,31 @@ async function main() {
         type: lesson.type,
         youtubeUrl: lesson.youtubeUrl ?? null,
         markdownContent: lesson.markdownContent ?? null,
+        sectionType: lesson.sectionType ?? null,
         order: lesson.order,
       },
     });
   }
 
-  console.log(`Seeded ${lessons.length} lessons.`);
+  // Clean up orphaned build lessons (old build-5 through build-16)
+  for (let order = 5; order <= 16; order++) {
+    await prisma.lesson
+      .delete({ where: { id: `seed-build-${order}` } })
+      .catch(() => {});
+  }
+
+  // Seed premium users
+  console.log("Seeding premium users...");
+  for (const discordId of PREMIUM_DISCORD_IDS) {
+    if (!discordId) continue;
+    await prisma.premiumUser.upsert({
+      where: { discordId },
+      update: { tier: "full" },
+      create: { discordId, tier: "full" },
+    });
+  }
+
+  console.log(`Seeded ${lessons.length} lessons + ${PREMIUM_DISCORD_IDS.length} premium users.`);
 }
 
 main()

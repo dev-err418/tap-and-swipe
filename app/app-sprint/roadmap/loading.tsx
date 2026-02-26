@@ -7,7 +7,7 @@ export default function RoadmapLoading() {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 7 }).map((_, i) => (
+        {Array.from({ length: 9 }).map((_, i) => (
           <div
             key={i}
             className="rounded-3xl border border-white/5 bg-white/5 p-6"

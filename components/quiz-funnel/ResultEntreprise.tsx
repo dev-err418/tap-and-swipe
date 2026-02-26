@@ -56,15 +56,25 @@ export default function ResultEntreprise({
   firstName,
   answers,
   leadId,
+  email,
+  phone,
   onBookingClick,
 }: {
   firstName: string;
   answers: Record<string, number>;
   leadId?: string;
+  email?: string;
+  phone?: string;
   onBookingClick?: () => void;
 }) {
   const blocker = getBlockageLabel(answers.q4 ?? 0);
-  const calUrl = leadId ? `${CAL_BASE}?utm_notes=${leadId}` : CAL_BASE;
+  const params = new URLSearchParams();
+  if (leadId) params.set("utm_notes", leadId);
+  if (firstName) params.set("name", firstName);
+  if (email) params.set("email", email);
+  if (phone) params.set("attendeePhoneNumber", phone);
+  const qs = params.toString();
+  const calUrl = qs ? `${CAL_BASE}?${qs}` : CAL_BASE;
   const displayName = firstName || "you";
 
   return (

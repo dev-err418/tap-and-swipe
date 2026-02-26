@@ -55,6 +55,8 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [firstName, setFirstName] = useState("");
   const [leadId, setLeadId] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const sessionIdRef = useRef(
     typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36),
   );
@@ -135,9 +137,11 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
     setStep(getPrevQuestion(step as QuestionKey | "optin", answers));
   }
 
-  function goToWaiting(name: string, id: string) {
+  function goToWaiting(name: string, id: string, em: string, ph: string) {
     setFirstName(name);
     setLeadId(id);
+    setEmail(em);
+    setPhone(ph);
     setDirection(1);
     setStep("waiting");
   }
@@ -230,6 +234,8 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
               firstName={firstName}
               answers={answers}
               leadId={leadId}
+              email={email}
+              phone={phone}
               onBookingClick={() => trackEvent("booking_click", sessionIdRef.current, sourceRef.current)}
             />
           )}
@@ -239,6 +245,8 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
               firstName={firstName}
               answers={answers}
               leadId={leadId}
+              email={email}
+              phone={phone}
               onBookingClick={() => trackEvent("booking_click", sessionIdRef.current, sourceRef.current)}
             />
           )}

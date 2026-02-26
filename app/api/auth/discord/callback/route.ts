@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
         "7d"
       );
 
-      return NextResponse.redirect(`${APP_URL}/app-sprint-community/${redirectTarget}`);
+      return NextResponse.redirect(`${APP_URL}/app-sprint/${redirectTarget}`);
     }
 
     // Already-subscribed user: create session and send to roadmap
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
         },
         "7d"
       );
-      return NextResponse.redirect(`${APP_URL}/app-sprint-community/roadmap`);
+      return NextResponse.redirect(`${APP_URL}/app-sprint/roadmap`);
     }
 
     // Set session cookie with Discord identity for checkout

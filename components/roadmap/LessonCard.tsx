@@ -8,6 +8,7 @@ import {
   Play,
   BookOpen,
   ChevronDown,
+  Lock,
 } from "lucide-react";
 import MarkdownContent from "./MarkdownContent";
 
@@ -23,6 +24,7 @@ export default function LessonCard({
   index,
   isLast,
   hideProgress,
+  isLocked,
   onToggle,
 }: {
   id: string;
@@ -36,6 +38,7 @@ export default function LessonCard({
   index: number;
   isLast?: boolean;
   hideProgress?: boolean;
+  isLocked?: boolean;
   onToggle?: (lessonId: string, completed: boolean) => void;
 }) {
   const [completed, setCompleted] = useState(initialCompleted);
@@ -97,6 +100,42 @@ export default function LessonCard({
     } finally {
       setIsPending(false);
     }
+  }
+
+  // Locked lessons: similar to comingSoon but with a lock badge
+  if (isLocked) {
+    return (
+      <motion.div
+        ref={cardRef}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05, duration: 0.3 }}
+        className="rounded-2xl border border-white/5 bg-white/5 overflow-hidden"
+      >
+        <div className="flex items-center gap-4 p-5 opacity-50">
+          <div className="shrink-0">
+            <Circle className="h-6 w-6 text-[#c9c4bc]/20" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[#c9c4bc]/60 font-medium">{order}.</span>
+              <h3 className="font-medium truncate text-[#c9c4bc]/60">
+                {title}
+              </h3>
+            </div>
+            {description && (
+              <p className="text-sm text-[#c9c4bc]/40 mt-0.5 truncate">
+                {description}
+              </p>
+            )}
+          </div>
+          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs text-[#c9c4bc]/40">
+            <Lock className="h-3 w-3" />
+            Premium
+          </span>
+        </div>
+      </motion.div>
+    );
   }
 
   return (

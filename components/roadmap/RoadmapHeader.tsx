@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, LifeBuoy, Mail, MessageCircle } from "lucide-react";
 import ProgressBar from "./ProgressBar";
+import TierSwitcher from "./TierSwitcher";
+import type { UserTier } from "@/lib/premium";
 
 export default function RoadmapHeader({
   discordUsername,
@@ -11,12 +13,16 @@ export default function RoadmapHeader({
   discordId,
   totalLessons,
   completedLessons,
+  isAdmin,
+  debugTier,
 }: {
   discordUsername: string;
   discordAvatar: string | null;
   discordId: string;
   totalLessons: number;
   completedLessons: number;
+  isAdmin?: boolean;
+  debugTier?: UserTier;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -47,7 +53,13 @@ export default function RoadmapHeader({
   return (
     <header className="border-b border-white/5 bg-[#2a2725]">
       <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-4">
-        <div className="w-40 hidden sm:block" />
+        <div className="hidden sm:block">
+          {isAdmin && debugTier ? (
+            <TierSwitcher currentTier={debugTier} />
+          ) : (
+            <div className="w-40" />
+          )}
+        </div>
 
         <div className="flex-1 max-w-xs hidden sm:block">
           <div className="flex items-center gap-3">
