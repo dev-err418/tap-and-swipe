@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
         data: { subscriptionStatus: "active" },
       });
 
-      // Create 7-day session and redirect to roadmap
+      // Create 7-day session and redirect to Discord server
       await createSession(
         {
           discordId: discordUser.id,
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
         "7d"
       );
 
-      return NextResponse.redirect(`${APP_URL}/app-sprint/roadmap`);
+      return NextResponse.redirect(`https://discord.com/channels/${process.env.DISCORD_GUILD_ID}`);
     }
 
     // --- Standard flows ---
