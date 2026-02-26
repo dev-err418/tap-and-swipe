@@ -190,6 +190,7 @@ export async function createPrivateChannel(
   const guildId = process.env.DISCORD_GUILD_ID!;
   const categoryId = process.env.DISCORD_SUPPORT_CATEGORY_ID!;
   const adminId = process.env.ADMIN_DISCORD_ID!;
+  const botId = process.env.DISCORD_CLIENT_ID!;
 
   // @everyone role ID equals the guild ID in Discord
   const everyoneRoleId = guildId;
@@ -211,9 +212,14 @@ export async function createPrivateChannel(
           deny: "1024", // VIEW_CHANNEL
         },
         {
-          id: adminId,
+          id: botId,
           type: 1, // member
           allow: "68608", // VIEW_CHANNEL | SEND_MESSAGES | READ_MESSAGE_HISTORY
+        },
+        {
+          id: adminId,
+          type: 1, // member
+          allow: "68608",
         },
         {
           id: discordUserId,
