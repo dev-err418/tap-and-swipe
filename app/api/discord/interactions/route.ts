@@ -6,6 +6,8 @@ import {
   InteractionResponseType,
 } from "discord-interactions";
 import { computeDailyStats } from "@/lib/compute-daily-stats";
+import { prisma } from "@/lib/prisma";
+import { randomUUID } from "crypto";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -59,6 +61,35 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
+      });
+    }
+
+    if (interaction.data.name === "invite") {
+      if (interaction.member.user.id !== process.env.ADMIN_DISCORD_ID) {
+        return NextResponse.json({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: { content: "Not authorized.", flags: 64 },
+        });
+      }
+
+      after(async () => {
+        const token = randomUUID();
+        await prisma.inviteLink.create({ data: { token, tier: "boilerplate" } });
+
+        const url = `https://tap-and-swipe.com/invite/${token}`;
+        const applicationId = process.env.DISCORD_CLIENT_ID!;
+        const webhookUrl = `https://discord.com/api/v10/webhooks/${applicationId}/${interaction.token}`;
+
+        await fetch(`${webhookUrl}/messages/@original`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: url, flags: 64 }),
+        });
+      });
+
+      return NextResponse.json({
+        type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
+        data: { flags: 64 },
       });
     }
   }

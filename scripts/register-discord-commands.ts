@@ -11,6 +11,12 @@ const commands = [
     description:
       "Show daily stats report (downloads, trials, conversions, revenue)",
   },
+  {
+    name: "invite",
+    type: 1,
+    description: "Generate an invite link",
+    default_member_permissions: "8",
+  },
 ];
 
 async function main() {
