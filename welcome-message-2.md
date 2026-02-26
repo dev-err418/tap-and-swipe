@@ -1,5 +1,4 @@
 Here are the next steps:
-
 1️⃣ Watch the video above
 2️⃣ Access your course on the platform: https://tap-and-swipe.com/app-sprint/roadmap
 

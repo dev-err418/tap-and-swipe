@@ -128,7 +128,6 @@ To get started, here's a short intro video:
 https://www.youtube.com/watch?v=cKW-pp1pprg`;
 
         const stepsMsg = `Here are the next steps:
-
 1️⃣ Watch the video above
 2️⃣ Access your course on the platform: https://tap-and-swipe.com/app-sprint/roadmap
 
