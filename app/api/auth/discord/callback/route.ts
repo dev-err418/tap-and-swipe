@@ -120,13 +120,12 @@ export async function GET(request: NextRequest) {
       try {
         const channelId = await createPrivateChannel(discordUser.id, channelName);
 
-        const welcomeMsg = `Hey <@${discordUser.id}> ! 👋
+        const welcomeMsg = `Hey <@${discordUser.id}>, it's Arthur! 👋
 
-Welcome to the **App Sprint** program 🎉
-The whole team is thrilled to start this journey with you!
+Welcome to the App Sprint program 🎉
 
 To get started, here's a short intro video:
-https://www.youtube.com/watch?v=PLACEHOLDER`;
+https://www.youtube.com/watch?v=cKW-pp1pprg`;
 
         const stepsMsg = `Here are the next steps:
 

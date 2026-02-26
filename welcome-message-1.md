@@ -1,7 +1,6 @@
-Hey <@userId> ! 👋
+Hey <@userId>, it's Arthur! 👋
 
-Welcome to the **App Sprint** program 🎉
-The whole team is thrilled to start this journey with you!
+Welcome to the App Sprint program 🎉
 
 To get started, here's a short intro video:
-https://www.youtube.com/watch?v=PLACEHOLDER
+https://www.youtube.com/watch?v=cKW-pp1pprg
