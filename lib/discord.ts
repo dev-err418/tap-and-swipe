@@ -233,6 +233,29 @@ export async function createPrivateChannel(
   return channel.id;
 }
 
+export async function sendChannelMessage(
+  channelId: string,
+  content: string,
+  suppressEmbeds?: boolean
+): Promise<void> {
+  const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content,
+      ...(suppressEmbeds && { flags: 4 }),
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Discord sendChannelMessage failed: ${res.status} ${text}`);
+  }
+}
+
 export async function removeRole(discordUserId: string): Promise<boolean> {
   const res = await fetch(
     `${DISCORD_API}/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${process.env.DISCORD_ROLE_ID}`,

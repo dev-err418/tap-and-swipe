@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { exchangeCode, getUser, addToGuildWithRoles, createPrivateChannel } from "@/lib/discord";
+import { exchangeCode, getUser, addToGuildWithRoles, createPrivateChannel, sendChannelMessage } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/session";
 
@@ -114,11 +114,30 @@ export async function GET(request: NextRequest) {
       ];
       await addToGuildWithRoles(discordUser.id, tokenData.access_token, roleIds);
 
-      // Create private support channel
+      // Create private support channel and send welcome messages
       const username = (discordUser.global_name || discordUser.username).toLowerCase().replace(/[^a-z0-9-]/g, "-");
       const channelName = `🎧・support-${username}`;
       try {
-        await createPrivateChannel(discordUser.id, channelName);
+        const channelId = await createPrivateChannel(discordUser.id, channelName);
+
+        const welcomeMsg = `Hey <@${discordUser.id}> ! 👋
+
+Welcome to the **App Sprint** program 🎉
+The whole team is thrilled to start this journey with you!
+
+To get started, here's a short intro video:
+https://www.youtube.com/watch?v=PLACEHOLDER`;
+
+        const stepsMsg = `Here are the next steps:
+
+1️⃣ Watch the video above
+2️⃣ Access your course on the platform: https://tap-and-swipe.com/app-sprint/roadmap
+
+We're super excited to kick this off with you!
+Feel free to reach out here if you have any questions 😉`;
+
+        await sendChannelMessage(channelId, welcomeMsg);
+        await sendChannelMessage(channelId, stepsMsg, true);
       } catch (err) {
         console.error("[invite] Failed to create support channel:", err);
       }
