@@ -114,6 +114,9 @@ export async function GET(request: NextRequest) {
       ];
       await addToGuildWithRoles(discordUser.id, tokenData.access_token, roleIds);
 
+      // Wait for Discord to propagate guild membership
+      await new Promise((r) => setTimeout(r, 1500));
+
       // Create private support channel
       const channelName = `support-${(discordUser.global_name || discordUser.username).toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
       try {
