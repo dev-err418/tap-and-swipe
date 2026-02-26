@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 
       // Create private support channel
       const username = (discordUser.global_name || discordUser.username).toLowerCase().replace(/[^a-z0-9-]/g, "-");
-      const channelName = `🕯️・support-${username}`;
+      const channelName = `🎧・support-${username}`;
       try {
         await createPrivateChannel(discordUser.id, channelName);
       } catch (err) {

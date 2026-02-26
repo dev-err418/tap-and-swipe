@@ -21,7 +21,7 @@ export default async function InvitePage({
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#2a2725] px-6 selection:bg-[#f4cf8f]/30">
       <div className="w-full max-w-md text-center">
-        <h1 className="font-sans text-5xl font-extrabold tracking-tight text-[#f1ebe2] sm:text-7xl">
+        <h1 className="font-serif text-6xl font-bold tracking-tight text-[#f1ebe2] sm:text-8xl">
           You&apos;re invited
         </h1>
         <p className="mt-6 text-lg text-[#c9c4bc]">
