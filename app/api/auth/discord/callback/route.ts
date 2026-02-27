@@ -119,8 +119,12 @@ https://www.youtube.com/watch?v=cKW-pp1pprg`;
 We're super excited to kick this off with you!
 Feel free to reach out here if you have any questions 😉`;
 
+        const kickoffMsg = `Here's the link to book your kickoff call, just a quick chat to get you started and welcome you on board 🚀
+https://cal.com/arthur-builds-stuff/-app-sprint-kickoff`;
+
         await sendChannelMessage(channelId, welcomeMsg);
         await sendChannelMessage(channelId, stepsMsg, true);
+        await sendChannelMessage(channelId, kickoffMsg);
       } catch (err) {
         console.error("[invite] Failed to create support channel:", err);
       }
