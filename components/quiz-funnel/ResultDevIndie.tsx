@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, Loader2, ArrowRight } from "lucide-react";
+import { CheckCircle2, Loader2, ArrowRight } from "lucide-react";
 import { isValidPhoneNumber, parsePhoneNumber } from "react-phone-number-input";
 import type { Country } from "react-phone-number-input";
 import type { E164Number } from "libphonenumber-js/core";
@@ -18,31 +18,70 @@ const fadeInUp = {
 
 const CAL_BASE = "https://cal.com/arthur-builds-stuff/app-sprint-application";
 
-const WHATS_INCLUDED = [
-  "Production-ready boilerplate",
-  "Paywall templates + A/B framework",
-  "Complete video course",
-  "1:1 mentoring calls",
-  "Group lives on growth & ads",
-  "Organic growth playbook",
-  "ASO framework",
-  "24/7 async support (WhatsApp & Discord)",
-  "Private Discord community",
-  "Lifetime updates",
-];
+type ProgramStep = {
+  emoji: string;
+  title: string;
+  format: string;
+  description: string;
+  includes: string[];
+};
 
-const TIMELINE = [
-  { step: "Step 1", title: "Find your idea", desc: "We find or validate your profitable app niche together." },
-  { step: "Step 2", title: "Code your MVP", desc: "You build on the boilerplate. Payments, analytics, attribution — all wired up." },
-  { step: "Step 3", title: "Publish to the stores", desc: "Your app goes live with optimized store listings and ASO." },
-  { step: "Step 4", title: "Organic growth", desc: "Content strategy, social media, community — free acquisition." },
-  { step: "Step 5", title: "Paid ads", desc: "We scale with paid acquisition once organic is working." },
-];
-
-const DELIVERY = [
-  { label: "Steps 1-3", format: "1:1 calls", desc: "Personal mentoring for idea, build, and publish phases" },
-  { label: "Steps 4-5", format: "Group lives", desc: "Learn growth strategies with other indie devs" },
-  { label: "Ongoing", format: "Async support", desc: "24/7 WhatsApp & Discord — I answer when you need me" },
+const PROGRAM_STEPS: ProgramStep[] = [
+  {
+    emoji: "💡",
+    title: "Find your idea",
+    format: "1:1 calls",
+    description: "Before you write a single line of code, we make sure people actually want what you're building. Data, not gut feelings.",
+    includes: [
+      "How to find app ideas that actually make money",
+      "ASO basics: pick keywords that get you discovered",
+      "The 3-day validation test",
+    ],
+  },
+  {
+    emoji: "💻",
+    title: "Build your MVP",
+    format: "1:1 calls",
+    description: "You build on the production-ready boilerplate. Payments, analytics, attribution, all wired up from day one.",
+    includes: [
+      "Production-ready boilerplate + Figma files",
+      "Paywall templates + A/B testing framework",
+      "Set up subscriptions with RevenueCat",
+    ],
+  },
+  {
+    emoji: "🚀",
+    title: "Publish to the stores",
+    format: "1:1 calls",
+    description: "Your app goes live with optimized store listings and ASO. No guessing on screenshots, descriptions, or keywords.",
+    includes: [
+      "App Store Connect setup & first TestFlight build",
+      "Optimized store listing & screenshots",
+      "ASO framework for organic discovery",
+    ],
+  },
+  {
+    emoji: "📈",
+    title: "Organic growth",
+    format: "Group lives",
+    description: "Content strategy, social media, community. Free acquisition channels that compound over time.",
+    includes: [
+      "Organic growth playbook",
+      "TikTok account warm-up & content strategy",
+      "ASO optimization after launch",
+    ],
+  },
+  {
+    emoji: "💰",
+    title: "Paid ads",
+    format: "Group lives",
+    description: "Once organic is working, we scale with paid acquisition. Learn to run profitable campaigns.",
+    includes: [
+      "Apple Search Ads: first campaign setup",
+      "Target any country on TikTok with a VPN",
+      "AB test everything: pricing, paywalls, creatives",
+    ],
+  },
 ];
 
 
@@ -244,6 +283,81 @@ function CTABlock({
 }
 
 
+function ProgramRoadmap() {
+  const [activeTab, setActiveTab] = useState(0);
+  const active = PROGRAM_STEPS[activeTab];
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      {/* Tabs */}
+      <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-12 border-b border-white/10 pb-8">
+        {PROGRAM_STEPS.map((step, i) => {
+          const isActive = activeTab === i;
+          return (
+            <button
+              key={i}
+              onClick={() => setActiveTab(i)}
+              className={`group flex flex-col items-center gap-3 transition-all duration-300 outline-none cursor-pointer ${
+                isActive ? "text-[#f4cf8f] scale-105" : "text-[#c9c4bc] hover:text-[#f1ebe2]"
+              }`}
+            >
+              <div className={`h-12 w-12 flex items-center justify-center rounded-xl transition-all ${
+                isActive
+                  ? "bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 shadow-[0_0_15px_rgba(244,207,143,0.1)]"
+                  : "bg-white/5 border border-transparent group-hover:bg-white/10"
+              }`}>
+                <span className="text-2xl">{step.emoji}</span>
+              </div>
+              <span className="text-sm font-medium">{step.title}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Active content */}
+      <div className="min-h-[320px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-xl mx-auto"
+          >
+            <div className="mb-6">
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 text-[#f4cf8f] text-xs font-bold uppercase tracking-wider">
+                {active.format}
+              </div>
+            </div>
+
+            <h3 className="text-3xl font-serif font-bold text-[#f1ebe2] mb-4">
+              {active.title}
+            </h3>
+            <p className="text-[#c9c4bc] text-lg leading-relaxed mb-8">
+              {active.description}
+            </p>
+
+            <div className="space-y-4">
+              {active.includes.map((item, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-[#f4cf8f] shrink-0 mt-0.5" />
+                  <span className="text-[#f1ebe2]/90">{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-8 text-sm text-[#c9c4bc]/60">
+              + 24/7 async support (WhatsApp & Discord) and private community access throughout the program
+            </p>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+    </div>
+  );
+}
+
 export default function ResultDevIndie({
   firstName,
   answers,
@@ -361,19 +475,17 @@ export default function ResultDevIndie({
         </p>
       </motion.div>
 
-      {/* 3-Tier Stack */}
+      {/* Program Roadmap */}
       <motion.div {...fadeInUp} className="pt-20 mb-20">
-        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-8 text-center">
-          What you get
-        </h2>
-        <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-          {WHATS_INCLUDED.map((item, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-[#f4cf8f] shrink-0 mt-0.5" />
-              <span className="text-[#f1ebe2]">{item}</span>
-            </div>
-          ))}
+        <div className="mb-12 text-center">
+          <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl">
+            What you get
+          </h2>
+          <p className="mt-4 text-[#c9c4bc]">
+            5 steps. From first idea to first revenue on the App Store. Then we do it again.
+          </p>
         </div>
+        <ProgramRoadmap />
       </motion.div>
 
       {/* CTA #1 */}
@@ -387,46 +499,6 @@ export default function ResultDevIndie({
           label="Book your free call"
           dataGoal="quiz_result_dev_indie_cta"
         />
-      </motion.div>
-
-      {/* 5 Steps Timeline */}
-      <motion.div {...fadeInUp} className="pt-20 mb-24">
-        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-8 text-center">
-          The 5-step roadmap
-        </h2>
-        <div className="space-y-6 relative max-w-md mx-auto">
-          <div className="absolute left-[18px] top-2 bottom-2 w-px bg-white/10" />
-          {TIMELINE.map((item, i) => (
-            <div key={i} className="flex gap-4 relative">
-              <div className="h-9 w-9 shrink-0 rounded-full bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 flex items-center justify-center text-sm font-bold text-[#f4cf8f] z-10">
-                {i + 1}
-              </div>
-              <div>
-                <span className="text-xs font-medium text-[#f4cf8f] uppercase tracking-wider">
-                  {item.step}
-                </span>
-                <h3 className="text-[#f1ebe2] font-bold mt-0.5">{item.title}</h3>
-                <p className="text-sm text-[#c9c4bc] mt-1">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Delivery Model */}
-      <motion.div {...fadeInUp} className="pt-20 mb-24">
-        <h2 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl mb-8 text-center">
-          How we work together
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {DELIVERY.map((d, i) => (
-            <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center">
-              <span className="text-xs font-medium text-[#f4cf8f] uppercase tracking-wider">{d.label}</span>
-              <h3 className="text-lg font-bold mt-2 mb-1">{d.format}</h3>
-              <p className="text-sm text-[#c9c4bc]">{d.desc}</p>
-            </div>
-          ))}
-        </div>
       </motion.div>
 
       {/* About Arthur */}

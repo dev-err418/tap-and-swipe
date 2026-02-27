@@ -45,7 +45,7 @@ const categories: Category[] = [
         id: "design",
         title: "Design",
         emoji: "🎨",
-        description: "Great apps don't just look pretty — they guide users toward a purchase. Study what works, then make it yours.",
+        description: "Great apps don't just look pretty. They guide users toward a purchase. Study what works, then make it yours.",
         lessons: [
             "Design your app without being a designer",
             "Design an onboarding that converts",
@@ -172,7 +172,7 @@ const Roadmap = () => {
                         The full App Sprint roadmap
                     </h2>
                     <p className="mt-4 text-lg text-[#c9c4bc]">
-                        6 modules, 21 lessons — from first idea to first revenue on the App Store
+                        6 modules, 21 lessons. From first idea to first revenue on the App Store.
                     </p>
                     <p className="mt-3 text-sm text-[#c9c4bc]/70">
                         Here&apos;s exactly what you get when you join.
