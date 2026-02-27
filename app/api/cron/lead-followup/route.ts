@@ -23,7 +23,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    for (const lead of leads) {
+    if (leads.length === 0) {
+      return NextResponse.json({ success: true, count: 0 });
+    }
+
+    const fields = leads.flatMap((lead) => {
       const { whatsappUrlFr, whatsappUrlEn } = generateFollowUpMessage({
         firstName: lead.firstName,
         countryCode: lead.countryCode,
@@ -33,36 +37,26 @@ export async function GET(request: NextRequest) {
       const answers = (lead.answers ?? {}) as Record<string, number>;
       const temperature = scoreTemperature(answers);
 
-      await sendDiscordNotification(
-        "🔔 [App Sprint] 24h Follow-Up",
-        `It's been 24h since **${lead.firstName}** attended the call. Time to follow up!`,
-        [
-          { name: "Name", value: lead.firstName, inline: true },
-          {
-            name: "Phone",
-            value: `${lead.countryCode} ${lead.phone}`,
-            inline: true,
-          },
-          { name: "Lead Score", value: temperature, inline: true },
-          {
-            name: "WhatsApp FR",
-            value: `[Envoyer le message](${whatsappUrlFr})`,
-            inline: true,
-          },
-          {
-            name: "WhatsApp EN",
-            value: `[Send message](${whatsappUrlEn})`,
-            inline: true,
-          },
-        ],
-        0xffa500,
-      );
+      return [
+        {
+          name: `${lead.firstName} (${temperature})`,
+          value: `${lead.countryCode} ${lead.phone}\n[WhatsApp FR](${whatsappUrlFr}) | [WhatsApp EN](${whatsappUrlEn})`,
+          inline: false,
+        },
+      ];
+    });
 
-      await prisma.quizLead.update({
-        where: { id: lead.id },
-        data: { followUpSentAt: new Date() },
-      });
-    }
+    await sendDiscordNotification(
+      "🔔 [App Sprint] Daily Follow-Ups",
+      `${leads.length} lead${leads.length > 1 ? "s" : ""} to follow up with today:`,
+      fields,
+      0xffa500,
+    );
+
+    await prisma.quizLead.updateMany({
+      where: { id: { in: leads.map((l) => l.id) } },
+      data: { followUpSentAt: new Date() },
+    });
 
     return NextResponse.json({ success: true, count: leads.length });
   } catch (err) {
