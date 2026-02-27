@@ -98,13 +98,13 @@ function BookedContent() {
             Otherwise, your appointment will be cancelled.
           </p>
 
-          <div className="aspect-video overflow-hidden rounded-2xl border border-white/5">
+          <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-[#f4cf8f]/10 ring-1 ring-white/10">
             <iframe
               src="https://www.youtube.com/embed/Ml22j9SWt0o"
               title="Preparation video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              className="h-full w-full"
+              className="aspect-video w-full"
             />
           </div>
         </motion.div>
