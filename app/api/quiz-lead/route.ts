@@ -8,7 +8,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { firstName, email, phone, countryCode, profileType, answers, source } =
+    const { firstName, email, phone, countryCode, answers, source, variant: rawVariant } =
       body as {
         firstName: string;
         email: string;
@@ -17,7 +17,11 @@ export async function POST(request: NextRequest) {
         profileType: string;
         answers: Record<string, number>;
         source?: string;
+        variant?: string;
       };
+
+    const profileType = "dev-indie";
+    const variant = rawVariant === "direct" ? "direct" : "quiz";
 
     if (!firstName || typeof firstName !== "string") {
       return NextResponse.json({ error: "firstName is required" }, { status: 400 });
@@ -31,10 +35,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "phone is required" }, { status: 400 });
     }
 
-    if (profileType !== "dev-indie" && profileType !== "entreprise") {
-      return NextResponse.json({ error: "Invalid profileType" }, { status: 400 });
-    }
-
     const country = request.headers.get("x-vercel-ip-country") || null;
     const city = request.headers.get("x-vercel-ip-city") || null;
 
@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
         phone: phone.trim(),
         countryCode: countryCode || "+33",
         profileType,
+        variant,
         answers,
         source: source || null,
         country,
@@ -70,6 +71,7 @@ export async function POST(request: NextRequest) {
         { name: "Profile", value: profileType, inline: true },
         { name: "Source", value: source || "Direct", inline: true },
         { name: "Location", value: [city ? decodeURIComponent(city) : null, country].filter(Boolean).join(", ") || "Unknown", inline: true },
+        { name: "Variant", value: variant, inline: true },
         { name: "Lead Score", value: temperature, inline: true },
         { name: "WhatsApp", value: `[Open in WhatsApp](${whatsappUrl})`, inline: true },
       ]

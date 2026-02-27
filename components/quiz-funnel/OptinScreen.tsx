@@ -13,11 +13,13 @@ export default function OptinScreen({
   answers,
   profileType,
   source,
+  variant,
   onSuccess,
 }: {
   answers: Record<string, number>;
-  profileType: "dev-indie" | "entreprise";
+  profileType: "dev-indie";
   source?: string;
+  variant: "quiz" | "direct";
   onSuccess: (firstName: string, leadId: string, email: string, phone: string) => void;
 }) {
   const [firstName, setFirstName] = useState("");
@@ -62,6 +64,7 @@ export default function OptinScreen({
           phone: parsed?.nationalNumber || "",
           countryCode: parsed ? `+${parsed.countryCallingCode}` : "+1",
           profileType,
+          variant,
           answers,
           source: source || undefined,
         }),

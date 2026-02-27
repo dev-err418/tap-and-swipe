@@ -11,6 +11,7 @@ interface Lead {
   phone: string;
   countryCode: string;
   profileType: string;
+  variant: string;
   status: string;
   answers: Record<string, number> | null;
   source: string | null;
@@ -77,7 +78,7 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Name</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Email</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Phone</th>
-              <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Profile</th>
+              <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Variant</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Status</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Location</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Source</th>
@@ -107,12 +108,12 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        lead.profileType === "entreprise"
-                          ? "bg-blue-500/10 text-blue-400"
+                        lead.variant === "direct"
+                          ? "bg-purple-500/10 text-purple-400"
                           : "bg-[#f4cf8f]/10 text-[#f4cf8f]"
                       }`}
                     >
-                      {lead.profileType}
+                      {lead.variant || "quiz"}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -172,15 +173,15 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
                 <span>{selected.countryCode} {selected.phone}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#c9c4bc]">Profile</span>
+                <span className="text-[#c9c4bc]">Variant</span>
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                    selected.profileType === "entreprise"
-                      ? "bg-blue-500/10 text-blue-400"
+                    selected.variant === "direct"
+                      ? "bg-purple-500/10 text-purple-400"
                       : "bg-[#f4cf8f]/10 text-[#f4cf8f]"
                   }`}
                 >
-                  {selected.profileType}
+                  {selected.variant || "quiz"}
                 </span>
               </div>
               <div className="flex justify-between items-center">

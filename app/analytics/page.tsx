@@ -42,10 +42,18 @@ function getDateFilter(period: Period) {
   return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
+type VariantFilter = "all" | "quiz" | "direct";
+
+const VARIANT_LABELS: Record<VariantFilter, string> = {
+  all: "All",
+  quiz: "Quiz",
+  direct: "Direct",
+};
+
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; variant?: string }>;
 }) {
   if (process.env.NODE_ENV === "production") {
     notFound();
@@ -55,9 +63,16 @@ export default async function AnalyticsPage({
   const period = (["day", "week", "month", "all"].includes(params.period ?? "")
     ? params.period
     : "week") as Period;
+  const variantFilter = (["all", "quiz", "direct"].includes(params.variant ?? "")
+    ? params.variant
+    : "all") as VariantFilter;
 
   const gte = getDateFilter(period);
-  const where = gte ? { createdAt: { gte } } : {};
+  const dateWhere = gte ? { createdAt: { gte } } : {};
+  const variantEventWhere = variantFilter !== "all" ? { variant: variantFilter } : {};
+  const variantLeadWhere = variantFilter !== "all" ? { variant: variantFilter } : {};
+  const eventWhere = { ...dateWhere, ...variantEventWhere };
+  const leadWhere = { ...dateWhere, ...variantLeadWhere };
 
   const [
     pageViews,
@@ -65,34 +80,38 @@ export default async function AnalyticsPage({
     quizCompletes,
     optins,
     bookingClicks,
-    devIndieCount,
-    entrepriseCount,
+    quizVariantLeads,
+    directVariantLeads,
+    quizBookingClicks,
+    directBookingClicks,
     leads,
     eventSourceGroups,
     leadSourceGroups,
     inviteLinks,
   ] = await Promise.all([
-    prisma.quizEvent.count({ where: { type: "page_view", ...where } }),
-    prisma.quizEvent.count({ where: { type: "quiz_start", ...where } }),
-    prisma.quizEvent.count({ where: { type: "quiz_complete", ...where } }),
-    prisma.quizLead.count({ where }),
-    prisma.quizEvent.count({ where: { type: "booking_click", ...where } }),
-    prisma.quizLead.count({ where: { profileType: "dev-indie", ...where } }),
-    prisma.quizLead.count({ where: { profileType: "entreprise", ...where } }),
+    prisma.quizEvent.count({ where: { type: "page_view", ...eventWhere } }),
+    prisma.quizEvent.count({ where: { type: "quiz_start", ...eventWhere } }),
+    prisma.quizEvent.count({ where: { type: "quiz_complete", ...eventWhere } }),
+    prisma.quizLead.count({ where: leadWhere }),
+    prisma.quizEvent.count({ where: { type: "booking_click", ...eventWhere } }),
+    prisma.quizLead.count({ where: { variant: "quiz", ...dateWhere } }),
+    prisma.quizLead.count({ where: { variant: "direct", ...dateWhere } }),
+    prisma.quizEvent.count({ where: { type: "booking_click", variant: "quiz", ...dateWhere } }),
+    prisma.quizEvent.count({ where: { type: "booking_click", variant: "direct", ...dateWhere } }),
     prisma.quizLead.findMany({
-      where,
+      where: leadWhere,
       orderBy: { createdAt: "desc" },
       take: 100,
     }),
     prisma.quizEvent.groupBy({
       by: ["source"],
-      where: { type: "page_view", ...where },
+      where: { type: "page_view", ...eventWhere },
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
     }),
     prisma.quizLead.groupBy({
       by: ["source"],
-      where,
+      where: leadWhere,
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
     }),
@@ -100,9 +119,6 @@ export default async function AnalyticsPage({
       orderBy: { createdAt: "desc" },
     }),
   ]);
-
-  const devIndiePercent = optins > 0 ? Math.round((devIndieCount / optins) * 100) : 0;
-  const entreprisePercent = optins > 0 ? Math.round((entrepriseCount / optins) * 100) : 0;
 
   // Funnel steps
   const funnel = [
@@ -135,6 +151,16 @@ export default async function AnalyticsPage({
 
   const maxCount = Math.max(...funnel.map((f) => f.count), 1);
 
+  function buildUrl(overrides: { period?: Period; variant?: VariantFilter } = {}) {
+    const p = overrides.period ?? period;
+    const v = overrides.variant ?? variantFilter;
+    const sp = new URLSearchParams();
+    if (p !== "week") sp.set("period", p);
+    if (v !== "all") sp.set("variant", v);
+    const qs = sp.toString();
+    return `/analytics${qs ? `?${qs}` : ""}`;
+  }
+
   const serializedInvites = inviteLinks.map((inv) => ({
     id: inv.id,
     token: inv.token,
@@ -157,12 +183,27 @@ export default async function AnalyticsPage({
       <div className="max-w-6xl mx-auto">
         {/* Conversion Funnel */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-10">
-          <div className="flex items-center justify-end mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex gap-1 rounded-xl bg-white/5 p-1">
+              {(Object.keys(VARIANT_LABELS) as VariantFilter[]).map((v) => (
+                <Link
+                  key={v}
+                  href={buildUrl({ variant: v })}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    variantFilter === v
+                      ? "bg-[#f4cf8f] text-[#2a2725]"
+                      : "text-[#c9c4bc] hover:text-[#f1ebe2]"
+                  }`}
+                >
+                  {VARIANT_LABELS[v]}
+                </Link>
+              ))}
+            </div>
             <div className="flex gap-1 rounded-xl bg-white/5 p-1">
               {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
                 <Link
                   key={p}
-                  href={`/analytics${p === "week" ? "" : `?period=${p}`}`}
+                  href={buildUrl({ period: p })}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     period === p
                       ? "bg-[#f4cf8f] text-[#2a2725]"
@@ -180,10 +221,10 @@ export default async function AnalyticsPage({
 
         {/* Stats cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-          <StatCard label="Leads" value={optins} />
-          <StatCard label="Dev Indie" value={devIndieCount} sub={`${devIndiePercent}%`} />
-          <StatCard label="Enterprise" value={entrepriseCount} sub={`${entreprisePercent}%`} />
-          <StatCard label="Booking clicks" value={bookingClicks} />
+          <StatCard label="Leads" value={optins} split={{ quiz: quizVariantLeads, direct: directVariantLeads }} />
+          <StatCard label="Booking clicks" value={bookingClicks} split={{ quiz: quizBookingClicks, direct: directBookingClicks }} />
+          <StatCard label="Quiz leads" value={quizVariantLeads} />
+          <StatCard label="Direct leads" value={directVariantLeads} />
         </div>
 
         {/* Traffic sources */}
@@ -371,14 +412,30 @@ function FunnelChart({
   );
 }
 
-function StatCard({ label, value, sub }: { label: string; value: number; sub?: string }) {
+function StatCard({ label, value, split }: { label: string; value: number; split?: { quiz: number; direct: number } }) {
+  const quizPct = split && value > 0 ? Math.round((split.quiz / value) * 100) : 0;
+  const directPct = split && value > 0 ? Math.round((split.direct / value) * 100) : 0;
+
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
       <div className="text-sm text-[#c9c4bc] mb-1">{label}</div>
-      <div className="text-3xl font-bold">
-        {value}
-        {sub && <span className="text-sm text-[#c9c4bc] font-normal ml-1">({sub})</span>}
-      </div>
+      <div className="text-3xl font-bold mb-3">{value}</div>
+      {split && value > 0 && (
+        <>
+          <div className="flex h-2 rounded-full overflow-hidden bg-white/5">
+            {split.quiz > 0 && (
+              <div className="bg-[#f4cf8f] h-full" style={{ width: `${quizPct}%` }} />
+            )}
+            {split.direct > 0 && (
+              <div className="bg-[#f4cf8f]/40 h-full" style={{ width: `${directPct}%` }} />
+            )}
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-[#c9c4bc]">
+            <span>Quiz {split.quiz} ({quizPct}%)</span>
+            <span>Direct {split.direct} ({directPct}%)</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }

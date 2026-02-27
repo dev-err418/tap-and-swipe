@@ -11,8 +11,7 @@ export type QuizStep =
   | "q8"
   | "optin"
   | "waiting"
-  | "result-dev-indie"
-  | "result-entreprise";
+  | "result-dev-indie";
 
 export type QuestionKey =
   | "q1"
@@ -162,9 +161,9 @@ export function getPrevQuestion(
 
 // ─── Segmentation Logic ─────────────────────────────────────────────
 
-/** Q1 index 2 (Entrepreneur/CEO) → entreprise, else → dev-indie */
-export function getProfileType(q1Index: number): "dev-indie" | "entreprise" {
-  return q1Index === 2 ? "entreprise" : "dev-indie";
+/** Always returns dev-indie (enterprise outcome removed) */
+export function getProfileType(_q1Index: number): "dev-indie" {
+  return "dev-indie";
 }
 
 /** Map Q4 answer index to blocker text for result pages */

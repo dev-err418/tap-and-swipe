@@ -91,6 +91,7 @@ model QuizLead {
   phone       String
   countryCode String   @default("+33")
   profileType String   // "dev-indie" | "entreprise"
+  variant     String   @default("quiz") // "quiz" | "direct"
   answers     Json     // { q1: 0, q2: 2, ... } index-based
   status         String    @default("new") // "new" | "abandoned" | "booked" | "whatsapp_sent" | "got_answered" | "show" | "no_show"
   showAt         DateTime?
@@ -109,6 +110,7 @@ model QuizEvent {
   id        String   @id @default(cuid())
   type      String   // "page_view" | "quiz_start" | "quiz_complete" | "booking_click"
   sessionId String
+  variant   String   @default("quiz") // "quiz" | "direct"
   source    String?
   createdAt DateTime @default(now())
 
