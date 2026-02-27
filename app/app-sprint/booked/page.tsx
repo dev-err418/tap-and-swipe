@@ -99,12 +99,11 @@ function BookedContent() {
           </p>
 
           <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-[#f4cf8f]/10 ring-1 ring-white/10">
-            <iframe
-              src="https://www.youtube.com/embed/Ml22j9SWt0o"
-              title="Preparation video"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="aspect-video w-full"
+            <video
+              src="https://assets-2-prod.whop.com/uploads/user_3590375/video/bots/2026-02-27/5e10f6ae-e359-4266-a8be-293ceb32777c.mp4"
+              controls
+              playsInline
+              className="w-full"
             />
           </div>
         </motion.div>
