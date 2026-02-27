@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 Welcome to the App Sprint program 🎉
 
 To get started, here's a short intro video:
-https://www.youtube.com/watch?v=cKW-pp1pprg`;
+https://youtu.be/AOH2aOJwp_Y`;
 
         const stepsMsg = `Here are the next steps:
 1️⃣ Watch the video above
