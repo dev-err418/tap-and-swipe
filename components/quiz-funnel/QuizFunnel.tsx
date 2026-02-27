@@ -63,22 +63,22 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
   );
   const sourceRef = useRef<string | undefined>(undefined);
 
-  // Determine variant on mount: URL param (debug) → sessionStorage → random 50/50
+  // Determine variant on mount: URL param (debug) → cookie → random 50/50
   useEffect(() => {
     const urlVariant = searchParams.get("variant");
     if (urlVariant === "quiz" || urlVariant === "direct") {
       setVariant(urlVariant);
-      sessionStorage.setItem("quiz_variant", urlVariant);
+      document.cookie = `quiz_variant=${urlVariant};path=/;max-age=${60 * 60 * 24 * 90};samesite=lax`;
       return;
     }
-    const stored = sessionStorage.getItem("quiz_variant");
-    if (stored === "quiz" || stored === "direct") {
-      setVariant(stored);
+    const match = document.cookie.match(/(?:^|; )quiz_variant=(quiz|direct)(?:;|$)/);
+    if (match) {
+      setVariant(match[1] as Variant);
       return;
     }
     const random: Variant = Math.random() < 0.5 ? "quiz" : "direct";
     setVariant(random);
-    sessionStorage.setItem("quiz_variant", random);
+    document.cookie = `quiz_variant=${random};path=/;max-age=${60 * 60 * 24 * 90};samesite=lax`;
   }, [searchParams]);
 
   // Capture UTM / referrer source on mount
