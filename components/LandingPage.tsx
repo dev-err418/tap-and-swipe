@@ -37,13 +37,18 @@ const LandingPage = ({
                         />
                         <span className="text-sm font-medium text-[#c9c4bc]">By ArthurBuildsStuff</span>
                     </a>
-                    <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[0.9] sm:text-7xl">
-                        Build a mobile app in <br />
-                        weeks <span className="relative inline-block font-serif text-6xl text-[#f4cf8f] sm:text-8xl">
+                    <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[1] sm:text-7xl">
+                        Build a mobile app in{" "}
+                        weeks{" "}
+                        <span
+                            className="text-[#f4cf8f] box-decoration-clone px-2 -mx-2"
+                            style={{
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`,
+                                backgroundSize: "100% 100%",
+                                backgroundRepeat: "no-repeat",
+                            }}
+                        >
                             not months
-                            <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 10" preserveAspectRatio="none">
-                                <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="2" fill="none" className="text-[#f4cf8f]/50" />
-                            </svg>
                         </span>
                     </h1>
                     <p className="mx-auto mt-8 max-w-2xl text-lg text-[#c9c4bc] sm:text-xl">
