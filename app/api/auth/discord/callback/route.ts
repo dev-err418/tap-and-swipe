@@ -114,6 +114,7 @@ https://www.youtube.com/watch?v=cKW-pp1pprg`;
         const stepsMsg = `Here are the next steps:
 1️⃣ Watch the video above
 2️⃣ Access your course on the platform: https://tap-and-swipe.com/app-sprint/roadmap
+3️⃣ Have a read through this report on the state of subscription apps — great insights on the mobile app market: https://www.revenuecat.com/pdf/state-of-subscription-apps-2025.pdf
 
 We're super excited to kick this off with you!
 Feel free to reach out here if you have any questions 😉`;
