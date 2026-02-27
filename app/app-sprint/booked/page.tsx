@@ -100,7 +100,7 @@ function BookedContent() {
 
           <div className="aspect-video overflow-hidden rounded-2xl border border-white/5">
             <iframe
-              src="https://www.youtube.com/embed/VIDEO_ID"
+              src="https://www.youtube.com/embed/Ml22j9SWt0o"
               title="Preparation video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
