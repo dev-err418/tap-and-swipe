@@ -92,8 +92,10 @@ model QuizLead {
   countryCode String   @default("+33")
   profileType String   // "dev-indie" | "entreprise"
   answers     Json     // { q1: 0, q2: 2, ... } index-based
-  status      String   @default("new") // "new" | "abandoned" | "booked" | "whatsapp_sent" | "got_answered" | "show" | "no_show"
-  source      String?  // UTM source
+  status         String    @default("new") // "new" | "abandoned" | "booked" | "whatsapp_sent" | "got_answered" | "show" | "no_show"
+  showAt         DateTime?
+  followUpSentAt DateTime?
+  source         String?  // UTM source
   country     String?  // Vercel geo
   city        String?  // Vercel geo
   createdAt   DateTime @default(now())

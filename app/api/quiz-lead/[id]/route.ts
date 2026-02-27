@@ -23,7 +23,15 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    await prisma.quizLead.update({ where: { id }, data: { status } });
+    await prisma.quizLead.update({
+      where: { id },
+      data: {
+        status,
+        ...(status === "show"
+          ? { showAt: new Date() }
+          : { showAt: null }),
+      },
+    });
     return NextResponse.json({ ok: true, status });
   } catch (err) {
     console.error("Update lead error:", err);

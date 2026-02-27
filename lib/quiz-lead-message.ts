@@ -21,7 +21,7 @@ interface GenerateLeadMessageResult {
 // Scoring (Q8 = investment readiness)
 // ---------------------------------------------------------------------------
 
-function scoreTemperature(answers: Record<string, number>): Temperature {
+export function scoreTemperature(answers: Record<string, number>): Temperature {
   const q8 = answers["8"];
   if (q8 === 0) return "HOT";
   if (q8 === 1) return "WARM";
@@ -185,6 +185,39 @@ function buildWhatsAppUrl(
 
 // ---------------------------------------------------------------------------
 // Public API
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Follow-up message (24h after "show")
+// ---------------------------------------------------------------------------
+
+interface GenerateFollowUpMessageInput {
+  firstName: string;
+  countryCode: string;
+  phone: string;
+}
+
+interface GenerateFollowUpMessageResult {
+  whatsappUrlFr: string;
+  whatsappUrlEn: string;
+}
+
+export function generateFollowUpMessage(
+  input: GenerateFollowUpMessageInput,
+): GenerateFollowUpMessageResult {
+  const { firstName, countryCode, phone } = input;
+
+  const messageFr = `Hey ${firstName}, je fais suite à notre appel. T'as eu le temps d'y réfléchir ?`;
+  const messageEn = `Hey ${firstName}, just following up after our call. Have you had time to think about it?`;
+
+  return {
+    whatsappUrlFr: buildWhatsAppUrl(countryCode, phone, messageFr),
+    whatsappUrlEn: buildWhatsAppUrl(countryCode, phone, messageEn),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Initial outreach message
 // ---------------------------------------------------------------------------
 
 export function generateLeadMessage(
