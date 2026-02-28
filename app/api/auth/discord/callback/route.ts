@@ -207,8 +207,8 @@ Feel free to reach out here if you have any questions 😉`;
       discordAvatar: discordUser.avatar,
     });
 
-    // Redirect to Paddle checkout
-    return NextResponse.redirect(`${APP_URL}/api/checkout/paddle`);
+    // Redirect to Stripe checkout
+    return NextResponse.redirect(`${APP_URL}/api/checkout`);
   } catch (err) {
     console.error("Discord callback error:", err);
     return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=auth_failed`);
