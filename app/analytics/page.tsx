@@ -50,16 +50,24 @@ const VARIANT_LABELS: Record<VariantFilter, string> = {
   direct: "Direct",
 };
 
+type Tab = "quiz" | "community";
+
+const TAB_LABELS: Record<Tab, string> = {
+  quiz: "1:1",
+  community: "Community",
+};
+
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; variant?: string }>;
+  searchParams: Promise<{ period?: string; variant?: string; tab?: string }>;
 }) {
   if (process.env.NODE_ENV === "production") {
     notFound();
   }
 
   const params = await searchParams;
+  const tab = (["quiz", "community"].includes(params.tab ?? "") ? params.tab : "quiz") as Tab;
   const period = (["day", "week", "month", "all"].includes(params.period ?? "")
     ? params.period
     : "week") as Period;
@@ -69,6 +77,99 @@ export default async function AnalyticsPage({
 
   const gte = getDateFilter(period);
   const dateWhere = gte ? { createdAt: { gte } } : {};
+
+  function buildUrl(overrides: { period?: Period; variant?: VariantFilter; tab?: Tab } = {}) {
+    const t = overrides.tab ?? tab;
+    const p = overrides.period ?? period;
+    const v = overrides.variant ?? variantFilter;
+    const sp = new URLSearchParams();
+    if (t !== "quiz") sp.set("tab", t);
+    if (p !== "week") sp.set("period", p);
+    if (v !== "all") sp.set("variant", v);
+    const qs = sp.toString();
+    return `/analytics${qs ? `?${qs}` : ""}`;
+  }
+
+  if (tab === "community") {
+    const [cPageViews, cCtaClicked, cStripeShown, cPaid] = await Promise.all([
+      prisma.communityEvent.count({ where: { type: "page_view", ...dateWhere } }),
+      prisma.communityEvent.count({ where: { type: "cta_clicked", ...dateWhere } }),
+      prisma.communityEvent.count({ where: { type: "stripe_shown", ...dateWhere } }),
+      prisma.communityEvent.count({ where: { type: "paid", ...dateWhere } }),
+    ]);
+
+    const communityFunnel: FunnelStep[] = [
+      { label: "Page views", count: cPageViews, rate: null, benchmark: null },
+      {
+        label: "CTA clicked",
+        count: cCtaClicked,
+        rate: cPageViews > 0 ? Math.round((cCtaClicked / cPageViews) * 100) : 0,
+        benchmark: null,
+      },
+      {
+        label: "Stripe shown",
+        count: cStripeShown,
+        rate: cCtaClicked > 0 ? Math.round((cStripeShown / cCtaClicked) * 100) : 0,
+        benchmark: null,
+      },
+      {
+        label: "Paid",
+        count: cPaid,
+        rate: cStripeShown > 0 ? Math.round((cPaid / cStripeShown) * 100) : 0,
+        benchmark: null,
+      },
+    ];
+
+    const cMaxCount = Math.max(...communityFunnel.map((f) => f.count), 1);
+
+    return (
+      <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] p-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Tab toggle */}
+          <div className="flex gap-1 rounded-xl bg-white/5 p-1 w-fit mb-6">
+            {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
+              <Link
+                key={t}
+                href={buildUrl({ tab: t })}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  tab === t
+                    ? "bg-[#f4cf8f] text-[#2a2725]"
+                    : "text-[#c9c4bc] hover:text-[#f1ebe2]"
+                }`}
+              >
+                {TAB_LABELS[t]}
+              </Link>
+            ))}
+          </div>
+
+          {/* Community Funnel */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-10">
+            <div className="flex items-center justify-end mb-6">
+              <div className="flex gap-1 rounded-xl bg-white/5 p-1">
+                {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
+                  <Link
+                    key={p}
+                    href={buildUrl({ period: p })}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      period === p
+                        ? "bg-[#f4cf8f] text-[#2a2725]"
+                        : "text-[#c9c4bc] hover:text-[#f1ebe2]"
+                    }`}
+                  >
+                    {PERIOD_LABELS[p]}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <FunnelChart funnel={communityFunnel} maxCount={cMaxCount} benchmarks={{}} benchmarkLabels={{}} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Quiz tab (default)
   const variantEventWhere = variantFilter !== "all" ? { variant: variantFilter } : {};
   const variantLeadWhere = variantFilter !== "all" ? { variant: variantFilter } : {};
   const eventWhere = { ...dateWhere, ...variantEventWhere };
@@ -120,46 +221,53 @@ export default async function AnalyticsPage({
     }),
   ]);
 
-  // Funnel steps
-  const funnel = [
-    { label: "Page views", count: pageViews, rate: null as number | null, benchmark: null as string | null },
-    {
-      label: "Quiz starts",
-      count: quizStarts,
-      rate: pageViews > 0 ? Math.round((quizStarts / pageViews) * 100) : 0,
-      benchmark: "start",
-    },
-    {
-      label: "Quiz completions",
-      count: quizCompletes,
-      rate: quizStarts > 0 ? Math.round((quizCompletes / quizStarts) * 100) : 0,
-      benchmark: "complete",
-    },
-    {
-      label: "Optins",
-      count: optins,
-      rate: quizCompletes > 0 ? Math.round((optins / quizCompletes) * 100) : 0,
-      benchmark: "optin",
-    },
-    {
-      label: "Booking clicks",
-      count: bookingClicks,
-      rate: optins > 0 ? Math.round((bookingClicks / optins) * 100) : 0,
-      benchmark: "booking",
-    },
-  ];
+  // Funnel steps — direct variant skips the quiz entirely
+  const funnel =
+    variantFilter === "direct"
+      ? [
+          { label: "Page views", count: pageViews, rate: null as number | null, benchmark: null as string | null },
+          {
+            label: "Optins",
+            count: optins,
+            rate: pageViews > 0 ? Math.round((optins / pageViews) * 100) : 0,
+            benchmark: "optin",
+          },
+          {
+            label: "Booking clicks",
+            count: bookingClicks,
+            rate: optins > 0 ? Math.round((bookingClicks / optins) * 100) : 0,
+            benchmark: "booking",
+          },
+        ]
+      : [
+          { label: "Page views", count: pageViews, rate: null as number | null, benchmark: null as string | null },
+          {
+            label: "Quiz starts",
+            count: quizStarts,
+            rate: pageViews > 0 ? Math.round((quizStarts / pageViews) * 100) : 0,
+            benchmark: "start",
+          },
+          {
+            label: "Quiz completions",
+            count: quizCompletes,
+            rate: quizStarts > 0 ? Math.round((quizCompletes / quizStarts) * 100) : 0,
+            benchmark: "complete",
+          },
+          {
+            label: "Optins",
+            count: optins,
+            rate: quizCompletes > 0 ? Math.round((optins / quizCompletes) * 100) : 0,
+            benchmark: "optin",
+          },
+          {
+            label: "Booking clicks",
+            count: bookingClicks,
+            rate: optins > 0 ? Math.round((bookingClicks / optins) * 100) : 0,
+            benchmark: "booking",
+          },
+        ];
 
   const maxCount = Math.max(...funnel.map((f) => f.count), 1);
-
-  function buildUrl(overrides: { period?: Period; variant?: VariantFilter } = {}) {
-    const p = overrides.period ?? period;
-    const v = overrides.variant ?? variantFilter;
-    const sp = new URLSearchParams();
-    if (p !== "week") sp.set("period", p);
-    if (v !== "all") sp.set("variant", v);
-    const qs = sp.toString();
-    return `/analytics${qs ? `?${qs}` : ""}`;
-  }
 
   const serializedInvites = inviteLinks.map((inv) => ({
     id: inv.id,
@@ -181,6 +289,23 @@ export default async function AnalyticsPage({
   return (
     <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] p-8">
       <div className="max-w-6xl mx-auto">
+        {/* Tab toggle */}
+        <div className="flex gap-1 rounded-xl bg-white/5 p-1 w-fit mb-6">
+          {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
+            <Link
+              key={t}
+              href={buildUrl({ tab: t })}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                tab === t
+                  ? "bg-[#f4cf8f] text-[#2a2725]"
+                  : "text-[#c9c4bc] hover:text-[#f1ebe2]"
+              }`}
+            >
+              {TAB_LABELS[t]}
+            </Link>
+          ))}
+        </div>
+
         {/* Conversion Funnel */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-10">
           <div className="flex items-center justify-between mb-6">
