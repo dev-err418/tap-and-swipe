@@ -134,6 +134,16 @@ model InviteLink {
   createdAt DateTime  @default(now())
 }
 
+model CommunityEvent {
+  id        String   @id @default(cuid())
+  type      String   // "page_view" | "cta_clicked" | "stripe_shown" | "paid"
+  sessionId String
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, type])
+  @@index([type, createdAt])
+}
+
 model TrialDiscordMessage {
   id                    String   @id @default(cuid())
   appName               String
