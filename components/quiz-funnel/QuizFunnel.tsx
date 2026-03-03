@@ -68,17 +68,19 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
     const urlVariant = searchParams.get("variant");
     if (urlVariant === "quiz" || urlVariant === "direct") {
       setVariant(urlVariant);
-      sessionStorage.setItem("quiz_variant", urlVariant);
+      try { sessionStorage.setItem("quiz_variant", urlVariant); } catch {}
       return;
     }
-    const stored = sessionStorage.getItem("quiz_variant");
-    if (stored === "quiz" || stored === "direct") {
-      setVariant(stored);
-      return;
-    }
+    try {
+      const stored = sessionStorage.getItem("quiz_variant");
+      if (stored === "quiz" || stored === "direct") {
+        setVariant(stored);
+        return;
+      }
+    } catch {}
     const random: Variant = Math.random() < 0.5 ? "quiz" : "direct";
     setVariant(random);
-    sessionStorage.setItem("quiz_variant", random);
+    try { sessionStorage.setItem("quiz_variant", random); } catch {}
   }, [searchParams]);
 
   // Capture UTM / referrer source on mount
