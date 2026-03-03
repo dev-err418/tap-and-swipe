@@ -137,6 +137,13 @@ function InlineOptinForm({
     }
   }
 
+  const canSubmit =
+    !loading &&
+    firstName.trim().length > 0 &&
+    EMAIL_REGEX.test(email) &&
+    !!phoneValue && isValidPhoneNumber(phoneValue) &&
+    consent;
+
   return (
     <motion.form
       initial={{ opacity: 0, height: 0 }}
@@ -183,7 +190,7 @@ function InlineOptinForm({
       {error && <p className="text-red-400 text-sm">{error}</p>}
       <button
         type="submit"
-        disabled={loading}
+        disabled={!canSubmit}
         className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? (
@@ -448,11 +455,11 @@ export default function ResultDevIndie({
       {/* VSL */}
       <motion.div {...fadeInUp} className="mb-20">
         <div className="aspect-video rounded-2xl overflow-hidden border border-white/5">
-          <iframe
-            src="https://www.youtube.com/embed/Zq37It_smAk"
-            title="Presentation video"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
+          <video
+            src="https://assets-2-prod.whop.com/uploads/user_3590375/video/bots/2026-02-28/1bfe9f16-09f1-48cb-b8c8-e7b788e37d1f.mp4"
+            controls
+            playsInline
+            preload="metadata"
             className="w-full h-full"
           />
         </div>

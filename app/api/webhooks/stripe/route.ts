@@ -71,6 +71,13 @@ export async function POST(request: NextRequest) {
           },
         });
 
+        // Track paid event
+        await prisma.communityEvent.upsert({
+          where: { sessionId_type: { sessionId: discordId, type: "paid" } },
+          create: { type: "paid", sessionId: discordId },
+          update: {},
+        });
+
         // Disposable email check
         const customerEmail = session.customer_details?.email;
         if (customerEmail && isDisposableEmail(customerEmail)) {

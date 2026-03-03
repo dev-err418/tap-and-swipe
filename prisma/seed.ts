@@ -107,6 +107,9 @@ Even 1-2 paid conversions means you're on the right track. Zero conversions mean
     description: "Build an onboarding flow that turns new users into paying customers",
     type: "video",
     youtubeUrl: "https://www.youtube.com/watch?v=sHzbhQaHIOw",
+    markdownContent: `Request access to the Figma file in the video [on Figma](https://www.figma.com/design/8GdnmiuajF78ioSqTxk4dJ/Bible-Prayer-Widget?node-id=0-1&t=cQMEvr0iKEcsjJbi-1)
+
+Cal AI onboarding analysis: [on Figma](https://www.figma.com/board/vXMqEHxmISELkKGXZF0beB/Cal-AI-s-Onboarding---Broken-down--Community-?node-id=0-1&p=f&t=37sbAsP5TkuMFN5i-0)`,
     order: 2,
   },
   {
@@ -310,6 +313,25 @@ Done. You can now clone repos, push code, and use Git anywhere on your Mac.`,
     type: "video",
     youtubeUrl: "https://youtu.be/XIffw1V3XD0",
     order: 4,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "How to setup App Sprint's boilerplate",
+    description: "Step-by-step setup of the boilerplate for you project",
+    type: "video",
+    youtubeUrl: "https://youtu.be/GJrtl5IfTfU",
+    markdownContent: `\`\`\`bash
+git clone https://github.com/App-Sprint/expo-boilerplate.git
+\`\`\``,
+    order: 5,
+  },
+  {
+    category: "build-with-boilerplate",
+    title: "How to use Claude Code with the boilerplate?",
+    description: "Use AI-assisted coding to build features faster",
+    type: "video",
+    youtubeUrl: "https://youtu.be/iK2slCBbNsQ",
+    order: 6,
   },
   {
     category: "build-with-boilerplate",
@@ -855,16 +877,6 @@ async function main() {
       .catch(() => {});
     await prisma.lesson
       .delete({ where: { id: `seed-build-${order}` } })
-      .catch(() => {});
-  }
-
-  // Clean up removed build-with-boilerplate lessons (orders 5 and 6)
-  for (const order of [5, 6]) {
-    await prisma.lessonProgress
-      .deleteMany({ where: { lessonId: `seed-build-with-boilerplate-${order}` } })
-      .catch(() => {});
-    await prisma.lesson
-      .delete({ where: { id: `seed-build-with-boilerplate-${order}` } })
       .catch(() => {});
   }
 

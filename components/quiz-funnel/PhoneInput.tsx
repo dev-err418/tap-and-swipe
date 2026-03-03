@@ -36,6 +36,12 @@ const COUNTRIES: { iso2: Country; label: string }[] = [
   { iso2: "MX", label: "Mexico" },
 ];
 
+const MAX_NATIONAL_DIGITS: Record<string, number> = {
+  US: 10, CA: 10, GB: 11, FR: 9, DE: 12, ES: 9, IT: 11,
+  PT: 9, NL: 9, BE: 9, CH: 9, SE: 13, PL: 9, AU: 9,
+  IN: 10, BR: 11, MA: 9, NG: 8, JP: 10, KR: 11, MX: 10,
+};
+
 export default function PhoneInput({
   country,
   value,
@@ -47,6 +53,17 @@ export default function PhoneInput({
   onCountryChange: (country: Country) => void;
   onChange: (value: E164Number | undefined) => void;
 }) {
+  function handleChange(newValue: E164Number | undefined) {
+    if (newValue) {
+      const prefix = `+${getCountryCallingCode(country)}`;
+      const nationalDigits = newValue.startsWith(prefix)
+        ? newValue.slice(prefix.length)
+        : newValue.slice(1);
+      if (nationalDigits.length > (MAX_NATIONAL_DIGITS[country] ?? 15)) return;
+    }
+    onChange(newValue);
+  }
+
   return (
     <div className="flex gap-2">
       <div className="relative shrink-0">
@@ -69,7 +86,7 @@ export default function PhoneInput({
       <PhoneInputLib
         country={country}
         value={value}
-        onChange={onChange}
+        onChange={handleChange}
         placeholder="Your phone number"
         className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[#f1ebe2] placeholder:text-[#c9c4bc]/40 outline-none focus:border-[#f4cf8f]/50 focus:ring-1 focus:ring-[#f4cf8f]/20"
       />

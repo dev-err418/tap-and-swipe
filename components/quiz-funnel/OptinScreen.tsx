@@ -84,6 +84,13 @@ export default function OptinScreen({
     }
   }
 
+  const canSubmit =
+    !loading &&
+    firstName.trim().length > 0 &&
+    EMAIL_REGEX.test(email) &&
+    !!phoneValue && isValidPhoneNumber(phoneValue) &&
+    consent;
+
   return (
     <div className="flex flex-col items-center text-center max-w-lg mx-auto w-full">
       <h2 className="text-4xl font-extrabold tracking-tight leading-tight sm:text-5xl mb-3 w-[120%]">
@@ -144,7 +151,7 @@ export default function OptinScreen({
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={!canSubmit}
           data-fast-goal="quiz_optin_submit"
           className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-4"
         >

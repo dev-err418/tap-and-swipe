@@ -53,6 +53,13 @@ export async function GET() {
       cancel_url: `${APP_URL}/app-sprint-community?status=canceled`,
     });
 
+    // Track stripe_shown event
+    await prisma.communityEvent.upsert({
+      where: { sessionId_type: { sessionId: session.discordId, type: "stripe_shown" } },
+      create: { type: "stripe_shown", sessionId: session.discordId },
+      update: {},
+    });
+
     await clearSession();
 
     return NextResponse.redirect(checkoutSession.url!);
