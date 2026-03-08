@@ -92,16 +92,29 @@ export async function POST(request: NextRequest) {
               ? latestInvoice
               : latestInvoice?.id;
           if (invoiceId) {
-            const invoicePayments = await stripe.invoicePayments.list({
-              invoice: invoiceId,
-            });
-            const payment = invoicePayments.data[0]?.payment;
-            if (payment?.payment_intent) {
-              const piId =
-                typeof payment.payment_intent === "string"
-                  ? payment.payment_intent
-                  : payment.payment_intent.id;
-              await stripe.refunds.create({ payment_intent: piId });
+            try {
+              const invoicePayments = await stripe.invoicePayments.list({
+                invoice: invoiceId,
+              });
+              const payment = invoicePayments.data[0]?.payment;
+              if (payment?.payment_intent) {
+                const piId =
+                  typeof payment.payment_intent === "string"
+                    ? payment.payment_intent
+                    : payment.payment_intent.id;
+                await stripe.refunds.create({ payment_intent: piId });
+              }
+            } catch (refundErr) {
+              console.error(`[disposable-email] Refund failed for invoice ${invoiceId}:`, refundErr);
+              await sendFraudAlert(
+                "Refund Failed — Manual Action Required",
+                `Auto-refund failed for disposable email. Please refund manually.`,
+                [
+                  { name: "Email", value: customerEmail, inline: true },
+                  { name: "Invoice", value: invoiceId, inline: true },
+                  { name: "Discord ID", value: discordId, inline: true },
+                ]
+              );
             }
           }
 
@@ -281,9 +294,22 @@ export async function POST(request: NextRequest) {
         const charge = await stripe.charges.retrieve(chargeId);
 
         if (!charge.refunded) {
-          await stripe.refunds.create({ charge: chargeId });
+          try {
+            await stripe.refunds.create({ charge: chargeId });
+          } catch (refundErr) {
+            console.error(`[radar.early_fraud_warning] Refund failed for charge ${chargeId}:`, refundErr);
+            await sendFraudAlert(
+              "Refund Failed — Manual Action Required",
+              `Auto-refund failed for early fraud warning. Please refund manually.`,
+              [
+                { name: "Charge", value: chargeId, inline: true },
+                { name: "Amount", value: `$${((charge.amount ?? 0) / 100).toFixed(2)}`, inline: true },
+                { name: "Fraud Type", value: warning.fraud_type, inline: true },
+              ]
+            );
+          }
 
-          // Find user and revoke access
+          // Find user and revoke access regardless of refund outcome
           const customerId =
             typeof charge.customer === "string"
               ? charge.customer
