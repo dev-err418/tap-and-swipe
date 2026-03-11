@@ -389,19 +389,21 @@ function SemaphoreGauge({
   const full = peakActive >= max;
   return (
     <div>
-      <p className="mb-1 text-xs text-[#c9c4bc]">{label}</p>
+      <div className="mb-1 flex items-baseline justify-between">
+        <p className="text-xs text-[#c9c4bc]">
+          <span className="font-mono text-[#f4cf8f]">{peakActive}/{max}</span>{" "}
+          {label}
+          {peakQueued > 0 && (
+            <span className="text-[#c9c4bc]/40"> +{peakQueued} queued</span>
+          )}
+        </p>
+        {full && <span className="text-[10px] text-red-400 font-semibold">SATURATED</span>}
+      </div>
       <div className="h-3 w-full rounded-full bg-white/5 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${full ? "bg-red-400" : "bg-[#f4cf8f]"}`}
           style={{ width: `${pct}%` }}
         />
-      </div>
-      <div className="mt-1 flex justify-between text-[10px] text-[#c9c4bc]/50">
-        <span>
-          Peak: {peakActive}/{max}
-          {peakQueued > 0 && ` (+${peakQueued} queued)`}
-        </span>
-        {full && <span className="text-red-400 font-semibold">SATURATED</span>}
       </div>
     </div>
   );
