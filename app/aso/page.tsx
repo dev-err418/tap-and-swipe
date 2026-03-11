@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import {
     ArrowRight,
     Check,
@@ -10,22 +7,9 @@ import {
     DollarSign,
     Ban,
 } from "lucide-react";
+import SubscribeButton from "./subscribe-button";
 
 export default function AsoPage() {
-    const [loading, setLoading] = useState(false);
-
-    async function handleSubscribe() {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/aso/checkout", { method: "POST" });
-            const data = await res.json();
-            if (data.url) {
-                window.location.href = data.url;
-            }
-        } catch {
-            setLoading(false);
-        }
-    }
     return (
         <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30">
             {/* Hero */}
@@ -343,14 +327,7 @@ export default function AsoPage() {
                                     <span className="text-[#c9c4bc]/50">Billed annually at 72&euro;</span>
                                     <span className="text-[#c9c4bc]/50"> &middot; Tax may apply</span>
                                 </p>
-                                <button
-                                    onClick={handleSubscribe}
-                                    disabled={loading}
-                                    className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] hover:bg-[#f4cf8f]/90 transition-all hover:ring-4 hover:ring-[#f4cf8f]/20 disabled:opacity-50 mb-4"
-                                >
-                                    {loading ? "Redirecting..." : "Subscribe"}
-                                    {!loading && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
-                                </button>
+                                <SubscribeButton />
                                 <p className="text-xs text-[#c9c4bc]/60">
                                     Single computer license &middot; macOS 14.6+
                                 </p>
