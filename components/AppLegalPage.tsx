@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 
@@ -12,6 +13,7 @@ interface AppLegalPageProps {
   textColor: string;
   mutedColor: string;
   contentPath: string;
+  showSupportLink?: boolean;
 }
 
 export default function AppLegalPage({
@@ -22,6 +24,7 @@ export default function AppLegalPage({
   textColor,
   mutedColor,
   contentPath,
+  showSupportLink = true,
 }: AppLegalPageProps) {
   const filePath = join(process.cwd(), contentPath);
   const content = readFileSync(filePath, "utf-8");
@@ -105,7 +108,7 @@ export default function AppLegalPage({
         </header>
 
         <article className="prose-custom">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={components}>
             {content}
           </ReactMarkdown>
         </article>
@@ -117,8 +120,12 @@ export default function AppLegalPage({
           <a href={`/${appSlug}/privacy`} className="underline hover:opacity-70">Privacy</a>
           {" · "}
           <a href={`/${appSlug}/terms`} className="underline hover:opacity-70">Terms</a>
-          {" · "}
-          <a href={`/${appSlug}/support`} className="underline hover:opacity-70">Support</a>
+          {showSupportLink && (
+            <>
+              {" · "}
+              <a href={`/${appSlug}/support`} className="underline hover:opacity-70">Support</a>
+            </>
+          )}
         </p>
       </footer>
     </main>

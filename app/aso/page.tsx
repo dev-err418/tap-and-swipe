@@ -8,7 +8,6 @@ import {
     Megaphone,
     Check,
     Star,
-    ShieldCheck,
     Globe,
     Sparkles,
     Download,
@@ -302,263 +301,79 @@ export default function AsoPage() {
             </section>
 
 
-            {/* Feature Deep Dive: Keyword Research & Tracking */}
-            <section className="bg-[#2a2725] py-24">
-                <div className="mx-auto max-w-7xl px-6">
-                    <div className="grid items-center gap-12 md:grid-cols-2">
-                        <motion.div {...fade}>
-                            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4cf8f]/10">
-                                <Search className="h-5 w-5 text-[#f4cf8f]" />
-                            </div>
-                            <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl mb-4">
-                                Keyword Research & Tracking
-                            </h2>
-                            <p className="text-lg text-[#c9c4bc] mb-8">
-                                Find the keywords that matter and track your position over time.
-                            </p>
-                            <ul className="space-y-4">
-                                {[
-                                    { icon: Globe, text: "Track keywords across countries (popularity, difficulty, targeting label)" },
-                                    { icon: TrendingUp, text: "Position tracking with historical trend charts" },
-                                    { icon: BarChart3, text: "Top 10 ranking apps per keyword with ratings, revenue & review velocity" },
-                                    { icon: Eye, text: "Competitor keyword discovery" },
-                                    { icon: Sparkles, text: "AI-powered keyword suggestions" },
-                                    { icon: Target, text: "Country Opportunity Scanner" },
-                                    { icon: Download, text: "CSV export for all your data" },
-                                ].map((feature, i) => (
-                                    <li key={i} className="flex items-start gap-3">
-                                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f4cf8f]/10">
-                                            <feature.icon className="h-3.5 w-3.5 text-[#f4cf8f]" />
-                                        </div>
-                                        <span className="text-[#c9c4bc] leading-relaxed">
-                                            {feature.text}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </motion.div>
-
-                        <motion.div
-                            {...fade}
-                            transition={{ duration: 0.5, delay: 0.2 }}
-                            className="flex items-center justify-center"
-                        >
-                            <div className="w-full aspect-[4/3] rounded-[32px] border border-white/5 bg-white/5 flex items-center justify-center text-[#c9c4bc]/30">
-                                <span className="text-sm">Screenshot placeholder</span>
-                            </div>
-                        </motion.div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Feature Deep Dive: App Store Page Optimization */}
-            <section className="bg-[#2a2725] py-24">
-                <div className="mx-auto max-w-7xl px-6">
-                    <div className="grid items-center gap-12 md:grid-cols-2">
-                        <motion.div
-                            {...fade}
-                            transition={{ duration: 0.5, delay: 0.2 }}
-                            className="flex items-center justify-center md:order-first"
-                        >
-                            <div className="w-full aspect-[4/3] rounded-[32px] border border-white/5 bg-white/5 flex items-center justify-center text-[#c9c4bc]/30">
-                                <span className="text-sm">Screenshot placeholder</span>
-                            </div>
-                        </motion.div>
-
-                        <motion.div {...fade}>
-                            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4cf8f]/10">
-                                <PenLine className="h-5 w-5 text-[#f4cf8f]" />
-                            </div>
-                            <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl mb-4">
-                                App Store Page Optimization
-                            </h2>
-                            <p className="text-lg text-[#c9c4bc] mb-8">
-                                Edit your metadata with confidence and never miss a keyword opportunity.
-                            </p>
-                            <ul className="space-y-4">
-                                {[
-                                    { icon: Download, text: "Pull live metadata directly from App Store Connect" },
-                                    { icon: PenLine, text: "Edit & save directly back to ASC" },
-                                    { icon: BarChart3, text: "Character counters (30 / 30 / 100)" },
-                                    { icon: Lightbulb, text: "Smart suggestions: missing keywords, cannibalized terms, weight optimization" },
-                                    { icon: Sparkles, text: "Tips engine: too competitive, keep, move to title" },
-                                    { icon: Check, text: "Cross-reference checkmarks on tracked keywords" },
-                                    { icon: Grid3X3, text: "US 10x Matrix for 10 locale keyword coverage" },
-                                ].map((feature, i) => (
-                                    <li key={i} className="flex items-start gap-3">
-                                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f4cf8f]/10">
-                                            <feature.icon className="h-3.5 w-3.5 text-[#f4cf8f]" />
-                                        </div>
-                                        <span className="text-[#c9c4bc] leading-relaxed">
-                                            {feature.text}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </motion.div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Feature Deep Dive: Apple Ads Campaign Management */}
-            <section className="bg-[#2a2725] py-24">
-                <div className="mx-auto max-w-7xl px-6">
-                    <div className="grid items-center gap-12 md:grid-cols-2">
-                        <motion.div {...fade}>
-                            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4cf8f]/10">
-                                <Megaphone className="h-5 w-5 text-[#f4cf8f]" />
-                            </div>
-                            <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl mb-4">
-                                Apple Ads Campaign Management
-                            </h2>
-                            <p className="text-lg text-[#c9c4bc] mb-8">
-                                Run and optimize your Apple Search Ads without leaving the app.
-                            </p>
-                            <ul className="space-y-4">
-                                {[
-                                    { icon: BarChart3, text: "Full campaign + ad group dashboard (spend, impressions, taps, installs, CPT, CPA)" },
-                                    { icon: Megaphone, text: "Create campaigns & ad groups from the app" },
-                                    { icon: DollarSign, text: "Edit bids, budgets, countries. Pause/enable with optimistic UI" },
-                                    { icon: TrendingUp, text: "Per-keyword ad metrics alongside organic data" },
-                                    { icon: Eye, text: "Keyword insights cross-referencing organic ranking with ads" },
-                                    { icon: Ban, text: "Cannibalization detection with one-click negative keyword fix" },
-                                ].map((feature, i) => (
-                                    <li key={i} className="flex items-start gap-3">
-                                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f4cf8f]/10">
-                                            <feature.icon className="h-3.5 w-3.5 text-[#f4cf8f]" />
-                                        </div>
-                                        <span className="text-[#c9c4bc] leading-relaxed">
-                                            {feature.text}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </motion.div>
-
-                        <motion.div
-                            {...fade}
-                            transition={{ duration: 0.5, delay: 0.2 }}
-                            className="flex items-center justify-center"
-                        >
-                            <div className="w-full aspect-[4/3] rounded-[32px] border border-white/5 bg-white/5 flex items-center justify-center text-[#c9c4bc]/30">
-                                <span className="text-sm">Screenshot placeholder</span>
-                            </div>
-                        </motion.div>
-                    </div>
-                </div>
-            </section>
+            {/* Feature Deep Dives commented out for now
+            <section> ... Keyword Research & Tracking ... </section>
+            <section> ... App Store Page Optimization ... </section>
+            <section> ... Apple Ads Campaign Management ... </section>
+            */}
 
             {/* Pricing */}
             <section
                 id="pricing"
-                className="bg-[#2a2725] py-24 relative overflow-hidden"
+                className="bg-[#2a2725] py-24"
             >
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[500px] bg-[#f4cf8f]/5 blur-[120px] pointer-events-none" />
-
-                <div className="mx-auto max-w-7xl px-6 relative z-10">
-                    <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
-                            Invest in your app&apos;s growth
-                        </h2>
-                        <p className="mt-4 text-lg text-[#c9c4bc] max-w-2xl mx-auto">
-                            Everything you need to rank higher, get more downloads, and grow your revenue.
-                        </p>
-                    </div>
-
-                    <div className="max-w-4xl mx-auto">
-                        <motion.div
-                            {...fade}
-                            className="relative rounded-[40px] border border-white/10 bg-white/5 p-8 md:p-12 shadow-2xl backdrop-blur-sm"
-                        >
-                            <div className="grid md:grid-cols-2 gap-12 items-center">
-                                {/* Left: Features */}
-                                <div>
-                                    <h3 className="text-2xl font-bold text-[#f1ebe2] mb-8">
-                                        What you get:
-                                    </h3>
-                                    <ul className="space-y-6">
-                                        {[
-                                            {
-                                                title: "Keyword Research & Tracking",
-                                                description: "Discover, track, and analyze keywords across all countries",
-                                            },
-                                            {
-                                                title: "App Store Connect Integration",
-                                                description: "Edit metadata and push changes directly to ASC",
-                                            },
-                                            {
-                                                title: "Apple Ads Management",
-                                                description: "Create and optimize campaigns from one dashboard",
-                                            },
-                                            {
-                                                title: "AI-Powered Suggestions",
-                                                description: "Smart keyword tips and cannibalization detection",
-                                            },
-                                        ].map((feature, i) => (
-                                            <li key={i} className="flex gap-4">
-                                                <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f4cf8f]/10">
-                                                    <Check className="h-4 w-4 text-[#f4cf8f]" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-[#f1ebe2] text-sm md:text-base leading-tight">
-                                                        {feature.title}
-                                                    </p>
-                                                    <p className="text-xs md:text-sm text-[#c9c4bc] mt-0.5">
-                                                        {feature.description}
-                                                    </p>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-
-                                {/* Right: Price & CTA */}
-                                <div className="flex flex-col items-center justify-center p-8 rounded-3xl bg-white/5 border border-white/5 text-center">
-                                    <span className="text-sm font-medium text-[#c9c4bc] mb-2 uppercase tracking-widest">
-                                        App Sprint ASO
-                                    </span>
-                                    <div className="flex items-baseline gap-1 mb-1">
-                                        <span className="text-5xl font-extrabold text-[#f1ebe2]">
-                                            --€
+                <div className="mx-auto max-w-3xl px-6">
+                    <motion.div
+                        {...fade}
+                        className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 md:p-12"
+                    >
+                        <div className="grid md:grid-cols-2 gap-10 items-center">
+                            {/* Left: Features */}
+                            <div>
+                            <p className="text-lg font-bold text-[#c9c4bc] mb-6">
+                                Everything included. No tiers, no upsells.
+                            </p>
+                            <ul className="space-y-4">
+                                {[
+                                    "Keyword research, keyword suggestions & tracking across all countries",
+                                    "Competitor MRR & download estimates",
+                                    "Cannibalization detection",
+                                    "App Store Connect metadata editing",
+                                    "Apple Search Ads management",
+                                    "Unlimited keywords & apps",
+                                ].map((feature, i) => (
+                                    <li key={i} className="flex items-start gap-3">
+                                        <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
+                                        <span className="text-sm text-[#c9c4bc]">
+                                            {feature}
                                         </span>
-                                        <span className="text-xl text-[#c9c4bc]">/mo</span>
-                                    </div>
-                                    <p className="text-xs text-[#c9c4bc] mb-8">
-                                        Price coming soon
-                                    </p>
-
-                                    <button
-                                        disabled
-                                        className="group flex w-full h-14 items-center justify-center gap-2 rounded-full bg-[#f4cf8f]/50 text-lg font-bold text-[#2a2725]/60 cursor-not-allowed shadow-lg shadow-[#f4cf8f]/5 mb-6"
-                                    >
-                                        <span>Coming soon</span>
-                                    </button>
-
-                                    <p className="text-xs text-[#c9c4bc] mb-4">
-                                        Requires macOS 14.6+
-                                    </p>
-
-                                    <div className="flex flex-col gap-3 w-full">
-                                        <div className="flex items-center justify-center gap-2 text-xs text-[#c9c4bc]">
-                                            <ShieldCheck className="h-4 w-4 text-[#f4cf8f]" />
-                                            Secure payment with Stripe
-                                        </div>
-                                        <div className="flex items-center justify-center gap-2 text-xs text-[#c9c4bc]">
-                                            <div className="flex text-[#f4cf8f]">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <Star
-                                                        key={i}
-                                                        className="h-3 w-3 fill-current"
-                                                    />
-                                                ))}
-                                            </div>
-                                            Rated 5/5 by makers
-                                        </div>
-                                    </div>
-                                </div>
+                                    </li>
+                                ))}
+                            </ul>
                             </div>
-                        </motion.div>
-                    </div>
+
+                            {/* Right: Price & CTA */}
+                            <div className="text-center">
+                                <motion.span
+                                    animate={{ scale: [1, 1.08, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                    className="inline-block text-xs font-bold uppercase tracking-wider text-[#f4cf8f] bg-[#f4cf8f]/10 px-3 py-1 rounded-full mb-4"
+                                >
+                                    -25% launch offer
+                                </motion.span>
+                                <div className="flex items-baseline justify-center gap-1 mb-2">
+                                    <span className="text-6xl font-extrabold text-[#f1ebe2]">
+                                        6&euro;
+                                    </span>
+                                    <span className="text-lg text-[#c9c4bc]">/month</span>
+                                </div>
+                                <p className="text-sm mb-8">
+                                    <span className="text-[#c9c4bc]/50">Billed annually at 72&euro;</span>
+                                    <span className="text-[#c9c4bc]/50"> &middot; Tax may apply</span>
+                                </p>
+                                <a
+                                    href="#"
+                                    className="group flex h-12 items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] hover:bg-[#f4cf8f]/90 transition-all hover:ring-4 hover:ring-[#f4cf8f]/20 mb-4"
+                                >
+                                    Subscribe
+                                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                </a>
+                                <p className="text-xs text-[#c9c4bc]/60">
+                                    Single computer license &middot; macOS 14.6+
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
                 </div>
             </section>
 
@@ -643,22 +458,16 @@ export default function AsoPage() {
                     </p>
                     <div className="flex gap-6">
                         <a
-                            href="/tos"
+                            href="/aso/terms"
                             className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]"
                         >
                             Terms of Service
                         </a>
                         <a
-                            href="/privacy"
+                            href="/aso/privacy"
                             className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]"
                         >
                             Privacy Policy
-                        </a>
-                        <a
-                            href="/tos#refund"
-                            className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]"
-                        >
-                            Refund Policy
                         </a>
                     </div>
                 </div>
