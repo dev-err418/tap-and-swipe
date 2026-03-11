@@ -1,0 +1,54 @@
+import { Pool } from "pg";
+import crypto from "crypto";
+
+export const asoPool = new Pool({
+  connectionString: process.env.ASO_DATABASE_URL,
+});
+
+/**
+ * Generate a license key for a Stripe customer. Idempotent — returns existing key if one exists.
+ * Format: ASO-XXXX-XXXX-XXXX-XXXX (uppercase hex)
+ */
+export async function generateAsoLicense(
+  email: string,
+  stripeCustomerId: string
+): Promise<string> {
+  // Idempotency: check for existing license
+  const existing = await asoPool.query(
+    "SELECT key FROM aso_licenses WHERE stripe_customer_id = $1 AND active = true LIMIT 1",
+    [stripeCustomerId]
+  );
+  if (existing.rows.length > 0) {
+    return existing.rows[0].key;
+  }
+
+  const segments = Array.from({ length: 4 }, () =>
+    crypto.randomBytes(2).toString("hex").toUpperCase()
+  );
+  const key = `ASO-${segments.join("-")}`;
+
+  await asoPool.query(
+    "INSERT INTO aso_licenses (key, email, stripe_customer_id) VALUES ($1, $2, $3)",
+    [key, email, stripeCustomerId]
+  );
+
+  return key;
+}
+
+export async function deactivateAsoLicenses(
+  stripeCustomerId: string
+): Promise<void> {
+  await asoPool.query(
+    "UPDATE aso_licenses SET active = false WHERE stripe_customer_id = $1 AND active = true",
+    [stripeCustomerId]
+  );
+}
+
+export async function reactivateAsoLicenses(
+  stripeCustomerId: string
+): Promise<void> {
+  await asoPool.query(
+    "UPDATE aso_licenses SET active = true WHERE stripe_customer_id = $1 AND active = false",
+    [stripeCustomerId]
+  );
+}

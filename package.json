@@ -24,6 +24,7 @@
     "libphonenumber-js": "^1.12.37",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
+    "pg": "^8.20.0",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -31,6 +32,7 @@
     "react-phone-number-input": "^3.4.16",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
+    "resend": "^6.9.3",
     "stripe": "^20.3.1",
     "tailwind-merge": "^3.4.0"
   },

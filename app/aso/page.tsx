@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
     ArrowRight,
@@ -24,6 +25,20 @@ import {
 } from "lucide-react";
 
 export default function AsoPage() {
+    const [loading, setLoading] = useState(false);
+
+    async function handleSubscribe() {
+        setLoading(true);
+        try {
+            const res = await fetch("/api/aso/checkout", { method: "POST" });
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+            }
+        } catch {
+            setLoading(false);
+        }
+    }
     const fade = {
         initial: { opacity: 0, y: 20 },
         whileInView: { opacity: 1, y: 0 },
@@ -349,7 +364,7 @@ export default function AsoPage() {
                                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                                     className="inline-block text-xs font-bold uppercase tracking-wider text-[#f4cf8f] bg-[#f4cf8f]/10 px-3 py-1 rounded-full mb-4"
                                 >
-                                    -25% launch offer
+                                    -33% launch offer
                                 </motion.span>
                                 <div className="flex items-baseline justify-center gap-1 mb-2">
                                     <span className="text-6xl font-extrabold text-[#f1ebe2]">
@@ -361,13 +376,14 @@ export default function AsoPage() {
                                     <span className="text-[#c9c4bc]/50">Billed annually at 72&euro;</span>
                                     <span className="text-[#c9c4bc]/50"> &middot; Tax may apply</span>
                                 </p>
-                                <a
-                                    href="#"
-                                    className="group flex h-12 items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] hover:bg-[#f4cf8f]/90 transition-all hover:ring-4 hover:ring-[#f4cf8f]/20 mb-4"
+                                <button
+                                    onClick={handleSubscribe}
+                                    disabled={loading}
+                                    className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] hover:bg-[#f4cf8f]/90 transition-all hover:ring-4 hover:ring-[#f4cf8f]/20 disabled:opacity-50 mb-4"
                                 >
-                                    Subscribe
-                                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                </a>
+                                    {loading ? "Redirecting..." : "Subscribe"}
+                                    {!loading && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
+                                </button>
                                 <p className="text-xs text-[#c9c4bc]/60">
                                     Single computer license &middot; macOS 14.6+
                                 </p>

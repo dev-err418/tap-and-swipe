@@ -5,6 +5,18 @@ import { prisma } from "@/lib/prisma";
 import { addToGuild, addRole, removeRole } from "@/lib/discord";
 import { sendFraudAlert } from "@/lib/discord-webhook";
 import { isDisposableEmail } from "@/lib/fraud";
+import {
+  generateAsoLicense,
+  deactivateAsoLicenses,
+  reactivateAsoLicenses,
+} from "@/lib/aso-db";
+import { sendLicenseKeyEmail } from "@/lib/aso-email";
+
+const ASO_PRICE_ID = "price_1T9ldIDGyKvKgBtCf9rafpe7";
+
+function isAsoSubscription(sub: Stripe.Subscription): boolean {
+  return sub.items.data.some((i) => i.price.id === ASO_PRICE_ID);
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -36,6 +48,48 @@ export async function POST(request: NextRequest) {
         const subscription = await stripe.subscriptions.retrieve(
           session.subscription as string
         );
+
+        // ASO subscription
+        if (isAsoSubscription(subscription)) {
+          const customerId = session.customer as string;
+          const customerEmail = session.customer_details?.email;
+          if (!customerEmail) break;
+
+          // Disposable email check — refund and cancel
+          if (isDisposableEmail(customerEmail)) {
+            console.warn(`[ASO] Disposable email detected: ${customerEmail}`);
+            const latestInvoice = subscription.latest_invoice;
+            const invoiceId =
+              typeof latestInvoice === "string"
+                ? latestInvoice
+                : latestInvoice?.id;
+            if (invoiceId) {
+              try {
+                const invoicePayments = await stripe.invoicePayments.list({
+                  invoice: invoiceId,
+                });
+                const payment = invoicePayments.data[0]?.payment;
+                if (payment?.payment_intent) {
+                  const piId =
+                    typeof payment.payment_intent === "string"
+                      ? payment.payment_intent
+                      : payment.payment_intent.id;
+                  await stripe.refunds.create({ payment_intent: piId });
+                }
+              } catch (refundErr) {
+                console.error(`[ASO] Refund failed for invoice ${invoiceId}:`, refundErr);
+              }
+            }
+            await stripe.subscriptions.cancel(subscription.id);
+            break;
+          }
+
+          const licenseKey = await generateAsoLicense(customerEmail, customerId);
+          await sendLicenseKeyEmail(customerEmail, licenseKey);
+          break;
+        }
+
+        // Community subscription
         const discordId = subscription.metadata.discordId;
         if (!discordId) break;
 
@@ -79,10 +133,10 @@ export async function POST(request: NextRequest) {
         });
 
         // Disposable email check
-        const customerEmail = session.customer_details?.email;
-        if (customerEmail && isDisposableEmail(customerEmail)) {
+        const communityEmail = session.customer_details?.email;
+        if (communityEmail && isDisposableEmail(communityEmail)) {
           console.warn(
-            `Disposable email detected: ${customerEmail} — refunding and revoking`
+            `Disposable email detected: ${communityEmail} — refunding and revoking`
           );
 
           // Refund the latest invoice payment
@@ -110,7 +164,7 @@ export async function POST(request: NextRequest) {
                 "Refund Failed — Manual Action Required",
                 `Auto-refund failed for disposable email. Please refund manually.`,
                 [
-                  { name: "Email", value: customerEmail, inline: true },
+                  { name: "Email", value: communityEmail, inline: true },
                   { name: "Invoice", value: invoiceId, inline: true },
                   { name: "Discord ID", value: discordId, inline: true },
                 ]
@@ -136,7 +190,7 @@ export async function POST(request: NextRequest) {
             "Disposable Email Detected",
             `Payment from disposable email was auto-refunded.`,
             [
-              { name: "Email", value: customerEmail, inline: true },
+              { name: "Email", value: communityEmail, inline: true },
               { name: "Customer", value: session.customer as string, inline: true },
               { name: "Discord ID", value: discordId, inline: true },
             ]
@@ -148,6 +202,22 @@ export async function POST(request: NextRequest) {
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
+
+        // ASO subscription
+        if (isAsoSubscription(subscription)) {
+          const customerId =
+            typeof subscription.customer === "string"
+              ? subscription.customer
+              : subscription.customer.id;
+          if (["active", "trialing"].includes(subscription.status)) {
+            await reactivateAsoLicenses(customerId);
+          } else {
+            await deactivateAsoLicenses(customerId);
+          }
+          break;
+        }
+
+        // Community subscription
         const discordId = subscription.metadata.discordId;
         if (!discordId) break;
 
@@ -175,6 +245,18 @@ export async function POST(request: NextRequest) {
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
+
+        // ASO subscription
+        if (isAsoSubscription(subscription)) {
+          const customerId =
+            typeof subscription.customer === "string"
+              ? subscription.customer
+              : subscription.customer.id;
+          await deactivateAsoLicenses(customerId);
+          break;
+        }
+
+        // Community subscription
         const discordId = subscription.metadata.discordId;
         if (!discordId) break;
 
@@ -202,6 +284,18 @@ export async function POST(request: NextRequest) {
 
         const subscription =
           await stripe.subscriptions.retrieve(subscriptionId);
+
+        // ASO subscription
+        if (isAsoSubscription(subscription)) {
+          const customerId =
+            typeof subscription.customer === "string"
+              ? subscription.customer
+              : subscription.customer.id;
+          await deactivateAsoLicenses(customerId);
+          break;
+        }
+
+        // Community subscription
         const discordId = subscription.metadata.discordId;
         if (!discordId) break;
 
@@ -228,6 +322,18 @@ export async function POST(request: NextRequest) {
 
         const subscription =
           await stripe.subscriptions.retrieve(subscriptionId);
+
+        // ASO subscription
+        if (isAsoSubscription(subscription)) {
+          const customerId =
+            typeof subscription.customer === "string"
+              ? subscription.customer
+              : subscription.customer.id;
+          await reactivateAsoLicenses(customerId);
+          break;
+        }
+
+        // Community subscription
         if (!["active", "trialing"].includes(subscription.status)) break;
 
         const discordId = subscription.metadata.discordId;
@@ -255,6 +361,25 @@ export async function POST(request: NextRequest) {
         const subscription = await stripe.subscriptions.retrieve(
           session.subscription as string
         );
+
+        // ASO subscription — same as checkout.session.completed
+        if (isAsoSubscription(subscription)) {
+          const customerId = session.customer as string;
+          const customerEmail = session.customer_details?.email;
+          if (!customerEmail) break;
+
+          if (isDisposableEmail(customerEmail)) {
+            console.warn(`[ASO] Disposable email on async payment: ${customerEmail}`);
+            await stripe.subscriptions.cancel(subscription.id);
+            break;
+          }
+
+          const licenseKey = await generateAsoLicense(customerEmail, customerId);
+          await sendLicenseKeyEmail(customerEmail, licenseKey);
+          break;
+        }
+
+        // Community subscription
         const discordId = subscription.metadata.discordId;
         if (!discordId) break;
 
@@ -337,6 +462,9 @@ export async function POST(request: NextRequest) {
 
               await removeRole(user.discordId);
             }
+
+            // Also deactivate ASO licenses (customer could have both products)
+            await deactivateAsoLicenses(customerId);
           }
 
           await sendFraudAlert(
@@ -403,6 +531,9 @@ export async function POST(request: NextRequest) {
 
             await removeRole(user.discordId);
           }
+
+          // Also deactivate ASO licenses (customer could have both products)
+          await deactivateAsoLicenses(customerId);
         }
 
         await sendFraudAlert(

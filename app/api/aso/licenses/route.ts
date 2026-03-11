@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
-import { Pool } from "pg";
+import { asoPool as pool } from "@/lib/aso-db";
 import crypto from "crypto";
-
-const pool = new Pool({
-  connectionString: process.env.ASO_DATABASE_URL,
-});
 
 // Dev-only guard
 function isDev() {
