@@ -9,7 +9,7 @@ export async function POST() {
     const checkoutSession = await stripe.checkout.sessions.create(
       {
         mode: "subscription",
-        allow_promotion_codes: true,
+        discounts: [{ promotion_code: "promo_1T9lgHDGyKvKgBtCSHBfgKaH" }],
         line_items: [{ price: ASO_PRICE_ID, quantity: 1 }],
         subscription_data: {
           metadata: { product: "aso" },
