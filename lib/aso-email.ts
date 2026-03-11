@@ -8,9 +8,9 @@ export async function sendLicenseKeyEmail(
 ): Promise<void> {
   try {
     await resend.emails.send({
-      from: "Arthur from App Sprint ASO <noreply@tapandswipe.app>",
+      from: "Arthur from App Sprint ASO <arthur@tap-and-swipe.com>",
       to,
-      subject: "Your license key is ready — let's get you more downloads",
+      subject: "Your license key is ready! Let's get you more downloads :)",
       template: {
         id: "onboarding-email",
         variables: {

@@ -12,7 +12,7 @@ import {
 } from "@/lib/aso-db";
 import { sendLicenseKeyEmail } from "@/lib/aso-email";
 
-const ASO_PRICE_ID = "price_1T9ldIDGyKvKgBtCf9rafpe7";
+const ASO_PRICE_ID = process.env.ASO_PRICE_ID || "price_1T9ldIDGyKvKgBtCf9rafpe7";
 
 function isAsoSubscription(sub: Stripe.Subscription): boolean {
   return sub.items.data.some((i) => i.price.id === ASO_PRICE_ID);
