@@ -155,3 +155,5 @@ model TrialDiscordMessage {
   @@unique([appName, originalTransactionId])
   @@index([appUserId])
 }
+
+
