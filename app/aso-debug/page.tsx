@@ -8,6 +8,7 @@ import {
   KeyRound,
   RotateCcw,
   BarChart3,
+  MessageSquare,
 } from "lucide-react";
 
 interface License {
@@ -63,7 +64,14 @@ interface AnalyticsData {
   timeseries: AnalyticsRow[];
 }
 
-type Tab = "licenses" | "analytics";
+interface Feedback {
+  id: number;
+  license_key: string;
+  message: string;
+  created_at: string;
+}
+
+type Tab = "licenses" | "analytics" | "feedback";
 type Period = "1h" | "6h" | "24h" | "7d" | "30d";
 
 // ---------------------------------------------------------------------------
@@ -410,6 +418,75 @@ function SemaphoreGauge({
 }
 
 // ---------------------------------------------------------------------------
+// Feedback Panel
+// ---------------------------------------------------------------------------
+function FeedbackPanel() {
+  const [items, setItems] = useState<Feedback[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [removing, setRemoving] = useState<number | null>(null);
+
+  const fetchFeedback = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch("/api/aso/feedback");
+    if (res.ok) setItems(await res.json());
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchFeedback();
+  }, [fetchFeedback]);
+
+  const remove = async (id: number) => {
+    if (!confirm("Remove this feedback?")) return;
+    setRemoving(id);
+    await fetch("/api/aso/feedback", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    setItems((prev) => prev.filter((f) => f.id !== id));
+    setRemoving(null);
+  };
+
+  if (loading)
+    return <p className="text-sm text-[#c9c4bc]/60">Loading feedback...</p>;
+
+  if (items.length === 0)
+    return (
+      <div className="rounded-2xl border border-white/5 bg-white/5 p-12 text-center">
+        <p className="text-sm text-[#c9c4bc]">No feedback yet.</p>
+      </div>
+    );
+
+  return (
+    <div className="space-y-3">
+      {items.map((f) => (
+        <div
+          key={f.id}
+          className="flex items-start gap-4 rounded-xl border border-white/5 bg-white/5 p-4"
+        >
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-[#f1ebe2] whitespace-pre-wrap">{f.message}</p>
+            <div className="mt-2 flex items-center gap-3 text-[10px] text-[#c9c4bc]/50">
+              <span className="font-mono">{f.license_key}</span>
+              <span>{new Date(f.created_at).toLocaleString()}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => remove(f.id)}
+            disabled={removing === f.id}
+            className="shrink-0 rounded-lg border border-[#f4cf8f]/20 p-2 text-[#f4cf8f] transition-colors hover:bg-[#f4cf8f]/10 disabled:opacity-40"
+            title="Remove"
+          >
+            <Check className={`h-4 w-4 ${removing === f.id ? "animate-pulse" : ""}`} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
 export default function AsoDebugPage() {
@@ -420,6 +497,7 @@ export default function AsoDebugPage() {
   const [generating, setGenerating] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [resettingMachine, setResettingMachine] = useState<string | null>(null);
+  const [feedbackCount, setFeedbackCount] = useState<number | null>(null);
 
   const fetchLicenses = useCallback(async () => {
     setLoading(true);
@@ -432,6 +510,9 @@ export default function AsoDebugPage() {
 
   useEffect(() => {
     fetchLicenses();
+    fetch("/api/aso/feedback")
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setFeedbackCount(data.length));
   }, [fetchLicenses]);
 
   const generate = async () => {
@@ -491,8 +572,10 @@ export default function AsoDebugPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4cf8f]/10">
               {tab === "licenses" ? (
                 <KeyRound className="h-5 w-5 text-[#f4cf8f]" />
-              ) : (
+              ) : tab === "analytics" ? (
                 <BarChart3 className="h-5 w-5 text-[#f4cf8f]" />
+              ) : (
+                <MessageSquare className="h-5 w-5 text-[#f4cf8f]" />
               )}
             </div>
             <h1 className="text-2xl font-bold tracking-tight">
@@ -525,6 +608,16 @@ export default function AsoDebugPage() {
             }`}
           >
             Analytics
+          </button>
+          <button
+            onClick={() => setTab("feedback")}
+            className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-colors ${
+              tab === "feedback"
+                ? "bg-[#f4cf8f] text-[#2a2725]"
+                : "text-[#c9c4bc] hover:text-[#f1ebe2]"
+            }`}
+          >
+            Feedback{feedbackCount !== null ? ` (${feedbackCount})` : ""}
           </button>
         </div>
 
@@ -601,7 +694,11 @@ export default function AsoDebugPage() {
 
                         {/* Email */}
                         <td className="px-4 py-3 text-[#c9c4bc]">
-                          {l.email || (
+                          {l.email ? (
+                            <span title={l.email}>
+                              {l.email.length > 10 ? l.email.slice(0, 10) + "..." : l.email}
+                            </span>
+                          ) : (
                             <span className="text-[#c9c4bc]/30">&mdash;</span>
                           )}
                         </td>
@@ -683,6 +780,9 @@ export default function AsoDebugPage() {
 
         {/* Analytics tab */}
         {tab === "analytics" && <AnalyticsPanel />}
+
+        {/* Feedback tab */}
+        {tab === "feedback" && <FeedbackPanel />}
       </div>
     </div>
   );
