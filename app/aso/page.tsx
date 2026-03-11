@@ -1,26 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import {
     ArrowRight,
-    Search,
-    BarChart3,
-    Megaphone,
     Check,
     Star,
     Globe,
     Sparkles,
-    Download,
-    Target,
-    TrendingUp,
-    Eye,
-    PenLine,
-    Lightbulb,
-    Grid3X3,
     DollarSign,
-    Pause,
-    Zap,
     Ban,
 } from "lucide-react";
 
@@ -39,13 +26,6 @@ export default function AsoPage() {
             setLoading(false);
         }
     }
-    const fade = {
-        initial: { opacity: 0, y: 20 },
-        whileInView: { opacity: 1, y: 0 },
-        viewport: { once: true },
-        transition: { duration: 0.5 },
-    };
-
     return (
         <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30">
             {/* Hero */}
@@ -113,14 +93,14 @@ export default function AsoPage() {
             {/* How It Works */}
             <section className="bg-[#2a2725] py-24">
                 <div className="mx-auto max-w-7xl px-6">
-                    <motion.div {...fade} className="mb-16 text-center">
+                    <div className="mb-16 text-center">
                         <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[#f4cf8f]">
                             How it works?
                         </p>
                         <h2 className="text-5xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-7xl">
                             Grow your downloads in 3 steps
                         </h2>
-                    </motion.div>
+                    </div>
 
                     <div className="mx-auto flex max-w-sm flex-col items-center gap-4 lg:max-w-none lg:flex-row lg:items-stretch lg:gap-0">
                         {[
@@ -129,28 +109,26 @@ export default function AsoPage() {
                                 title: "Research keywords",
                                 description:
                                     "Find high-value keywords your competitors rank for. Track popularity, difficulty, and your position across every country.",
-                                image: "/aso/step-1-keywords.png",
+                                image: "/aso/step-1-keywords.webp",
                             },
                             {
                                 step: "2",
                                 title: "Optimize your page",
                                 description:
                                     "Pull your metadata from App Store Connect, edit it with smart suggestions, and push changes back in one click.",
-                                image: "/aso/step-2-optimize.png",
+                                image: "/aso/step-2-optimize.webp",
                             },
                             {
                                 step: "3",
                                 title: "Scale with ads",
                                 description:
                                     "Create Apple Search Ads campaigns, manage bids and budgets, and cross-reference ad performance with organic data.",
-                                image: "/aso/step-3-ads.png",
+                                image: "/aso/step-3-ads.webp",
                             },
                         ].flatMap((item, i, arr) => {
                             const card = (
-                                <motion.div
+                                <div
                                     key={`card-${i}`}
-                                    {...fade}
-                                    transition={{ duration: 0.5, delay: i * 0.15 }}
                                     className="relative w-full lg:flex-1 lg:basis-0 lg:min-w-0 rounded-3xl border border-white/5 bg-white/5 overflow-hidden transition-all hover:bg-white/10"
                                 >
                                     <div className="aspect-[16/10] overflow-hidden">
@@ -168,7 +146,7 @@ export default function AsoPage() {
                                             {item.description}
                                         </p>
                                     </div>
-                                </motion.div>
+                                </div>
                             );
                             if (i < arr.length - 1) {
                                 return [card, (
@@ -221,12 +199,8 @@ export default function AsoPage() {
                                 site: "blink.new",
                             },
                         ].map((t, i) => (
-                            <motion.div
+                            <div
                                 key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5, delay: i * 0.1 }}
                                 className="text-center"
                             >
                                 <div className="mb-4 flex justify-center text-[#f4cf8f]">
@@ -239,7 +213,7 @@ export default function AsoPage() {
                                 </p>
                                 <p className="font-bold text-[#f1ebe2]">{t.name}</p>
                                 <p className="text-sm text-[#c9c4bc]/60">{t.site}</p>
-                            </motion.div>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -248,14 +222,14 @@ export default function AsoPage() {
             {/* Features */}
             <section className="bg-[#2a2725] py-24">
                 <div className="mx-auto max-w-5xl px-6">
-                    <motion.div {...fade} className="mb-16 text-center">
+                    <div className="mb-16 text-center">
                         <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[#f4cf8f]">
                             Features
                         </p>
                         <h2 className="text-5xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-7xl">
                             Insights that drive rankings, not complexity
                         </h2>
-                    </motion.div>
+                    </div>
 
                     <div className="grid gap-6 sm:grid-cols-2">
                         {[
@@ -264,36 +238,32 @@ export default function AsoPage() {
                                 description:
                                     "See estimated revenue and downloads for any app on the App Store. Know exactly who's making money in your niche and how much.",
                                 icon: DollarSign,
-                                image: "/aso/feature-mrr.png",
+                                image: "/aso/feature-mrr.webp",
                             },
                             {
                                 title: "Smart keyword suggestions",
                                 description:
                                     "Get AI-powered keyword recommendations based on your metadata gaps, competitor analysis, and search volume. No more guessing.",
                                 icon: Sparkles,
-                                image: "/aso/feature-suggestions.png",
+                                image: "/aso/feature-suggestions.webp",
                             },
                             {
                                 title: "Cannibalization detection",
                                 description:
                                     "Spot keywords where your ads are eating your organic traffic. One click to add them as negatives and stop wasting budget.",
                                 icon: Ban,
-                                image: "/aso/feature-cannibalization.png",
+                                image: "/aso/feature-cannibalization.webp",
                             },
                             {
                                 title: "Country opportunity scanner",
                                 description:
                                     "Find countries where your keyword is popular but competition is weak. Expand to markets others haven't discovered yet.",
                                 icon: Globe,
-                                image: "/aso/feature-opportunity.png",
+                                image: "/aso/feature-opportunity.webp",
                             },
                         ].map((item, i) => (
-                            <motion.div
+                            <div
                                 key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5, delay: i * 0.1 }}
                                 className="group rounded-3xl border border-white/5 bg-white/5 overflow-hidden transition-all hover:bg-white/10"
                             >
                                 <div className="p-8">
@@ -309,7 +279,7 @@ export default function AsoPage() {
                                     alt={item.title}
                                     className="w-full"
                                 />
-                            </motion.div>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -328,8 +298,7 @@ export default function AsoPage() {
                 className="bg-[#2a2725] py-24"
             >
                 <div className="mx-auto max-w-3xl px-6">
-                    <motion.div
-                        {...fade}
+                    <div
                         className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 md:p-12"
                     >
                         <div className="grid md:grid-cols-2 gap-10 items-center">
@@ -359,13 +328,11 @@ export default function AsoPage() {
 
                             {/* Right: Price & CTA */}
                             <div className="text-center">
-                                <motion.span
-                                    animate={{ scale: [1, 1.08, 1] }}
-                                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                    className="inline-block text-xs font-bold uppercase tracking-wider text-[#f4cf8f] bg-[#f4cf8f]/10 px-3 py-1 rounded-full mb-4"
+                                <span
+                                    className="inline-block text-xs font-bold uppercase tracking-wider text-[#f4cf8f] bg-[#f4cf8f]/10 px-3 py-1 rounded-full mb-4 animate-pulse"
                                 >
                                     -33% launch offer
-                                </motion.span>
+                                </span>
                                 <div className="flex items-baseline justify-center gap-1 mb-2">
                                     <span className="text-6xl font-extrabold text-[#f1ebe2]">
                                         6&euro;
@@ -389,7 +356,7 @@ export default function AsoPage() {
                                 </p>
                             </div>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             </section>
 
@@ -400,12 +367,9 @@ export default function AsoPage() {
             >
                 <div className="mx-auto max-w-4xl px-6">
                     <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
+                        <h2 className="text-5xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-7xl">
                             Frequently asked questions
                         </h2>
-                        <p className="mt-4 text-lg text-[#c9c4bc]">
-                            Everything you need to know about App Sprint ASO.
-                        </p>
                     </div>
 
                     <div className="space-y-4">
