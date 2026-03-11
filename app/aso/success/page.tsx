@@ -3,7 +3,9 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Check, Copy, ArrowRight } from "lucide-react";
+import { Check, Copy, ArrowRight, Download } from "lucide-react";
+
+const DOWNLOAD_URL = "https://github.com/dev-err418/app-sprint-aso-releases/releases/latest/download/AppSprintASO.dmg";
 
 export default function AsoSuccessPage() {
     return (
@@ -90,9 +92,9 @@ function AsoSuccessContent() {
                                     stiffness: 200,
                                     delay: 0.2,
                                 }}
-                                className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20"
+                                className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#f4cf8f]/20"
                             >
-                                <Check className="h-8 w-8 text-green-400" />
+                                <Check className="h-8 w-8 text-[#f4cf8f]" />
                             </motion.div>
                             <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
                                 You're in!
@@ -132,33 +134,14 @@ function AsoSuccessContent() {
                             </button>
                         </motion.div>
 
-                        <div className="space-y-3 text-left rounded-2xl border border-white/5 bg-white/[0.03] p-6">
-                            <p className="text-sm font-semibold text-[#f1ebe2]">
-                                Get started in 30 seconds:
-                            </p>
-                            <ol className="space-y-2 text-sm text-[#c9c4bc]">
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-[#f4cf8f]">1.</span>
-                                    Open App Sprint ASO on your Mac
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-[#f4cf8f]">2.</span>
-                                    Paste the license key when prompted
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-[#f4cf8f]">3.</span>
-                                    Search for your app and start optimizing
-                                </li>
-                            </ol>
-                        </div>
-
                         <a
-                            href="/aso"
-                            className="inline-flex items-center gap-2 text-sm text-[#c9c4bc] hover:text-[#f1ebe2] transition-colors"
+                            href={DOWNLOAD_URL}
+                            className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] hover:bg-[#f4cf8f]/90 transition-all hover:ring-4 hover:ring-[#f4cf8f]/20"
                         >
-                            Back to App Sprint ASO
-                            <ArrowRight className="h-3 w-3" />
+                            <Download className="h-4 w-4" />
+                            Download App Sprint ASO
                         </a>
+
                     </motion.div>
                 )}
             </div>
