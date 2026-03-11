@@ -182,10 +182,10 @@ export default function AsoPage() {
                                 url: "",
                             },
                             {
-                                quote: "The cannibalization detection alone saved me hundreds in wasted ad spend. No other ASO tool surfaces this so clearly.",
-                                name: "Kai",
-                                flag: "",
-                                site: "blink.new",
+                                quote: <>My apps were practically invisible in the stores. After I started using the app, <span className="text-[#f4cf8f] box-decoration-clone px-1 -mx-1" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }}>my downloads grew dramatically.</span> I finally started seeing real results.</>,
+                                name: "Caio",
+                                flag: "🇧🇷",
+                                site: "",
                                 url: "",
                             },
                         ].map((t, i) => (
