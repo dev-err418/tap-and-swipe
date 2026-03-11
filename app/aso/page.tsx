@@ -168,35 +168,50 @@ export default function AsoPage() {
                     <div className="grid gap-12 md:grid-cols-3">
                         {[
                             {
-                                quote: "App Sprint ASO replaced 3 tools for me. Keyword tracking, metadata editing, and ads management — all in one native Mac app. Finally.",
-                                name: "Wozu",
-                                site: "gfluo.com",
+                                quote: <><span className="text-[#f4cf8f] box-decoration-clone px-1 -mx-1" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }}>Keyword research is effortless.</span> Download data, category insights, and country guidance all in one place. The Ads section is a game-changer: 10x clearer than Apple{"'"}s dashboard and way faster.</>,
+                                name: "Pau",
+                                flag: "🇪🇸",
+                                site: "Restory",
+                                url: "https://apps.apple.com/es/app/fix-old-photos-ai-restory/id6757200644",
                             },
                             {
-                                quote: "Been using App Sprint ASO for a month now. I found keywords I was completely missing and doubled my organic installs. The competitor MRR data is gold.",
-                                name: "Siya",
-                                site: "genppt.com",
+                                quote: <>I{"'"}ve tried every ASO tool out there. Astro, AppTweak, you name it. None of them come close to what App Sprint does. Simply put: <span className="text-[#f4cf8f] box-decoration-clone px-1 -mx-1" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }}>the app dev{"'"}s best friend.</span></>,
+                                name: "Daniel",
+                                flag: "",
+                                site: "",
+                                url: "",
                             },
                             {
                                 quote: "The cannibalization detection alone saved me hundreds in wasted ad spend. No other ASO tool surfaces this so clearly.",
                                 name: "Kai",
+                                flag: "",
                                 site: "blink.new",
+                                url: "",
                             },
                         ].map((t, i) => (
                             <div
                                 key={i}
                                 className="text-center"
                             >
-                                <div className="mb-4 flex justify-center text-[#f4cf8f]">
+                                <div className="mb-4 flex justify-center gap-1 text-[#f4cf8f]">
                                     {[...Array(5)].map((_, j) => (
                                         <Star key={j} className="h-4 w-4 fill-current" />
                                     ))}
                                 </div>
                                 <p className="text-[#c9c4bc] leading-relaxed mb-4">
-                                    &ldquo;{t.quote}&rdquo;
+                                    {t.quote}
                                 </p>
-                                <p className="font-bold text-[#f1ebe2]">{t.name}</p>
-                                <p className="text-sm text-[#c9c4bc]/60">{t.site}</p>
+                                <div className="flex items-center justify-center gap-3">
+                                    {t.flag && <span className="text-3xl">{t.flag}</span>}
+                                    <div className={t.flag ? "text-left" : ""}>
+                                        <p className="font-bold text-[#f1ebe2] leading-tight">{t.name}</p>
+                                        {t.url ? (
+                                            <a href={t.url} target="_blank" rel="noopener noreferrer" className="text-sm text-[#c9c4bc]/60 hover:text-[#f4cf8f] transition-colors">{t.site}</a>
+                                        ) : (
+                                            <p className="text-sm text-[#c9c4bc]/60">{t.site}</p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
