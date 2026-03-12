@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 
@@ -8,9 +9,9 @@ const ASO_PROMO_CODE = process.env.ASO_PROMO_CODE || "promo_1T9lgHDGyKvKgBtCSHBf
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json().catch(() => ({}));
-    const visitorId = body.visitorId || "";
-    const country = request.headers.get("x-vercel-ip-country") || null;
+    const cookieStore = await cookies();
+    const visitorId = cookieStore.get("visitor_id")?.value || "";
+    const country = request.headers.get("x-vercel-ip-country") || "";
 
     const checkoutSession = await stripe.checkout.sessions.create(
       {
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
         discounts: [{ promotion_code: ASO_PROMO_CODE }],
         line_items: [{ price: ASO_PRICE_ID, quantity: 1 }],
         subscription_data: {
-          metadata: { product: "aso", visitorId, country: country || "" },
+          metadata: { product: "aso", visitorId, country },
         },
         managed_payments: { enabled: true },
         success_url: `${APP_URL}/aso/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (visitorId) {
       await prisma.pageEvent.upsert({
         where: { sessionId_type_product: { sessionId: visitorId, type: "stripe_shown", product: "aso" } },
-        create: { product: "aso", type: "stripe_shown", visitorId, sessionId: visitorId, country },
+        create: { product: "aso", type: "stripe_shown", visitorId, sessionId: visitorId, country: country || null },
         update: {},
       }).catch(() => {});
     }

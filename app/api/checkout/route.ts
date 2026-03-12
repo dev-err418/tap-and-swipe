@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
@@ -50,7 +50,8 @@ export async function GET() {
     }
 
     // Read visitorId from cookie
-    const visitorId = headersList.get("cookie")?.match(/(?:^|; )visitor_id=([^;]*)/)?.[1] || "";
+    const cookieStore = await cookies();
+    const visitorId = cookieStore.get("visitor_id")?.value || "";
 
     // Create Checkout session
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
@@ -87,7 +88,7 @@ export async function GET() {
     if (visitorId) {
       await prisma.pageEvent.upsert({
         where: { sessionId_type_product: { sessionId: visitorId, type: "stripe_shown", product: "community" } },
-        create: { product: "community", type: "stripe_shown", visitorId, sessionId: visitorId, country, stripeCustomerId: customerId },
+        create: { product: "community", type: "stripe_shown", visitorId, sessionId: visitorId, country: country || null, stripeCustomerId: customerId },
         update: {},
       }).catch(() => {});
     }

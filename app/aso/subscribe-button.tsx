@@ -22,8 +22,6 @@ export default function SubscribeButton() {
 
             const res = await fetch("/api/aso/checkout", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ visitorId }),
             });
             const data = await res.json();
             if (data.url) {
