@@ -14,7 +14,7 @@ interface License {
   machine_id: string | null;
 }
 
-export default function LicensesPanel() {
+export default function LicensesPanel({ limit }: { limit?: number } = {}) {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
@@ -24,7 +24,7 @@ export default function LicensesPanel() {
 
   const fetchLicenses = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/aso/licenses");
+    const res = await fetch(limit ? `/api/aso/licenses?limit=${limit}` : "/api/aso/licenses");
     if (res.ok) setLicenses(await res.json());
     setLoading(false);
   }, []);

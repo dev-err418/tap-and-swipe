@@ -8,13 +8,19 @@ function isDev() {
 }
 
 // GET /api/aso/licenses — List all license keys
-export async function GET() {
+export async function GET(req: Request) {
   if (!isDev()) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
 
+  const url = new URL(req.url);
+  const limit = parseInt(url.searchParams.get("limit") ?? "0", 10);
+
   const { rows } = await pool.query(
-    "SELECT * FROM aso_licenses ORDER BY created_at DESC"
+    limit > 0
+      ? "SELECT * FROM aso_licenses ORDER BY created_at DESC LIMIT $1"
+      : "SELECT * FROM aso_licenses ORDER BY created_at DESC",
+    limit > 0 ? [limit] : undefined
   );
 
   return NextResponse.json(rows);

@@ -10,7 +10,7 @@ export default function LicensesModal() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-[#c9c4bc] hover:text-[#f1ebe2] hover:bg-white/10 transition-colors"
+        className="px-4 py-2 rounded-xl bg-[#f4cf8f] text-[#2a2725] text-sm font-medium hover:bg-[#e8c27f] transition-colors"
       >
         Licenses
       </button>
@@ -33,7 +33,7 @@ export default function LicensesModal() {
                 &times;
               </button>
             </div>
-            <LicensesPanel />
+            <LicensesPanel limit={10} />
           </div>
         </div>
       )}

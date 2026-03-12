@@ -167,7 +167,7 @@ export default function AsoPage() {
             {/* Testimonials */}
             <section className="bg-[#2a2725] py-24">
                 <div className="mx-auto max-w-6xl px-6">
-                    <div className="grid gap-12 md:grid-cols-3">
+                    <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
                         {[
                             {
                                 quote: <><span className="text-[#f4cf8f] box-decoration-clone px-1 -mx-1" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }}>Keyword research is effortless.</span> Download data, category insights, and country guidance all in one place. The Ads section is a game-changer: 10x clearer than Apple{"'"}s dashboard and way faster.</>,
@@ -189,6 +189,13 @@ export default function AsoPage() {
                                 flag: "🇧🇷",
                                 site: "",
                                 url: "",
+                            },
+                            {
+                                quote: <><span className="text-[#f4cf8f] box-decoration-clone px-1 -mx-1" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }}>Better than Astro in every way:</span> smarter keyword ideas, faster Apple Ads management, and an intuitive metadata workflow. Solid tool!</>,
+                                name: "Llorenç",
+                                flag: "🇪🇸",
+                                site: "Debloaty",
+                                url: "https://apps.apple.com/es/app/diario-fodmap-y-caca-debloaty/id6758434773",
                             },
                         ].map((t, i) => (
                             <div
