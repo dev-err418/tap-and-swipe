@@ -42,61 +42,245 @@ function getDateFilter(period: Period) {
   return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
-type VariantFilter = "all" | "quiz" | "direct";
-
-const VARIANT_LABELS: Record<VariantFilter, string> = {
-  all: "All",
-  quiz: "Quiz",
-  direct: "Direct",
-};
-
-type Tab = "quiz" | "community";
+type Tab = "quiz" | "community" | "aso";
 
 const TAB_LABELS: Record<Tab, string> = {
   quiz: "1:1",
   community: "Community",
+  aso: "ASO",
 };
 
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; variant?: string; tab?: string }>;
+  searchParams: Promise<{ period?: string; tab?: string }>;
 }) {
   if (process.env.NODE_ENV === "production") {
     notFound();
   }
 
   const params = await searchParams;
-  const tab = (["quiz", "community"].includes(params.tab ?? "") ? params.tab : "quiz") as Tab;
+  const tab = (["quiz", "community", "aso"].includes(params.tab ?? "") ? params.tab : "quiz") as Tab;
   const period = (["day", "week", "month", "all"].includes(params.period ?? "")
     ? params.period
     : "week") as Period;
-  const variantFilter = (["all", "quiz", "direct"].includes(params.variant ?? "")
-    ? params.variant
-    : "all") as VariantFilter;
 
   const gte = getDateFilter(period);
   const dateWhere = gte ? { createdAt: { gte } } : {};
 
-  function buildUrl(overrides: { period?: Period; variant?: VariantFilter; tab?: Tab } = {}) {
+  function buildUrl(overrides: { period?: Period; tab?: Tab } = {}) {
     const t = overrides.tab ?? tab;
     const p = overrides.period ?? period;
-    const v = overrides.variant ?? variantFilter;
     const sp = new URLSearchParams();
     if (t !== "quiz") sp.set("tab", t);
     if (p !== "week") sp.set("period", p);
-    if (v !== "all") sp.set("variant", v);
     const qs = sp.toString();
     return `/analytics${qs ? `?${qs}` : ""}`;
   }
 
-  if (tab === "community") {
-    const [cPageViews, cCtaClicked, cStripeShown, cPaid] = await Promise.all([
-      prisma.communityEvent.count({ where: { type: "page_view", ...dateWhere } }),
-      prisma.communityEvent.count({ where: { type: "cta_clicked", ...dateWhere } }),
-      prisma.communityEvent.count({ where: { type: "stripe_shown", ...dateWhere } }),
-      prisma.communityEvent.count({ where: { type: "paid", ...dateWhere } }),
+  // ── Tab toggle (shared) ──
+  const tabToggle = (
+    <div className="flex gap-1 rounded-xl bg-white/5 p-1 w-fit mb-6">
+      {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
+        <Link
+          key={t}
+          href={buildUrl({ tab: t })}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            tab === t
+              ? "bg-[#f4cf8f] text-[#2a2725]"
+              : "text-[#c9c4bc] hover:text-[#f1ebe2]"
+          }`}
+        >
+          {TAB_LABELS[t]}
+        </Link>
+      ))}
+    </div>
+  );
+
+  // ── Period selector (shared) ──
+  const periodSelector = (
+    <div className="flex gap-1 rounded-xl bg-white/5 p-1">
+      {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
+        <Link
+          key={p}
+          href={buildUrl({ period: p })}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            period === p
+              ? "bg-[#f4cf8f] text-[#2a2725]"
+              : "text-[#c9c4bc] hover:text-[#f1ebe2]"
+          }`}
+        >
+          {PERIOD_LABELS[p]}
+        </Link>
+      ))}
+    </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ASO Tab
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (tab === "aso") {
+    const pageEventWhere = { product: "aso" as const, ...dateWhere };
+
+    const [aPageViews, aCtaClicked, aStripeShown, aPaid, paidEvents, countryRows] = await Promise.all([
+      prisma.pageEvent.count({ where: { ...pageEventWhere, type: "page_view" } }),
+      prisma.pageEvent.count({ where: { ...pageEventWhere, type: "cta_clicked" } }),
+      prisma.pageEvent.count({ where: { ...pageEventWhere, type: "stripe_shown" } }),
+      prisma.pageEvent.count({ where: { ...pageEventWhere, type: "paid" } }),
+      prisma.pageEvent.findMany({
+        where: { ...pageEventWhere, type: "paid" },
+        select: { revenue: true, currency: true, visitorId: true },
+      }),
+      prisma.pageEvent.groupBy({
+        by: ["country"],
+        where: { ...pageEventWhere, type: "page_view" },
+        _count: { id: true },
+        orderBy: { _count: { id: "desc" } },
+      }),
     ]);
+
+    const totalRevenue = paidEvents.reduce((sum, e) => sum + (e.revenue ?? 0), 0);
+    const conversionRate = aPageViews > 0 ? ((aPaid / aPageViews) * 100).toFixed(1) : "0";
+
+    // Country breakdown: get paid counts per country too
+    const countryPaidRows = await prisma.pageEvent.groupBy({
+      by: ["country"],
+      where: { ...pageEventWhere, type: "paid" },
+      _count: { id: true },
+    });
+    const paidByCountry = Object.fromEntries(countryPaidRows.map((r) => [r.country, r._count.id]));
+
+    // Revenue by country
+    const revenueByCountryRows = await prisma.pageEvent.groupBy({
+      by: ["country"],
+      where: { ...pageEventWhere, type: "paid" },
+      _sum: { revenue: true },
+    });
+    const revenueByCountry = Object.fromEntries(revenueByCountryRows.map((r) => [r.country, r._sum.revenue ?? 0]));
+
+    const asoFunnel: FunnelStep[] = [
+      { label: "Page views", count: aPageViews, rate: null, benchmark: null },
+      {
+        label: "CTA clicked",
+        count: aCtaClicked,
+        rate: aPageViews > 0 ? Math.round((aCtaClicked / aPageViews) * 100) : 0,
+        benchmark: null,
+      },
+      {
+        label: "Stripe shown",
+        count: aStripeShown,
+        rate: aCtaClicked > 0 ? Math.round((aStripeShown / aCtaClicked) * 100) : 0,
+        benchmark: null,
+      },
+      {
+        label: "Paid",
+        count: aPaid,
+        rate: aStripeShown > 0 ? Math.round((aPaid / aStripeShown) * 100) : 0,
+        benchmark: null,
+      },
+    ];
+
+    const aMaxCount = Math.max(...asoFunnel.map((f) => f.count), 1);
+
+    return (
+      <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] p-8">
+        <div className="max-w-6xl mx-auto">
+          {tabToggle}
+
+          {/* Funnel */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-10">
+            <div className="flex items-center justify-end mb-6">
+              {periodSelector}
+            </div>
+            <FunnelChart funnel={asoFunnel} maxCount={aMaxCount} benchmarks={{}} benchmarkLabels={{}} />
+          </div>
+
+          {/* Stats cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+            <StatCard label="Page views" value={aPageViews} />
+            <StatCard label="Conversion rate" value={`${conversionRate}%`} />
+            <StatCard label="Paid" value={aPaid} />
+            <StatCard label="Revenue" value={`${(totalRevenue / 100).toFixed(0)}€`} />
+          </div>
+
+          {/* Country breakdown */}
+          {countryRows.length > 0 && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-10">
+              <h3 className="text-lg font-bold mb-3">Country breakdown</h3>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[#c9c4bc] border-b border-white/10">
+                    <th className="text-left pb-2 font-medium">Country</th>
+                    <th className="text-right pb-2 font-medium">Views</th>
+                    <th className="text-right pb-2 font-medium">Paid</th>
+                    <th className="text-right pb-2 font-medium">Revenue</th>
+                    <th className="text-right pb-2 font-medium">Conv.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {countryRows.map((row) => {
+                    const views = row._count.id;
+                    const paid = paidByCountry[row.country ?? ""] ?? 0;
+                    const rev = revenueByCountry[row.country ?? ""] ?? 0;
+                    const conv = views > 0 ? ((paid / views) * 100).toFixed(1) : "0";
+                    return (
+                      <tr key={row.country ?? "__null"} className="border-b border-white/5">
+                        <td className="py-2">{row.country || "Unknown"}</td>
+                        <td className="py-2 text-right tabular-nums">{views}</td>
+                        <td className="py-2 text-right tabular-nums">{paid}</td>
+                        <td className="py-2 text-right tabular-nums">{(rev / 100).toFixed(0)}€</td>
+                        <td className="py-2 text-right tabular-nums text-[#c9c4bc]">{conv}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Community Tab
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (tab === "community") {
+    const pageEventWhere = { product: "community" as const, ...dateWhere };
+
+    const [cPageViews, cCtaClicked, cStripeShown, cPaid, cPaidEvents, cCountryRows] = await Promise.all([
+      prisma.pageEvent.count({ where: { ...pageEventWhere, type: "page_view" } }),
+      prisma.pageEvent.count({ where: { ...pageEventWhere, type: "cta_clicked" } }),
+      prisma.pageEvent.count({ where: { ...pageEventWhere, type: "stripe_shown" } }),
+      prisma.pageEvent.count({ where: { ...pageEventWhere, type: "paid" } }),
+      prisma.pageEvent.findMany({
+        where: { ...pageEventWhere, type: "paid" },
+        select: { revenue: true, visitorId: true },
+      }),
+      prisma.pageEvent.groupBy({
+        by: ["country"],
+        where: { ...pageEventWhere, type: "page_view" },
+        _count: { id: true },
+        orderBy: { _count: { id: "desc" } },
+      }),
+    ]);
+
+    const cTotalRevenue = cPaidEvents.reduce((sum, e) => sum + (e.revenue ?? 0), 0);
+    const cConversionRate = cPageViews > 0 ? ((cPaid / cPageViews) * 100).toFixed(1) : "0";
+
+    const cCountryPaidRows = await prisma.pageEvent.groupBy({
+      by: ["country"],
+      where: { ...pageEventWhere, type: "paid" },
+      _count: { id: true },
+    });
+    const cPaidByCountry = Object.fromEntries(cCountryPaidRows.map((r) => [r.country, r._count.id]));
+
+    const cRevenueByCountryRows = await prisma.pageEvent.groupBy({
+      by: ["country"],
+      where: { ...pageEventWhere, type: "paid" },
+      _sum: { revenue: true },
+    });
+    const cRevenueByCountry = Object.fromEntries(cRevenueByCountryRows.map((r) => [r.country, r._sum.revenue ?? 0]));
 
     const communityFunnel: FunnelStep[] = [
       { label: "Page views", count: cPageViews, rate: null, benchmark: null },
@@ -125,55 +309,68 @@ export default async function AnalyticsPage({
     return (
       <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] p-8">
         <div className="max-w-6xl mx-auto">
-          {/* Tab toggle */}
-          <div className="flex gap-1 rounded-xl bg-white/5 p-1 w-fit mb-6">
-            {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
-              <Link
-                key={t}
-                href={buildUrl({ tab: t })}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  tab === t
-                    ? "bg-[#f4cf8f] text-[#2a2725]"
-                    : "text-[#c9c4bc] hover:text-[#f1ebe2]"
-                }`}
-              >
-                {TAB_LABELS[t]}
-              </Link>
-            ))}
-          </div>
+          {tabToggle}
 
-          {/* Community Funnel */}
+          {/* Funnel */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-10">
             <div className="flex items-center justify-end mb-6">
-              <div className="flex gap-1 rounded-xl bg-white/5 p-1">
-                {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
-                  <Link
-                    key={p}
-                    href={buildUrl({ period: p })}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      period === p
-                        ? "bg-[#f4cf8f] text-[#2a2725]"
-                        : "text-[#c9c4bc] hover:text-[#f1ebe2]"
-                    }`}
-                  >
-                    {PERIOD_LABELS[p]}
-                  </Link>
-                ))}
-              </div>
+              {periodSelector}
             </div>
-
             <FunnelChart funnel={communityFunnel} maxCount={cMaxCount} benchmarks={{}} benchmarkLabels={{}} />
           </div>
+
+          {/* Stats cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+            <StatCard label="Page views" value={cPageViews} />
+            <StatCard label="Conversion rate" value={`${cConversionRate}%`} />
+            <StatCard label="Paid" value={cPaid} />
+            <StatCard label="Revenue" value={`${(cTotalRevenue / 100).toFixed(0)}€`} />
+          </div>
+
+          {/* Country breakdown */}
+          {cCountryRows.length > 0 && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-10">
+              <h3 className="text-lg font-bold mb-3">Country breakdown</h3>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[#c9c4bc] border-b border-white/10">
+                    <th className="text-left pb-2 font-medium">Country</th>
+                    <th className="text-right pb-2 font-medium">Views</th>
+                    <th className="text-right pb-2 font-medium">Paid</th>
+                    <th className="text-right pb-2 font-medium">Revenue</th>
+                    <th className="text-right pb-2 font-medium">Conv.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cCountryRows.map((row) => {
+                    const views = row._count.id;
+                    const paid = cPaidByCountry[row.country ?? ""] ?? 0;
+                    const rev = cRevenueByCountry[row.country ?? ""] ?? 0;
+                    const conv = views > 0 ? ((paid / views) * 100).toFixed(1) : "0";
+                    return (
+                      <tr key={row.country ?? "__null"} className="border-b border-white/5">
+                        <td className="py-2">{row.country || "Unknown"}</td>
+                        <td className="py-2 text-right tabular-nums">{views}</td>
+                        <td className="py-2 text-right tabular-nums">{paid}</td>
+                        <td className="py-2 text-right tabular-nums">{(rev / 100).toFixed(0)}€</td>
+                        <td className="py-2 text-right tabular-nums text-[#c9c4bc]">{conv}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  // Quiz tab (default)
-  const variantEventWhere = variantFilter !== "all" ? { variant: variantFilter } : {};
-  const variantLeadWhere = variantFilter !== "all" ? { variant: variantFilter } : {};
-  const eventWhere = { ...dateWhere, ...variantEventWhere };
-  const leadWhere = { ...dateWhere, ...variantLeadWhere };
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Quiz (1:1) Tab — default
+  // ═══════════════════════════════════════════════════════════════════════════
+  const eventWhere = { ...dateWhere };
+  const leadWhere = { ...dateWhere };
 
   const [
     pageViews,
@@ -181,10 +378,6 @@ export default async function AnalyticsPage({
     quizCompletes,
     optins,
     bookingClicks,
-    quizVariantLeads,
-    directVariantLeads,
-    quizBookingClicks,
-    directBookingClicks,
     leads,
     eventSourceGroups,
     leadSourceGroups,
@@ -195,10 +388,6 @@ export default async function AnalyticsPage({
     prisma.quizEvent.count({ where: { type: "quiz_complete", ...eventWhere } }),
     prisma.quizLead.count({ where: leadWhere }),
     prisma.quizEvent.count({ where: { type: "booking_click", ...eventWhere } }),
-    prisma.quizLead.count({ where: { variant: "quiz", ...dateWhere } }),
-    prisma.quizLead.count({ where: { variant: "direct", ...dateWhere } }),
-    prisma.quizEvent.count({ where: { type: "booking_click", variant: "quiz", ...dateWhere } }),
-    prisma.quizEvent.count({ where: { type: "booking_click", variant: "direct", ...dateWhere } }),
     prisma.quizLead.findMany({
       where: leadWhere,
       orderBy: { createdAt: "desc" },
@@ -221,51 +410,33 @@ export default async function AnalyticsPage({
     }),
   ]);
 
-  // Funnel steps — direct variant skips the quiz entirely
-  const funnel =
-    variantFilter === "direct"
-      ? [
-          { label: "Page views", count: pageViews, rate: null as number | null, benchmark: null as string | null },
-          {
-            label: "Optins",
-            count: optins,
-            rate: pageViews > 0 ? Math.round((optins / pageViews) * 100) : 0,
-            benchmark: "optin",
-          },
-          {
-            label: "Booking clicks",
-            count: bookingClicks,
-            rate: optins > 0 ? Math.round((bookingClicks / optins) * 100) : 0,
-            benchmark: "booking",
-          },
-        ]
-      : [
-          { label: "Page views", count: pageViews, rate: null as number | null, benchmark: null as string | null },
-          {
-            label: "Quiz starts",
-            count: quizStarts,
-            rate: pageViews > 0 ? Math.round((quizStarts / pageViews) * 100) : 0,
-            benchmark: "start",
-          },
-          {
-            label: "Quiz completions",
-            count: quizCompletes,
-            rate: quizStarts > 0 ? Math.round((quizCompletes / quizStarts) * 100) : 0,
-            benchmark: "complete",
-          },
-          {
-            label: "Optins",
-            count: optins,
-            rate: quizCompletes > 0 ? Math.round((optins / quizCompletes) * 100) : 0,
-            benchmark: "optin",
-          },
-          {
-            label: "Booking clicks",
-            count: bookingClicks,
-            rate: optins > 0 ? Math.round((bookingClicks / optins) * 100) : 0,
-            benchmark: "booking",
-          },
-        ];
+  const funnel: FunnelStep[] = [
+    { label: "Page views", count: pageViews, rate: null, benchmark: null },
+    {
+      label: "Quiz starts",
+      count: quizStarts,
+      rate: pageViews > 0 ? Math.round((quizStarts / pageViews) * 100) : 0,
+      benchmark: "start",
+    },
+    {
+      label: "Quiz completions",
+      count: quizCompletes,
+      rate: quizStarts > 0 ? Math.round((quizCompletes / quizStarts) * 100) : 0,
+      benchmark: "complete",
+    },
+    {
+      label: "Optins",
+      count: optins,
+      rate: quizCompletes > 0 ? Math.round((optins / quizCompletes) * 100) : 0,
+      benchmark: "optin",
+    },
+    {
+      label: "Booking clicks",
+      count: bookingClicks,
+      rate: optins > 0 ? Math.round((bookingClicks / optins) * 100) : 0,
+      benchmark: "booking",
+    },
+  ];
 
   const maxCount = Math.max(...funnel.map((f) => f.count), 1);
 
@@ -289,67 +460,22 @@ export default async function AnalyticsPage({
   return (
     <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] p-8">
       <div className="max-w-6xl mx-auto">
-        {/* Tab toggle */}
-        <div className="flex gap-1 rounded-xl bg-white/5 p-1 w-fit mb-6">
-          {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
-            <Link
-              key={t}
-              href={buildUrl({ tab: t })}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                tab === t
-                  ? "bg-[#f4cf8f] text-[#2a2725]"
-                  : "text-[#c9c4bc] hover:text-[#f1ebe2]"
-              }`}
-            >
-              {TAB_LABELS[t]}
-            </Link>
-          ))}
-        </div>
+        {tabToggle}
 
         {/* Conversion Funnel */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex gap-1 rounded-xl bg-white/5 p-1">
-              {(Object.keys(VARIANT_LABELS) as VariantFilter[]).map((v) => (
-                <Link
-                  key={v}
-                  href={buildUrl({ variant: v })}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    variantFilter === v
-                      ? "bg-[#f4cf8f] text-[#2a2725]"
-                      : "text-[#c9c4bc] hover:text-[#f1ebe2]"
-                  }`}
-                >
-                  {VARIANT_LABELS[v]}
-                </Link>
-              ))}
-            </div>
-            <div className="flex gap-1 rounded-xl bg-white/5 p-1">
-              {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
-                <Link
-                  key={p}
-                  href={buildUrl({ period: p })}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    period === p
-                      ? "bg-[#f4cf8f] text-[#2a2725]"
-                      : "text-[#c9c4bc] hover:text-[#f1ebe2]"
-                  }`}
-                >
-                  {PERIOD_LABELS[p]}
-                </Link>
-              ))}
-            </div>
+          <div className="flex items-center justify-end mb-6">
+            {periodSelector}
           </div>
 
           <FunnelChart funnel={funnel} maxCount={maxCount} benchmarks={BENCHMARKS} benchmarkLabels={BENCHMARK_LABELS} />
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-          <StatCard label="Leads" value={optins} split={{ quiz: quizVariantLeads, direct: directVariantLeads }} />
-          <StatCard label="Booking clicks" value={bookingClicks} split={{ quiz: quizBookingClicks, direct: directBookingClicks }} />
-          <StatCard label="Quiz leads" value={quizVariantLeads} />
-          <StatCard label="Direct leads" value={directVariantLeads} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-10">
+          <StatCard label="Leads" value={optins} />
+          <StatCard label="Booking clicks" value={bookingClicks} />
+          <StatCard label="Page views" value={pageViews} />
         </div>
 
         {/* Traffic sources */}
@@ -430,9 +556,6 @@ function FunnelChart({
 
   const shapePath = topPath + botPath;
 
-  // Section boundaries for the vertical grid lines (midpoints between steps)
-  const midXs = funnel.slice(1).map((_, i) => (xs[i] + xs[i + 1]) / 2);
-
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="xMidYMid meet">
       {/* Funnel shape — single smooth filled path */}
@@ -473,7 +596,6 @@ function FunnelChart({
           benchmarkValue !== null && step.rate !== null && step.rate >= benchmarkValue;
 
         if (i === 0) {
-          // First step: just show the count
           return (
             <g key={i}>
               <text
@@ -537,30 +659,11 @@ function FunnelChart({
   );
 }
 
-function StatCard({ label, value, split }: { label: string; value: number; split?: { quiz: number; direct: number } }) {
-  const quizPct = split && value > 0 ? Math.round((split.quiz / value) * 100) : 0;
-  const directPct = split && value > 0 ? Math.round((split.direct / value) * 100) : 0;
-
+function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
       <div className="text-sm text-[#c9c4bc] mb-1">{label}</div>
-      <div className="text-3xl font-bold mb-3">{value}</div>
-      {split && value > 0 && (
-        <>
-          <div className="flex h-2 rounded-full overflow-hidden bg-white/5">
-            {split.quiz > 0 && (
-              <div className="bg-[#f4cf8f] h-full" style={{ width: `${quizPct}%` }} />
-            )}
-            {split.direct > 0 && (
-              <div className="bg-[#f4cf8f]/40 h-full" style={{ width: `${directPct}%` }} />
-            )}
-          </div>
-          <div className="flex justify-between mt-2 text-xs text-[#c9c4bc]">
-            <span>Quiz {split.quiz} ({quizPct}%)</span>
-            <span>Direct {split.direct} ({directPct}%)</span>
-          </div>
-        </>
-      )}
+      <div className="text-3xl font-bold">{typeof value === "number" ? value.toLocaleString() : value}</div>
     </div>
   );
 }

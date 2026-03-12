@@ -1,19 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { prisma } from "@/lib/prisma";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 const ASO_PRICE_ID = process.env.ASO_PRICE_ID || "price_1T9ldIDGyKvKgBtCf9rafpe7";
 const ASO_PROMO_CODE = process.env.ASO_PROMO_CODE || "promo_1T9lgHDGyKvKgBtCSHBfgKaH";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    const body = await request.json().catch(() => ({}));
+    const visitorId = body.visitorId || "";
+    const country = request.headers.get("x-vercel-ip-country") || null;
+
     const checkoutSession = await stripe.checkout.sessions.create(
       {
         mode: "subscription",
         discounts: [{ promotion_code: ASO_PROMO_CODE }],
         line_items: [{ price: ASO_PRICE_ID, quantity: 1 }],
         subscription_data: {
-          metadata: { product: "aso" },
+          metadata: { product: "aso", visitorId, country: country || "" },
         },
         managed_payments: { enabled: true },
         success_url: `${APP_URL}/aso/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -23,6 +28,15 @@ export async function POST() {
         apiVersion: "2026-03-04.preview" as any,
       }
     );
+
+    // Track stripe_shown event
+    if (visitorId) {
+      await prisma.pageEvent.upsert({
+        where: { sessionId_type_product: { sessionId: visitorId, type: "stripe_shown", product: "aso" } },
+        create: { product: "aso", type: "stripe_shown", visitorId, sessionId: visitorId, country },
+        update: {},
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ url: checkoutSession.url });
   } catch (err) {

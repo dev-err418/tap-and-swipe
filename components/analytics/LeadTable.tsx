@@ -11,7 +11,6 @@ interface Lead {
   phone: string;
   countryCode: string;
   profileType: string;
-  variant: string;
   status: string;
   answers: Record<string, number> | null;
   source: string | null;
@@ -78,7 +77,6 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Name</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Email</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Phone</th>
-              <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Variant</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Status</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Location</th>
               <th className="text-left px-4 py-3 font-medium text-[#c9c4bc]">Source</th>
@@ -107,17 +105,6 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        lead.variant === "direct"
-                          ? "bg-purple-500/10 text-purple-400"
-                          : "bg-[#f4cf8f]/10 text-[#f4cf8f]"
-                      }`}
-                    >
-                      {lead.variant || "quiz"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${sc.classes}`}
                     >
                       {sc.label}
@@ -132,7 +119,7 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
             })}
             {leads.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-[#c9c4bc]">
+                <td colSpan={7} className="px-4 py-8 text-center text-[#c9c4bc]">
                   No leads yet
                 </td>
               </tr>
@@ -171,18 +158,6 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
               <div className="flex justify-between">
                 <span className="text-[#c9c4bc]">Phone</span>
                 <span>{selected.countryCode} {selected.phone}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#c9c4bc]">Variant</span>
-                <span
-                  className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                    selected.variant === "direct"
-                      ? "bg-purple-500/10 text-purple-400"
-                      : "bg-[#f4cf8f]/10 text-[#f4cf8f]"
-                  }`}
-                >
-                  {selected.variant || "quiz"}
-                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[#c9c4bc]">Status</span>

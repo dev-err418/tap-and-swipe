@@ -49,6 +49,9 @@ export async function GET() {
       });
     }
 
+    // Read visitorId from cookie
+    const visitorId = headersList.get("cookie")?.match(/(?:^|; )visitor_id=([^;]*)/)?.[1] || "";
+
     // Create Checkout session
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
@@ -61,7 +64,7 @@ export async function GET() {
         },
       ],
       subscription_data: {
-        metadata: { discordId: session.discordId },
+        metadata: { discordId: session.discordId, visitorId, country: country || "" },
       },
       success_url: `${APP_URL}/app-sprint-community?status=success`,
       cancel_url: `${APP_URL}/app-sprint-community?status=canceled`,
@@ -81,11 +84,13 @@ export async function GET() {
     );
 
     // Track stripe_shown event
-    await prisma.communityEvent.upsert({
-      where: { sessionId_type: { sessionId: session.discordId, type: "stripe_shown" } },
-      create: { type: "stripe_shown", sessionId: session.discordId },
-      update: {},
-    });
+    if (visitorId) {
+      await prisma.pageEvent.upsert({
+        where: { sessionId_type_product: { sessionId: visitorId, type: "stripe_shown", product: "community" } },
+        create: { product: "community", type: "stripe_shown", visitorId, sessionId: visitorId, country, stripeCustomerId: customerId },
+        update: {},
+      }).catch(() => {});
+    }
 
     await clearSession();
 

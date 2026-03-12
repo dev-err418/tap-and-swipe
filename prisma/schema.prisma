@@ -91,7 +91,6 @@ model QuizLead {
   phone       String
   countryCode String   @default("+33")
   profileType String   // "dev-indie" | "entreprise"
-  variant     String   @default("quiz") // "quiz" | "direct"
   answers     Json     // { q1: 0, q2: 2, ... } index-based
   status         String    @default("new") // "new" | "abandoned" | "booked" | "whatsapp_sent" | "got_answered" | "show" | "no_show"
   showAt         DateTime?
@@ -110,7 +109,6 @@ model QuizEvent {
   id        String   @id @default(cuid())
   type      String   // "page_view" | "quiz_start" | "quiz_complete" | "booking_click"
   sessionId String
-  variant   String   @default("quiz") // "quiz" | "direct"
   source    String?
   createdAt DateTime @default(now())
 
@@ -134,14 +132,23 @@ model InviteLink {
   createdAt DateTime  @default(now())
 }
 
-model CommunityEvent {
-  id        String   @id @default(cuid())
-  type      String   // "page_view" | "cta_clicked" | "stripe_shown" | "paid"
-  sessionId String
-  createdAt DateTime @default(now())
+model PageEvent {
+  id               String   @id @default(cuid())
+  product          String   // "aso" | "community"
+  type             String   // "page_view" | "cta_clicked" | "stripe_shown" | "paid"
+  visitorId        String   // cookie-based, persists across sessions (1yr)
+  sessionId        String   // per browser-session, for within-session dedup
+  country          String?  // x-vercel-ip-country
+  referrer         String?  // document.referrer or UTM source
+  stripeCustomerId String?  // set at stripe_shown / paid time
+  revenue          Int?     // amount in cents, set on "paid" events
+  currency         String?  // e.g. "eur", set on "paid" events
+  createdAt        DateTime @default(now())
 
-  @@unique([sessionId, type])
-  @@index([type, createdAt])
+  @@unique([sessionId, type, product])
+  @@index([product, type, createdAt])
+  @@index([visitorId])
+  @@index([product, country, createdAt])
 }
 
 model TrialDiscordMessage {

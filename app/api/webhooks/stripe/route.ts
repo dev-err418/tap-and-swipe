@@ -86,6 +86,29 @@ export async function POST(request: NextRequest) {
 
           const licenseKey = await generateAsoLicense(customerEmail, customerId);
           await sendLicenseKeyEmail(customerEmail, licenseKey);
+
+          // Track ASO paid event
+          const asoVisitorId = subscription.metadata.visitorId;
+          if (asoVisitorId) {
+            const asoInvoice =
+              typeof subscription.latest_invoice === "string"
+                ? await stripe.invoices.retrieve(subscription.latest_invoice)
+                : subscription.latest_invoice;
+            await prisma.pageEvent.upsert({
+              where: { sessionId_type_product: { sessionId: asoVisitorId, type: "paid", product: "aso" } },
+              create: {
+                product: "aso",
+                type: "paid",
+                visitorId: asoVisitorId,
+                sessionId: asoVisitorId,
+                stripeCustomerId: customerId,
+                revenue: asoInvoice?.amount_paid ?? null,
+                currency: asoInvoice?.currency ?? null,
+                country: subscription.metadata.country || null,
+              },
+              update: {},
+            }).catch((e) => console.error("[ASO] PageEvent upsert error:", e));
+          }
           break;
         }
 
@@ -125,12 +148,28 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // Track paid event
-        await prisma.communityEvent.upsert({
-          where: { sessionId_type: { sessionId: discordId, type: "paid" } },
-          create: { type: "paid", sessionId: discordId },
-          update: {},
-        });
+        // Track community paid event
+        const communityVisitorId = subscription.metadata.visitorId || discordId;
+        {
+          const communityInvoice =
+            typeof subscription.latest_invoice === "string"
+              ? await stripe.invoices.retrieve(subscription.latest_invoice)
+              : subscription.latest_invoice;
+          await prisma.pageEvent.upsert({
+            where: { sessionId_type_product: { sessionId: communityVisitorId, type: "paid", product: "community" } },
+            create: {
+              product: "community",
+              type: "paid",
+              visitorId: communityVisitorId,
+              sessionId: communityVisitorId,
+              stripeCustomerId: session.customer as string,
+              revenue: communityInvoice?.amount_paid ?? null,
+              currency: communityInvoice?.currency ?? null,
+              country: subscription.metadata.country || null,
+            },
+            update: {},
+          }).catch((e) => console.error("[Community] PageEvent upsert error:", e));
+        }
 
         // Disposable email check
         const communityEmail = session.customer_details?.email;

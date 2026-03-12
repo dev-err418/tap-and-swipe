@@ -8,10 +8,12 @@ import {
     Ban,
 } from "lucide-react";
 import SubscribeButton from "./subscribe-button";
+import PageTracker from "@/components/PageTracker";
 
 export default function AsoPage() {
     return (
         <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30">
+            <PageTracker product="aso" ctaSelector='[data-track="cta"]' />
             {/* Hero */}
             <header className="relative overflow-hidden pt-32 pb-16">
                 <div className="mx-auto max-w-7xl px-6 text-center">

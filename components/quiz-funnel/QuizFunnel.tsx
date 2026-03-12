@@ -37,14 +37,12 @@ const slideVariants = {
 const TOTAL_STEPS_FULL = 10; // 8 questions + optin + buffer
 const TOTAL_STEPS_SKIP = 9; // 7 questions (skip Q3) + optin + buffer
 
-type Variant = "quiz" | "direct";
-
-function trackEvent(type: string, sessionId: string, variant: Variant, source?: string) {
+function trackEvent(type: string, sessionId: string, source?: string) {
   if (process.env.NODE_ENV === "development") return;
   fetch("/api/quiz-event", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type, sessionId, variant, source: source || undefined }),
+    body: JSON.stringify({ type, sessionId, source: source || undefined }),
   }).catch(() => {});
 }
 
@@ -57,35 +55,13 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
   const [leadId, setLeadId] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [variant, setVariant] = useState<Variant | null>(null);
   const sessionIdRef = useRef(
     typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36),
   );
   const sourceRef = useRef<string | undefined>(undefined);
 
-  // Determine variant on mount: URL param (debug) → sessionStorage → random 50/50
-  useEffect(() => {
-    const urlVariant = searchParams.get("variant");
-    if (urlVariant === "quiz" || urlVariant === "direct") {
-      setVariant(urlVariant);
-      try { sessionStorage.setItem("quiz_variant", urlVariant); } catch {}
-      return;
-    }
-    try {
-      const stored = sessionStorage.getItem("quiz_variant");
-      if (stored === "quiz" || stored === "direct") {
-        setVariant(stored);
-        return;
-      }
-    } catch {}
-    const random: Variant = Math.random() < 0.5 ? "quiz" : "direct";
-    setVariant(random);
-    try { sessionStorage.setItem("quiz_variant", random); } catch {}
-  }, [searchParams]);
-
   // Capture UTM / referrer source on mount
   useEffect(() => {
-    if (!variant) return;
     const utm =
       searchParams.get("utm") ||
       searchParams.get("utm_source") ||
@@ -109,8 +85,8 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
         sourceRef.current = serverAppSource;
       }
     }
-    trackEvent("page_view", sessionIdRef.current, variant, sourceRef.current);
-  }, [variant, searchParams, serverReferrer, serverAppSource]);
+    trackEvent("page_view", sessionIdRef.current, sourceRef.current);
+  }, [searchParams, serverReferrer, serverAppSource]);
 
   // Debug: ?step=optin or ?step=waiting or ?step=result-dev-indie
   useEffect(() => {
@@ -124,10 +100,8 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
   const currentQuestionIndex = questionOrder.indexOf(step as QuestionKey);
   const isQuestion = currentQuestionIndex !== -1;
 
-  // For variant B (direct), skip quiz entirely — go straight to result
-  const isDirect = variant === "direct";
-  const showProgressBar = !isDirect && (isQuestion || step === "optin");
-  const showBack = !isDirect && (isQuestion || step === "optin");
+  const showProgressBar = isQuestion || step === "optin";
+  const showBack = isQuestion || step === "optin";
 
   const skipsQ3 = answers.q2 === 2;
   const totalSteps = skipsQ3 ? TOTAL_STEPS_SKIP : TOTAL_STEPS_FULL;
@@ -151,7 +125,7 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
     setDirection(1);
     const next = getNextQuestion(questionKey, newAnswers);
     if (next === "optin") {
-      trackEvent("quiz_complete", sessionIdRef.current, variant || "quiz", sourceRef.current);
+      trackEvent("quiz_complete", sessionIdRef.current, sourceRef.current);
     }
     setStep(next);
   }
@@ -176,30 +150,7 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
   }, []);
 
   const isResult = step === "result-dev-indie";
-  const isScrollable = isResult || isDirect;
 
-  // Wait for variant to be determined
-  if (!variant) return null;
-
-  // Variant B: render result page directly (no quiz, no progress bar)
-  if (isDirect) {
-    return (
-      <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30 relative">
-        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#f4cf8f]/[0.03] blur-[120px]" />
-        <div className="min-h-screen px-6 pt-32 pb-16">
-          <ResultDevIndie
-            firstName=""
-            answers={{}}
-            variant="direct"
-            source={sourceRef.current}
-            onBookingClick={() => trackEvent("booking_click", sessionIdRef.current, variant, sourceRef.current)}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Variant A: existing quiz flow
   return (
     <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30 relative">
       {/* Background glow */}
@@ -238,7 +189,7 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
           exit="exit"
           transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
           className={
-            isScrollable
+            isResult
               ? "min-h-screen px-6 pt-36 pb-16"
               : "flex min-h-screen items-center justify-center px-6 py-16 overflow-hidden"
           }
@@ -246,7 +197,7 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
           {step === "hero" && (
             <HeroScreen
               onStart={() => {
-                trackEvent("quiz_start", sessionIdRef.current, variant, sourceRef.current);
+                trackEvent("quiz_start", sessionIdRef.current, sourceRef.current);
                 setDirection(1);
                 setStep("q1");
               }}
@@ -266,7 +217,6 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
               answers={answers}
               profileType={getProfileType(answers.q1 ?? 0)}
               source={sourceRef.current}
-              variant={variant}
               onSuccess={goToWaiting}
             />
           )}
@@ -280,9 +230,8 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
               leadId={leadId}
               email={email}
               phone={phone}
-              variant="quiz"
               source={sourceRef.current}
-              onBookingClick={() => trackEvent("booking_click", sessionIdRef.current, variant, sourceRef.current)}
+              onBookingClick={() => trackEvent("booking_click", sessionIdRef.current, sourceRef.current)}
             />
           )}
         </motion.div>
