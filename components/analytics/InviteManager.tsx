@@ -70,9 +70,8 @@ export default function InviteManager({ initialInvites }: { initialInvites: Invi
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold">Invite links</h3>
+    <div>
+      <div className="flex items-center justify-end mb-4">
         <div className="flex items-center gap-2">
           <select
             value={tier}
