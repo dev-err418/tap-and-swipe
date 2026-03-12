@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import LeadTable from "@/components/analytics/LeadTable";
 import InviteManager from "@/components/analytics/InviteManager";
 import ExpandableGroup from "@/components/analytics/ExpandableGroup";
+import LicensesPanel from "@/components/aso-debug/LicensesPanel";
+import ProxyAnalyticsPanel from "@/components/aso-debug/ProxyAnalyticsPanel";
+import FeedbackPanel from "@/components/aso-debug/FeedbackPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -237,6 +240,24 @@ export default async function AnalyticsPage({
               </table>
             </div>
           )}
+
+          {/* Licenses */}
+          <h3 className="text-lg font-bold mb-4">Licenses</h3>
+          <div className="mb-10">
+            <LicensesPanel />
+          </div>
+
+          {/* Proxy Analytics */}
+          <h3 className="text-lg font-bold mb-4">Proxy analytics</h3>
+          <div className="mb-10">
+            <ProxyAnalyticsPanel />
+          </div>
+
+          {/* Feedback */}
+          <h3 className="text-lg font-bold mb-4">Feedback</h3>
+          <div className="mb-10">
+            <FeedbackPanel />
+          </div>
         </div>
       </div>
     );
