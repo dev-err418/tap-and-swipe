@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import AppLegalPage from "@/components/AppLegalPage";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Divvy",
-  description: "Privacy policy for Divvy, the bill splitting app.",
+  title: "Support — Divvy",
+  description: "Get help and support for Divvy, the bill splitting app.",
   alternates: {
-    canonical: "/divvy/privacy",
+    canonical: "/divvy/support",
   },
 };
 
-export default function DivvyPrivacyPage() {
+export default function DivvySupportPage() {
   return (
     <AppLegalPage
       appName="Divvy"
@@ -18,7 +18,7 @@ export default function DivvyPrivacyPage() {
       backgroundColor="#0F1A17"
       textColor="#E8F5F0"
       mutedColor="#8FAFA3"
-      contentPath="content/divvy/privacy.md"
+      contentPath="content/divvy/support.md"
     />
   );
 }

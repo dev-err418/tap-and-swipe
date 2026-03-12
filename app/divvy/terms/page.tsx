@@ -19,7 +19,6 @@ export default function DivvyTermsPage() {
       textColor="#E8F5F0"
       mutedColor="#8FAFA3"
       contentPath="content/divvy/terms.md"
-      showSupportLink={false}
     />
   );
 }
