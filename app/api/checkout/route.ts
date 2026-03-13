@@ -16,7 +16,7 @@ export async function GET() {
 
   try {
     const headersList = await headers();
-    const country = headersList.get("cf-ipcountry") || headersList.get("x-vercel-ip-country") ?? "";
+    const country = headersList.get("cf-ipcountry") || headersList.get("x-vercel-ip-country") || "";
 
     // Find or create Stripe customer
     const user = await prisma.user.findUnique({
