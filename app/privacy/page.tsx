@@ -71,8 +71,8 @@ export default function PrivacyPage() {
                 authentication and community access)
               </li>
               <li>
-                <strong className="text-[#f1ebe2]">Vercel</strong> (to host and serve
-                the website)
+                <strong className="text-[#f1ebe2]">Cloudflare</strong> (CDN and DDoS
+                protection)
               </li>
             </ul>
             <p className="mt-2">

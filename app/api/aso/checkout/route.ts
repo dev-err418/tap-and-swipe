@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const visitorId = cookieStore.get("visitor_id")?.value || "";
-    const country = request.headers.get("cf-ipcountry") || request.headers.get("x-vercel-ip-country") || "";
+    const country = request.headers.get("cf-ipcountry") || "";
 
     const checkoutSession = await stripe.checkout.sessions.create(
       {

@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "phone is required" }, { status: 400 });
     }
 
-    const country = request.headers.get("cf-ipcountry") || request.headers.get("x-vercel-ip-country") || null;
-    const city = request.headers.get("x-vercel-ip-city") || null;
+    const country = request.headers.get("cf-ipcountry") || null;
+    const city = request.headers.get("cf-ipcity") || null;
 
     const lead = await prisma.quizLead.create({
       data: {

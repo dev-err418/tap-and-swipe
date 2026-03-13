@@ -80,8 +80,8 @@ export default function QuizPrivacyPage() {
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
-                <strong className="text-[#f1ebe2]">Vercel</strong> — website hosting and
-                serverless functions.
+                <strong className="text-[#f1ebe2]">Cloudflare</strong> — CDN and DDoS
+                protection.
               </li>
               <li>
                 <strong className="text-[#f1ebe2]">Database provider</strong> — secure
