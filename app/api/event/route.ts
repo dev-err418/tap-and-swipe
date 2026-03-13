@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    const country = request.headers.get("x-vercel-ip-country") || null;
+    const country = request.headers.get("cf-ipcountry") || request.headers.get("x-vercel-ip-country") || null;
 
     await prisma.pageEvent.upsert({
       where: { sessionId_type_product: { sessionId, type, product } },

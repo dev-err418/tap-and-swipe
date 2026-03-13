@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
         has: [
           {
             type: "header",
-            key: "x-vercel-ip-country",
+            key: "cf-ipcountry",
             value: "IN",
           },
         ],
