@@ -7,16 +7,6 @@ import { getSession, clearSession } from "@/lib/session";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
-// Countries where we handle payments ourselves (regular checkout)
-const REGULAR_PAYMENT_COUNTRIES = new Set([
-  // EU 27
-  "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-  "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
-  "PL", "PT", "RO", "SK", "SI", "ES", "SE",
-  // Other
-  "AU", "MY", "NO", "CH", "NZ", "CA", "SG", "JP", "US",
-]);
-
 export async function GET() {
   const session = await getSession();
 
@@ -27,7 +17,6 @@ export async function GET() {
   try {
     const headersList = await headers();
     const country = headersList.get("x-vercel-ip-country") ?? "";
-    const useManagedPayments = !REGULAR_PAYMENT_COUNTRIES.has(country);
 
     // Find or create Stripe customer
     const user = await prisma.user.findUnique({
@@ -71,17 +60,11 @@ export async function GET() {
       cancel_url: `${APP_URL}/app-sprint-community?status=canceled`,
     };
 
-    if (useManagedPayments) {
-      // Stripe handles tax, address collection, and payment methods
-      (sessionParams as any).managed_payments = { enabled: true };
-    } else {
-      // We handle tax and address collection ourselves
-      sessionParams.automatic_tax = { enabled: true };
-      sessionParams.customer_update = { address: "auto" };
-    }
+    (sessionParams as any).managed_payments = { enabled: true };
 
     const checkoutSession = await stripe.checkout.sessions.create(
       sessionParams as any,
+      { apiVersion: "2026-03-04.preview" as any },
     );
 
     // Track stripe_shown event
