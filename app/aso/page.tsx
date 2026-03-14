@@ -1,5 +1,6 @@
 import {
     ArrowRight,
+    ArrowLeft,
     Check,
     Star,
     Globe,
@@ -7,7 +8,11 @@ import {
     DollarSign,
     Ban,
 } from "lucide-react";
+import { Suspense } from "react";
 import SubscribeButton from "./subscribe-button";
+import AsoBundleButton from "./bundle-button";
+import BundleMiniCard from "@/components/BundleMiniCard";
+import AsoLastUpdate from "./last-update";
 import PageTracker from "@/components/PageTracker";
 
 export default function AsoPage() {
@@ -305,19 +310,24 @@ export default function AsoPage() {
                 id="pricing"
                 className="bg-[#2a2725] py-24"
             >
-                <div className="mx-auto max-w-3xl px-6">
-                    <div
-                        className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 md:p-12"
-                    >
-                        <div className="grid md:grid-cols-2 gap-10 items-center">
-                            {/* Left: Features */}
-                            <div>
-                            <p className="text-lg font-bold text-[#c9c4bc] mb-6">
-                                Everything included. No tiers, no upsells.
+                <div className="mx-auto max-w-4xl px-6">
+                    <div className="grid md:grid-cols-2 gap-6 items-stretch">
+                        {/* Left: ASO Standalone */}
+                        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 md:p-10 flex flex-col max-w-lg mx-auto w-full md:max-w-none">
+                            <p className="text-lg font-bold text-[#f1ebe2] mb-4">
+                                App Sprint ASO
                             </p>
-                            <ul className="space-y-4">
+
+                            <div className="mb-6">
+                                <div className="flex items-baseline gap-2 mb-1">
+                                    <span className="text-2xl text-[#c9c4bc]/40 line-through">299&euro;</span>
+                                    <span className="text-5xl font-extrabold text-[#f1ebe2]">199&euro;</span>
+                                </div>
+                            </div>
+
+                            <ul className="space-y-2.5 flex-1">
                                 {[
-                                    "Keyword research, keyword suggestions & tracking across all countries",
+                                    "Keyword research, suggestions & tracking across all countries",
                                     "Competitor MRR & download estimates",
                                     "Cannibalization detection",
                                     "App Store Connect metadata editing",
@@ -331,30 +341,67 @@ export default function AsoPage() {
                                         </span>
                                     </li>
                                 ))}
-                            </ul>
-                            </div>
-
-                            {/* Right: Price & CTA */}
-                            <div className="text-center">
-                                <span
-                                    className="inline-block text-xs font-bold uppercase tracking-wider text-[#f4cf8f] bg-[#f4cf8f]/10 px-3 py-1 rounded-full mb-4 animate-pulse"
-                                >
-                                    -33% launch offer
-                                </span>
-                                <div className="flex items-baseline justify-center gap-1 mb-2">
-                                    <span className="text-6xl font-extrabold text-[#f1ebe2]">
-                                        6&euro;
+                                <li className="flex items-start gap-3">
+                                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
+                                    <span className="text-sm text-[#c9c4bc]">
+                                        Lifetime updates
+                                        <Suspense>
+                                            <AsoLastUpdate />
+                                        </Suspense>
                                     </span>
-                                    <span className="text-lg text-[#c9c4bc]">/month</span>
-                                </div>
-                                <p className="text-sm mb-8">
-                                    <span className="text-[#c9c4bc]/50">Billed annually at 72&euro;</span>
-                                    <span className="text-[#c9c4bc]/50"> &middot; Tax may apply</span>
-                                </p>
+                                </li>
+                            </ul>
+
+                            <div className="text-center mt-8">
                                 <SubscribeButton />
-                                <p className="text-xs text-[#c9c4bc]/60">
+                                <p className="text-sm font-bold text-[#f4cf8f] mb-2">
+                                    Pay once. Build unlimited apps!
+                                </p>
+                                <p className="text-xs text-[#c9c4bc]/60 mb-2">
                                     Single computer license &middot; macOS 14.6+
                                 </p>
+                            </div>
+                        </div>
+
+                        {/* Right: ASO + Community Bundle */}
+                        <div className="rounded-3xl border-2 border-[#f4cf8f]/30 bg-white/[0.03] p-8 md:p-10 flex flex-col relative max-w-lg mx-auto w-full md:max-w-none">
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                <span className="text-xs font-bold uppercase tracking-wider text-[#2a2725] bg-[#f4cf8f] px-4 py-1 rounded-full">
+                                    Bundle
+                                </span>
+                            </div>
+
+                            <div>
+                                <p className="text-lg font-bold text-[#f1ebe2] mb-4">
+                                    App Sprint ASO <span className="text-[#f4cf8f]">+ Community</span>
+                                </p>
+
+                                <div className="mb-6">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-2xl text-[#c9c4bc]/40 line-through">426&euro;</span>
+                                        <span className="text-5xl font-extrabold text-[#f1ebe2]">249&euro;</span>
+                                        <span className="text-lg text-[#c9c4bc]">first month</span>
+                                    </div>
+                                    <p className="text-sm text-[#c9c4bc]/50 mt-1">
+                                        Then 127&euro;/mo &middot; Includes ASO tool forever + Community membership
+                                    </p>                                </div>
+                            </div>
+
+                            <div className="flex-1 flex items-center">
+                                <BundleMiniCard
+                                    name="App Sprint Community"
+                                    tagline="The builder community for app founders"
+                                    avatars={["/jx_op.png", "/luka.png", "/jesse.png", "/hnythng.png", "/raphael.png"]}
+                                    features={[
+                                        "2x weekly group calls",
+                                        "6-week launch roadmap",
+                                        "Revenue scaling systems",
+                                    ]}
+                                />
+                            </div>
+
+                            <div className="text-center mt-6">
+                                <AsoBundleButton />
                             </div>
                         </div>
                     </div>

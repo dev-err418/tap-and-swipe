@@ -4,8 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
-const ASO_PRICE_ID = process.env.ASO_PRICE_ID || "price_1T9ldIDGyKvKgBtCf9rafpe7";
-const ASO_PROMO_CODE = process.env.ASO_PROMO_CODE || "promo_1T9lgHDGyKvKgBtCSHBfgKaH";
+const ASO_ONETIME_PRICE_ID = process.env.ASO_ONETIME_PRICE_ID!;
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,10 +14,9 @@ export async function POST(request: NextRequest) {
 
     const checkoutSession = await stripe.checkout.sessions.create(
       {
-        mode: "subscription",
-        discounts: [{ promotion_code: ASO_PROMO_CODE }],
-        line_items: [{ price: ASO_PRICE_ID, quantity: 1 }],
-        subscription_data: {
+        mode: "payment",
+        line_items: [{ price: ASO_ONETIME_PRICE_ID, quantity: 1 }],
+        payment_intent_data: {
           metadata: { product: "aso", visitorId, country },
         },
         managed_payments: { enabled: true },

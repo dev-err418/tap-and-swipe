@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
-import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { getSession, clearSession } from "@/lib/session";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
+const COMMUNITY_PRICE_ID = process.env.COMMUNITY_PRICE_ID!;
+const ASO_BUNDLE_PRICE_ID = process.env.ASO_BUNDLE_PRICE_ID!;
 
 export async function GET() {
   const session = await getSession();
@@ -38,40 +39,34 @@ export async function GET() {
       });
     }
 
-    // Read visitorId from cookie
     const cookieStore = await cookies();
     const visitorId = cookieStore.get("visitor_id")?.value || "";
 
-    // Create Checkout session
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      customer: customerId,
-      mode: "subscription",
-      allow_promotion_codes: true,
-      line_items: [
-        {
-          price: process.env.COMMUNITY_PRICE_ID!,
-          quantity: 1,
-        },
-      ],
-      subscription_data: {
-        metadata: { discordId: session.discordId, visitorId, country: country || "" },
-      },
-      success_url: `${APP_URL}/app-sprint-community?status=success`,
-      cancel_url: `${APP_URL}/app-sprint-community?status=canceled`,
-    };
-
-    (sessionParams as any).managed_payments = { enabled: true };
-
     const checkoutSession = await stripe.checkout.sessions.create(
-      sessionParams as any,
-      { apiVersion: "2026-03-04.preview" as any },
+      {
+        customer: customerId,
+        mode: "subscription",
+        line_items: [
+          { price: COMMUNITY_PRICE_ID, quantity: 1 },
+          { price: ASO_BUNDLE_PRICE_ID, quantity: 1 },
+        ],
+        subscription_data: {
+          metadata: { product: "bundle-community", discordId: session.discordId, visitorId, country },
+        },
+        managed_payments: { enabled: true },
+        success_url: `${APP_URL}/app-sprint-community?status=success`,
+        cancel_url: `${APP_URL}/app-sprint-community?status=canceled`,
+      } as any,
+      {
+        apiVersion: "2026-03-04.preview" as any,
+      }
     );
 
     // Track stripe_shown event
     if (visitorId) {
       await prisma.pageEvent.upsert({
-        where: { sessionId_type_product: { sessionId: visitorId, type: "stripe_shown", product: "community" } },
-        create: { product: "community", type: "stripe_shown", visitorId, sessionId: visitorId, country: country || null, stripeCustomerId: customerId },
+        where: { sessionId_type_product: { sessionId: visitorId, type: "stripe_shown", product: "bundle-community" } },
+        create: { product: "bundle-community", type: "stripe_shown", visitorId, sessionId: visitorId, country: country || null, stripeCustomerId: customerId },
         update: {},
       }).catch(() => {});
     }
@@ -80,7 +75,7 @@ export async function GET() {
 
     return NextResponse.redirect(checkoutSession.url!);
   } catch (err) {
-    console.error("Checkout error:", err);
+    console.error("[Community Bundle Checkout] Error:", err);
     return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=checkout_failed`);
   }
 }

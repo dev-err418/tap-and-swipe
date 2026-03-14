@@ -3,19 +3,19 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Check, Copy, Download } from "lucide-react";
+import { Check, Copy, ArrowRight, Download } from "lucide-react";
 
 const DOWNLOAD_URL = "https://github.com/dev-err418/app-sprint-aso-releases/releases/latest/download/AppSprintASO.dmg";
 
-export default function AsoSuccessPage() {
+export default function BundleSuccessPage() {
     return (
         <Suspense>
-            <AsoSuccessContent />
+            <BundleSuccessContent />
         </Suspense>
     );
 }
 
-function AsoSuccessContent() {
+function BundleSuccessContent() {
     const searchParams = useSearchParams();
     const sessionId = searchParams.get("session_id");
 
@@ -70,10 +70,10 @@ function AsoSuccessContent() {
                     >
                         <p className="text-red-400">{error}</p>
                         <a
-                            href="/aso"
+                            href="/app-sprint-community"
                             className="inline-flex items-center gap-2 text-sm text-[#f4cf8f] hover:underline"
                         >
-                            Back to App Sprint ASO
+                            Back to App Sprint Community
                         </a>
                     </motion.div>
                 ) : (
@@ -97,10 +97,10 @@ function AsoSuccessContent() {
                                 <Check className="h-8 w-8 text-[#f4cf8f]" />
                             </motion.div>
                             <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-                                You're in!
+                                Welcome to the bundle!
                             </h1>
                             <p className="mt-3 text-lg text-[#c9c4bc]">
-                                Here's your license key — we also sent it to your email.
+                                Here's your ASO license key — we also sent it to your email.
                             </p>
                         </div>
 
@@ -142,6 +142,26 @@ function AsoSuccessContent() {
                             Download App Sprint ASO
                         </a>
 
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5 }}
+                            className="rounded-2xl border border-[#5865F2]/20 bg-[#5865F2]/5 p-6 space-y-4"
+                        >
+                            <h2 className="text-lg font-bold text-[#f1ebe2]">
+                                Connect your Discord to access the Community
+                            </h2>
+                            <p className="text-sm text-[#c9c4bc]">
+                                Join the private Discord, group calls, and the full 6-week roadmap.
+                            </p>
+                            <a
+                                href="/api/auth/discord?flow=bundle"
+                                className="group inline-flex h-11 items-center gap-2 rounded-full bg-[#5865F2] px-6 text-sm font-bold text-white transition-all hover:bg-[#4752C4] hover:ring-4 hover:ring-[#5865F2]/20"
+                            >
+                                Connect Discord
+                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </a>
+                        </motion.div>
 
                     </motion.div>
                 )}

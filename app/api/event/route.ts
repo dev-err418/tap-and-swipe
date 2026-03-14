@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const VALID_PRODUCTS = ["aso", "community"];
+const VALID_PRODUCTS = ["aso", "community", "bundle-aso", "bundle-community"];
 const VALID_TYPES = ["page_view", "cta_clicked", "stripe_shown", "paid"];
 
 export async function POST(request: NextRequest) {
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       where: { sessionId_type_product: { sessionId, type, product } },
       create: { product, type, visitorId, sessionId, country, referrer: referrer || null },
       update: {},
-    });
+    }).catch(() => {});
 
     // Set visitor_id cookie if not already present
     const existingVid = request.cookies.get("visitor_id")?.value;

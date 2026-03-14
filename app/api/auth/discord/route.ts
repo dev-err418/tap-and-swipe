@@ -10,11 +10,15 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 export async function GET(request: NextRequest) {
   const redirect = request.nextUrl.searchParams.get("redirect");
   const invite = request.nextUrl.searchParams.get("invite");
+  const flow = request.nextUrl.searchParams.get("flow");
 
   // Generate CSRF state as a signed JWT, encoding the redirect target
   const claims: Record<string, unknown> = {};
   if (redirect?.startsWith("roadmap")) {
     claims.redirect = redirect;
+  }
+  if (flow === "bundle-community" || flow === "bundle-aso") {
+    claims.flow = flow;
   }
 
   // Validate invite token if provided

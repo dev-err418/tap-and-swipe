@@ -49,6 +49,8 @@ export async function GET(request: NextRequest) {
     : null;
 
   const inviteToken = typeof statePayload.invite === "string" ? statePayload.invite : null;
+  const bundleFlow = typeof statePayload.flow === "string" ? statePayload.flow : null;
+  const isBundleFlow = bundleFlow === "bundle-community" || bundleFlow === "bundle-aso";
 
   try {
     // Exchange code for access token
@@ -153,6 +155,33 @@ Feel free to reach out here if you have any questions 😉`;
       );
 
       return NextResponse.redirect(`https://discord.com/channels/${process.env.DISCORD_GUILD_ID}`);
+    }
+
+    // --- Bundle Discord → Checkout flow ---
+    if (isBundleFlow) {
+      // Already-subscribed user: skip checkout, send to roadmap
+      if (user.subscriptionStatus === "active") {
+        await createSession(
+          {
+            discordId: discordUser.id,
+            discordUsername: discordUser.global_name || discordUser.username,
+            discordAvatar: discordUser.avatar,
+          },
+          "7d"
+        );
+        return NextResponse.redirect(`${APP_URL}/app-sprint/roadmap`);
+      }
+
+      await createSession({
+        discordId: discordUser.id,
+        discordUsername: discordUser.global_name || discordUser.username,
+        discordAvatar: discordUser.avatar,
+      });
+
+      if (bundleFlow === "bundle-aso") {
+        return NextResponse.redirect(`${APP_URL}/api/aso/checkout-bundle`);
+      }
+      return NextResponse.redirect(`${APP_URL}/api/checkout/bundle`);
     }
 
     // --- Standard flows ---

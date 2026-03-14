@@ -18,6 +18,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         licenseKey: "ASO-TEST-ABCD-1234-EFGH",
         email: "test@example.com",
+        isBundle: false,
+      });
+    }
+    if (process.env.NODE_ENV === "development" && sessionId === "test-bundle") {
+      return NextResponse.json({
+        licenseKey: "ASO-TEST-ABCD-1234-EFGH",
+        email: "test@example.com",
+        isBundle: true,
       });
     }
 
@@ -43,7 +51,16 @@ export async function GET(request: NextRequest) {
     // Idempotent — returns existing key if already created by webhook
     const licenseKey = await generateAsoLicense(email, customerId);
 
-    return NextResponse.json({ licenseKey, email });
+    // Check if this is a bundle purchase
+    let isBundle = false;
+    if (session.subscription) {
+      const subscription = await stripe.subscriptions.retrieve(
+        session.subscription as string
+      );
+      isBundle = (subscription.metadata.product || "").startsWith("bundle-");
+    }
+
+    return NextResponse.json({ licenseKey, email, isBundle });
   } catch (err) {
     console.error("[ASO Success] Error:", err);
     return NextResponse.json(
