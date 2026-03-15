@@ -48,7 +48,7 @@ We use the collected data for the following purposes:
 
 1. **License validation**: To verify your license key and device binding upon activation
 2. **Crash reporting**: To identify and fix bugs and improve App stability
-3. **Billing**: To process payments and manage subscriptions via Stripe
+3. **Billing**: To process payments via Stripe
 4. **Communication**: To send important updates about your subscription or the App (only to your billing email)
 
 We do not use your data for advertising, profiling, or any purpose not listed above.
@@ -80,7 +80,7 @@ The App does not use cookies. Our website does not use tracking cookies. The App
 
 - **Payment records**: Retained for 5-10 years as required by tax and accounting regulations
 - **Crash reports**: Automatically deleted after 90 days
-- **License records**: Retained for the duration of your subscription plus 30 days after expiration
+- **License records**: Retained indefinitely for the duration of your perpetual license
 - **Local data**: Remains on your device until you delete it; uninstalling the App removes application data
 
 ## 8. Your Rights (GDPR)

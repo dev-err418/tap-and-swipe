@@ -43,19 +43,19 @@ You agree NOT to:
 - Circumvent or attempt to circumvent the licensing or device-binding mechanisms
 - Use the App for any illegal or unauthorized purpose
 
-## 5. Subscription & Payment
+## 5. Payment
 
 ### 5.1 Pricing
 
-The App requires a paid subscription of 6 EUR per month, billed annually at 72 EUR per year. All payments are processed through Stripe.
+The App requires a one-time payment. The current price is displayed on the purchase page. All payments are processed through Stripe.
 
 ### 5.2 Billing
 
-Payment is charged upon purchase. Your subscription automatically renews at the end of each annual billing period unless cancelled before the renewal date.
+Payment is charged once upon purchase. There are no recurring charges for the standalone App. If you purchase a bundle that includes a subscription to another service (e.g., App Sprint Community), the subscription terms for that service apply separately.
 
 ### 5.3 Price Changes
 
-We reserve the right to change subscription pricing. We will provide at least 30 days' notice before any price increase. Price changes will not affect your current billing period.
+We reserve the right to change pricing at any time. Price changes do not affect existing license holders.
 
 ## 6. Refund Policy
 
@@ -92,15 +92,11 @@ App Store data, keyword metrics, and search results are provided "as is" based o
 
 App Sprint ASO is not affiliated with, endorsed by, or sponsored by Apple Inc. "Apple", "App Store", "App Store Connect", and "Apple Search Ads" are trademarks of Apple Inc. Use of Apple's APIs is subject to Apple's own terms and conditions.
 
-## 10. Cancellation
+## 10. License Validity
 
-You may cancel your subscription at any time. Upon cancellation:
+Your license is perpetual and does not expire. Once purchased, you retain access to the App and all future updates indefinitely. Data stored locally on your device remains yours and is not deleted.
 
-- You retain access to the App until the end of your current paid billing period
-- No further charges will be made after cancellation
-- Data stored locally on your device remains yours and is not deleted
-
-To cancel, manage your subscription through your account or contact us at arthurs.dev@gmail.com.
+If you purchased a bundle that includes a subscription to another service, cancelling that subscription does not affect your App license.
 
 ## 11. Disclaimer of Warranties
 
