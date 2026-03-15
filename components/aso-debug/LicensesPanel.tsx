@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Copy, Check, Plus, RotateCcw, Search } from "lucide-react";
+import { Copy, Check, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
 
 interface License {
   id: number;
@@ -80,6 +80,16 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
     });
     fetchLicenses();
     setResettingMachine(null);
+  };
+
+  const deleteLicense = async (key: string) => {
+    if (!confirm(`Delete license ${key}? This cannot be undone.`)) return;
+    await fetch("/api/aso/licenses", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key }),
+    });
+    fetchLicenses();
   };
 
   const copyKey = (key: string) => {
@@ -303,16 +313,25 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                     {l.last_used_at ? new Date(l.last_used_at).toLocaleDateString() : "Never"}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => updateField(l.key, "active", !l.active)}
-                      className={`rounded-lg border px-3 py-1 text-xs font-medium transition-colors ${
-                        l.active
-                          ? "border-red-500/20 text-red-400 hover:bg-red-500/10"
-                          : "border-green-500/20 text-green-400 hover:bg-green-500/10"
-                      }`}
-                    >
-                      {l.active ? "Deactivate" : "Activate"}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateField(l.key, "active", !l.active)}
+                        className={`rounded-lg border px-3 py-1 text-xs font-medium transition-colors ${
+                          l.active
+                            ? "border-red-500/20 text-red-400 hover:bg-red-500/10"
+                            : "border-green-500/20 text-green-400 hover:bg-green-500/10"
+                        }`}
+                      >
+                        {l.active ? "Deactivate" : "Activate"}
+                      </button>
+                      <button
+                        onClick={() => deleteLicense(l.key)}
+                        className="rounded p-1.5 text-[#c9c4bc]/30 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                        title="Delete license"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

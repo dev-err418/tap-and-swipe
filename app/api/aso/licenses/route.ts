@@ -104,3 +104,21 @@ export async function PATCH(req: Request) {
 
   return NextResponse.json({ key, updated: Object.keys(updates).filter((k) => EDITABLE_COLUMNS.has(k)) });
 }
+
+// DELETE /api/aso/licenses — Remove a license
+export async function DELETE(req: Request) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: "Not available" }, { status: 404 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const { key } = body;
+
+  if (!key) {
+    return NextResponse.json({ error: "key is required" }, { status: 400 });
+  }
+
+  await pool.query("DELETE FROM aso_licenses WHERE key = $1", [key]);
+
+  return NextResponse.json({ deleted: key });
+}
