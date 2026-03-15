@@ -47,10 +47,26 @@ function AsoSuccessContent() {
             .finally(() => setLoading(false));
     }, [sessionId]);
 
-    function handleCopy() {
-        navigator.clipboard.writeText(licenseKey);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+    async function handleCopy() {
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(licenseKey);
+            } else {
+                const textarea = document.createElement("textarea");
+                textarea.value = licenseKey;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+            }
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
     }
 
     return (
