@@ -16,24 +16,18 @@ export default function LicensesModal() {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          />
-          {/* Sheet */}
-          <div className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#2a2725] p-6 m-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-[#2a2725] overflow-y-auto">
+          <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-[#f1ebe2]">Licenses</h3>
               <button
                 onClick={() => setOpen(false)}
-                className="text-[#c9c4bc] hover:text-[#f1ebe2] transition-colors text-xl leading-none"
+                className="text-[#c9c4bc] hover:text-[#f1ebe2] transition-colors text-xl leading-none px-2"
               >
                 &times;
               </button>
             </div>
-            <LicensesPanel limit={10} />
+            <LicensesPanel />
           </div>
         </div>
       )}

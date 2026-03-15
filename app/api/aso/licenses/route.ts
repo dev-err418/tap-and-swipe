@@ -16,13 +16,24 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const limit = parseInt(url.searchParams.get("limit") ?? "0", 10);
+  const search = url.searchParams.get("search")?.trim() || "";
 
-  const { rows } = await pool.query(
-    limit > 0
-      ? "SELECT * FROM aso_licenses ORDER BY created_at DESC LIMIT $1"
-      : "SELECT * FROM aso_licenses ORDER BY created_at DESC",
-    limit > 0 ? [limit] : undefined
-  );
+  let query = "SELECT * FROM aso_licenses";
+  const params: (string | number)[] = [];
+
+  if (search) {
+    params.push(`%${search}%`);
+    query += ` WHERE key ILIKE $1 OR email ILIKE $1 OR stripe_customer_id ILIKE $1`;
+  }
+
+  query += " ORDER BY created_at DESC";
+
+  if (limit > 0) {
+    params.push(limit);
+    query += ` LIMIT $${params.length}`;
+  }
+
+  const { rows } = await pool.query(query, params.length > 0 ? params : undefined);
 
   return NextResponse.json(rows);
 }
@@ -49,14 +60,16 @@ export async function POST(req: Request) {
   return NextResponse.json({ key, email });
 }
 
-// PATCH /api/aso/licenses — Toggle active status or reset machine binding
+const EDITABLE_COLUMNS = new Set(["email", "stripe_customer_id", "active", "machine_id", "plan"]);
+
+// PATCH /api/aso/licenses — Update license fields
 export async function PATCH(req: Request) {
   if (!(await isAdmin())) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
 
   const body = await req.json().catch(() => ({}));
-  const { key, active, reset_machine } = body;
+  const { key, reset_machine, ...updates } = body;
 
   if (!key) {
     return NextResponse.json({ error: "key is required" }, { status: 400 });
@@ -70,17 +83,24 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ key, machine_id: null });
   }
 
-  if (typeof active !== "boolean") {
-    return NextResponse.json(
-      { error: "active (boolean) or reset_machine required" },
-      { status: 400 }
-    );
+  const sets: string[] = [];
+  const params: unknown[] = [];
+
+  for (const [col, val] of Object.entries(updates)) {
+    if (!EDITABLE_COLUMNS.has(col)) continue;
+    params.push(val === "" ? null : val);
+    sets.push(`${col} = $${params.length}`);
   }
 
+  if (sets.length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+  }
+
+  params.push(key);
   await pool.query(
-    "UPDATE aso_licenses SET active = $1 WHERE key = $2",
-    [active, key]
+    `UPDATE aso_licenses SET ${sets.join(", ")} WHERE key = $${params.length}`,
+    params
   );
 
-  return NextResponse.json({ key, active });
+  return NextResponse.json({ key, updated: Object.keys(updates).filter((k) => EDITABLE_COLUMNS.has(k)) });
 }

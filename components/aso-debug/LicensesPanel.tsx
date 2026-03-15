@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Copy, Check, Plus, RotateCcw } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Copy, Check, Plus, RotateCcw, Search } from "lucide-react";
 
 interface License {
   id: number;
@@ -9,29 +9,44 @@ interface License {
   email: string | null;
   stripe_customer_id: string | null;
   active: boolean;
+  plan: string | null;
   created_at: string;
   last_used_at: string | null;
   machine_id: string | null;
 }
 
+type EditingCell = { key: string; field: string } | null;
+
 export default function LicensesPanel({ limit }: { limit?: number } = {}) {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
+  const [search, setSearch] = useState("");
   const [generating, setGenerating] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [resettingMachine, setResettingMachine] = useState<string | null>(null);
+  const [editing, setEditing] = useState<EditingCell>(null);
+  const [editValue, setEditValue] = useState("");
+  const editRef = useRef<HTMLInputElement>(null);
 
   const fetchLicenses = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(limit ? `/api/aso/licenses?limit=${limit}` : "/api/aso/licenses");
+    const params = new URLSearchParams();
+    if (limit) params.set("limit", String(limit));
+    if (search) params.set("search", search);
+    const qs = params.toString();
+    const res = await fetch(`/api/aso/licenses${qs ? `?${qs}` : ""}`);
     if (res.ok) setLicenses(await res.json());
     setLoading(false);
-  }, []);
+  }, [limit, search]);
 
   useEffect(() => {
     fetchLicenses();
   }, [fetchLicenses]);
+
+  useEffect(() => {
+    if (editing && editRef.current) editRef.current.focus();
+  }, [editing]);
 
   const generate = async () => {
     setGenerating(true);
@@ -47,11 +62,11 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
     setGenerating(false);
   };
 
-  const toggleActive = async (key: string, active: boolean) => {
+  const updateField = async (key: string, field: string, value: unknown) => {
     await fetch("/api/aso/licenses", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, active }),
+      body: JSON.stringify({ key, [field]: value }),
     });
     fetchLicenses();
   };
@@ -73,10 +88,70 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
+  const startEdit = (key: string, field: string, currentValue: string | null) => {
+    setEditing({ key, field });
+    setEditValue(currentValue ?? "");
+  };
+
+  const commitEdit = () => {
+    if (!editing) return;
+    updateField(editing.key, editing.field, editValue);
+    setEditing(null);
+  };
+
+  const cancelEdit = () => setEditing(null);
+
+  const renderCell = (l: License, field: string, displayValue: string | null, truncate?: number) => {
+    if (editing?.key === l.key && editing?.field === field) {
+      return (
+        <input
+          ref={editRef}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={commitEdit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commitEdit();
+            if (e.key === "Escape") cancelEdit();
+          }}
+          className="h-7 w-full rounded border border-[#f4cf8f]/40 bg-white/5 px-2 text-xs text-[#f1ebe2] outline-none"
+        />
+      );
+    }
+
+    return (
+      <button
+        onClick={() => startEdit(l.key, field, displayValue)}
+        className="text-left w-full hover:text-[#f4cf8f] transition-colors cursor-text"
+        title="Click to edit"
+      >
+        {displayValue ? (
+          truncate && displayValue.length > truncate ? (
+            <span title={displayValue}>{displayValue.slice(0, truncate)}...</span>
+          ) : (
+            displayValue
+          )
+        ) : (
+          <span className="text-[#c9c4bc]/30">&mdash;</span>
+        )}
+      </button>
+    );
+  };
+
   return (
     <div>
-      {/* Generate */}
-      <div className="mb-6 flex items-center gap-3">
+      {/* Search + Generate */}
+      <div className="mb-6 flex items-center gap-3 flex-wrap">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c9c4bc]/50" />
+          <input
+            type="text"
+            placeholder="Search key, email, customer..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 w-72 rounded-lg border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-[#f1ebe2] placeholder:text-[#c9c4bc]/50 outline-none transition-colors focus:border-[#f4cf8f]/40"
+          />
+        </div>
+        <div className="flex-1" />
         <input
           type="email"
           placeholder="Email (optional)"
@@ -100,7 +175,9 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
         <p className="text-sm text-[#c9c4bc]/60">Loading...</p>
       ) : licenses.length === 0 ? (
         <div className="rounded-2xl border border-white/5 bg-white/5 p-12 text-center">
-          <p className="text-sm text-[#c9c4bc]">No license keys yet.</p>
+          <p className="text-sm text-[#c9c4bc]">
+            {search ? "No licenses match your search." : "No license keys yet."}
+          </p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-white/5 bg-white/5">
@@ -109,6 +186,8 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
               <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-[#c9c4bc]/60">
                 <th className="px-4 py-3 font-medium">Key</th>
                 <th className="px-4 py-3 font-medium">Email</th>
+                <th className="px-4 py-3 font-medium">Customer</th>
+                <th className="px-4 py-3 font-medium">Plan</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Machine</th>
                 <th className="px-4 py-3 font-medium">Created</th>
@@ -139,24 +218,61 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                     </button>
                   </td>
                   <td className="px-4 py-3 text-[#c9c4bc]">
-                    {l.email ? (
-                      <span title={l.email}>
-                        {l.email.length > 10 ? l.email.slice(0, 10) + "..." : l.email}
-                      </span>
+                    {renderCell(l, "email", l.email, 24)}
+                  </td>
+                  <td className="px-4 py-3 text-[#c9c4bc]">
+                    {renderCell(l, "stripe_customer_id", l.stripe_customer_id, 16)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {editing?.key === l.key && editing?.field === "plan" ? (
+                      <select
+                        autoFocus
+                        value={editValue}
+                        onChange={(e) => {
+                          setEditValue(e.target.value);
+                          updateField(l.key, "plan", e.target.value);
+                          setEditing(null);
+                        }}
+                        onBlur={cancelEdit}
+                        className="h-7 rounded border border-[#f4cf8f]/40 bg-white/5 px-2 text-xs text-[#f1ebe2] outline-none"
+                      >
+                        <option value="solo">Solo</option>
+                        <option value="pro">Pro</option>
+                      </select>
                     ) : (
-                      <span className="text-[#c9c4bc]/30">&mdash;</span>
+                      <button
+                        onClick={() => startEdit(l.key, "plan", l.plan)}
+                        className="hover:opacity-80 transition-opacity"
+                        title="Click to change plan"
+                      >
+                        <span
+                          className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            l.plan === "pro"
+                              ? "bg-[#f4cf8f]/10 text-[#f4cf8f]"
+                              : "bg-blue-500/10 text-blue-400"
+                          }`}
+                        >
+                          {l.plan === "pro" ? "Pro" : l.plan === "solo" ? "Solo" : l.plan ?? "—"}
+                        </span>
+                      </button>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        l.active
-                          ? "bg-green-500/10 text-green-400"
-                          : "bg-red-500/10 text-red-400"
-                      }`}
+                    <button
+                      onClick={() => updateField(l.key, "active", !l.active)}
+                      className="hover:opacity-80 transition-opacity"
+                      title="Click to toggle"
                     >
-                      {l.active ? "Active" : "Inactive"}
-                    </span>
+                      <span
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          l.active
+                            ? "bg-green-500/10 text-green-400"
+                            : "bg-red-500/10 text-red-400"
+                        }`}
+                      >
+                        {l.active ? "Active" : "Inactive"}
+                      </span>
+                    </button>
                   </td>
                   <td className="px-4 py-3">
                     {l.machine_id ? (
@@ -188,7 +304,7 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => toggleActive(l.key, !l.active)}
+                      onClick={() => updateField(l.key, "active", !l.active)}
                       className={`rounded-lg border px-3 py-1 text-xs font-medium transition-colors ${
                         l.active
                           ? "border-red-500/20 text-red-400 hover:bg-red-500/10"
