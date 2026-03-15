@@ -7,7 +7,7 @@ import ReviewsJsonLd from "@/components/ReviewsJsonLd";
 export const metadata: Metadata = {
   title: "App Sprint — Build a Mobile App in Weeks, Not Months",
   description:
-    "Join the 6-week App Sprint program to build and launch your own mobile app with Expo, React Native, and AI. 51+ makers, weekly group calls, 5/5 rating. €127/mo.",
+    "Join the 6-week App Sprint program to build and launch your own mobile app with Expo, React Native, and AI. 51+ makers, weekly group calls, 5/5 rating. €137/mo.",
   keywords: [
     "app sprint",
     "build a mobile app",

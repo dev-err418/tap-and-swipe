@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const VALID_PRODUCTS = ["aso", "community", "bundle-aso", "bundle-community"];
+const VALID_PRODUCTS = ["aso", "aso-solo", "aso-pro", "community", "bundle-aso", "bundle-community"];
 const VALID_TYPES = ["page_view", "cta_clicked", "stripe_shown", "paid"];
 
 export async function POST(request: NextRequest) {

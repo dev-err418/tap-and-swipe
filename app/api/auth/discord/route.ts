@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   if (redirect?.startsWith("roadmap")) {
     claims.redirect = redirect;
   }
-  if (flow === "bundle-community" || flow === "bundle-aso") {
+  if (flow === "bundle-community" || flow === "bundle-aso" || flow === "aso-yearly-bonus") {
     claims.flow = flow;
   }
 

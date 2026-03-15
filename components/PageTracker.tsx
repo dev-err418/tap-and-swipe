@@ -2,11 +2,19 @@
 
 import { useEffect } from "react";
 
+function uuid(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 function getVisitorId(): string {
   const KEY = "visitor_id";
   const match = document.cookie.match(new RegExp(`(?:^|; )${KEY}=([^;]*)`));
   if (match) return match[1];
-  const id = crypto.randomUUID();
+  const id = uuid();
   document.cookie = `${KEY}=${id}; path=/; max-age=31536000; samesite=lax`;
   return id;
 }
@@ -15,7 +23,7 @@ function getSessionId(product: string): string {
   const KEY = `_sid_${product}`;
   let id = sessionStorage.getItem(KEY);
   if (!id) {
-    id = crypto.randomUUID();
+    id = uuid();
     sessionStorage.setItem(KEY, id);
   }
   return id;

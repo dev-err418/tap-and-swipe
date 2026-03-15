@@ -42,7 +42,7 @@ export default function BundleMiniCard({ name, tagline, value, features, avatars
                 {features.map((f, i) => (
                     <li key={i} className="flex items-start gap-3">
                         <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
-                        <span className="text-sm text-[#c9c4bc]">{f}</span>
+                        <span className="text-sm font-medium text-[#f1ebe2]">{f}</span>
                     </li>
                 ))}
             </ul>

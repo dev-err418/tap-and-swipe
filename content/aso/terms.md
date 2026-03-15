@@ -1,6 +1,6 @@
 # Terms of Service for App Sprint ASO
 
-**Effective Date:** March 11, 2026
+**Effective Date:** March 15, 2026
 
 ## 1. Acceptance of Terms
 
@@ -47,23 +47,48 @@ You agree NOT to:
 
 ### 5.1 Pricing
 
-The App requires a one-time payment. The current price is displayed on the purchase page. All payments are processed through Stripe.
+The App is available via recurring subscription. The following plans are offered:
+
+- **Solo**: 9€/month or 90€/year — limited to 1 app
+- **Pro**: 19€/month or 190€/year — unlimited apps
+
+All payments are processed through Stripe.
 
 ### 5.2 Billing
 
-Payment is charged once upon purchase. There are no recurring charges for the standalone App. If you purchase a bundle that includes a subscription to another service (e.g., App Sprint Community), the subscription terms for that service apply separately.
+Payment is charged on a recurring basis (monthly or yearly depending on your chosen plan). Your subscription automatically renews at the end of each billing period unless cancelled. You may cancel at any time from your Stripe billing portal.
 
-### 5.3 Price Changes
+### 5.3 Community Membership
 
-We reserve the right to change pricing at any time. Price changes do not affect existing license holders.
+ASO Pro is included at no additional cost with an active App Sprint Community membership (137€/month). If your Community membership is cancelled, your ASO Pro license will be deactivated.
 
-## 6. Refund Policy
+### 5.4 Price Changes
 
-We offer a 14-day refund policy from the date of purchase. If you are not satisfied with the App, contact us at arthurs.dev@gmail.com within 14 days of your purchase to request a full refund.
+We reserve the right to change pricing at any time. Price changes do not affect your current billing period. We will provide at least 30 days' notice of any price increase.
 
-For EU consumers, this refund period satisfies the right of withdrawal under the Consumer Rights Directive (2011/83/EU). By using the App before the end of the withdrawal period, you acknowledge that you may lose the right to withdraw if the digital content has been fully provided.
+## 6. Free Trial & Refund Policy
 
-## 7. Prohibited Use
+### 6.1 Free Trial
+
+All new subscriptions include a 7-day free trial. During the trial, you have full access to the App's features at no charge. Your payment method is collected at sign-up but will not be charged until the trial period ends. You may cancel at any time during the trial without being charged.
+
+### 6.2 Refunds
+
+Because a free trial is provided, no refunds are issued after the trial period ends and billing begins. By continuing your subscription past the trial, you confirm that the App meets your expectations.
+
+For EU consumers, the free trial satisfies the right of withdrawal under the Consumer Rights Directive (2011/83/EU). By using the App during the trial period, you acknowledge that you have had the opportunity to evaluate the digital content before any payment is taken.
+
+## 7. Cancellation & License Validity
+
+Your license is valid for the duration of your active subscription. When your subscription is cancelled or expires:
+
+- Your license key will be deactivated
+- You will lose access to the App's features
+- Data stored locally on your device remains yours and is not deleted
+
+You may reactivate your license by resubscribing at any time.
+
+## 8. Prohibited Use
 
 In addition to the restrictions in Section 4.3, you may not:
 
@@ -72,31 +97,25 @@ In addition to the restrictions in Section 4.3, you may not:
 - Use the App in any way that violates Apple's terms of service
 - Misrepresent your identity or affiliation when using the App
 
-## 8. Intellectual Property
+## 9. Intellectual Property
 
-### 8.1 Ownership
+### 9.1 Ownership
 
 The App, including all code, design, features, and documentation, is owned by Tap & Swipe and is protected by copyright and other intellectual property laws.
 
-### 8.2 Your Data
+### 9.2 Your Data
 
 You retain full ownership of all data you create or store within the App, including your keywords, projects, and metadata. Your App Store Connect credentials and Apple Ads API keys are stored locally on your device and are never transmitted to our servers.
 
-## 9. Third-Party Data & Apple Disclaimer
+## 10. Third-Party Data & Apple Disclaimer
 
-### 9.1 Data Accuracy
+### 10.1 Data Accuracy
 
 App Store data, keyword metrics, and search results are provided "as is" based on Apple's public and authenticated APIs. We do not guarantee the accuracy, completeness, or timeliness of any data.
 
-### 9.2 Apple Disclaimer
+### 10.2 Apple Disclaimer
 
 App Sprint ASO is not affiliated with, endorsed by, or sponsored by Apple Inc. "Apple", "App Store", "App Store Connect", and "Apple Search Ads" are trademarks of Apple Inc. Use of Apple's APIs is subject to Apple's own terms and conditions.
-
-## 10. License Validity
-
-Your license is perpetual and does not expire. Once purchased, you retain access to the App and all future updates indefinitely. Data stored locally on your device remains yours and is not deleted.
-
-If you purchased a bundle that includes a subscription to another service, cancelling that subscription does not affect your App license.
 
 ## 11. Disclaimer of Warranties
 
@@ -157,4 +176,4 @@ For questions, concerns, or notices regarding these Terms, please contact us at:
 
 ---
 
-**Effective Date:** March 11, 2026
+**Effective Date:** March 15, 2026

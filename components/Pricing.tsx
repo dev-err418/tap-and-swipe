@@ -3,8 +3,6 @@
 import { motion } from "framer-motion";
 import { Check, ArrowRight, Star } from "lucide-react";
 import BundleMiniCard from "./BundleMiniCard";
-import BundleButton from "./BundleButton";
-
 const features = [
     "Complete 6-week roadmap",
     "30+ video lessons",
@@ -28,120 +26,86 @@ const Pricing = () => {
                     </p>
                 </div>
 
-                <div className="max-w-4xl mx-auto px-6">
-                    <div className="grid md:grid-cols-2 gap-6 items-stretch">
-                        {/* Left: Community Standalone */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="relative rounded-3xl border border-white/10 bg-white/[0.03] p-8 md:p-10 flex flex-col max-w-lg mx-auto w-full md:max-w-none"
-                        >
-                            <p className="text-lg font-bold text-[#f1ebe2] mb-4">
-                                App Sprint Community
-                            </p>
+                <div className="max-w-lg mx-auto px-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="relative rounded-3xl border border-white/10 bg-white/[0.03] p-8 md:p-10 flex flex-col"
+                    >
+                        <p className="text-lg font-bold text-[#f1ebe2] mb-4">
+                            App Sprint Community
+                        </p>
 
-                            <div className="mb-6">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl font-extrabold text-[#f1ebe2]">127&euro;</span>
-                                    <span className="text-lg text-[#c9c4bc]">/mo</span>
-                                </div>
+                        <div className="mb-6">
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-5xl font-extrabold text-[#f1ebe2]">137&euro;</span>
+                                <span className="text-lg text-[#c9c4bc]">/mo</span>
                             </div>
+                        </div>
 
-                            <ul className="space-y-2.5 flex-1">
-                                {features.map((feature, i) => (
-                                    <li key={i} className="flex items-start gap-3">
-                                        <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
-                                        <span className="text-sm text-[#c9c4bc]">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                        <ul className="space-y-2.5">
+                            {features.map((feature, i) => (
+                                <li key={i} className="flex items-start gap-3">
+                                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
+                                    <span className="text-sm font-medium text-[#f1ebe2]">{feature}</span>
+                                </li>
+                            ))}
+                            <li className="flex items-start gap-3">
+                                <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
+                                <span className="text-sm font-bold text-[#f4cf8f]">App Sprint ASO Pro included (worth 19€/mo)</span>
+                            </li>
+                        </ul>
 
-                            <div className="flex -space-x-2 mt-6">
-                                {["/jx_op.png", "/luka.png", "/jesse.png", "/hnythng.png", "/raphael.png"].map((src, i) => (
-                                    <img
-                                        key={i}
-                                        className="h-9 w-9 rounded-full border-2 border-[#2a2725] object-cover"
-                                        src={src}
-                                        alt="Member"
-                                    />
-                                ))}
-                                <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#2a2725] bg-white/10 text-xs font-bold text-[#c9c4bc]">
-                                    51+
-                                </span>
-                            </div>
+                        {/* ASO included */}
+                        <div className="mt-6">
+                            <BundleMiniCard
+                                name="App Sprint ASO"
+                                tagline="The all-in-one macOS app for ASO"
+                                icon="/aso/app-icon.png"
+                                value=""
+                                features={[
+                                    "Keyword research & tracking",
+                                    "Competitor MRR estimates",
+                                    "Apple Search Ads management",
+                                    "Unlimited keywords & apps",
+                                ]}
+                            />
+                        </div>
 
-                            <div className="text-center mt-8">
-                                <a
-                                    href="/api/auth/discord"
-                                    data-fast-goal="cta_pricing_clicked"
-                                    className="group flex w-full h-12 items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer mb-4"
-                                >
-                                    <span>Launch your app, now</span>
-                                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                </a>
-                                <div className="flex flex-col gap-2">
-                                    <div className="flex items-center justify-center gap-2 text-xs text-[#c9c4bc]">
-                                        <div className="flex text-[#f4cf8f]">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star key={i} className="h-3 w-3 fill-current" />
-                                            ))}
-                                        </div>
-                                        Rated 5/5 by makers
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
-
-                        {/* Right: Community + ASO Bundle */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.1 }}
-                            className="relative rounded-3xl border-2 border-[#f4cf8f]/30 bg-white/[0.03] p-8 md:p-10 flex flex-col max-w-lg mx-auto w-full md:max-w-none"
-                        >
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                <span className="text-xs font-bold uppercase tracking-wider text-[#2a2725] bg-[#f4cf8f] px-4 py-1 rounded-full">
-                                    Bundle
-                                </span>
-                            </div>
-
-                            <div>
-                                <p className="text-lg font-bold text-[#f1ebe2] mb-4 mt-2">
-                                    App Sprint Community <span className="text-[#f4cf8f]">+ ASO</span>
-                                </p>
-
-                                <div className="mb-6">
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-2xl text-[#c9c4bc]/40 line-through">426&euro;</span>
-                                        <span className="text-5xl font-extrabold text-[#f1ebe2]">249&euro;</span>
-                                        <span className="text-lg text-[#c9c4bc]">first month</span>
-                                    </div>
-                                    <p className="text-sm text-[#c9c4bc]/50 mt-1">
-                                        Then 127&euro;/mo &middot; Includes ASO tool forever + Community membership
-                                    </p>                                </div>
-                            </div>
-
-                            <div className="flex-1 flex items-center py-6">
-                                <BundleMiniCard
-                                    name="App Sprint ASO"
-                                    tagline="The all-in-one macOS app for ASO"
-                                    icon="/aso/app-icon.png"
-                                    features={[
-                                        "Keyword research & tracking",
-                                        "Competitor MRR estimates",
-                                        "Apple Search Ads management",
-                                        "Unlimited keywords & apps",
-                                    ]}
+                        <div className="flex -space-x-2 mt-6 justify-center">
+                            {["/jx_op.png", "/luka.png", "/jesse.png", "/hnythng.png", "/raphael.png"].map((src, i) => (
+                                <img
+                                    key={i}
+                                    className="h-9 w-9 rounded-full border-2 border-[#2a2725] object-cover"
+                                    src={src}
+                                    alt="Member"
                                 />
-                            </div>
+                            ))}
+                            <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#2a2725] bg-white/10 text-xs font-bold text-[#c9c4bc]">
+                                51+
+                            </span>
+                        </div>
 
-                            <div className="text-center">
-                                <BundleButton />
+                        <div className="text-center mt-8">
+                            <a
+                                href="/api/auth/discord"
+                                data-fast-goal="cta_pricing_clicked"
+                                className="group flex w-full h-12 items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer mb-4"
+                            >
+                                <span>Launch your app, now</span>
+                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </a>
+                            <div className="flex items-center justify-center gap-2 text-xs text-[#c9c4bc]">
+                                <div className="flex text-[#f4cf8f]">
+                                    {[...Array(5)].map((_, i) => (
+                                        <Star key={i} className="h-3 w-3 fill-current" />
+                                    ))}
+                                </div>
+                                Rated 5/5 by makers
                             </div>
-                        </motion.div>
-                    </div>
+                        </div>
+                    </motion.div>
 
                     {/* Money-back / Guarantee note */}
                     <p className="mt-8 text-center text-sm text-[#c9c4bc]/50 leading-relaxed max-w-xl mx-auto italic">

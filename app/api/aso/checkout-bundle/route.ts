@@ -6,7 +6,6 @@ import { getSession, clearSession } from "@/lib/session";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 const COMMUNITY_PRICE_ID = process.env.COMMUNITY_PRICE_ID!;
-const ASO_BUNDLE_PRICE_ID = process.env.ASO_BUNDLE_PRICE_ID!;
 
 export async function GET() {
   const session = await getSession();
@@ -48,7 +47,6 @@ export async function GET() {
         mode: "subscription",
         line_items: [
           { price: COMMUNITY_PRICE_ID, quantity: 1 },
-          { price: ASO_BUNDLE_PRICE_ID, quantity: 1 },
         ],
         subscription_data: {
           metadata: { product: "bundle-aso", discordId: session.discordId, visitorId, country },

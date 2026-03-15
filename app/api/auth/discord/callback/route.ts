@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
   const inviteToken = typeof statePayload.invite === "string" ? statePayload.invite : null;
   const bundleFlow = typeof statePayload.flow === "string" ? statePayload.flow : null;
   const isBundleFlow = bundleFlow === "bundle-community" || bundleFlow === "bundle-aso";
+  const isYearlyBonusFlow = bundleFlow === "aso-yearly-bonus";
 
   try {
     // Exchange code for access token
@@ -153,6 +154,24 @@ Feel free to reach out here if you have any questions 😉`;
         },
         "7d"
       );
+
+      return NextResponse.redirect(`https://discord.com/channels/${process.env.DISCORD_GUILD_ID}`);
+    }
+
+    // --- Yearly Pro Discord bonus flow ---
+    if (isYearlyBonusFlow) {
+      const { addToGuild: addToGuildFn, addRole: addRoleFn } = await import("@/lib/discord");
+
+      await addToGuildFn(discordUser.id, tokenData.access_token);
+      await addRoleFn(discordUser.id);
+
+      // Set trial expiry to 30 days from now
+      await prisma.user.update({
+        where: { discordId: discordUser.id },
+        data: {
+          discordTrialExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
 
       return NextResponse.redirect(`https://discord.com/channels/${process.env.DISCORD_GUILD_ID}`);
     }

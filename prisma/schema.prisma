@@ -24,6 +24,7 @@ model User {
   subscriptionId     String?            @unique
   subscriptionStatus String?
   roleGranted        Boolean            @default(false)
+  discordTrialExpiry DateTime?
   lessonProgress     LessonProgress[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt

@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Check, Copy, Download } from "lucide-react";
+import { Check, Copy, Download, MessageCircle } from "lucide-react";
 
 const DOWNLOAD_URL = "https://github.com/dev-err418/app-sprint-aso-releases/releases/latest/download/AppSprintASO.dmg";
 
@@ -18,11 +18,13 @@ export default function AsoSuccessPage() {
 function AsoSuccessContent() {
     const searchParams = useSearchParams();
     const sessionId = searchParams.get("session_id");
+    const bonusActivated = searchParams.get("bonus") === "activated";
 
     const [licenseKey, setLicenseKey] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [copied, setCopied] = useState(false);
+    const [isYearlyPro, setIsYearlyPro] = useState(false);
 
     useEffect(() => {
         if (!sessionId) {
@@ -36,6 +38,7 @@ function AsoSuccessContent() {
             .then((data) => {
                 if (data.licenseKey) {
                     setLicenseKey(data.licenseKey);
+                    setIsYearlyPro(data.isYearlyPro || false);
                 } else {
                     setError(data.error || "Could not retrieve license key");
                 }
@@ -142,7 +145,44 @@ function AsoSuccessContent() {
                             Download App Sprint ASO
                         </a>
 
+                        {/* Yearly Pro Discord bonus */}
+                        {isYearlyPro && !bonusActivated && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                                className="rounded-2xl border border-[#f4cf8f]/20 bg-[#f4cf8f]/5 p-6"
+                            >
+                                <p className="text-sm font-bold text-[#f4cf8f] mb-2">
+                                    You unlocked 1 month free Community access!
+                                </p>
+                                <p className="text-sm text-[#c9c4bc] mb-4">
+                                    Connect your Discord to join the App Sprint Community for 30 days, on us.
+                                </p>
+                                <a
+                                    href="/api/auth/discord?flow=aso-yearly-bonus"
+                                    className="group inline-flex h-10 items-center gap-2 rounded-full bg-[#5865F2] px-6 text-sm font-bold text-white hover:bg-[#4752C4] transition-all"
+                                >
+                                    <MessageCircle className="h-4 w-4" />
+                                    Connect Discord
+                                </a>
+                            </motion.div>
+                        )}
 
+                        {bonusActivated && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="rounded-2xl border border-green-500/20 bg-green-500/5 p-6"
+                            >
+                                <p className="text-sm font-bold text-green-400 mb-1">
+                                    Community access activated!
+                                </p>
+                                <p className="text-sm text-[#c9c4bc]">
+                                    You now have 30 days of free access to the App Sprint Community on Discord.
+                                </p>
+                            </motion.div>
+                        )}
                     </motion.div>
                 )}
             </div>

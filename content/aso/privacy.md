@@ -1,6 +1,6 @@
 # Privacy Policy for App Sprint ASO
 
-**Effective Date:** March 11, 2026
+**Effective Date:** March 15, 2026
 
 ## 1. Introduction
 
@@ -16,9 +16,11 @@ When you purchase and activate the App, we collect:
 - **Machine identifier**: A device-specific identifier bound to your computer upon first activation
 - **Email address**: Collected by Stripe during purchase for billing and communication
 
-### 2.2 Payment Information
+### 2.2 Payment & Subscription Information
 
 Payment is processed entirely by Stripe. We do not store or have access to your credit card number or full payment details. Stripe may collect billing name, address, and payment method information in accordance with their privacy policy.
+
+We store your Stripe customer ID and subscription status to manage your recurring billing and license activation. Subscription data includes your plan type (Solo or Pro), billing interval (monthly or yearly), and payment status.
 
 ### 2.3 Crash Reports
 
@@ -47,9 +49,10 @@ This data remains under your control. We have no access to it.
 We use the collected data for the following purposes:
 
 1. **License validation**: To verify your license key and device binding upon activation
-2. **Crash reporting**: To identify and fix bugs and improve App stability
-3. **Billing**: To process payments via Stripe
-4. **Communication**: To send important updates about your subscription or the App (only to your billing email)
+2. **Subscription management**: To manage your recurring billing, activate/deactivate your license based on payment status, and process plan changes
+3. **Crash reporting**: To identify and fix bugs and improve App stability
+4. **Billing**: To process payments via Stripe
+5. **Communication**: To send important updates about your subscription or the App (only to your billing email)
 
 We do not use your data for advertising, profiling, or any purpose not listed above.
 
@@ -80,7 +83,7 @@ The App does not use cookies. Our website does not use tracking cookies. The App
 
 - **Payment records**: Retained for 5-10 years as required by tax and accounting regulations
 - **Crash reports**: Automatically deleted after 90 days
-- **License records**: Retained indefinitely for the duration of your perpetual license
+- **License records**: Retained for the duration of your subscription and a reasonable period after cancellation
 - **Local data**: Remains on your device until you delete it; uninstalling the App removes application data
 
 ## 8. Your Rights (GDPR)

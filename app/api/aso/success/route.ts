@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
         licenseKey: "ASO-TEST-ABCD-1234-EFGH",
         email: "test@example.com",
         isBundle: false,
+        isYearlyPro: false,
       });
     }
     if (process.env.NODE_ENV === "development" && sessionId === "test-bundle") {
@@ -26,6 +27,15 @@ export async function GET(request: NextRequest) {
         licenseKey: "ASO-TEST-ABCD-1234-EFGH",
         email: "test@example.com",
         isBundle: true,
+        isYearlyPro: false,
+      });
+    }
+    if (process.env.NODE_ENV === "development" && sessionId === "test-yearly-pro") {
+      return NextResponse.json({
+        licenseKey: "ASO-TEST-ABCD-1234-EFGH",
+        email: "test@example.com",
+        isBundle: false,
+        isYearlyPro: true,
       });
     }
 
@@ -48,19 +58,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Idempotent — returns existing key if already created by webhook
-    const licenseKey = await generateAsoLicense(email, customerId);
-
-    // Check if this is a bundle purchase
+    // Check subscription metadata
     let isBundle = false;
+    let isYearlyPro = false;
+    let plan: "solo" | "pro" = "pro";
     if (session.subscription) {
       const subscription = await stripe.subscriptions.retrieve(
         session.subscription as string
       );
-      isBundle = (subscription.metadata.product || "").startsWith("bundle-");
+      const product = subscription.metadata.product || "";
+      const interval = subscription.metadata.interval || "";
+      isBundle = product.startsWith("bundle-");
+      isYearlyPro = product === "aso-pro" && interval === "year";
+      plan = product === "aso-solo" ? "solo" : "pro";
     }
 
-    return NextResponse.json({ licenseKey, email, isBundle });
+    // Idempotent — returns existing key if already created by webhook
+    const licenseKey = await generateAsoLicense(email, customerId, plan);
+
+    return NextResponse.json({ licenseKey, email, isBundle, isYearlyPro });
   } catch (err) {
     console.error("[ASO Success] Error:", err);
     return NextResponse.json(
