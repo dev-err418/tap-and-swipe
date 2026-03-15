@@ -184,7 +184,7 @@ export default function AsoPage() {
                             {
                                 quote: <>I{"'"}ve tried every ASO tool out there. Astro, AppTweak, you name it. None of them come close to what App Sprint does. Simply put: <span className="text-[#f4cf8f] box-decoration-clone px-1 -mx-1" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }}>the app dev{"'"}s best friend.</span></>,
                                 name: "Daniel",
-                                flag: "",
+                                flag: "\ud83c\uddfa\ud83c\uddf8",
                                 site: "",
                                 url: "",
                             },

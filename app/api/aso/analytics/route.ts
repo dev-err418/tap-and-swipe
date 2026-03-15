@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
 import { Pool } from "pg";
+import { getSession } from "@/lib/session";
 
 const pool = new Pool({
   connectionString: process.env.ASO_DATABASE_URL,
 });
 
-function isDev() {
-  return process.env.NODE_ENV === "development";
-}
-
 export async function GET(req: Request) {
-  if (!isDev()) {
+  const session = await getSession();
+  if (session?.discordId !== process.env.ADMIN_DISCORD_ID) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
 

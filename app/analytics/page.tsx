@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/session";
 import LeadTable from "@/components/analytics/LeadTable";
 import InviteModal from "@/components/analytics/InviteModal";
 import ExpandableGroup from "@/components/analytics/ExpandableGroup";
@@ -57,7 +58,8 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ period?: string; tab?: string }>;
 }) {
-  if (process.env.NODE_ENV === "production") {
+  const session = await getSession();
+  if (session?.discordId !== process.env.ADMIN_DISCORD_ID) {
     notFound();
   }
 
