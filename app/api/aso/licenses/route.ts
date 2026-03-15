@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { asoPool as pool } from "@/lib/aso-db";
+import { getSession } from "@/lib/session";
 import crypto from "crypto";
 
-// Dev-only guard
-function isDev() {
-  return process.env.NODE_ENV === "development";
+async function isAdmin() {
+  const session = await getSession();
+  return session?.discordId === process.env.ADMIN_DISCORD_ID;
 }
 
 // GET /api/aso/licenses — List all license keys
 export async function GET(req: Request) {
-  if (!isDev()) {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
 
@@ -28,7 +29,7 @@ export async function GET(req: Request) {
 
 // POST /api/aso/licenses — Generate a new license key
 export async function POST(req: Request) {
-  if (!isDev()) {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
 
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
 
 // PATCH /api/aso/licenses — Toggle active status or reset machine binding
 export async function PATCH(req: Request) {
-  if (!isDev()) {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
 

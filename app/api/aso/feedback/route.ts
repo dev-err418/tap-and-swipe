@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { asoPool as pool } from "@/lib/aso-db";
+import { getSession } from "@/lib/session";
 
-function isDev() {
-  return process.env.NODE_ENV === "development";
+async function isAdmin() {
+  const session = await getSession();
+  return session?.discordId === process.env.ADMIN_DISCORD_ID;
 }
 
 // GET /api/aso/feedback — List all feedback
 export async function GET() {
-  if (!isDev()) {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
 
@@ -20,7 +22,7 @@ export async function GET() {
 
 // DELETE /api/aso/feedback — Remove a feedback entry
 export async function DELETE(req: Request) {
-  if (!isDev()) {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
 
