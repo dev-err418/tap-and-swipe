@@ -150,111 +150,88 @@ export default async function AnalyticsPage({
   // App Sprint Tab — 3-column layout: 1:1, Community, ASO web funnels
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const eventWhere = { ...dateWhere };
-  const leadWhere = { ...dateWhere };
-  const communityEventWhere = { product: "community" as const, ...dateWhere };
-  const asoEventWhere = { product: "aso" as const, ...dateWhere };
+  const since = gte ?? new Date("2000-01-01");
 
-  const [
-    // 1:1 Quiz
-    pageViews,
-    quizStarts,
-    quizCompletes,
-    optins,
-    bookingClicks,
-    leads,
-    eventSourceGroups,
-    leadSourceGroups,
-    inviteLinks,
-    // Community
-    cPageViews,
-    cCtaClicked,
-    cStripeShown,
-    cPaid,
-    cPaidEvents,
-    cSourceGroups,
-    // ASO
-    aPageViews,
-    aCtaClicked,
-    aStripeShown,
-    aPaid,
-    aPaidEvents,
-    aSourceGroups,
-    // Payment sources
-    paymentSourcesRaw,
-  ] = await Promise.all([
-    // 1:1 Quiz queries
-    prisma.quizEvent.count({ where: { type: "page_view", ...eventWhere } }),
-    prisma.quizEvent.count({ where: { type: "quiz_start", ...eventWhere } }),
-    prisma.quizEvent.count({ where: { type: "quiz_complete", ...eventWhere } }),
-    prisma.quizLead.count({ where: leadWhere }),
-    prisma.quizEvent.count({ where: { type: "booking_click", ...eventWhere } }),
+  const [countsArr, sourcesRaw, leads, inviteLinks] = await Promise.all([
+    // All counts + revenue in a single query
+    prisma.$queryRaw<[{
+      q_views: number; q_starts: number; q_completes: number; q_bookings: number; q_leads: number;
+      c_views: number; c_cta: number; c_stripe: number; c_paid: number; c_revenue: number;
+      a_views: number; a_cta: number; a_stripe: number; a_trials: number; a_revenue: number;
+    }]>`
+      SELECT
+        (SELECT COUNT(*)::int FROM "QuizEvent" WHERE type='page_view' AND "createdAt">=${since}) as q_views,
+        (SELECT COUNT(*)::int FROM "QuizEvent" WHERE type='quiz_start' AND "createdAt">=${since}) as q_starts,
+        (SELECT COUNT(*)::int FROM "QuizEvent" WHERE type='quiz_complete' AND "createdAt">=${since}) as q_completes,
+        (SELECT COUNT(*)::int FROM "QuizEvent" WHERE type='booking_click' AND "createdAt">=${since}) as q_bookings,
+        (SELECT COUNT(*)::int FROM "QuizLead" WHERE "createdAt">=${since}) as q_leads,
+        (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='community' AND type='page_view' AND "createdAt">=${since}) as c_views,
+        (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='community' AND type='cta_clicked' AND "createdAt">=${since}) as c_cta,
+        (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='community' AND type='stripe_shown' AND "createdAt">=${since}) as c_stripe,
+        (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='community' AND type='paid' AND "createdAt">=${since}) as c_paid,
+        COALESCE((SELECT SUM(revenue)::int FROM "PageEvent" WHERE product='community' AND type='paid' AND "createdAt">=${since}), 0) as c_revenue,
+        (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='aso' AND type='page_view' AND "createdAt">=${since}) as a_views,
+        (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='aso' AND type='cta_clicked' AND "createdAt">=${since}) as a_cta,
+        (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='aso' AND type='stripe_shown' AND "createdAt">=${since}) as a_stripe,
+        (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='aso' AND type='trial_started' AND "createdAt">=${since}) as a_trials,
+        COALESCE((SELECT SUM(revenue)::int FROM "PageEvent" WHERE product='aso' AND type='trial_started' AND "createdAt">=${since}), 0) as a_revenue
+    `,
+    // All source groupBys in a single query
+    prisma.$queryRaw<{ kind: string; ref: string | null; count: bigint }[]>`
+      SELECT 'q_traffic' as kind, source as ref, COUNT(*)::bigint as count
+      FROM "QuizEvent" WHERE type='page_view' AND "createdAt">=${since}
+      GROUP BY source
+      UNION ALL
+      SELECT 'q_leads' as kind, source as ref, COUNT(*)::bigint as count
+      FROM "QuizLead" WHERE "createdAt">=${since}
+      GROUP BY source
+      UNION ALL
+      SELECT 'c_traffic' as kind, referrer as ref, COUNT(*)::bigint as count
+      FROM "PageEvent" WHERE product='community' AND type='page_view' AND "createdAt">=${since}
+      GROUP BY referrer
+      UNION ALL
+      SELECT 'a_traffic' as kind, referrer as ref, COUNT(*)::bigint as count
+      FROM "PageEvent" WHERE product='aso' AND type='page_view' AND "createdAt">=${since}
+      GROUP BY referrer
+      UNION ALL
+      SELECT 'c_payment' as kind, pv.referrer as ref, COUNT(DISTINCT pv."visitorId")::bigint as count
+      FROM "PageEvent" pv
+      INNER JOIN "PageEvent" conv ON conv."visitorId"=pv."visitorId"
+        AND conv.product='community' AND conv.type='paid' AND conv."createdAt">=${since}
+      WHERE pv.product='community' AND pv.type='page_view'
+      GROUP BY pv.referrer
+      UNION ALL
+      SELECT 'a_payment' as kind, pv.referrer as ref, COUNT(DISTINCT pv."visitorId")::bigint as count
+      FROM "PageEvent" pv
+      INNER JOIN "PageEvent" conv ON conv."visitorId"=pv."visitorId"
+        AND conv.product='aso' AND conv.type='trial_started' AND conv."createdAt">=${since}
+      WHERE pv.product='aso' AND pv.type='page_view'
+      GROUP BY pv.referrer
+    `,
     prisma.quizLead.findMany({
-      where: leadWhere,
+      where: gte ? { createdAt: { gte } } : {},
       orderBy: { createdAt: "desc" },
       take: 100,
-    }),
-    prisma.quizEvent.groupBy({
-      by: ["source"],
-      where: { type: "page_view", ...eventWhere },
-      _count: { id: true },
-      orderBy: { _count: { id: "desc" } },
-    }),
-    prisma.quizLead.groupBy({
-      by: ["source"],
-      where: leadWhere,
-      _count: { id: true },
-      orderBy: { _count: { id: "desc" } },
     }),
     prisma.inviteLink.findMany({
       orderBy: { createdAt: "desc" },
     }),
-    // Community queries
-    prisma.pageEvent.count({ where: { ...communityEventWhere, type: "page_view" } }),
-    prisma.pageEvent.count({ where: { ...communityEventWhere, type: "cta_clicked" } }),
-    prisma.pageEvent.count({ where: { ...communityEventWhere, type: "stripe_shown" } }),
-    prisma.pageEvent.count({ where: { ...communityEventWhere, type: "paid" } }),
-    prisma.pageEvent.findMany({
-      where: { ...communityEventWhere, type: "paid" },
-      select: { revenue: true, visitorId: true },
-    }),
-    prisma.pageEvent.groupBy({
-      by: ["referrer"],
-      where: { ...communityEventWhere, type: "page_view" },
-      _count: { id: true },
-      orderBy: { _count: { id: "desc" } },
-    }),
-    // ASO queries
-    prisma.pageEvent.count({ where: { ...asoEventWhere, type: "page_view" } }),
-    prisma.pageEvent.count({ where: { ...asoEventWhere, type: "cta_clicked" } }),
-    prisma.pageEvent.count({ where: { ...asoEventWhere, type: "stripe_shown" } }),
-    prisma.pageEvent.count({ where: { ...asoEventWhere, type: "trial_started" } }),
-    prisma.pageEvent.findMany({
-      where: { ...asoEventWhere, type: "trial_started" },
-      select: { revenue: true, visitorId: true },
-    }),
-    prisma.pageEvent.groupBy({
-      by: ["referrer"],
-      where: { ...asoEventWhere, type: "page_view" },
-      _count: { id: true },
-      orderBy: { _count: { id: "desc" } },
-    }),
-    // Payment sources: join paid/trial events back to page_view referrer
-    prisma.$queryRaw<{ product: string; referrer: string | null; count: bigint }[]>`
-      SELECT conv.product, pv.referrer, COUNT(DISTINCT pv."visitorId")::bigint as count
-      FROM "PageEvent" pv
-      INNER JOIN "PageEvent" conv ON conv."visitorId" = pv."visitorId"
-        AND conv.product = pv.product
-        AND conv.type = CASE WHEN pv.product = 'community' THEN 'paid' ELSE 'trial_started' END
-        AND conv."createdAt" >= ${gte ?? new Date('2000-01-01')}
-      WHERE pv.type = 'page_view' AND pv.product IN ('community', 'aso')
-      GROUP BY conv.product, pv.referrer
-      ORDER BY conv.product, count DESC
-    `,
   ]);
 
-  const cPaymentSources = paymentSourcesRaw.filter((r) => r.product === "community");
-  const aPaymentSources = paymentSourcesRaw.filter((r) => r.product === "aso");
+  const {
+    q_views: pageViews, q_starts: quizStarts, q_completes: quizCompletes,
+    q_bookings: bookingClicks, q_leads: optins,
+    c_views: cPageViews, c_cta: cCtaClicked, c_stripe: cStripeShown,
+    c_paid: cPaid, c_revenue: cTotalRevenue,
+    a_views: aPageViews, a_cta: aCtaClicked, a_stripe: aStripeShown,
+    a_trials: aPaid, a_revenue: aTotalRevenue,
+  } = countsArr[0];
+
+  const sourceRows = (kind: string) =>
+    sourcesRaw
+      .filter((r) => r.kind === kind)
+      .sort((a, b) => Number(b.count) - Number(a.count))
+      .map((r) => ({ source: r.ref, count: Number(r.count) }));
 
   // ── 1:1 Quiz funnel ──
   const quizFunnel: FunnelStep[] = [
@@ -287,7 +264,6 @@ export default async function AnalyticsPage({
   const quizMaxCount = Math.max(...quizFunnel.map((f) => f.count), 1);
 
   // ── Community funnel ──
-  const cTotalRevenue = cPaidEvents.reduce((sum, e) => sum + (e.revenue ?? 0), 0);
   const communityFunnel: FunnelStep[] = [
     { label: "Page views", shortLabel: "Views", count: cPageViews, rate: null, benchmark: null },
     {
@@ -312,7 +288,6 @@ export default async function AnalyticsPage({
   const cMaxCount = Math.max(...communityFunnel.map((f) => f.count), 1);
 
   // ── ASO web funnel ──
-  const aTotalRevenue = aPaidEvents.reduce((sum, e) => sum + (e.revenue ?? 0), 0);
   const asoFunnel: FunnelStep[] = [
     { label: "Page views", shortLabel: "Views", count: aPageViews, rate: null, benchmark: null },
     {
@@ -375,19 +350,9 @@ export default async function AnalyticsPage({
               <StatCard label="Leads" value={optins} compact />
               <StatCard label="Bookings" value={bookingClicks} compact />
             </div>
-            <SourceTable
-              title="Traffic sources"
-              rows={eventSourceGroups.map((g) => ({ source: g.source, count: g._count.id }))}
-              total={pageViews}
-              compact
-            />
+            <SourceTable title="Traffic sources" rows={sourceRows("q_traffic")} total={pageViews} compact />
             <div className="mt-4">
-              <SourceTable
-                title="Lead sources"
-                rows={leadSourceGroups.map((g) => ({ source: g.source, count: g._count.id }))}
-                total={optins}
-                compact
-              />
+              <SourceTable title="Lead sources" rows={sourceRows("q_leads")} total={optins} compact />
             </div>
           </div>
 
@@ -401,19 +366,9 @@ export default async function AnalyticsPage({
               <StatCard label="Paid" value={cPaid} compact />
               <StatCard label="Revenue" value={`${(cTotalRevenue / 100).toFixed(0)}€`} compact />
             </div>
-            <SourceTable
-              title="Traffic sources"
-              rows={cSourceGroups.map((g) => ({ source: g.referrer, count: g._count.id }))}
-              total={cPageViews}
-              compact
-            />
+            <SourceTable title="Traffic sources" rows={sourceRows("c_traffic")} total={cPageViews} compact />
             <div className="mt-4">
-              <SourceTable
-                title="Payment sources"
-                rows={cPaymentSources.map((r) => ({ source: r.referrer, count: Number(r.count) }))}
-                total={cPaid}
-                compact
-              />
+              <SourceTable title="Payment sources" rows={sourceRows("c_payment")} total={cPaid} compact />
             </div>
           </div>
 
@@ -427,19 +382,9 @@ export default async function AnalyticsPage({
               <StatCard label="Trials" value={aPaid} compact />
               <StatCard label="Potential MRR" value={`${(aTotalRevenue / 100).toFixed(0)}€`} compact />
             </div>
-            <SourceTable
-              title="Traffic sources"
-              rows={aSourceGroups.map((g) => ({ source: g.referrer, count: g._count.id }))}
-              total={aPageViews}
-              compact
-            />
+            <SourceTable title="Traffic sources" rows={sourceRows("a_traffic")} total={aPageViews} compact />
             <div className="mt-4">
-              <SourceTable
-                title="Payment sources"
-                rows={aPaymentSources.map((r) => ({ source: r.referrer, count: Number(r.count) }))}
-                total={aPaid}
-                compact
-              />
+              <SourceTable title="Payment sources" rows={sourceRows("a_payment")} total={aPaid} compact />
             </div>
           </div>
         </div>
