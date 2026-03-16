@@ -242,7 +242,7 @@ export default async function AnalyticsPage({
     }),
     // Payment sources: join paid/trial events back to page_view referrer
     prisma.$queryRaw<{ referrer: string | null; count: bigint }[]>`
-      SELECT pv.referrer, COUNT(*)::bigint as count
+      SELECT pv.referrer, COUNT(DISTINCT pv."visitorId")::bigint as count
       FROM "PageEvent" pv
       INNER JOIN "PageEvent" paid ON paid."visitorId" = pv."visitorId"
         AND paid.product = 'community' AND paid.type = 'paid'
@@ -252,7 +252,7 @@ export default async function AnalyticsPage({
       ORDER BY count DESC
     `,
     prisma.$queryRaw<{ referrer: string | null; count: bigint }[]>`
-      SELECT pv.referrer, COUNT(*)::bigint as count
+      SELECT pv.referrer, COUNT(DISTINCT pv."visitorId")::bigint as count
       FROM "PageEvent" pv
       INNER JOIN "PageEvent" trial ON trial."visitorId" = pv."visitorId"
         AND trial.product = 'aso' AND trial.type = 'trial_started'
