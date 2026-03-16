@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { addToGuild, addRole, removeRole } from "@/lib/discord";
-import { sendFraudAlert } from "@/lib/discord-webhook";
+import { sendFraudAlert, sendDiscordNotification } from "@/lib/discord-webhook";
 import { isDisposableEmail } from "@/lib/fraud";
 import {
   asoPool,
@@ -148,6 +148,21 @@ export async function POST(request: NextRequest) {
           const licenseKey = await generateAsoLicense(customerEmail, customerId, asoPlan);
           await sendLicenseKeyEmail(customerEmail, licenseKey);
 
+          // Discord notification
+          const isTrial = subscription.status === "trialing";
+          await sendDiscordNotification(
+            isTrial ? "New ASO Trial Started" : "New ASO Subscription",
+            undefined,
+            [
+              { name: "Plan", value: asoPlan.charAt(0).toUpperCase() + asoPlan.slice(1), inline: true },
+              { name: "Interval", value: subscription.metadata.interval || "month", inline: true },
+              { name: "Status", value: isTrial ? "Trialing (7 days)" : "Active", inline: true },
+              { name: "Email", value: customerEmail, inline: true },
+              { name: "Customer", value: customerId, inline: true },
+            ],
+            isTrial ? 0xf4cf8f : 0x57f287
+          ).catch(() => {});
+
           // Track paid event
           const asoProduct = subscription.metadata.product; // "aso-solo" or "aso-pro"
           const asoVisitorId = subscription.metadata.visitorId;
@@ -214,6 +229,17 @@ export async function POST(request: NextRequest) {
           // Generate ASO license for ALL bundles
           const licenseKey = await generateAsoLicense(customerEmail, customerId, "pro");
           await sendLicenseKeyEmail(customerEmail, licenseKey);
+
+          // Discord notification
+          await sendDiscordNotification(
+            "New Bundle Subscription",
+            undefined,
+            [
+              { name: "Bundle", value: bundleProduct, inline: true },
+              { name: "Email", value: customerEmail, inline: true },
+              { name: "Customer", value: customerId, inline: true },
+            ],
+          ).catch(() => {});
 
           // Discord was collected before payment — add to guild and grant role
           const bundleDiscordId = subscription.metadata.discordId;
@@ -334,6 +360,17 @@ export async function POST(request: NextRequest) {
         // === Community subscription ===
         const discordId = subscription.metadata.discordId;
         if (!discordId) break;
+
+        // Discord notification
+        await sendDiscordNotification(
+          "New Community Subscription",
+          undefined,
+          [
+            { name: "Email", value: session.customer_details?.email || "—", inline: true },
+            { name: "Discord", value: `<@${discordId}>`, inline: true },
+            { name: "Customer", value: session.customer as string, inline: true },
+          ],
+        ).catch(() => {});
 
         // Look up the stored access token to add user to guild
         const dbUser = await prisma.user.findUnique({ where: { discordId } });
