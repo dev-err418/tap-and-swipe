@@ -17,6 +17,18 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
+        source: "/app-sprint",
+        has: [
+          {
+            type: "header",
+            key: "cf-ipcountry",
+            value: "BR",
+          },
+        ],
+        destination: "/app-sprint-community",
+        permanent: false,
+      },
+      {
         source: "/app-sprint-community/roadmap",
         destination: "/app-sprint/roadmap",
         permanent: true,
