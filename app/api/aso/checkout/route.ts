@@ -48,11 +48,11 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Track stripe_shown event
+    // Track stripe_shown event (unified under "aso" for funnel analytics)
     if (visitorId) {
       await prisma.pageEvent.upsert({
-        where: { sessionId_type_product: { sessionId: visitorId, type: "stripe_shown", product } },
-        create: { product, type: "stripe_shown", visitorId, sessionId: visitorId, country: country || null },
+        where: { sessionId_type_product: { sessionId: visitorId, type: "stripe_shown", product: "aso" } },
+        create: { product: "aso", type: "stripe_shown", visitorId, sessionId: visitorId, country: country || null },
         update: {},
       }).catch(() => {});
     }

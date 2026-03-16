@@ -226,9 +226,9 @@ export default async function AnalyticsPage({
     prisma.pageEvent.count({ where: { ...asoEventWhere, type: "page_view" } }),
     prisma.pageEvent.count({ where: { ...asoEventWhere, type: "cta_clicked" } }),
     prisma.pageEvent.count({ where: { ...asoEventWhere, type: "stripe_shown" } }),
-    prisma.pageEvent.count({ where: { ...asoEventWhere, type: "paid" } }),
+    prisma.pageEvent.count({ where: { ...asoEventWhere, type: "trial_started" } }),
     prisma.pageEvent.findMany({
-      where: { ...asoEventWhere, type: "paid" },
+      where: { ...asoEventWhere, type: "trial_started" },
       select: { revenue: true, visitorId: true },
     }),
     prisma.pageEvent.groupBy({
@@ -311,7 +311,7 @@ export default async function AnalyticsPage({
       benchmark: null,
     },
     {
-      label: "Paid", shortLabel: "Paid",
+      label: "Trials started", shortLabel: "Trials",
       count: aPaid,
       rate: aStripeShown > 0 ? Math.round((aPaid / aStripeShown) * 100) : 0,
       benchmark: null,
@@ -399,8 +399,8 @@ export default async function AnalyticsPage({
               <FunnelChart funnel={asoFunnel} maxCount={aMaxCount} benchmarks={{}} benchmarkLabels={{}} compact />
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <StatCard label="Paid" value={aPaid} compact />
-              <StatCard label="Revenue" value={`${(aTotalRevenue / 100).toFixed(0)}€`} compact />
+              <StatCard label="Trials" value={aPaid} compact />
+              <StatCard label="Potential MRR" value={`${(aTotalRevenue / 100).toFixed(0)}€`} compact />
             </div>
             <SourceTable
               title="Traffic sources"

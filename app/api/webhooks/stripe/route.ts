@@ -163,24 +163,22 @@ export async function POST(request: NextRequest) {
             isTrial ? 0xf4cf8f : 0x57f287
           ).catch(() => {});
 
-          // Track paid event
-          const asoProduct = subscription.metadata.product; // "aso-solo" or "aso-pro"
+          // Track trial or paid event (unified under "aso" for funnel analytics)
           const asoVisitorId = subscription.metadata.visitorId;
           if (asoVisitorId) {
-            const asoInvoice =
-              typeof subscription.latest_invoice === "string"
-                ? await stripe.invoices.retrieve(subscription.latest_invoice)
-                : subscription.latest_invoice;
+            // Calculate plan price as potential revenue (in cents)
+            const planPrice = subscription.items.data[0]?.price?.unit_amount ?? 0;
+            const eventType = isTrial ? "trial_started" : "paid";
             await prisma.pageEvent.upsert({
-              where: { sessionId_type_product: { sessionId: asoVisitorId, type: "paid", product: asoProduct } },
+              where: { sessionId_type_product: { sessionId: asoVisitorId, type: eventType, product: "aso" } },
               create: {
-                product: asoProduct,
-                type: "paid",
+                product: "aso",
+                type: eventType,
                 visitorId: asoVisitorId,
                 sessionId: asoVisitorId,
                 stripeCustomerId: customerId,
-                revenue: asoInvoice?.amount_paid ?? null,
-                currency: asoInvoice?.currency ?? null,
+                revenue: planPrice,
+                currency: subscription.currency ?? null,
                 country: subscription.metadata.country || null,
               },
               update: {},
