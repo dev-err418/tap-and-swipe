@@ -181,8 +181,7 @@ export default async function AnalyticsPage({
     aPaidEvents,
     aSourceGroups,
     // Payment sources
-    cPaymentSources,
-    aPaymentSources,
+    paymentSourcesRaw,
   ] = await Promise.all([
     // 1:1 Quiz queries
     prisma.quizEvent.count({ where: { type: "page_view", ...eventWhere } }),
@@ -241,27 +240,21 @@ export default async function AnalyticsPage({
       orderBy: { _count: { id: "desc" } },
     }),
     // Payment sources: join paid/trial events back to page_view referrer
-    prisma.$queryRaw<{ referrer: string | null; count: bigint }[]>`
-      SELECT pv.referrer, COUNT(DISTINCT pv."visitorId")::bigint as count
+    prisma.$queryRaw<{ product: string; referrer: string | null; count: bigint }[]>`
+      SELECT conv.product, pv.referrer, COUNT(DISTINCT pv."visitorId")::bigint as count
       FROM "PageEvent" pv
-      INNER JOIN "PageEvent" paid ON paid."visitorId" = pv."visitorId"
-        AND paid.product = 'community' AND paid.type = 'paid'
-        AND paid."createdAt" >= ${gte ?? new Date('2000-01-01')}
-      WHERE pv.product = 'community' AND pv.type = 'page_view'
-      GROUP BY pv.referrer
-      ORDER BY count DESC
-    `,
-    prisma.$queryRaw<{ referrer: string | null; count: bigint }[]>`
-      SELECT pv.referrer, COUNT(DISTINCT pv."visitorId")::bigint as count
-      FROM "PageEvent" pv
-      INNER JOIN "PageEvent" trial ON trial."visitorId" = pv."visitorId"
-        AND trial.product = 'aso' AND trial.type = 'trial_started'
-        AND trial."createdAt" >= ${gte ?? new Date('2000-01-01')}
-      WHERE pv.product = 'aso' AND pv.type = 'page_view'
-      GROUP BY pv.referrer
-      ORDER BY count DESC
+      INNER JOIN "PageEvent" conv ON conv."visitorId" = pv."visitorId"
+        AND conv.product = pv.product
+        AND conv.type = CASE WHEN pv.product = 'community' THEN 'paid' ELSE 'trial_started' END
+        AND conv."createdAt" >= ${gte ?? new Date('2000-01-01')}
+      WHERE pv.type = 'page_view' AND pv.product IN ('community', 'aso')
+      GROUP BY conv.product, pv.referrer
+      ORDER BY conv.product, count DESC
     `,
   ]);
+
+  const cPaymentSources = paymentSourcesRaw.filter((r) => r.product === "community");
+  const aPaymentSources = paymentSourcesRaw.filter((r) => r.product === "aso");
 
   // ── 1:1 Quiz funnel ──
   const quizFunnel: FunnelStep[] = [
