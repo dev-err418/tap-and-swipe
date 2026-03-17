@@ -11,6 +11,7 @@ import { Suspense } from "react";
 import PricingSection from "./pricing-section";
 import AsoLastUpdate from "./last-update";
 import PageTracker from "@/components/PageTracker";
+import HeroVideo from "./hero-video";
 
 export default function AsoPage() {
     return (
@@ -68,11 +69,10 @@ export default function AsoPage() {
                         Requires <span className="text-[#f4cf8f]">macOS 14.6+</span>
                     </p>
 
-                    {/* Video placeholder */}
+                    {/* Hero video */}
                     <div className="mt-16 flex justify-center">
                         <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-[#f4cf8f]/10 ring-1 ring-white/10">
-                            {/* Replace empty string with actual video URL when ready */}
-                            <div className="w-full max-w-4xl aspect-video bg-black/20" />
+                            <HeroVideo />
                         </div>
                     </div>
                 </div>
