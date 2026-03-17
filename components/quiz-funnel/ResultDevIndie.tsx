@@ -337,6 +337,7 @@ export default function ResultDevIndie({
           dataGoal="quiz_result_dev_indie_cta_final"
         />
       </motion.div>
+
     </div>
   );
 }

@@ -145,9 +145,14 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
   }
 
   const goToResult = useCallback(() => {
+    // Cold lead: not ready or unsure about investing → redirect to community
+    if (answers.q8 === 1 || answers.q8 === 2) {
+      window.location.href = "/app-sprint-community";
+      return;
+    }
     setDirection(1);
     setStep("result-dev-indie");
-  }, []);
+  }, [answers.q8]);
 
   const isResult = step === "result-dev-indie";
 
