@@ -137,7 +137,7 @@ export default function ProxyAnalyticsPanel() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <SummaryCard label="Total Requests" value={s.requests.toLocaleString()} />
         <SummaryCard label="Rate Limits" value={s.rateLimits.toLocaleString()} sub={`G:${s.rateLimitsGlobal} A:${s.rateLimitsAuth} L:${s.rateLimitsLicense} S:${s.rateLimitsSuggestions}`} />
         <SummaryCard label="Unique Licenses" value={String(s.uniqueLicenses)} />
