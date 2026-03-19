@@ -15,8 +15,8 @@ export default function OptinScreen({
   source,
   onSuccess,
 }: {
-  answers: Record<string, number>;
-  profileType: "dev-indie";
+  answers: Record<string, number | string>;
+  profileType: string;
   source?: string;
   onSuccess: (firstName: string, leadId: string, email: string, phone: string) => void;
 }) {
@@ -91,7 +91,7 @@ export default function OptinScreen({
   return (
     <div className="flex flex-col items-center text-center max-w-lg mx-auto w-full">
       <h2 className="text-4xl font-extrabold tracking-tight leading-tight sm:text-5xl mb-3 w-[120%]">
-        Last step before getting your personalized action plan 👇
+        Last step before getting your personalized recommendation 👇
       </h2>
 
       <p className="text-[#c9c4bc] mb-8 text-lg sm:text-xl">
@@ -156,7 +156,7 @@ export default function OptinScreen({
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <>
-              See my results
+              See my recommendation
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </>
           )}

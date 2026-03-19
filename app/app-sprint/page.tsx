@@ -4,26 +4,26 @@ import type { Metadata } from "next";
 import QuizFunnel from "@/components/quiz-funnel/QuizFunnel";
 
 export const metadata: Metadata = {
-  title: "App Sprint — Discover Your Personalized Action Plan",
+  title: "App Sprint — Get Your Mobile App Built Right",
   description:
-    "Answer 10 questions to get your personalized action plan and launch your mobile app. 1:1 mentorship with Arthur — coaching, code review, and strategy.",
+    "Take a 2-minute quiz to get a personalized recommendation for your mobile app project. Strategy, development, and launch — tailored to your business.",
   keywords: [
-    "mobile app mentorship",
-    "developer coaching",
-    "launch an app",
-    "app sprint",
-    "mobile development mentorship",
+    "mobile app development",
+    "app consulting",
     "build a mobile app",
+    "app sprint",
+    "mobile app strategy",
+    "app development services",
   ],
   openGraph: {
-    title: "App Sprint — Discover Your Personalized Action Plan",
+    title: "App Sprint — Get Your Mobile App Built Right",
     description:
-      "Answer 10 questions to get your personalized action plan and launch your mobile app.",
+      "Take a 2-minute quiz to get a personalized recommendation for your mobile app project.",
   },
   twitter: {
-    title: "App Sprint — Discover Your Personalized Action Plan",
+    title: "App Sprint — Get Your Mobile App Built Right",
     description:
-      "Answer 10 questions to get your personalized action plan and launch your mobile app.",
+      "Take a 2-minute quiz to get a personalized recommendation for your mobile app project.",
   },
   alternates: {
     canonical: "/app-sprint",

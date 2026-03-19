@@ -6,8 +6,8 @@ import { Check } from "lucide-react";
 
 const STEPS = [
   "Analyzing your answers",
-  "Identifying your profile",
-  "Generating your action plan",
+  "Identifying your needs",
+  "Preparing your recommendation",
 ];
 
 const STEP_DELAY = 1000; // ms between each step

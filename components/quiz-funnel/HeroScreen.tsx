@@ -13,15 +13,14 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
       >
         <img
           src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
-          alt="ArthurBuildsStuff"
+          alt="Arthur"
           className="h-8 w-8 rounded-full border border-[#f4cf8f]/20"
         />
-        <span className="text-sm font-medium text-[#c9c4bc]">By ArthurBuildsStuff</span>
+        <span className="text-sm font-medium text-[#c9c4bc]">By Arthur</span>
       </a>
 
       <h1 className="text-5xl font-extrabold tracking-tight leading-[1] sm:text-7xl">
-        Launch a{" "}
-        profitable app{" "}
+        Your app, built right{" "}
         <span
           className="text-[#f4cf8f] box-decoration-clone px-2 -mx-2"
           style={{
@@ -30,13 +29,13 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
             backgroundRepeat: "no-repeat",
           }}
         >
-          without the guesswork
+          from strategy to launch
         </span>
       </h1>
 
       <p className="text-[#c9c4bc] text-lg sm:text-xl mt-4">
-        Take this 2-minute quiz to discover what type of app creator you are
-        and get a personalized action plan to go from zero to a live, monetized and profitable app.
+        Take this 2-minute quiz to get a personalized recommendation
+        and find out how we can help you bring your mobile app to life.
       </p>
 
       <div className="mt-10">

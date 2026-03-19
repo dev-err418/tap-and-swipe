@@ -6,22 +6,12 @@ export type QuizStep =
   | "q3"
   | "q4"
   | "q5"
-  | "q6"
-  | "q7"
-  | "q8"
+  | "note"
   | "optin"
   | "waiting"
-  | "result-dev-indie";
+  | "result-business";
 
-export type QuestionKey =
-  | "q1"
-  | "q2"
-  | "q3"
-  | "q4"
-  | "q5"
-  | "q6"
-  | "q7"
-  | "q8";
+export type QuestionKey = "q1" | "q2" | "q3" | "q4" | "q5";
 
 export interface AnswerOption {
   emoji: string;
@@ -41,91 +31,57 @@ export const questionOrder: QuestionKey[] = [
   "q3",
   "q4",
   "q5",
-  "q6",
-  "q7",
-  "q8",
 ];
 
 // ─── Questions ──────────────────────────────────────────────────────
 export const questions: Record<QuestionKey, QuestionConfig> = {
   q1: {
-    title: "What's your current situation?",
+    title: "What best describes your business?",
     subtitle: "",
     answers: [
-      { emoji: "🧑‍💻", label: "I'm a salaried dev and I want to launch a profitable side project" },
-      { emoji: "🚀", label: "I'm an indie dev / freelancer and I want to build my own apps" },
-      { emoji: "🏢", label: "I already have a business (SaaS, course, e-commerce...) and I want to add a mobile app" },
-      { emoji: "💡", label: "I have an app idea but I don't know how to code" },
+      { emoji: "🏢", label: "Local / service-based business" },
+      { emoji: "🛒", label: "E-commerce / product business" },
+      { emoji: "🧑‍💻", label: "SaaS / digital platform" },
+      { emoji: "🚀", label: "Startup, the app is my product" },
+      { emoji: "💼", label: "Other (corporate, internal tool...)" },
     ],
   },
   q2: {
-    title: "Have you ever published an app on the App Store or Play Store?",
+    title: "Where are you with your mobile app?",
     subtitle: "",
     answers: [
-      { emoji: "✅", label: "Yes, I have one or more published apps" },
-      { emoji: "🛠️", label: "I have an app in development" },
-      { emoji: "❌", label: "No, never" },
+      { emoji: "💡", label: "Just an idea, haven't started" },
+      { emoji: "📝", label: "Specs or mockups, no code yet" },
+      { emoji: "🛠️", label: "In development, not live yet" },
+      { emoji: "📱", label: "Live app, needs improvements" },
     ],
   },
   q3: {
-    title: "Are you already generating revenue from a mobile app?",
+    title: "What do you need the most help with?",
     subtitle: "",
     answers: [
-      { emoji: "💰", label: "Yes, more than $500/month" },
-      { emoji: "💵", label: "Yes, but less than $500/month" },
-      { emoji: "🆓", label: "No, no revenue yet" },
-      { emoji: "🤷", label: "I'm not sure how to monetize an app" },
+      { emoji: "🧭", label: "Strategy and guidance" },
+      { emoji: "💻", label: "Development" },
+      { emoji: "📈", label: "Growth and monetization" },
+      { emoji: "🤝", label: "Strategy + development" },
     ],
   },
   q4: {
-    title: "What's your biggest blocker right now?",
+    title: "Do you currently have a technical team?",
     subtitle: "",
     answers: [
-      { emoji: "🧩", label: "I don't know which app idea to pick" },
-      { emoji: "💻", label: "I don't know how to properly build an app" },
-      { emoji: "📣", label: "I have an app but nobody downloads it" },
-      { emoji: "💰", label: "I have downloads but no revenue" },
-      { emoji: "📈", label: "I don't know how to scale beyond my first revenue" },
+      { emoji: "👨‍💻", label: "Yes, but I need extra help" },
+      { emoji: "🧑‍💼", label: "No, I need a full solution" },
+      { emoji: "🤝", label: "Yes, but I'm not satisfied" },
     ],
   },
   q5: {
-    title: "How many hours per week can you dedicate to your app project?",
+    title: "Are you ready to invest in getting your app built the right way?",
     subtitle: "",
     answers: [
-      { emoji: "⏳", label: "Less than 5h/week" },
-      { emoji: "💪", label: "5 to 15h/week" },
-      { emoji: "🔥", label: "15 to 30h/week" },
-      { emoji: "⚡", label: "30h+/week (full-time)" },
-    ],
-  },
-  q6: {
-    title: "What's your ideal goal in the next 6 months?",
-    subtitle: "",
-    answers: [
-      { emoji: "🚀", label: "Launch my first app and get my first users" },
-      { emoji: "💰", label: "Reach $3,000/month in recurring revenue (MRR)" },
-      { emoji: "🔥", label: "Replace my salary with app revenue" },
-      { emoji: "🏢", label: "Add a profitable app to my existing business" },
-    ],
-  },
-  q7: {
-    title: "What's stopped you from getting there so far?",
-    subtitle: "",
-    answers: [
-      { emoji: "🤯", label: "I don't know where to start — too much conflicting info" },
-      { emoji: "🧭", label: "I lack structure and guidance" },
-      { emoji: "🔧", label: "I don't have the technical skills (payments, analytics, ASO...)" },
-      { emoji: "⏰", label: "I don't have enough time" },
-      { emoji: "😔", label: "I've already tried and it didn't work" },
-    ],
-  },
-  q8: {
-    title: "Are you ready to invest in mentorship to accelerate your results?",
-    subtitle: "",
-    answers: [
-      { emoji: "💎", label: "Yes, if it's the right program, I'm ready to invest" },
-      { emoji: "🤔", label: "Maybe — depends on the format and price" },
-      { emoji: "🆓", label: "No, I prefer learning on my own for now" },
+      { emoji: "💎", label: "Yes, budget ready" },
+      { emoji: "🤔", label: "Exploring options" },
+      { emoji: "🔍", label: "Just researching for now" },
     ],
   },
 };
@@ -134,47 +90,47 @@ export const questions: Record<QuestionKey, QuestionConfig> = {
 
 export function getNextQuestion(
   current: QuestionKey,
-  answers: Record<string, number>,
-): QuestionKey | "optin" {
+  _answers: Record<string, number | string>,
+): QuestionKey | "note" {
   const idx = questionOrder.indexOf(current);
-  // Skip Q3 (revenue) if Q2 answer is "No, never" (index 2)
-  if (current === "q2" && answers.q2 === 2) {
-    return "q4";
-  }
   if (idx < questionOrder.length - 1) return questionOrder[idx + 1];
-  return "optin";
+  return "note";
 }
 
 export function getPrevQuestion(
-  current: QuestionKey | "optin",
-  answers: Record<string, number>,
+  current: QuestionKey | "note" | "optin",
+  _answers: Record<string, number | string>,
 ): QuestionKey | "hero" {
-  if (current === "optin") return questionOrder[questionOrder.length - 1];
+  if (current === "optin") return "note" as QuestionKey | "hero";
+  if (current === "note") return questionOrder[questionOrder.length - 1];
   const idx = questionOrder.indexOf(current as QuestionKey);
-  // Skip back over Q3 if it was skipped going forward
-  if (current === "q4" && answers.q2 === 2) {
-    return "q2";
-  }
   if (idx <= 0) return "hero";
   return questionOrder[idx - 1];
 }
 
 // ─── Segmentation Logic ─────────────────────────────────────────────
 
-/** Always returns dev-indie (enterprise outcome removed) */
-export function getProfileType(_q1Index: number): "dev-indie" {
-  return "dev-indie";
+export type ProfileType = "consulting" | "development" | "growth" | "full-partner";
+
+/** Derive profile type from Q3 answer */
+export function getProfileType(q3Index: number): ProfileType {
+  switch (q3Index) {
+    case 0: return "consulting";
+    case 1: return "development";
+    case 2: return "growth";
+    case 3: return "full-partner";
+    default: return "consulting";
+  }
 }
 
-/** Map Q4 answer index to blocker text for result pages */
-const blockerLabels = [
-  "you don't know which app idea to pick",
-  "you don't know how to properly build an app",
-  "you have an app but nobody downloads it",
-  "you have downloads but no revenue",
-  "you don't know how to scale beyond your first revenue",
+/** Map Q3 answer index to need label for result pages */
+const needLabels = [
+  "you need strategic guidance on what to build",
+  "you need someone to build or rebuild your app",
+  "you need help with growth and monetization",
+  "you need a full partner for strategy and development",
 ];
 
-export function getBlockageLabel(q5Index: number): string {
-  return blockerLabels[q5Index] ?? blockerLabels[0];
+export function getNeedLabel(q3Index: number): string {
+  return needLabels[q3Index] ?? needLabels[0];
 }

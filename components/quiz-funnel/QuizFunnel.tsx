@@ -17,7 +17,8 @@ import HeroScreen from "./HeroScreen";
 import QuestionScreen from "./QuestionScreen";
 import OptinScreen from "./OptinScreen";
 import WaitingScreen from "./WaitingScreen";
-import ResultDevIndie from "./ResultDevIndie";
+import NoteScreen from "./NoteScreen";
+import ResultBusiness from "./ResultBusiness";
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -34,8 +35,7 @@ const slideVariants = {
   }),
 };
 
-const TOTAL_STEPS_FULL = 10; // 8 questions + optin + buffer
-const TOTAL_STEPS_SKIP = 9; // 7 questions (skip Q3) + optin + buffer
+const TOTAL_STEPS = 8; // 5 questions + note + optin + buffer
 
 function trackEvent(type: string, sessionId: string, source?: string) {
   if (process.env.NODE_ENV === "development") return;
@@ -50,7 +50,7 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
   const searchParams = useSearchParams();
   const [step, setStep] = useState<QuizStep>("hero");
   const [direction, setDirection] = useState(1);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, number | string>>({});
   const [firstName, setFirstName] = useState("");
   const [leadId, setLeadId] = useState("");
   const [email, setEmail] = useState("");
@@ -88,10 +88,10 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
     trackEvent("page_view", sessionIdRef.current, sourceRef.current);
   }, [searchParams, serverReferrer, serverAppSource]);
 
-  // Debug: ?step=optin or ?step=waiting or ?step=result-dev-indie
+  // Debug: ?step=optin or ?step=waiting or ?step=result-business
   useEffect(() => {
     const debugStep = searchParams.get("step") as QuizStep | null;
-    if (debugStep && ["optin", "waiting", "result-dev-indie"].includes(debugStep)) {
+    if (debugStep && ["note", "optin", "waiting", "result-business"].includes(debugStep)) {
       setFirstName("Debug");
       setStep(debugStep);
     }
@@ -100,31 +100,24 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
   const currentQuestionIndex = questionOrder.indexOf(step as QuestionKey);
   const isQuestion = currentQuestionIndex !== -1;
 
-  const showProgressBar = isQuestion || step === "optin";
-  const showBack = isQuestion || step === "optin";
-
-  const skipsQ3 = answers.q2 === 2;
-  const totalSteps = skipsQ3 ? TOTAL_STEPS_SKIP : TOTAL_STEPS_FULL;
-
-  const effectiveIndex = isQuestion
-    ? skipsQ3 && currentQuestionIndex >= 3
-      ? currentQuestionIndex
-      : currentQuestionIndex + 1
-    : 0;
+  const showProgressBar = isQuestion || step === "note" || step === "optin";
+  const showBack = isQuestion || step === "note" || step === "optin";
 
   const progressValue =
     step === "optin"
-      ? (totalSteps - 1) / totalSteps
-      : isQuestion
-        ? effectiveIndex / totalSteps
-        : 0;
+      ? (TOTAL_STEPS - 1) / TOTAL_STEPS
+      : step === "note"
+        ? (questionOrder.length + 1) / TOTAL_STEPS
+        : isQuestion
+          ? (currentQuestionIndex + 1) / TOTAL_STEPS
+          : 0;
 
   function goNext(questionKey: QuestionKey, answerIndex: number) {
     const newAnswers = { ...answers, [questionKey]: answerIndex };
     setAnswers(newAnswers);
     setDirection(1);
     const next = getNextQuestion(questionKey, newAnswers);
-    if (next === "optin") {
+    if (next === "note") {
       trackEvent("quiz_complete", sessionIdRef.current, sourceRef.current);
     }
     setStep(next);
@@ -132,7 +125,7 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
 
   function goBack() {
     setDirection(-1);
-    setStep(getPrevQuestion(step as QuestionKey | "optin", answers));
+    setStep(getPrevQuestion(step as QuestionKey | "note" | "optin", answers));
   }
 
   function goToWaiting(name: string, id: string, em: string, ph: string) {
@@ -145,16 +138,11 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
   }
 
   const goToResult = useCallback(() => {
-    // Cold lead: not ready or unsure about investing → redirect to community
-    if (answers.q8 === 1 || answers.q8 === 2) {
-      window.location.href = "/app-sprint-community";
-      return;
-    }
     setDirection(1);
-    setStep("result-dev-indie");
-  }, [answers.q8]);
+    setStep("result-business");
+  }, []);
 
-  const isResult = step === "result-dev-indie";
+  const isResult = step === "result-business";
 
   return (
     <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30 relative">
@@ -217,10 +205,21 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
             />
           )}
 
+          {step === "note" && (
+            <NoteScreen
+              initialValue={(answers.note as string) ?? ""}
+              onSubmit={(note) => {
+                setAnswers((prev) => ({ ...prev, note }));
+                setDirection(1);
+                setStep("optin");
+              }}
+            />
+          )}
+
           {step === "optin" && (
             <OptinScreen
               answers={answers}
-              profileType={getProfileType(answers.q1 ?? 0)}
+              profileType={getProfileType((answers.q3 as number) ?? 0)}
               source={sourceRef.current}
               onSuccess={goToWaiting}
             />
@@ -228,8 +227,8 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
 
           {step === "waiting" && <WaitingScreen onComplete={goToResult} />}
 
-          {step === "result-dev-indie" && (
-            <ResultDevIndie
+          {step === "result-business" && (
+            <ResultBusiness
               firstName={firstName}
               answers={answers}
               leadId={leadId}

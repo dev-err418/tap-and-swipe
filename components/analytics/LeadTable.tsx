@@ -198,6 +198,14 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
                 Object.entries(selected.answers)
                   .sort(([a], [b]) => a.localeCompare(b))
                   .map(([key, value]) => {
+                    if (key === "note") {
+                      return value ? (
+                        <div key={key} className="rounded-xl border border-white/5 bg-white/5 p-3">
+                          <div className="text-xs text-[#c9c4bc] mb-1">NOTE: Project description</div>
+                          <div className="text-sm">{String(value)}</div>
+                        </div>
+                      ) : null;
+                    }
                     const q = questions[key as QuestionKey];
                     if (!q) return null;
                     return (

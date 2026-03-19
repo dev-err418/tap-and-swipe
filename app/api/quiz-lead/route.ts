@@ -5,6 +5,13 @@ import { generateLeadMessage } from "@/lib/quiz-lead-message";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const PROFILE_TYPE_MAP: Record<number, string> = {
+  0: "consulting",
+  1: "development",
+  2: "growth",
+  3: "full-partner",
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -19,7 +26,7 @@ export async function POST(request: NextRequest) {
         source?: string;
       };
 
-    const profileType = "dev-indie";
+    const profileType = PROFILE_TYPE_MAP[answers?.q3 ?? 0] ?? "consulting";
 
     if (!firstName || typeof firstName !== "string") {
       return NextResponse.json({ error: "firstName is required" }, { status: 400 });
@@ -59,7 +66,7 @@ export async function POST(request: NextRequest) {
     });
 
     await sendDiscordNotification(
-      "🎯 [App Sprint] New lead",
+      "🎯 [App Sprint] New business lead",
       undefined,
       [
         { name: "Name", value: firstName.trim(), inline: true },

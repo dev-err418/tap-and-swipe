@@ -18,13 +18,13 @@ interface GenerateLeadMessageResult {
 }
 
 // ---------------------------------------------------------------------------
-// Scoring (Q8 = investment readiness)
+// Scoring (Q5 = investment readiness)
 // ---------------------------------------------------------------------------
 
 export function scoreTemperature(answers: Record<string, number>): Temperature {
-  const q8 = answers["8"];
-  if (q8 === 0) return "HOT";
-  if (q8 === 1) return "WARM";
+  const q5 = answers["q5"];
+  if (q5 === 0) return "HOT";
+  if (q5 === 1) return "WARM";
   return "COLD";
 }
 
@@ -33,30 +33,29 @@ export function scoreTemperature(answers: Record<string, number>): Temperature {
 // ---------------------------------------------------------------------------
 
 const Q1_LABELS: Record<number, string> = {
-  0: "you're a salaried dev building on the side",
-  1: "you're already indie",
-  2: "you have a business and want to add a mobile app",
-  3: "you have an app idea and you're starting from scratch",
-};
-
-const Q2_LABELS: Record<number, string> = {
-  0: "you've already shipped apps",
-  1: "you have an app in development",
+  0: "you run a local / service-based business",
+  1: "you run an e-commerce business",
+  2: "you run a SaaS or digital platform",
+  3: "you're launching a startup around your app",
+  4: "you have a specific business context",
 };
 
 const Q3_LABELS: Record<number, string> = {
-  0: "you're already generating over $500/mo",
-  1: "you have some revenue coming in",
+  0: "you need strategic guidance first",
+  1: "you need someone to handle the development",
+  2: "you need help with growth and monetization",
+  3: "you want a full partner for strategy and development",
 };
 
-const Q5_LABELS: Record<number, string> = {
-  0: "you're going full-time on this",
-  1: "you can put in 15-30h/week",
+const Q4_LABELS: Record<number, string> = {
+  0: "you already have a dev team but need extra help",
+  1: "you don't have a technical team yet",
+  2: "you're not satisfied with your current freelancer or agency",
 };
 
-const Q7_LABELS: Record<number, string> = {
-  0: "your main gap is structure and guidance",
-  3: "you've already tried and it didn't work out",
+const Q2_LABELS: Record<number, string> = {
+  2: "you already have an app in development",
+  3: "you have a live app that needs work",
 };
 
 function buildMirror(
@@ -66,15 +65,14 @@ function buildMirror(
   const facts: string[] = [];
 
   // Q1 always first
-  const q1 = Q1_LABELS[answers["1"]];
+  const q1 = Q1_LABELS[answers["q1"]];
   if (q1) facts.push(q1);
 
-  // Best secondary signal: Q3 > Q5 > Q7 > Q2
+  // Best secondary signal: Q3 > Q4 > Q2
   const secondary = [
-    Q3_LABELS[answers["3"]],
-    Q5_LABELS[answers["5"]],
-    Q7_LABELS[answers["7"]],
-    Q2_LABELS[answers["2"]],
+    Q3_LABELS[answers["q3"]],
+    Q4_LABELS[answers["q4"]],
+    Q2_LABELS[answers["q2"]],
   ];
 
   for (const s of secondary) {
@@ -89,19 +87,18 @@ function buildMirror(
 }
 
 // ---------------------------------------------------------------------------
-// Reframe one-liners (WARM leads, keyed on Q7)
+// Reframe one-liners (WARM leads, keyed on Q3 = primary need)
 // ---------------------------------------------------------------------------
 
 const REFRAMES: Record<number, string> = {
-  0: "There's a lot of noise out there, I get it.",
-  1: "Structure is exactly what makes the difference.",
-  2: "The technical stuff is the easy part once you have the right system.",
-  3: "Time is always tight, the question is whether you're spending it on the right things.",
-  4: "The fact that you tried already puts you ahead of most people.",
+  0: "Figuring out the right strategy before building is the smartest move you can make.",
+  1: "Finding the right person to build your app is half the battle.",
+  2: "Growth is a completely different skill than building — and it's where most apps stall.",
+  3: "Having one person who handles both strategy and execution makes everything faster.",
 };
 
 function getReframe(answers: Record<string, number>): string {
-  return REFRAMES[answers["7"]] ?? "Sounds like you're at a turning point.";
+  return REFRAMES[answers["q3"]] ?? "Sounds like you're at a turning point.";
 }
 
 // ---------------------------------------------------------------------------
@@ -109,7 +106,7 @@ function getReframe(answers: Record<string, number>): string {
 // ---------------------------------------------------------------------------
 
 function hasApp(answers: Record<string, number>): boolean {
-  return answers["2"] === 0 || answers["2"] === 1;
+  return answers["q2"] === 2 || answers["q2"] === 3;
 }
 
 function bookedMessage(
@@ -119,7 +116,7 @@ function bookedMessage(
 ): string {
   const appLine = appOwner
     ? "Send me a link or screenshots of your app before the call so I can review everything and give you real feedback."
-    : "Looking forward to chatting and figuring out the best plan for you.";
+    : "Looking forward to learning more about your project and figuring out the best approach.";
 
   return `Hey ${firstName}
 
@@ -137,15 +134,15 @@ function hotMessage(
 ): string {
   const appLine = appOwner
     ? `Send me a link or screenshots of your app, and book a call here: ${BOOKING_LINK}`
-    : `Book a call here and let's figure out the best path for you: ${BOOKING_LINK}`;
+    : `Book a call here and let's figure out the best approach for your project: ${BOOKING_LINK}`;
 
   return `Hey ${firstName}
 
-Just read your answers. ${mirror}. Solid profile.
+Just read your answers. ${mirror}. Sounds like a solid project.
 
 ${appLine}
 
-I'll review everything before we talk so I can give you real feedback. We'll also go over the training to see if it's a fit.
+I'll review everything before we talk so I can give you real, specific feedback on your situation.
 
 Talk soon!`;
 }
@@ -159,7 +156,7 @@ function warmMessage(
 
 Just read your answers. ${mirror}. ${reframe}
 
-Before I send you anything though, are you actually ready to invest in solving this, or just looking around?`;
+Quick question before I send you anything: are you actively looking to move forward on this, or still in research mode?`;
 }
 
 function coldMessage(firstName: string, mirror: string): string {
@@ -167,7 +164,9 @@ function coldMessage(firstName: string, mirror: string): string {
 
 Just read your answers. ${mirror}.
 
-Real talk though: the training is a serious investment. Is that something you're actually ready for right now?`;
+When you're ready to move forward on your app project, feel free to book a call: ${BOOKING_LINK}
+
+No rush — happy to chat whenever the timing is right.`;
 }
 
 // ---------------------------------------------------------------------------
