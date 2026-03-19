@@ -16,7 +16,7 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
           alt="Arthur"
           className="h-8 w-8 rounded-full border border-[#f4cf8f]/20"
         />
-        <span className="text-sm font-medium text-[#c9c4bc]">By Arthur</span>
+        <span className="text-sm font-medium text-[#c9c4bc]">By ArthurBuildsStuff</span>
       </a>
 
       <h1 className="text-5xl font-extrabold tracking-tight leading-[1] sm:text-7xl">

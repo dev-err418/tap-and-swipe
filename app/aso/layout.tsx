@@ -19,6 +19,11 @@ export const metadata: Metadata = {
             "The all-in-one macOS app for App Store Optimization. Keywords, metadata, and Apple Ads — in one place.",
         type: "website",
     },
+    twitter: {
+        title: "App Sprint ASO — App Store Optimization for macOS",
+        description:
+            "The all-in-one macOS app for App Store Optimization. Keywords, metadata, and Apple Ads — in one place.",
+    },
     alternates: {
         canonical: "/aso",
     },

@@ -13,9 +13,92 @@ import AsoLastUpdate from "./last-update";
 import PageTracker from "@/components/PageTracker";
 import HeroVideo from "./hero-video";
 
+const softwareApplicationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "App Sprint ASO",
+    operatingSystem: "macOS",
+    applicationCategory: "BusinessApplication",
+    description:
+        "The all-in-one macOS app for App Store Optimization. Keywords, metadata, and Apple Ads in one place.",
+    offers: {
+        "@type": "AggregateOffer",
+        priceCurrency: "EUR",
+        lowPrice: "9",
+        highPrice: "19",
+        offerCount: 2,
+    },
+    aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "5",
+        ratingCount: "4",
+        bestRating: "5",
+        worstRating: "1",
+    },
+};
+
+const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+        {
+            "@type": "Question",
+            name: "What is ASO?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "ASO stands for App Store Optimization. It's the process of improving your app's visibility in the App Store by optimizing keywords, metadata, and leveraging Apple Search Ads. Think of it as SEO, but for mobile apps.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Do I need an Apple Developer account?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "Yes. To pull and push metadata from App Store Connect and manage Apple Ads campaigns, you need an active Apple Developer account ($99/year from Apple).",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Does it work with Apple Search Ads?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "Absolutely. App Sprint ASO integrates with the Apple Search Ads API so you can create campaigns, manage ad groups, edit bids and budgets, and cross-reference ad performance with your organic keyword data, all from one place.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "What macOS version do I need?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "App Sprint ASO requires macOS 14.6 (Sonoma) or later. It's a native macOS app built with Swift and SwiftUI for the best performance.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Can I track competitor keywords?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "Yes. You can discover which keywords your competitors rank for, see their positions, and find keyword opportunities they might be missing. This works across all countries supported by the App Store.",
+            },
+        },
+    ],
+};
+
 export default function AsoPage() {
     return (
         <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(softwareApplicationJsonLd),
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(faqJsonLd),
+                }}
+            />
             <PageTracker product="aso" ctaSelector='[data-track="cta"]' />
             {/* Hero */}
             <header className="relative overflow-hidden pt-32 pb-16">
