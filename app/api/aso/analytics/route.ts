@@ -41,7 +41,8 @@ export async function GET(req: Request) {
         MAX(sem_amp_peak_active)::int AS sem_amp_peak_active,
         MAX(sem_amp_peak_queued)::int AS sem_amp_peak_queued,
         MAX(sem_itunes_peak_active)::int AS sem_itunes_peak_active,
-        MAX(sem_itunes_peak_queued)::int AS sem_itunes_peak_queued
+        MAX(sem_itunes_peak_queued)::int AS sem_itunes_peak_queued,
+        SUM(token_expired_401s)::int AS token_expired_401s
     FROM aso_analytics
     WHERE minute >= NOW() - ($1 || ' minutes')::interval
     GROUP BY bucket
@@ -65,6 +66,7 @@ export async function GET(req: Request) {
       acc.rateLimitsAuth += r.rate_limits_auth;
       acc.rateLimitsLicense += r.rate_limits_license;
       acc.rateLimitsSuggestions += r.rate_limits_suggestions;
+      acc.tokenExpired401s += r.token_expired_401s || 0;
       acc.semAmpPeakActive = Math.max(
         acc.semAmpPeakActive,
         r.sem_amp_peak_active
@@ -93,6 +95,7 @@ export async function GET(req: Request) {
       rateLimitsAuth: 0,
       rateLimitsLicense: 0,
       rateLimitsSuggestions: 0,
+      tokenExpired401s: 0,
       semAmpPeakActive: 0,
       semAmpPeakQueued: 0,
       semItunesPeakActive: 0,
