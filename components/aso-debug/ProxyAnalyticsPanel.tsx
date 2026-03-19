@@ -112,8 +112,9 @@ export default function ProxyAnalyticsPanel() {
     return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   }
 
-  const AMP_MAX = 8;
-  const ITUNES_MAX = 20;
+  // Semaphore limits scale with proxy count: 11 proxies × 10 = 110 concurrent
+  const AMP_MAX = 110;
+  const ITUNES_MAX = 110;
 
   return (
     <div className="space-y-6">
