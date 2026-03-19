@@ -18,6 +18,7 @@ interface AnalyticsRow {
   sem_amp_peak_queued: number;
   sem_itunes_peak_active: number;
   sem_itunes_peak_queued: number;
+  token_expired_401s: number;
 }
 
 interface AnalyticsSummary {
@@ -31,6 +32,7 @@ interface AnalyticsSummary {
   rateLimitsAuth: number;
   rateLimitsLicense: number;
   rateLimitsSuggestions: number;
+  tokenExpired401s: number;
   semAmpPeakActive: number;
   semAmpPeakQueued: number;
   semItunesPeakActive: number;
@@ -140,6 +142,14 @@ export default function ProxyAnalyticsPanel() {
         <SummaryCard label="Rate Limits" value={s.rateLimits.toLocaleString()} sub={`G:${s.rateLimitsGlobal} A:${s.rateLimitsAuth} L:${s.rateLimitsLicense} S:${s.rateLimitsSuggestions}`} />
         <SummaryCard label="Unique Licenses" value={String(s.uniqueLicenses)} />
         <SummaryCard label="Cache Hit Rate" value={`${s.cacheHitRate}%`} sub={`${s.cacheHits.toLocaleString()} hits / ${(s.cacheHits + s.cacheMisses).toLocaleString()} total`} />
+        {/* Token Health Card (only show if there are 401s) */}
+        {s.tokenExpired401s > 0 && (
+          <div className="rounded-xl border border-red-400/20 bg-red-400/5 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-red-400/80">Token Expired (401s)</p>
+            <p className="mt-1 text-xl font-bold text-red-400">{s.tokenExpired401s}</p>
+            <p className="mt-0.5 text-[10px] text-red-400/60">Apple token had to be refreshed</p>
+          </div>
+        )}
       </div>
 
       {/* Request volume chart */}
