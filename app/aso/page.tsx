@@ -24,8 +24,8 @@ const softwareApplicationJsonLd = {
     offers: {
         "@type": "AggregateOffer",
         priceCurrency: "EUR",
-        lowPrice: "9",
-        highPrice: "19",
+        lowPrice: "14",
+        highPrice: "24",
         offerCount: 2,
     },
     aggregateRating: {

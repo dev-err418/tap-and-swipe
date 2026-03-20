@@ -46,7 +46,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                                 animate={{ opacity: [1, 0.4, 1] }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                             >
-                                Save 2 months
+                                Save 3 months
                             </motion.span>
                         </button>
                     </div>
@@ -60,7 +60,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-1 mb-1">
                                 <span className="text-5xl font-extrabold text-[#f1ebe2]">
-                                    &euro;<RollingPrice value={interval === "month" ? "9" : "90"} />
+                                    &euro;<RollingPrice value={interval === "month" ? "14" : "126"} />
                                 </span>
                                 <span className="text-lg text-[#c9c4bc]">
                                     /{interval === "month" ? "mo" : "yr"}
@@ -75,7 +75,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                                 }`}
                             >
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
-                                <span className="text-sm font-bold text-[#f4cf8f]">Save 18&euro;</span>
+                                <span className="text-sm font-bold text-[#f4cf8f]">Save 42&euro;</span>
                             </li>
                             {[
                                 "1 app",
@@ -115,7 +115,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-1 mb-1">
                                 <span className="text-5xl font-extrabold text-[#f1ebe2]">
-                                    &euro;<RollingPrice value={interval === "month" ? "19" : "190"} />
+                                    &euro;<RollingPrice value={interval === "month" ? "24" : "216"} />
                                 </span>
                                 <span className="text-lg text-[#c9c4bc]">
                                     /{interval === "month" ? "mo" : "yr"}
@@ -136,7 +136,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                                 }`}
                             >
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
-                                <span className="text-sm font-bold text-[#f4cf8f]">Save 38&euro;</span>
+                                <span className="text-sm font-bold text-[#f4cf8f]">Save 72&euro;</span>
                             </li>
                             {[
                                 "Everything in Solo",

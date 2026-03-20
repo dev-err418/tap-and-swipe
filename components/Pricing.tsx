@@ -53,7 +53,7 @@ const Pricing = () => {
                             ))}
                             <li className="flex items-start gap-3">
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
-                                <span className="text-sm font-bold text-[#f4cf8f]">App Sprint ASO Pro included (worth 19€/mo)</span>
+                                <span className="text-sm font-bold text-[#f4cf8f]">App Sprint ASO Pro included (worth 24€/mo)</span>
                             </li>
                         </ul>
 
