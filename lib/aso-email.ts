@@ -4,21 +4,27 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendLicenseKeyEmail(
   to: string,
-  licenseKey: string
+  licenseKey: string,
+  source: "aso" | "community" = "aso"
 ): Promise<void> {
+  const isComm = source === "community";
   try {
     await resend.emails.send({
-      from: "Arthur from App Sprint ASO <arthur@tap-and-swipe.com>",
+      from: isComm
+        ? "Arthur from App Sprint <arthur@tap-and-swipe.com>"
+        : "Arthur from App Sprint ASO <arthur@tap-and-swipe.com>",
       to,
-      subject: "Your license key is ready! Let's get you more downloads :)",
+      subject: isComm
+        ? "Your free ASO Pro license is ready!"
+        : "Your license key is ready! Let's get you more downloads :)",
       template: {
-        id: "onboarding-email",
+        id: isComm ? "community-email" : "onboarding-email",
         variables: {
           LICENCE_KEY: licenseKey,
         },
       },
     } as any);
   } catch (err) {
-    console.error("[ASO] Failed to send license email:", err);
+    console.error(`[${isComm ? "Community" : "ASO"}] Failed to send license email:`, err);
   }
 }

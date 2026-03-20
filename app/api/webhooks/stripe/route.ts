@@ -405,7 +405,7 @@ export async function POST(request: NextRequest) {
         const communityCustomerEmail = session.customer_details?.email;
         if (communityCustomerEmail) {
           const licenseKey = await generateAsoLicense(communityCustomerEmail, session.customer as string, "pro");
-          await sendLicenseKeyEmail(communityCustomerEmail, licenseKey);
+          await sendLicenseKeyEmail(communityCustomerEmail, licenseKey, "community");
         }
 
         // Track community paid event
