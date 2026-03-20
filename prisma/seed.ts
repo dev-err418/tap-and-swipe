@@ -591,111 +591,40 @@ $5/week feels different than 40kr/week. Price for the market, not just for the U
   },
   {
     category: "launch-and-grow",
-    title: "Target any country on TikTok with a VPN",
-    description: "Reach international audiences by geo-targeting your TikTok content",
+    title: "Target the US (or any country) on TikTok with a proxy",
+    description: "Set up a spare iPhone with an ISP proxy to post TikTok content in any country",
     type: "markdown",
-    markdownContent: `TikTok decides which country you belong to based on two things: your ASN (who owns your internet connection) and your GEO (which country your IP resolves to). Get either wrong and your content gets shown to the wrong audience, or worse, gets suppressed entirely.
+    markdownContent: `You need a **spare iPhone**. Android phones are significantly harder to get through TikTok's detection — stick with iOS.
+
+Here's the exact setup I followed. Total cost: ~$7.
 
 ---
 
-## Setup guides
+## Step by step
 
-Detailed Notion walkthroughs:
+**1. Buy a US ISP proxy on [iProyal](https://iproyal.com)** (~$7). Pick a residential ISP — I used Spartanburg, SC. The key is that the proxy must come from a real ISP (not a data center), otherwise TikTok flags it immediately.
 
-- Hostinger setup: [Notion guide](https://capable-oak-5a9.notion.site/Set-up-your-own-Tiktok-VPN-on-Mac-For-beginners-3006f6d8ab3d802b9dd0f4bba07e1a2e)
-- DigitalOcean setup (beginner friendly): [Notion guide](https://separate-quart-3d6.notion.site/TikTok-USA-VPN-via-DigitalOcean-306806fd6a11801c94bbf8bb454f2083)
+**2. Factory reset a spare iPhone.** Settings > General > Transfer or Reset iPhone > Erase All Content and Settings. Remove any SIM card from the phone — TikTok uses carrier info to detect your real country.
 
----
+**3. Set timezone + region to US.** During setup, set the device region to United States and timezone to Eastern or Pacific.
 
-## What TikTok actually checks
+**4. Create a fresh iCloud account from the phone.** Don't sign in with your existing one — Apple ties location history to your iCloud account. During setup, Apple may ask for a phone number. Use an app like [Text+](https://apps.apple.com/app/text-free-texting-calling/id338088432) to get a cheap US phone number.
 
-Most people think a VPN is enough. It's not. TikTok cross-checks multiple signals.
+**5. Set a US shipping address.** You can generate a realistic US address on [FakeXY](https://www.fakexy.com/).
 
-ASN (Autonomous System Number) is who owns your internet connection. Think of it as your digital passport. If your ASN says "French telecom provider" but your content targets the US, TikTok notices.
+**6. Buy Shadowrocket with a prepaid US iTunes gift card.** [MTC Games](https://www.mtcgame.com/fr/itunes/gift-card-us/itunes-gift-card-us-3?currency=EUR) sells US iTunes cards. Shadowrocket costs ~$3 but taxes aren't included, so get a $4 card to be safe. Redeem it in the App Store and download [Shadowrocket](https://apps.apple.com/app/shadowrocket/id932747118).
 
-GEO is the country your IP resolves to. This is your face at the border. TikTok checks both, and if they don't match, you're flagged.
+**7. Add your proxy to Shadowrocket.** Configure the iProyal proxy in Shadowrocket and connect.
 
-How to verify before opening TikTok:
-- GEO + ASN check: [geo.brdtest.com/mygeo.json](https://geo.brdtest.com/mygeo.json)
-- ISP verification: [bgp.he.net](https://bgp.he.net/)
+**8. Verify your setup on [Whoer.net](https://whoer.net)** before opening any social app:
+- **OS:** must be detected as "iOS (iPhone)"
+- **Anonymity:** must reach 90-100% with no proxy or masking system detected
 
-Both must show your target country. If either is wrong, fix your connection first. Never "test anyway."
+If either check fails, fix your proxy configuration before proceeding.
 
----
+**9. Download TikTok and sign up with Apple.** Since your iCloud account is US-based, Sign in with Apple goes through cleanly.
 
-## Device preparation (before installing TikTok)
-
-This must happen BEFORE TikTok touches your device. If you install first, TikTok already fingerprinted your real location.
-
-1. Factory reset your phone (Settings > General > Transfer or Reset iPhone > Erase All Content and Settings). You need a completely blank device with no previous location data.
-2. Create a brand new iCloud account during setup. Don't sign in with your existing one — Apple ties location history to your iCloud account.
-3. Remove your SIM card (or use a device without one). TikTok uses carrier info to detect your real country.
-4. Set your device region to match your target country (Settings > General > Language & Region).
-5. Set your timezone to match your target location. If targeting US, use Eastern Time or Pacific Time. TikTok weighs posting timing and engagement timing against your timezone.
-6. Set language to English (or your target country's language).
-7. Connect your proxy/VPN and verify ASN + GEO are correct using the tools above.
-8. Only then download TikTok. The app must be installed while your connection is already clean.
-
----
-
-## Creating your account
-
-1. Install TikTok fresh. If previously installed, delete completely and reinstall.
-2. Verify the country code when the phone number field appears. It must match your target region. This is a dead giveaway if it's wrong.
-3. Sign up with email, not phone number. Phone numbers are tied to your real country and harder to match with your target GEO. If you're on iPhone, "Sign in with Apple" is even better (higher trust, device-verified identity).
-4. Check your For You Page. It should show content from your target region in the right language. If you see content from your real country, something is wrong. Start over.
-5. Don't touch your profile yet. No bio, no picture, no username changes. We'll do that during warmup.
-
----
-
-## IP fraud scores: ignore them
-
-You might see people obsess over tools like IPQualityScore, Scamalytics, or IPFighter. From large-scale testing: high fraud score does NOT equal low reach. Low fraud score does NOT equal high reach. Zero correlation with virality.
-
-These tools were built for payment fraud detection, not content distribution. TikTok doesn't use them. Don't rotate or discard IPs based on fraud scores.
-
-What matters is ASN + GEO consistency. That's it.
-
----
-
-## Red flags TikTok watches for
-
-Immediate red flags: non-target GEO + target country content, posting during your target country's sleep hours (2-5 AM), device timezone mismatch, rapid IP changes, switching GEO mid-lifecycle.
-
-Silent killers: correct IP but wrong browsing patterns (scrolling non-target content), mixed language For You Page, local creators from your real country dominating your feed.
-
-If you see mixed language content or local creators from your real country, your account is mis-trained. Fix it during warmup or reset.
-
----
-
-## Posting windows (US FYP)
-
-If targeting the US, these windows have been tested repeatedly:
-
-- 7-9 AM Eastern
-- 11 AM-1 PM Eastern
-- 6-9 PM Eastern
-
-Avoid posting between 2-5 AM Eastern. If you're consistently getting under 300 views outside these windows, re-align your posting schedule.
-
----
-
-## Quick checklist
-
-Before creating your account, verify ALL of these:
-
-- [ ] SIM card removed (or no-SIM device)
-- [ ] Device region set to target country
-- [ ] Device timezone set to target location
-- [ ] Device language set correctly
-- [ ] Proxy/VPN connected and active
-- [ ] ASN verified on bgp.he.net (matches target country)
-- [ ] GEO verified on geo.brdtest.com/mygeo.json (matches target country)
-- [ ] TikTok freshly installed AFTER proxy was active
-- [ ] Signing up with email or Sign in with Apple (not phone number)
-- [ ] For You Page shows target country content
-
-If your For You Page shows local content from your target country, you're good. Move on to the account warmup guide.`,
+**10. Warm up the account** for 2-3 days before posting (see the next lesson).`,
     order: 3,
   },
   {
@@ -703,112 +632,46 @@ If your For You Page shows local content from your target country, you're good. 
     title: "Warm up a fresh TikTok account",
     description: "Build trust with the algorithm before posting content",
     type: "markdown",
-    markdownContent: `TikTok profiles your account before it rewards you. Every scroll, every like, every search teaches TikTok who you are. If you skip warmup and start posting immediately, TikTok has no data about you. Your content gets tested in the wrong bucket, gets suppressed, and the account never recovers.
-
-Warmup is not about reach. Warmup is about trust calibration.
+    markdownContent: `TikTok profiles your account before showing your content to anyone. Skip warmup and the algorithm has no data on you — your posts get tested in the wrong bucket and the account never recovers.
 
 ---
 
-## Why you can't just start posting
+## Phase 0: lurk (Days 1-2)
 
-New accounts have zero trust. When you post immediately, TikTok has no persona data on you, your content is tested against the wrong audience, early failures poison your account's graph permanently, and you get inconsistent reach that never stabilizes.
+Scroll 3-4 times a day, 10-15 min each. No posting, no commenting, no profile edits. Watch niche content fully, skip irrelevant stuff quickly. Follow 5-10 accounts per day max, spread across sessions.
 
-Accounts that survive long term move slowly early and build consistent signals. Accounts that die rush posting, rush engagement, rush promotion.
+Watch time is the strongest signal — complete videos, rewatch some, let them loop. This matters more than likes.
 
----
-
-## Phase 0: the lurker (Days 1-2)
-
-Goal: establish who this account represents without producing any content.
-
-Open TikTok 3-4 times per day. Scroll for 10-15 minutes per session. No posting, no commenting, no profile edits (no bio, no picture yet), no DMs.
-
-Scroll like a real user in your target country. Pause on content related to your niche. Watch 80-100% of videos you're interested in. Skip irrelevant content quickly but naturally. Let some videos auto-loop. Rewatch clips you genuinely find interesting.
-
-Watch time matters more than likes. TikTok weighs watch completion heavily. Complete videos. Rewatch some. Let videos loop occasionally. This tells TikTok what you care about far more than tapping a heart.
-
-Follow limits: 5-10 follows per day maximum, spread across your sessions (not all at once). Don't follow only big accounts. Don't unfollow anyone during warmup.
-
-If after Day 2 your For You Page consistently shows non-target language content, or your niche feed is completely mixed with unrelated stuff, or ads dominate your feed abnormally: reset the account and start over. Don't "wait and see." Bad signals compound silently.
+If your FYP isn't showing target-country niche content by Day 2, reset the account.
 
 ---
 
-## Phase 1: training the algorithm (Days 3-5)
+## Phase 1: train the algorithm (Days 3-5)
 
-Goal: reinforce your persona and lock in your niche. Still no posting.
+Still no posting. 2-3 scroll sessions per day. Start using search — search niche keywords, click results, watch top videos fully. Stay in your niche.
 
-2-3 scrolling sessions per day. Targeted engagement only. Light commenting (see below).
+Add 1-2 short, neutral comments per session ("this makes sense," "never thought about it this way"). No emoji spam, no hot takes.
 
-Use search actively. Search is one of the strongest signals you can send TikTok. Search niche keywords manually ("daily affirmations," "self care routine," "morning motivation," whatever your app's niche is). Click multiple results. Watch top performing videos all the way through. Don't search trending generic stuff or random curiosity topics. Stay in your niche.
-
-Start commenting carefully. Comments train your persona faster than likes. 1-2 comments per session maximum. Short, neutral comments. No emoji spam. No controversial takes yet. Good comments: "this makes sense," "never thought about it this way," "this explains a lot." Bad comments: long replies, jokes, hot takes, anything with lots of emojis.
-
-Move to Phase 2 when your FYP is roughly 70% niche-aligned, creators are mostly from your target country, and language and tone match your target audience. If this isn't the case by Day 5, keep doing Phase 1.
+Move on when your FYP is ~70% niche-aligned with creators from your target country.
 
 ---
 
 ## Phase 2: first posts (Days 5-7)
 
-1. Upload a profile picture (neutral, no logos, no stock photos).
-2. Write a generic bio. No selling, no links, no emoji spam. Something like "sharing thoughts on [niche]" or "interested in [topic]." Don't mention your app.
-3. Post 2-3 pieces of content. Image slideshows work best for first posts. They're low risk, generate natural watch time, and reduce production friction. Save the fancy videos for later. Simple, niche-relevant, value-driven.
+Add a neutral profile picture and a simple bio (no links, no selling). Post 2-3 image slideshows — low risk, good watch time.
 
-### The 700-view health test
-
-Wait 24-48 hours after posting and check your views.
-
-700+ views: your account is healthy. Keep going.
-300-700 views: inconclusive. Post a few more and re-evaluate.
-Under 300 views: your account is likely compromised. If 3+ posts all land under 300, consider starting fresh.
-
-Most people think their account is dead when really their content just isn't hitting. Content failure: some formats work, new hooks still get tested, reach returns when you change approach. Account failure: everything stalls, even proven formats get under 300 views, no recovery after multiple tests.
+**The 700-view test:** wait 24-48h. 700+ views = healthy. Under 300 on 3+ posts = account is likely compromised, consider starting fresh.
 
 ---
 
-## After warmup: ongoing rules
+## Ongoing rules
 
-1-2 posts per day per account. Maximum 3 during expansion phases when something is working. Post during target country's active hours (7-9 AM, 11 AM-1 PM, 6-9 PM Eastern for US).
-
-Don't change your bio, username, or profile photo frequently. Don't add links until you have consistent traction (and ideally 1000+ followers for the link-in-bio feature).
-
-Pause posting if you see consecutive low views, your FYP shifts to a different audience, or engagement drops suddenly. Pausing preserves account health. Pushing harder when things aren't working makes it worse.
-
-Every content format has a lifecycle: early signal, expansion, saturation, decay. When a format stops working (6+ consecutive posts under your baseline), stop using it. Switch to something new. Formats are disposable.
-
-Always post natively through the TikTok app. Don't use third-party scheduling tools for posting. They create metadata inconsistencies that TikTok detects. Vary your captions slightly between posts. Don't copy-paste identical descriptions or hashtags.
-
-Don't push calls to action in your first seconds. Don't repeat CTAs every post. If you notice reach dropping after adding CTAs, remove them. Let curiosity drive installs. "What app is this?" comments are more powerful than any CTA.
-
----
-
-## Recovery: when things go wrong
-
-If views drop suddenly:
-1. Stop posting that format
-2. Check your connection (ASN + GEO still correct?)
-3. Wait 48 hours
-4. Test a completely different format
-
-For struggling accounts:
-1. Stop posting for 48 hours
-2. Go back to Phase 1 behavior (scroll, search, comment in niche)
-3. Post 1 simple slideshow
-4. Wait 24 hours
-5. Repeat up to 3 posts. If views bounce back, continue. If not, it might be time to start fresh.
-
-Give up on an account when recovery has failed twice, your connection setup is clean, and the same content works on other accounts. Time is more valuable than sentiment. Keep going when at least one post shows improvement, your GEO is correct, and new formats still get tested by TikTok.
-
----
-
-## Quick reference
-
-During warmup (Days 1-5): 2-3 scroll sessions (10-15 min each), watch niche content fully, 5-10 follows max spread across sessions, 1-2 short neutral comments per session (Phase 1 only), no posting, no DMs, no profile changes, only during target country active hours.
-
-After warmup (Day 5+): 1-2 posts per day natively through the app, continue engaging with niche content between posts, post during peak hours (7-9 AM, 11 AM-1 PM, 6-9 PM ET for US), monitor the 700-view baseline, rotate formats before they decay, don't add links or CTAs until you have consistent traction.
-
-The lifecycle to keep in mind: setup > trust > test > scale > decay > rotate.
-
-If you're stuck, you probably skipped a step.`,
+- 1-2 posts/day, natively through the app (no third-party schedulers)
+- Post during peak hours (7-9 AM, 11 AM-1 PM, 6-9 PM ET for US)
+- Don't add links or CTAs until you have consistent traction
+- When a format stops working (6+ posts under baseline), switch to something new
+- If views drop: stop posting that format, wait 48h, test something different
+- Pausing preserves account health — pushing harder when things aren't working makes it worse`,
     order: 4,
   },
 

@@ -84,7 +84,7 @@ const categories: Category[] = [
         lessons: [
             "ASO after launch",
             "Apple Ads: your first campaign setup",
-            "Target any country on TikTok with a VPN",
+            "Target the US (or any country) on TikTok with a proxy",
             "Warm up a fresh TikTok account",
         ],
     },
