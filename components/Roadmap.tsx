@@ -86,6 +86,8 @@ const categories: Category[] = [
             "Apple Ads: your first campaign setup",
             "Target the US (or any country) on TikTok with a proxy",
             "Warm up a fresh TikTok account",
+            "What to post on TikTok",
+            "What to post on Instagram",
         ],
     },
 ];
@@ -172,7 +174,7 @@ const Roadmap = () => {
                         The full App Sprint roadmap
                     </h2>
                     <p className="mt-4 text-lg text-[#c9c4bc]">
-                        6 modules, 21 lessons. From first idea to first revenue on the App Store.
+                        6 modules, 23 lessons. From first idea to first revenue on the App Store.
                     </p>
                     <p className="mt-3 text-sm text-[#c9c4bc]/70">
                         Here&apos;s exactly what you get when you join.

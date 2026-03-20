@@ -594,21 +594,21 @@ $5/week feels different than 40kr/week. Price for the market, not just for the U
     title: "Target the US (or any country) on TikTok with a proxy",
     description: "Set up a spare iPhone with an ISP proxy to post TikTok content in any country",
     type: "markdown",
-    markdownContent: `You need a **spare iPhone**. Android phones are significantly harder to get through TikTok's detection — stick with iOS.
+    markdownContent: `You need a **spare iPhone**. Android phones are significantly harder to get through TikTok's detection, so stick with iOS.
 
-Here's the exact setup I followed. Total cost: ~$7.
+Here's the exact setup I followed.
 
 ---
 
 ## Step by step
 
-**1. Buy a US ISP proxy on [iProyal](https://iproyal.com)** (~$7). Pick a residential ISP — I used Spartanburg, SC. The key is that the proxy must come from a real ISP (not a data center), otherwise TikTok flags it immediately.
+**1. Buy a US ISP proxy on [iProyal](https://iproyal.com)** (~$7). Pick a residential ISP, I used Spartanburg, SC. The key is that the proxy must come from a real ISP (not a data center), otherwise TikTok flags it immediately.
 
-**2. Factory reset a spare iPhone.** Settings > General > Transfer or Reset iPhone > Erase All Content and Settings. Remove any SIM card from the phone — TikTok uses carrier info to detect your real country.
+**2. Factory reset a spare iPhone.** Settings > General > Transfer or Reset iPhone > Erase All Content and Settings. Remove any SIM card from the phone. TikTok uses carrier info to detect your real country.
 
 **3. Set timezone + region to US.** During setup, set the device region to United States and timezone to Eastern or Pacific.
 
-**4. Create a fresh iCloud account from the phone.** Don't sign in with your existing one — Apple ties location history to your iCloud account. During setup, Apple may ask for a phone number. Use an app like [Text+](https://apps.apple.com/app/text-free-texting-calling/id338088432) to get a cheap US phone number.
+**4. Create a fresh iCloud account from the phone.** Don't sign in with your existing one. Apple ties location history to your iCloud account. During setup, Apple may ask for a phone number. Use an app like [Text+](https://apps.apple.com/app/text-free-texting-calling/id338088432) to get a cheap US phone number.
 
 **5. Set a US shipping address.** You can generate a realistic US address on [FakeXY](https://www.fakexy.com/).
 
@@ -624,7 +624,7 @@ If either check fails, fix your proxy configuration before proceeding.
 
 **9. Download TikTok and sign up with Apple.** Since your iCloud account is US-based, Sign in with Apple goes through cleanly.
 
-**10. Warm up the account** for 2-3 days before posting (see the next lesson).`,
+**10. Warm up the account** for 2-3 days before posting. See the tutorial below.`,
     order: 3,
   },
   {
@@ -632,7 +632,7 @@ If either check fails, fix your proxy configuration before proceeding.
     title: "Warm up a fresh TikTok account",
     description: "Build trust with the algorithm before posting content",
     type: "markdown",
-    markdownContent: `TikTok profiles your account before showing your content to anyone. Skip warmup and the algorithm has no data on you — your posts get tested in the wrong bucket and the account never recovers.
+    markdownContent: `TikTok profiles your account before showing your content to anyone. Skip warmup and the algorithm has no data on you. Your posts get tested in the wrong bucket and the account never recovers.
 
 ---
 
@@ -640,7 +640,7 @@ If either check fails, fix your proxy configuration before proceeding.
 
 Scroll 3-4 times a day, 10-15 min each. No posting, no commenting, no profile edits. Watch niche content fully, skip irrelevant stuff quickly. Follow 5-10 accounts per day max, spread across sessions.
 
-Watch time is the strongest signal — complete videos, rewatch some, let them loop. This matters more than likes.
+Watch time is the strongest signal. Complete videos, rewatch some, let them loop. This matters more than likes.
 
 If your FYP isn't showing target-country niche content by Day 2, reset the account.
 
@@ -648,7 +648,7 @@ If your FYP isn't showing target-country niche content by Day 2, reset the accou
 
 ## Phase 1: train the algorithm (Days 3-5)
 
-Still no posting. 2-3 scroll sessions per day. Start using search — search niche keywords, click results, watch top videos fully. Stay in your niche.
+Still no posting. 2-3 scroll sessions per day. Start using search: search niche keywords, click results, watch top videos fully. Stay in your niche.
 
 Add 1-2 short, neutral comments per session ("this makes sense," "never thought about it this way"). No emoji spam, no hot takes.
 
@@ -658,7 +658,7 @@ Move on when your FYP is ~70% niche-aligned with creators from your target count
 
 ## Phase 2: first posts (Days 5-7)
 
-Add a neutral profile picture and a simple bio (no links, no selling). Post 2-3 image slideshows — low risk, good watch time.
+Add a neutral profile picture and a simple bio (no links, no selling). Post 2-3 image slideshows. Low risk, good watch time.
 
 **The 700-view test:** wait 24-48h. 700+ views = healthy. Under 300 on 3+ posts = account is likely compromised, consider starting fresh.
 
@@ -671,8 +671,144 @@ Add a neutral profile picture and a simple bio (no links, no selling). Post 2-3 
 - Don't add links or CTAs until you have consistent traction
 - When a format stops working (6+ posts under baseline), switch to something new
 - If views drop: stop posting that format, wait 48h, test something different
-- Pausing preserves account health — pushing harder when things aren't working makes it worse`,
+- Pausing preserves account health. Pushing harder when things aren't working makes it worse`,
     order: 4,
+  },
+  {
+    category: "launch-and-grow",
+    title: "What to post on TikTok",
+    description: "Turn your warmup research into content that gets views",
+    type: "markdown",
+    markdownContent: `Warmup isn't just about building trust with the algorithm. It's your market research phase. Use it.
+
+---
+
+## Warmup = market research
+
+While you're lurking (Phase 0-1 of warmup), actively take notes:
+
+- **Save sounds and music** used in your niche. You'll reuse these later.
+- **Note the formats**: carousels, faceless videos, talking head, text overlay, screen recordings. What do creators in your niche actually post?
+- **Write down hooks** that grab your attention. The first 1-2 seconds decide everything on TikTok.
+
+Don't just scroll passively. You're studying what works.
+
+---
+
+## Find reproducible formats
+
+The goal isn't to find what's "cool." It's to spot trending formats **you can easily reproduce**.
+
+No face? Carousels? Text overlay videos with trending audio? Identify what's getting views in your niche and what you can actually make with minimal effort.
+
+If a format requires expensive gear, editing skills you don't have, or showing your face when you don't want to: skip it. There are always simpler formats that work.
+
+---
+
+## Start with variants
+
+Once your research is done, **create variants of what you've seen**. Don't reinvent. Reproduce and iterate.
+
+Take a viral video in your niche, study the structure (hook → content → CTA), and make your own version with your app's angle. Same format, different content.
+
+---
+
+## The <500 view rule
+
+If a format consistently gets under 500 views after 3-4 posts, **drop it**. It's a bad format for your account.
+
+Don't keep pushing a format that isn't working. The algorithm has already decided it doesn't resonate with your audience. Move on.
+
+---
+
+## Double down on what works
+
+When something hits (1k+ views, good engagement), **analyze why**:
+
+- Was it the hook?
+- The music/sound?
+- The format itself?
+- The topic?
+
+Then create more variants of that winner. Claude can help you brainstorm and generate variants of a format that's performing well.
+
+---
+
+## The cycle
+
+This is the process, on repeat:
+
+1. **Research**: study what's working in your niche
+2. **Reproduce**: create your version of proven formats
+3. **Test**: post 3-4 videos in that format
+4. **Analyze**: check views and engagement after 48h
+5. **Variant or pivot**: if it works, make more variants. If not, try a different format
+6. **Repeat**
+
+The creators who grow aren't more creative. They just test more formats and double down faster on what works.`,
+    order: 5,
+  },
+  {
+    category: "launch-and-grow",
+    title: "What to post on Instagram",
+    description: "Adapt your content strategy for Instagram Reels and carousels",
+    type: "markdown",
+    markdownContent: `What works on TikTok doesn't automatically work on Instagram. Different algorithm, different audience behavior, different content culture. You need to do the research again from scratch.
+
+---
+
+## Warm up on Instagram too
+
+Just like TikTok, you need a warmup phase on Instagram. New accounts that start posting immediately get buried.
+
+Spend 3-5 days scrolling Reels in your niche, engaging with content, following relevant accounts. Train the algorithm to understand what your account is about before you post anything.
+
+The process is the same: lurk, engage lightly, build a profile the algorithm can categorize.
+
+---
+
+## Do your market research separately
+
+Don't assume your TikTok research carries over. The formats, hooks, and styles that perform on TikTok can completely flop on Instagram (and vice versa).
+
+During your warmup, study Instagram specifically:
+
+- What Reel formats get views in your niche?
+- What carousel styles get saves and shares?
+- How long are the top-performing Reels? (often shorter than TikTok)
+- What hooks work here vs TikTok?
+
+Take notes separately from your TikTok research. Treat it as a different platform because it is.
+
+---
+
+## Music matters more on Instagram
+
+On TikTok, trending sounds come and go fast. On Instagram, **music choice is a bigger ranking factor**. The algorithm actively pushes Reels that use trending audio.
+
+Here's how to find the right sounds:
+
+1. **Go to the Reels "Trends" section** in the Instagram app (when creating a Reel, browse trending audio)
+2. **Look for sounds with less than 20k posts**. These are trending but not oversaturated. Once a sound has 100k+ posts, you're competing with everyone
+3. **During warmup, pay attention to the music**. When you watch Reels in your niche, tap on the audio name. You'll see how many posts use it and whether it's trending up
+
+The sweet spot is a sound that's clearly gaining traction but hasn't blown up yet. Use it before everyone else does.
+
+---
+
+## Same cycle, different platform
+
+The process is identical to TikTok:
+
+1. **Research**: study what's working on Instagram specifically
+2. **Reproduce**: create your version of proven formats
+3. **Test**: post 3-4 Reels or carousels in that format
+4. **Analyze**: check reach and engagement after 48h
+5. **Variant or pivot**: double down on winners, drop what doesn't work
+6. **Repeat**
+
+Don't cross-post TikTok content to Instagram with a watermark. Instagram deprioritizes recycled TikTok videos. If you want to reuse a concept, re-record it natively or at least remove the watermark.`,
+    order: 6,
   },
 
   // Scaling (empty — placeholder)
