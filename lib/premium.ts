@@ -13,8 +13,6 @@ export async function getUserTier(discordId: string): Promise<UserTier> {
 }
 
 const ACCESS_MATRIX: Record<string, Record<UserTier, CategoryAccess>> = {
-  build: { standard: "unlocked", boilerplate: "hidden", full: "unlocked" },
-  "build-with-boilerplate": { standard: "locked", boilerplate: "unlocked", full: "unlocked" },
   scaling: { standard: "locked", boilerplate: "locked", full: "locked" },
 };
 
