@@ -8,7 +8,7 @@ export async function getUserTier(discordId: string): Promise<UserTier> {
   const row = await prisma.premiumUser.findUnique({
     where: { discordId },
   });
-  if (!row) return "standard";
+  if (!row) return "full";
   return row.tier === "boilerplate" ? "boilerplate" : "full";
 }
 
