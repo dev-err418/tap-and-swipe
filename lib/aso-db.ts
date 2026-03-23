@@ -30,6 +30,15 @@ export async function generateAsoLicense(
     return { key: existing.rows[0].key, isNew: false };
   }
 
+  // Check by email — catches duplicate checkouts with different Stripe customer IDs
+  const existingByEmail = await asoPool.query(
+    "SELECT key FROM aso_licenses WHERE email = $1 AND active = true LIMIT 1",
+    [email]
+  );
+  if (existingByEmail.rows.length > 0) {
+    return { key: existingByEmail.rows[0].key, isNew: false };
+  }
+
   const segments = Array.from({ length: 4 }, () =>
     crypto.randomBytes(2).toString("hex").toUpperCase()
   );

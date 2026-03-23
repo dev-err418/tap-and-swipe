@@ -5,42 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { addToGuild, addRole, removeRole } from "@/lib/discord";
 import { sendFraudAlert, sendDiscordNotification } from "@/lib/discord-webhook";
 import { isDisposableEmail } from "@/lib/fraud";
-import {
-  asoPool,
-  generateAsoLicense,
-  deactivateAsoLicenses,
-  reactivateAsoLicenses,
-} from "@/lib/aso-db";
-import { sendLicenseKeyEmail } from "@/lib/aso-email";
-
-const ASO_PRICE_ID = process.env.ASO_PRICE_ID || "price_1T9ldIDGyKvKgBtCf9rafpe7";
-
-function isNewAsoSubscription(sub: Stripe.Subscription): boolean {
-  const product = sub.metadata.product || "";
-  return product === "aso-solo" || product === "aso-pro";
-}
-
-function isAsoSubscription(sub: Stripe.Subscription): boolean {
-  return sub.items.data.some((i) => i.price.id === ASO_PRICE_ID);
-}
-
-function isBundleSubscription(sub: Stripe.Subscription): boolean {
-  const product = sub.metadata.product || "";
-  return product.startsWith("bundle-");
-}
 
 function isCommunitySubscription(sub: Stripe.Subscription): boolean {
-  return !isAsoSubscription(sub) && !!sub.metadata.discordId;
-}
-
-const ASO_SOLO_PRICE_IDS = [
-  process.env.ASO_SOLO_MONTHLY_PRICE_ID,
-  process.env.ASO_SOLO_YEARLY_PRICE_ID,
-].filter(Boolean);
-
-function getAsoPlanFromPrices(sub: Stripe.Subscription): "solo" | "pro" {
-  const isSolo = sub.items.data.some((i) => ASO_SOLO_PRICE_IDS.includes(i.price.id));
-  return isSolo ? "solo" : "pro";
+  return !!sub.metadata.discordId;
 }
 
 export async function POST(request: NextRequest) {
@@ -69,305 +36,17 @@ export async function POST(request: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // === One-time payment (legacy ASO — remove after 2026-04-15) ===
-        if (session.mode === "payment") {
-          const customerId = session.customer as string;
-          const customerEmail = session.customer_details?.email;
-          if (!customerEmail) break;
-
-          // Read metadata from payment_intent
-          const paymentIntentId = session.payment_intent as string;
-          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-          const product = paymentIntent.metadata.product;
-
-          if (product === "aso") {
-            // Disposable email check — refund
-            if (isDisposableEmail(customerEmail)) {
-              console.warn(`[ASO] Disposable email detected: ${customerEmail}`);
-              await stripe.refunds.create({ payment_intent: paymentIntentId });
-              break;
-            }
-
-            const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
-            if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
-
-            // Track ASO paid event
-            const asoVisitorId = paymentIntent.metadata.visitorId;
-            if (asoVisitorId) {
-              await prisma.pageEvent.upsert({
-                where: { sessionId_type_product: { sessionId: asoVisitorId, type: "paid", product: "aso" } },
-                create: {
-                  product: "aso",
-                  type: "paid",
-                  visitorId: asoVisitorId,
-                  sessionId: asoVisitorId,
-                  stripeCustomerId: customerId,
-                  revenue: paymentIntent.amount_received ?? null,
-                  currency: paymentIntent.currency ?? null,
-                  country: paymentIntent.metadata.country || null,
-                },
-                update: {},
-              }).catch((e) => console.error("[ASO] PageEvent upsert error:", e));
-            }
-          }
-          break;
-        }
-
+        // Only handle subscription mode
         if (session.mode !== "subscription" || !session.subscription) break;
 
         const subscription = await stripe.subscriptions.retrieve(
           session.subscription as string
         );
 
-        // === New ASO subscriptions (Solo / Pro) ===
-        if (isNewAsoSubscription(subscription)) {
-          const customerId = session.customer as string;
-          const customerEmail = session.customer_details?.email;
-          if (!customerEmail) break;
+        // Only handle community subscriptions
+        if (!isCommunitySubscription(subscription)) break;
 
-          // Disposable email check — refund and cancel
-          if (isDisposableEmail(customerEmail)) {
-            console.warn(`[ASO] Disposable email detected: ${customerEmail}`);
-            const latestInvoice = subscription.latest_invoice;
-            const invoiceId =
-              typeof latestInvoice === "string"
-                ? latestInvoice
-                : latestInvoice?.id;
-            if (invoiceId) {
-              try {
-                const invoicePayments = await stripe.invoicePayments.list({
-                  invoice: invoiceId,
-                });
-                const payment = invoicePayments.data[0]?.payment;
-                if (payment?.payment_intent) {
-                  const piId =
-                    typeof payment.payment_intent === "string"
-                      ? payment.payment_intent
-                      : payment.payment_intent.id;
-                  await stripe.refunds.create({ payment_intent: piId });
-                }
-              } catch (refundErr) {
-                console.error(`[ASO] Refund failed for invoice ${invoiceId}:`, refundErr);
-              }
-            }
-            await stripe.subscriptions.cancel(subscription.id);
-            break;
-          }
-
-          const asoPlan = subscription.metadata.product === "aso-solo" ? "solo" as const : "pro" as const;
-          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, asoPlan);
-          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
-
-          // Discord notification
-          const isTrial = subscription.status === "trialing";
-          await sendDiscordNotification(
-            isTrial ? "New ASO Trial Started" : "New ASO Subscription",
-            undefined,
-            [
-              { name: "Plan", value: asoPlan.charAt(0).toUpperCase() + asoPlan.slice(1), inline: true },
-              { name: "Interval", value: subscription.metadata.interval || "month", inline: true },
-              { name: "Status", value: isTrial ? "Trialing (7 days)" : "Active", inline: true },
-              { name: "Email", value: customerEmail, inline: true },
-              { name: "Customer", value: customerId, inline: true },
-            ],
-            isTrial ? 0xf4cf8f : 0x57f287
-          ).catch(() => {});
-
-          // Track trial or paid event (unified under "aso" for funnel analytics)
-          const asoVisitorId = subscription.metadata.visitorId;
-          if (asoVisitorId) {
-            // Calculate plan price as potential revenue (in cents)
-            const planPrice = subscription.items.data[0]?.price?.unit_amount ?? 0;
-            const eventType = isTrial ? "trial_started" : "paid";
-            await prisma.pageEvent.upsert({
-              where: { sessionId_type_product: { sessionId: asoVisitorId, type: eventType, product: "aso" } },
-              create: {
-                product: "aso",
-                type: eventType,
-                visitorId: asoVisitorId,
-                sessionId: asoVisitorId,
-                stripeCustomerId: customerId,
-                revenue: planPrice,
-                currency: subscription.currency ?? null,
-                country: subscription.metadata.country || null,
-              },
-              update: {},
-            }).catch((e) => console.error("[ASO] PageEvent upsert error:", e));
-          }
-          break;
-        }
-
-        // === Bundle subscriptions ===
-        if (isBundleSubscription(subscription)) {
-          const customerId = session.customer as string;
-          const customerEmail = session.customer_details?.email;
-          if (!customerEmail) break;
-
-          const bundleProduct = subscription.metadata.product;
-
-          // Disposable email check — refund and cancel
-          if (isDisposableEmail(customerEmail)) {
-            console.warn(`[Bundle] Disposable email detected: ${customerEmail}`);
-            const latestInvoice = subscription.latest_invoice;
-            const invoiceId =
-              typeof latestInvoice === "string"
-                ? latestInvoice
-                : latestInvoice?.id;
-            if (invoiceId) {
-              try {
-                const invoicePayments = await stripe.invoicePayments.list({
-                  invoice: invoiceId,
-                });
-                const payment = invoicePayments.data[0]?.payment;
-                if (payment?.payment_intent) {
-                  const piId =
-                    typeof payment.payment_intent === "string"
-                      ? payment.payment_intent
-                      : payment.payment_intent.id;
-                  await stripe.refunds.create({ payment_intent: piId });
-                }
-              } catch (refundErr) {
-                console.error(`[Bundle] Refund failed for invoice ${invoiceId}:`, refundErr);
-              }
-            }
-            await stripe.subscriptions.cancel(subscription.id);
-            break;
-          }
-
-          // Generate ASO license for ALL bundles
-          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
-          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
-
-          // Discord notification
-          await sendDiscordNotification(
-            "New Bundle Subscription",
-            undefined,
-            [
-              { name: "Bundle", value: bundleProduct, inline: true },
-              { name: "Email", value: customerEmail, inline: true },
-              { name: "Customer", value: customerId, inline: true },
-            ],
-          ).catch(() => {});
-
-          // Discord was collected before payment — add to guild and grant role
-          const bundleDiscordId = subscription.metadata.discordId;
-          if (bundleDiscordId) {
-            const bundleDbUser = await prisma.user.findUnique({ where: { discordId: bundleDiscordId } });
-            let bundleRoleAdded = false;
-
-            if (bundleDbUser?.discordAccessToken) {
-              const addedToGuild = await addToGuild(bundleDiscordId, bundleDbUser.discordAccessToken);
-              if (addedToGuild) {
-                bundleRoleAdded = await addRole(bundleDiscordId);
-              } else {
-                bundleRoleAdded = await addRole(bundleDiscordId);
-              }
-            } else {
-              bundleRoleAdded = await addRole(bundleDiscordId);
-            }
-
-            await prisma.user.update({
-              where: { discordId: bundleDiscordId },
-              data: {
-                subscriptionId: subscription.id,
-                subscriptionStatus: subscription.status,
-                stripeCustomerId: customerId,
-                roleGranted: bundleRoleAdded,
-              },
-            });
-          }
-
-          // Track bundle paid event
-          const bundleVisitorId = subscription.metadata.visitorId;
-          if (bundleVisitorId) {
-            const bundleInvoice =
-              typeof subscription.latest_invoice === "string"
-                ? await stripe.invoices.retrieve(subscription.latest_invoice)
-                : subscription.latest_invoice;
-            await prisma.pageEvent.upsert({
-              where: { sessionId_type_product: { sessionId: bundleVisitorId, type: "paid", product: bundleProduct } },
-              create: {
-                product: bundleProduct,
-                type: "paid",
-                visitorId: bundleVisitorId,
-                sessionId: bundleVisitorId,
-                stripeCustomerId: customerId,
-                revenue: bundleInvoice?.amount_paid ?? null,
-                currency: bundleInvoice?.currency ?? null,
-                country: subscription.metadata.country || null,
-              },
-              update: {},
-            }).catch((e) => console.error("[Bundle] PageEvent upsert error:", e));
-          }
-          break;
-        }
-
-        // === ASO subscription (legacy — backward compat for existing subscribers) ===
-        if (isAsoSubscription(subscription)) {
-          const customerId = session.customer as string;
-          const customerEmail = session.customer_details?.email;
-          if (!customerEmail) break;
-
-          // Disposable email check — refund and cancel
-          if (isDisposableEmail(customerEmail)) {
-            console.warn(`[ASO] Disposable email detected: ${customerEmail}`);
-            const latestInvoice = subscription.latest_invoice;
-            const invoiceId =
-              typeof latestInvoice === "string"
-                ? latestInvoice
-                : latestInvoice?.id;
-            if (invoiceId) {
-              try {
-                const invoicePayments = await stripe.invoicePayments.list({
-                  invoice: invoiceId,
-                });
-                const payment = invoicePayments.data[0]?.payment;
-                if (payment?.payment_intent) {
-                  const piId =
-                    typeof payment.payment_intent === "string"
-                      ? payment.payment_intent
-                      : payment.payment_intent.id;
-                  await stripe.refunds.create({ payment_intent: piId });
-                }
-              } catch (refundErr) {
-                console.error(`[ASO] Refund failed for invoice ${invoiceId}:`, refundErr);
-              }
-            }
-            await stripe.subscriptions.cancel(subscription.id);
-            break;
-          }
-
-          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
-          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
-
-          // Track ASO paid event
-          const asoVisitorId = subscription.metadata.visitorId;
-          if (asoVisitorId) {
-            const asoInvoice =
-              typeof subscription.latest_invoice === "string"
-                ? await stripe.invoices.retrieve(subscription.latest_invoice)
-                : subscription.latest_invoice;
-            await prisma.pageEvent.upsert({
-              where: { sessionId_type_product: { sessionId: asoVisitorId, type: "paid", product: "aso" } },
-              create: {
-                product: "aso",
-                type: "paid",
-                visitorId: asoVisitorId,
-                sessionId: asoVisitorId,
-                stripeCustomerId: customerId,
-                revenue: asoInvoice?.amount_paid ?? null,
-                currency: asoInvoice?.currency ?? null,
-                country: subscription.metadata.country || null,
-              },
-              update: {},
-            }).catch((e) => console.error("[ASO] PageEvent upsert error:", e));
-          }
-          break;
-        }
-
-        // === Community subscription ===
         const discordId = subscription.metadata.discordId;
-        if (!discordId) break;
 
         // Discord notification
         await sendDiscordNotification(
@@ -410,13 +89,6 @@ export async function POST(request: NextRequest) {
             roleGranted: roleAdded,
           },
         });
-
-        // Generate ASO Pro license (included with Community)
-        const communityCustomerEmail = session.customer_details?.email;
-        if (communityCustomerEmail) {
-          const { key: licenseKey, isNew } = await generateAsoLicense(communityCustomerEmail, session.customer as string, "pro");
-          if (isNew) await sendLicenseKeyEmail(communityCustomerEmail, licenseKey, "community");
-        }
 
         // Track community paid event
         const communityVisitorId = subscription.metadata.visitorId || discordId;
@@ -511,89 +183,20 @@ export async function POST(request: NextRequest) {
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
+        if (!isCommunitySubscription(subscription)) break;
 
-        // New ASO subscriptions (Solo / Pro)
-        if (isNewAsoSubscription(subscription)) {
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-          if (["active", "trialing"].includes(subscription.status)) {
-            await reactivateAsoLicenses(customerId);
-            // Update plan from actual price IDs (metadata is stale after portal upgrades)
-            const updatedPlan = getAsoPlanFromPrices(subscription);
-            await asoPool.query(
-              "UPDATE aso_licenses SET plan = $1 WHERE stripe_customer_id = $2 AND active = true",
-              [updatedPlan, customerId]
-            );
-          } else {
-            await deactivateAsoLicenses(customerId);
-          }
-          break;
-        }
-
-        // ASO subscription (legacy)
-        if (isAsoSubscription(subscription)) {
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-          if (["active", "trialing"].includes(subscription.status)) {
-            await reactivateAsoLicenses(customerId);
-          } else {
-            await deactivateAsoLicenses(customerId);
-          }
-          break;
-        }
-
-        // Bundle subscription — handle Community role + ASO license
-        if (isBundleSubscription(subscription)) {
-          const bundleDiscordId = subscription.metadata.discordId;
-          if (!bundleDiscordId) break;
-
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-
-          const isActive = ["active", "trialing"].includes(subscription.status);
-          let roleGranted = false;
-          if (isActive) {
-            roleGranted = await addRole(bundleDiscordId);
-            await reactivateAsoLicenses(customerId);
-          } else {
-            await removeRole(bundleDiscordId);
-            await deactivateAsoLicenses(customerId);
-          }
-
-          await prisma.user.update({
-            where: { discordId: bundleDiscordId },
-            data: { subscriptionStatus: subscription.status, roleGranted },
-          });
-          break;
-        }
-
-        // Community subscription — also manages ASO Pro license
         const discordId = subscription.metadata.discordId;
-        if (!discordId) break;
-
-        const communityCustomerId =
-          typeof subscription.customer === "string"
-            ? subscription.customer
-            : subscription.customer.id;
 
         const isActive = ["active", "trialing"].includes(subscription.status);
 
         let roleGranted = false;
         if (isActive) {
           roleGranted = await addRole(discordId);
-          await reactivateAsoLicenses(communityCustomerId);
           if (!roleGranted) {
             console.warn(`[customer.subscription.updated] addRole returned false for ${discordId} — user may not be in the guild`);
           }
         } else {
           await removeRole(discordId);
-          await deactivateAsoLicenses(communityCustomerId);
         }
 
         await prisma.user.update({
@@ -608,75 +211,21 @@ export async function POST(request: NextRequest) {
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
+        if (!isCommunitySubscription(subscription)) break;
 
-        // New ASO subscriptions (Solo / Pro)
-        if (isNewAsoSubscription(subscription)) {
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-          await deactivateAsoLicenses(customerId);
-          break;
-        }
+        const discordId = subscription.metadata.discordId;
 
-        // ASO subscription (legacy)
-        if (isAsoSubscription(subscription)) {
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-          await deactivateAsoLicenses(customerId);
-          break;
-        }
+        await prisma.user.update({
+          where: { discordId },
+          data: {
+            subscriptionStatus: "canceled",
+            subscriptionId: null,
+            roleGranted: false,
+          },
+        });
 
-        // Bundle subscription — revoke Community role + deactivate ASO
-        if (isBundleSubscription(subscription)) {
-          const bundleDiscordId = subscription.metadata.discordId;
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-
-          await deactivateAsoLicenses(customerId);
-
-          if (!bundleDiscordId) break;
-
-          await prisma.user.update({
-            where: { discordId: bundleDiscordId },
-            data: {
-              subscriptionStatus: "canceled",
-              subscriptionId: null,
-              roleGranted: false,
-            },
-          });
-          await removeRole(bundleDiscordId);
-          break;
-        }
-
-        // Community subscription — also deactivate ASO Pro
-        {
-          const discordId = subscription.metadata.discordId;
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-
-          await deactivateAsoLicenses(customerId);
-
-          if (!discordId) break;
-
-          await prisma.user.update({
-            where: { discordId },
-            data: {
-              subscriptionStatus: "canceled",
-              subscriptionId: null,
-              roleGranted: false,
-            },
-          });
-
-          await removeRole(discordId);
-          break;
-        }
+        await removeRole(discordId);
+        break;
       }
 
       case "invoice.payment_failed": {
@@ -690,70 +239,20 @@ export async function POST(request: NextRequest) {
 
         const subscription =
           await stripe.subscriptions.retrieve(subscriptionId);
+        if (!isCommunitySubscription(subscription)) break;
 
-        // New ASO subscriptions (Solo / Pro)
-        if (isNewAsoSubscription(subscription)) {
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-          await deactivateAsoLicenses(customerId);
-          break;
-        }
+        const discordId = subscription.metadata.discordId;
 
-        // ASO subscription (legacy)
-        if (isAsoSubscription(subscription)) {
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-          await deactivateAsoLicenses(customerId);
-          break;
-        }
+        await prisma.user.update({
+          where: { discordId },
+          data: {
+            subscriptionStatus: "past_due",
+            roleGranted: false,
+          },
+        });
 
-        // Bundle subscription — revoke Community role + deactivate ASO
-        if (isBundleSubscription(subscription)) {
-          const bundleDiscordId = subscription.metadata.discordId;
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-
-          await deactivateAsoLicenses(customerId);
-
-          if (!bundleDiscordId) break;
-
-          await prisma.user.update({
-            where: { discordId: bundleDiscordId },
-            data: { subscriptionStatus: "past_due", roleGranted: false },
-          });
-          await removeRole(bundleDiscordId);
-          break;
-        }
-
-        // Community subscription — also deactivate ASO Pro
-        {
-          const discordId = subscription.metadata.discordId;
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-
-          await deactivateAsoLicenses(customerId);
-
-          if (!discordId) break;
-
-          await prisma.user.update({
-            where: { discordId },
-            data: {
-              subscriptionStatus: "past_due",
-              roleGranted: false,
-            },
-          });
-
-          await removeRole(discordId);
-          break;
-        }
+        await removeRole(discordId);
+        break;
       }
 
       case "invoice.paid": {
@@ -767,58 +266,8 @@ export async function POST(request: NextRequest) {
 
         const subscription =
           await stripe.subscriptions.retrieve(subscriptionId);
-
-        // New ASO subscriptions (Solo / Pro)
-        if (isNewAsoSubscription(subscription)) {
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-          await reactivateAsoLicenses(customerId);
-          break;
-        }
-
-        // ASO subscription (legacy)
-        if (isAsoSubscription(subscription)) {
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-          await reactivateAsoLicenses(customerId);
-          break;
-        }
-
-        // Bundle subscription — re-grant Community role + reactivate ASO
-        if (isBundleSubscription(subscription)) {
-          if (!["active", "trialing"].includes(subscription.status)) break;
-          const bundleDiscordId = subscription.metadata.discordId;
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-
-          await reactivateAsoLicenses(customerId);
-
-          if (!bundleDiscordId) break;
-
-          const roleAdded = await addRole(bundleDiscordId);
-          await prisma.user.update({
-            where: { discordId: bundleDiscordId },
-            data: { subscriptionStatus: subscription.status, roleGranted: roleAdded },
-          });
-          break;
-        }
-
-        // Community subscription — also reactivate ASO Pro
+        if (!isCommunitySubscription(subscription)) break;
         if (!["active", "trialing"].includes(subscription.status)) break;
-
-        {
-          const customerId =
-            typeof subscription.customer === "string"
-              ? subscription.customer
-              : subscription.customer.id;
-          await reactivateAsoLicenses(customerId);
-        }
 
         const discordId = subscription.metadata.discordId;
         if (!discordId) break;
@@ -841,81 +290,14 @@ export async function POST(request: NextRequest) {
       case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // One-time payment (legacy ASO)
-        if (session.mode === "payment") {
-          const customerId = session.customer as string;
-          const customerEmail = session.customer_details?.email;
-          if (!customerEmail) break;
-
-          if (isDisposableEmail(customerEmail)) {
-            console.warn(`[ASO] Disposable email on async payment: ${customerEmail}`);
-            break;
-          }
-
-          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
-          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
-          break;
-        }
-
         if (session.mode !== "subscription" || !session.subscription) break;
 
         const subscription = await stripe.subscriptions.retrieve(
           session.subscription as string
         );
+        if (!isCommunitySubscription(subscription)) break;
 
-        // New ASO subscriptions (Solo / Pro)
-        if (isNewAsoSubscription(subscription)) {
-          const customerId = session.customer as string;
-          const customerEmail = session.customer_details?.email;
-          if (!customerEmail) break;
-
-          if (isDisposableEmail(customerEmail)) {
-            await stripe.subscriptions.cancel(subscription.id);
-            break;
-          }
-
-          const asyncAsoPlan = subscription.metadata.product === "aso-solo" ? "solo" as const : "pro" as const;
-          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, asyncAsoPlan);
-          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
-          break;
-        }
-
-        // Bundle — generate ASO license + handle Discord
-        if (isBundleSubscription(subscription)) {
-          const customerId = session.customer as string;
-          const customerEmail = session.customer_details?.email;
-          if (!customerEmail) break;
-
-          if (isDisposableEmail(customerEmail)) {
-            await stripe.subscriptions.cancel(subscription.id);
-            break;
-          }
-
-          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
-          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
-          break;
-        }
-
-        // ASO subscription (legacy)
-        if (isAsoSubscription(subscription)) {
-          const customerId = session.customer as string;
-          const customerEmail = session.customer_details?.email;
-          if (!customerEmail) break;
-
-          if (isDisposableEmail(customerEmail)) {
-            console.warn(`[ASO] Disposable email on async payment: ${customerEmail}`);
-            await stripe.subscriptions.cancel(subscription.id);
-            break;
-          }
-
-          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
-          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
-          break;
-        }
-
-        // Community subscription
         const discordId = subscription.metadata.discordId;
-        if (!discordId) break;
 
         const asyncDbUser = await prisma.user.findUnique({ where: { discordId } });
         let asyncRoleAdded = false;
@@ -968,7 +350,7 @@ export async function POST(request: NextRequest) {
             );
           }
 
-          // Find user and revoke access regardless of refund outcome
+          // Find user and revoke access
           const customerId =
             typeof charge.customer === "string"
               ? charge.customer
@@ -980,7 +362,6 @@ export async function POST(request: NextRequest) {
             });
 
             if (user) {
-              // Cancel any active subscription
               if (user.subscriptionId) {
                 await stripe.subscriptions.cancel(user.subscriptionId);
               }
@@ -996,9 +377,6 @@ export async function POST(request: NextRequest) {
 
               await removeRole(user.discordId);
             }
-
-            // Also deactivate ASO licenses (customer could have both products)
-            await deactivateAsoLicenses(customerId);
           }
 
           await sendFraudAlert(
@@ -1013,7 +391,7 @@ export async function POST(request: NextRequest) {
               },
               {
                 name: "Customer",
-                value: customerId ?? "Unknown",
+                value: (typeof charge.customer === "string" ? charge.customer : charge.customer?.id) ?? "Unknown",
                 inline: true,
               },
               {
@@ -1034,7 +412,6 @@ export async function POST(request: NextRequest) {
             ? dispute.charge
             : dispute.charge?.id ?? "Unknown";
 
-        // Find user by customer and revoke access
         const disputeCharge = typeof dispute.charge === "string"
           ? await stripe.charges.retrieve(dispute.charge)
           : dispute.charge;
@@ -1065,9 +442,6 @@ export async function POST(request: NextRequest) {
 
             await removeRole(user.discordId);
           }
-
-          // Also deactivate ASO licenses (customer could have both products)
-          await deactivateAsoLicenses(customerId);
         }
 
         await sendFraudAlert(
