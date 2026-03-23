@@ -78,8 +78,8 @@ export async function POST(request: NextRequest) {
               break;
             }
 
-            const licenseKey = await generateAsoLicense(customerEmail, customerId, "pro");
-            await sendLicenseKeyEmail(customerEmail, licenseKey);
+            const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
+            if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
 
             // Track ASO paid event
             const asoVisitorId = paymentIntent.metadata.visitorId;
@@ -145,8 +145,8 @@ export async function POST(request: NextRequest) {
           }
 
           const asoPlan = subscription.metadata.product === "aso-solo" ? "solo" as const : "pro" as const;
-          const licenseKey = await generateAsoLicense(customerEmail, customerId, asoPlan);
-          await sendLicenseKeyEmail(customerEmail, licenseKey);
+          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, asoPlan);
+          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
 
           // Discord notification
           const isTrial = subscription.status === "trialing";
@@ -225,8 +225,8 @@ export async function POST(request: NextRequest) {
           }
 
           // Generate ASO license for ALL bundles
-          const licenseKey = await generateAsoLicense(customerEmail, customerId, "pro");
-          await sendLicenseKeyEmail(customerEmail, licenseKey);
+          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
+          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
 
           // Discord notification
           await sendDiscordNotification(
@@ -327,8 +327,8 @@ export async function POST(request: NextRequest) {
             break;
           }
 
-          const licenseKey = await generateAsoLicense(customerEmail, customerId, "pro");
-          await sendLicenseKeyEmail(customerEmail, licenseKey);
+          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
+          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
 
           // Track ASO paid event
           const asoVisitorId = subscription.metadata.visitorId;
@@ -404,8 +404,8 @@ export async function POST(request: NextRequest) {
         // Generate ASO Pro license (included with Community)
         const communityCustomerEmail = session.customer_details?.email;
         if (communityCustomerEmail) {
-          const licenseKey = await generateAsoLicense(communityCustomerEmail, session.customer as string, "pro");
-          await sendLicenseKeyEmail(communityCustomerEmail, licenseKey, "community");
+          const { key: licenseKey, isNew } = await generateAsoLicense(communityCustomerEmail, session.customer as string, "pro");
+          if (isNew) await sendLicenseKeyEmail(communityCustomerEmail, licenseKey, "community");
         }
 
         // Track community paid event
@@ -842,8 +842,8 @@ export async function POST(request: NextRequest) {
             break;
           }
 
-          const licenseKey = await generateAsoLicense(customerEmail, customerId, "pro");
-          await sendLicenseKeyEmail(customerEmail, licenseKey);
+          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
+          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
           break;
         }
 
@@ -865,8 +865,8 @@ export async function POST(request: NextRequest) {
           }
 
           const asyncAsoPlan = subscription.metadata.product === "aso-solo" ? "solo" as const : "pro" as const;
-          const licenseKey = await generateAsoLicense(customerEmail, customerId, asyncAsoPlan);
-          await sendLicenseKeyEmail(customerEmail, licenseKey);
+          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, asyncAsoPlan);
+          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
           break;
         }
 
@@ -881,8 +881,8 @@ export async function POST(request: NextRequest) {
             break;
           }
 
-          const licenseKey = await generateAsoLicense(customerEmail, customerId, "pro");
-          await sendLicenseKeyEmail(customerEmail, licenseKey);
+          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
+          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
           break;
         }
 
@@ -898,8 +898,8 @@ export async function POST(request: NextRequest) {
             break;
           }
 
-          const licenseKey = await generateAsoLicense(customerEmail, customerId, "pro");
-          await sendLicenseKeyEmail(customerEmail, licenseKey);
+          const { key: licenseKey, isNew } = await generateAsoLicense(customerEmail, customerId, "pro");
+          if (isNew) await sendLicenseKeyEmail(customerEmail, licenseKey);
           break;
         }
 

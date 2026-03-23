@@ -15,7 +15,7 @@ export async function generateAsoLicense(
   email: string,
   stripeCustomerId: string,
   plan: AsoPlan = "pro"
-): Promise<string> {
+): Promise<{ key: string; isNew: boolean }> {
   // Idempotency: check for existing license
   const existing = await asoPool.query(
     "SELECT key FROM aso_licenses WHERE stripe_customer_id = $1 AND active = true LIMIT 1",
@@ -27,7 +27,7 @@ export async function generateAsoLicense(
       "UPDATE aso_licenses SET plan = $1 WHERE stripe_customer_id = $2 AND active = true",
       [plan, stripeCustomerId]
     );
-    return existing.rows[0].key;
+    return { key: existing.rows[0].key, isNew: false };
   }
 
   const segments = Array.from({ length: 4 }, () =>
@@ -40,7 +40,7 @@ export async function generateAsoLicense(
     [key, email, stripeCustomerId, plan]
   );
 
-  return key;
+  return { key, isNew: true };
 }
 
 export async function deactivateAsoLicenses(
