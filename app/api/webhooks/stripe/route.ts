@@ -33,6 +33,16 @@ function isCommunitySubscription(sub: Stripe.Subscription): boolean {
   return !isAsoSubscription(sub) && !!sub.metadata.discordId;
 }
 
+const ASO_SOLO_PRICE_IDS = [
+  process.env.ASO_SOLO_MONTHLY_PRICE_ID,
+  process.env.ASO_SOLO_YEARLY_PRICE_ID,
+].filter(Boolean);
+
+function getAsoPlanFromPrices(sub: Stripe.Subscription): "solo" | "pro" {
+  const isSolo = sub.items.data.some((i) => ASO_SOLO_PRICE_IDS.includes(i.price.id));
+  return isSolo ? "solo" : "pro";
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
@@ -510,8 +520,8 @@ export async function POST(request: NextRequest) {
               : subscription.customer.id;
           if (["active", "trialing"].includes(subscription.status)) {
             await reactivateAsoLicenses(customerId);
-            // Update plan in case of upgrade/downgrade
-            const updatedPlan = subscription.metadata.product === "aso-solo" ? "solo" : "pro";
+            // Update plan from actual price IDs (metadata is stale after portal upgrades)
+            const updatedPlan = getAsoPlanFromPrices(subscription);
             await asoPool.query(
               "UPDATE aso_licenses SET plan = $1 WHERE stripe_customer_id = $2 AND active = true",
               [updatedPlan, customerId]
