@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Idempotent — returns existing key if already created by webhook
-    const licenseKey = await generateAsoLicense(email, customerId, plan);
+    const { key: licenseKey } = await generateAsoLicense(email, customerId, plan);
 
     return NextResponse.json({ licenseKey, email, isBundle, isYearlyPro });
   } catch (err) {

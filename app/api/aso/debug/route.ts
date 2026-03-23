@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   if (action === "create") {
     const email = req.nextUrl.searchParams.get("email") || "debug@test.com";
     const plan = (req.nextUrl.searchParams.get("plan") || "pro") as "solo" | "pro";
-    const key = await generateAsoLicense(email, `debug_${Date.now()}`, plan);
+    const { key } = await generateAsoLicense(email, `debug_${Date.now()}`, plan);
     return NextResponse.json({ key, email, plan });
   }
 
