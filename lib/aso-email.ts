@@ -11,8 +11,8 @@ export async function sendLicenseKeyEmail(
   try {
     await resend.emails.send({
       from: isComm
-        ? "Arthur from App Sprint <arthur@tap-and-swipe.com>"
-        : "Arthur from App Sprint ASO <arthur@tap-and-swipe.com>",
+        ? "Arthur from App Sprint <arthur@appsprint.app>"
+        : "Arthur from App Sprint ASO <arthur@appsprint.app>",
       to,
       subject: isComm
         ? "Your free ASO Pro license is ready!"
