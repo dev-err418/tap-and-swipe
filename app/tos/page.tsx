@@ -50,7 +50,7 @@ export default function TermsPage() {
                 group support available during community hours.
               </li>
               <li>
-                If a refund is requested after more than 10% of the course has
+                If a refund is requested after more than 20% of the course has
                 been completed, access to the course materials will be revoked.
               </li>
             </ul>
@@ -61,8 +61,9 @@ export default function TermsPage() {
               3. Refund Policy
             </h2>
             <p className="mt-2">
-              Full refunds are available within 14 days of purchase, no questions
-              asked. To request a refund, contact us at{" "}
+              Full refunds are available within 14 days of purchase, provided
+              that less than 20% of the roadmap content has been accessed or
+              watched. To request a refund, contact us at{" "}
               <a
                 href="mailto:arthurs.dev@gmail.com"
                 className="text-[#f4cf8f] underline hover:text-[#f4cf8f]/80"
@@ -70,6 +71,14 @@ export default function TermsPage() {
                 arthurs.dev@gmail.com
               </a>{" "}
               or reach out on our Discord server.
+            </p>
+            <p className="mt-2">
+              Once more than 20% of the roadmap content has been accessed, the
+              digital content is considered substantially consumed. In accordance
+              with EU Directive 2011/83/EU (Article 16(m)), by accessing the
+              course content you acknowledge and consent to the loss of your
+              right of withdrawal. This applies to all customers, including those
+              in the European Union and European Economic Area.
             </p>
           </section>
 
