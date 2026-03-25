@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { addToGuild, addRole, removeRole } from "@/lib/discord";
 import { sendFraudAlert, sendDiscordNotification } from "@/lib/discord-webhook";
 import { isDisposableEmail } from "@/lib/fraud";
+import { deactivateAsoLicenses, reactivateAsoLicenses } from "@/lib/aso-db";
 
 function isCommunitySubscription(sub: Stripe.Subscription): boolean {
   return !!sub.metadata.discordId;
@@ -166,6 +167,7 @@ export async function POST(request: NextRequest) {
             },
           });
           await removeRole(discordId);
+          await deactivateAsoLicenses(session.customer as string);
 
           await sendFraudAlert(
             "Disposable Email Detected",
@@ -188,6 +190,9 @@ export async function POST(request: NextRequest) {
         const discordId = subscription.metadata.discordId;
 
         const isActive = ["active", "trialing"].includes(subscription.status);
+        const customerId = typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer.id;
 
         let roleGranted = false;
         if (isActive) {
@@ -195,8 +200,10 @@ export async function POST(request: NextRequest) {
           if (!roleGranted) {
             console.warn(`[customer.subscription.updated] addRole returned false for ${discordId} — user may not be in the guild`);
           }
+          await reactivateAsoLicenses(customerId);
         } else {
           await removeRole(discordId);
+          await deactivateAsoLicenses(customerId);
         }
 
         await prisma.user.update({
@@ -214,6 +221,9 @@ export async function POST(request: NextRequest) {
         if (!isCommunitySubscription(subscription)) break;
 
         const discordId = subscription.metadata.discordId;
+        const customerId = typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer.id;
 
         await prisma.user.update({
           where: { discordId },
@@ -225,6 +235,7 @@ export async function POST(request: NextRequest) {
         });
 
         await removeRole(discordId);
+        await deactivateAsoLicenses(customerId);
         break;
       }
 
@@ -243,6 +254,10 @@ export async function POST(request: NextRequest) {
 
         const discordId = subscription.metadata.discordId;
 
+        const failedCustomerId = typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer.id;
+
         await prisma.user.update({
           where: { discordId },
           data: {
@@ -252,6 +267,7 @@ export async function POST(request: NextRequest) {
         });
 
         await removeRole(discordId);
+        await deactivateAsoLicenses(failedCustomerId);
         break;
       }
 
@@ -276,6 +292,11 @@ export async function POST(request: NextRequest) {
         if (!roleAdded) {
           console.warn(`[invoice.paid] addRole returned false for ${discordId} — user may not be in the guild`);
         }
+
+        const paidCustomerId = typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer.id;
+        await reactivateAsoLicenses(paidCustomerId);
 
         await prisma.user.update({
           where: { discordId },
@@ -377,6 +398,7 @@ export async function POST(request: NextRequest) {
 
               await removeRole(user.discordId);
             }
+            await deactivateAsoLicenses(customerId);
           }
 
           await sendFraudAlert(
@@ -442,6 +464,7 @@ export async function POST(request: NextRequest) {
 
             await removeRole(user.discordId);
           }
+          await deactivateAsoLicenses(customerId);
         }
 
         await sendFraudAlert(
