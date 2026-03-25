@@ -80,6 +80,12 @@ export default function TermsPage() {
               right of withdrawal. This applies to all customers, including those
               in the European Union and European Economic Area.
             </p>
+            <p className="mt-2">
+              As part of your subscription, you receive a complimentary Pro
+              license for App Sprint ASO at no additional cost. This license is
+              provided as a free benefit of your membership and will be revoked
+              upon cancellation of your subscription.
+            </p>
           </section>
 
           <section>
