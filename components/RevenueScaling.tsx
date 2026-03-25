@@ -38,7 +38,7 @@ const RevenueScaling = () => {
                                 <img
                                     src="/first-sale.webp"
                                     alt="RevenueCat mobile dashboard showing app revenue from multiple countries"
-                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-full"
+                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 max-h-[250px] w-auto mx-auto"
                                 />
                             </div>
                         </div>

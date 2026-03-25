@@ -141,6 +141,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                             {[
                                 "Everything in Solo",
                                 "Unlimited apps",
+                                "Deep competitor analysis",
                                 "Priority updates",
                             ].map((feature, i) => (
                                 <li key={i} className="flex items-start gap-3">
