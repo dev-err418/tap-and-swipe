@@ -36,8 +36,8 @@ const RevenueScaling = () => {
                             {/* Visual: Payment Notification */}
                             <div className="flex-1 flex items-center justify-center relative">
                                 <img
-                                    src="/first-sale.png"
-                                    alt="First sale notification"
+                                    src="/first-sale.webp"
+                                    alt="RevenueCat mobile dashboard showing app revenue from multiple countries"
                                     className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-full"
                                 />
                             </div>
