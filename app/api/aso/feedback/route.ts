@@ -14,7 +14,10 @@ export async function GET() {
   }
 
   const { rows } = await pool.query(
-    "SELECT * FROM aso_feedback ORDER BY created_at DESC"
+    `SELECT f.*, l.stripe_customer_id
+     FROM aso_feedback f
+     LEFT JOIN aso_licenses l ON l.key = f.license_key
+     ORDER BY f.created_at DESC`
   );
 
   return NextResponse.json(rows);

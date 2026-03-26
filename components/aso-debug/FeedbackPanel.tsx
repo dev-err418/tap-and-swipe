@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 interface Feedback {
   id: number;
   license_key: string;
+  stripe_customer_id: string | null;
   message: string;
   created_at: string;
 }
@@ -55,7 +56,7 @@ export default function FeedbackPanel() {
           <div className="flex-1 min-w-0">
             <p className="text-sm text-[#f1ebe2] whitespace-pre-wrap">{f.message}</p>
             <div className="mt-2 flex items-center gap-3 text-[10px] text-[#c9c4bc]/50">
-              <span className="font-mono">{f.license_key}</span>
+              <span className="font-mono">{f.license_key}{f.stripe_customer_id ? ` · ${f.stripe_customer_id}` : ""}</span>
               <span>{new Date(f.created_at).toLocaleString()}</span>
             </div>
           </div>
