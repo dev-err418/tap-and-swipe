@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { addToGuild, addRole, removeRole } from "@/lib/discord";
 import { sendFraudAlert, sendDiscordNotification } from "@/lib/discord-webhook";
 import { isDisposableEmail } from "@/lib/fraud";
-import { deactivateAsoLicenses, reactivateAsoLicenses } from "@/lib/aso-db";
+import { generateAsoLicense, deactivateAsoLicenses, reactivateAsoLicenses } from "@/lib/aso-db";
+import { sendLicenseKeyEmail } from "@/lib/aso-email";
 
 function isCommunitySubscription(sub: Stripe.Subscription): boolean {
   return !!sub.metadata.discordId;
@@ -90,6 +91,13 @@ export async function POST(request: NextRequest) {
             roleGranted: roleAdded,
           },
         });
+
+        // Generate ASO Pro license (included with Community)
+        const communityCustomerEmail = session.customer_details?.email;
+        if (communityCustomerEmail) {
+          const { key: licenseKey, isNew } = await generateAsoLicense(communityCustomerEmail, session.customer as string, "pro");
+          if (isNew) await sendLicenseKeyEmail(communityCustomerEmail, licenseKey, "community");
+        }
 
         // Track community paid event
         const communityVisitorId = subscription.metadata.visitorId || discordId;
