@@ -191,9 +191,7 @@ export default function QuizFunnel({
           )}
 
           {step === "result-disqualified" && (
-            <ResultBusiness
-              answers={answers}
-            />
+            <ResultBusiness />
           )}
         </motion.div>
       </AnimatePresence>
