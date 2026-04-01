@@ -11,6 +11,7 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
         rel="noopener noreferrer"
         className="mb-6 flex items-center gap-2 transition-opacity hover:opacity-80"
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
           alt="Arthur"
@@ -34,8 +35,8 @@ export default function HeroScreen({ onStart }: { onStart: () => void }) {
       </h1>
 
       <p className="text-[#c9c4bc] text-lg sm:text-xl mt-4">
-        Take this 2-minute quiz to get a personalized recommendation
-        and find out how we can help you bring your mobile app to life.
+        In under 60 seconds, I&apos;ll sort whether you need scaling help,
+        app development, or a different next step.
       </p>
 
       <div className="mt-10">

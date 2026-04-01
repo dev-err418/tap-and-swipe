@@ -6,7 +6,7 @@ type Temperature = "HOT" | "WARM" | "COLD";
 interface GenerateLeadMessageInput {
   firstName: string;
   countryCode: string;
-  phone: string;
+  phone?: string;
   answers: Record<string, number>;
   booked: boolean;
 }
@@ -14,149 +14,108 @@ interface GenerateLeadMessageInput {
 interface GenerateLeadMessageResult {
   temperature: Temperature;
   message: string;
-  whatsappUrl: string;
+  whatsappUrl?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Scoring (Q5 = investment readiness)
-// ---------------------------------------------------------------------------
+function getProfileType(answers: Record<string, number>): "scale" | "build" | "disqualified" {
+  const q1 = answers.q1;
+  const q2 = answers.q2;
+  const q3 = answers.q3;
+
+  if (q1 !== 0) return "disqualified";
+  if (q2 === 0) return "scale";
+  if (q2 === 2) return "build";
+  if (q3 === 1) return "build";
+  if (q3 === 0) return "scale";
+  return "disqualified";
+}
 
 export function scoreTemperature(answers: Record<string, number>): Temperature {
-  const q5 = answers["q5"];
-  if (q5 === 0) return "HOT";
-  if (q5 === 1) return "WARM";
+  const profileType = getProfileType(answers);
+  if (profileType === "scale") return "HOT";
+  if (profileType === "build") return "WARM";
   return "COLD";
 }
 
-// ---------------------------------------------------------------------------
-// Mirroring – pick 1-2 relevant facts from answers
-// ---------------------------------------------------------------------------
-
 const Q1_LABELS: Record<number, string> = {
-  0: "you run a local / service-based business",
-  1: "you run an e-commerce business",
-  2: "you run a SaaS or digital platform",
-  3: "you're launching a startup around your app",
-  4: "you have a specific business context",
-};
-
-const Q3_LABELS: Record<number, string> = {
-  0: "you need strategic guidance first",
-  1: "you need someone to handle the development",
-  2: "you need help with growth and monetization",
-  3: "you want a full partner for strategy and development",
-};
-
-const Q4_LABELS: Record<number, string> = {
-  0: "you already have a dev team but need extra help",
-  1: "you don't have a technical team yet",
-  2: "you're not satisfied with your current freelancer or agency",
+  0: "you are a founder or small team with a real B2C business",
+  1: "you are a developer, freelancer, or agency",
+  2: "you are still exploring",
 };
 
 const Q2_LABELS: Record<number, string> = {
-  2: "you already have an app in development",
-  3: "you have a live app that needs work",
+  0: "the app is already live and doing between €3k and €50k MRR",
+  1: "the app is live but still below €3k MRR",
+  2: "the business is real but the app is not live yet",
+  3: "there is no live app with traction yet",
+};
+
+const Q3_LABELS: Record<number, string> = {
+  0: "you are looking for help scaling the app",
+  1: "you are looking for help building or improving the app",
+};
+
+const Q4_LABELS: Record<number, string> = {
+  0: "you do not have enough channel-level revenue visibility",
+  1: "paid acquisition still feels blind",
+  2: "attribution and SKAN are too noisy to trust",
+  3: "you need the full growth system set up properly",
 };
 
 function buildMirror(
   answers: Record<string, number>,
   maxFacts: number,
 ): string {
-  const facts: string[] = [];
+  const facts = [Q1_LABELS[answers.q1], Q2_LABELS[answers.q2], Q3_LABELS[answers.q3], Q4_LABELS[answers.q4]]
+    .filter(Boolean)
+    .slice(0, maxFacts);
 
-  // Q1 always first
-  const q1 = Q1_LABELS[answers["q1"]];
-  if (q1) facts.push(q1);
-
-  // Best secondary signal: Q3 > Q4 > Q2
-  const secondary = [
-    Q3_LABELS[answers["q3"]],
-    Q4_LABELS[answers["q4"]],
-    Q2_LABELS[answers["q2"]],
-  ];
-
-  for (const s of secondary) {
-    if (s && facts.length < maxFacts) facts.push(s);
-  }
-
-  // Capitalise first fact, join with ", and "
   if (facts.length === 0) return "Interesting profile";
   facts[0] = facts[0].charAt(0).toUpperCase() + facts[0].slice(1);
   if (facts.length === 1) return facts[0];
-  return facts.slice(0, -1).join(", ") + ", and " + facts[facts.length - 1];
-}
-
-// ---------------------------------------------------------------------------
-// Reframe one-liners (WARM leads, keyed on Q3 = primary need)
-// ---------------------------------------------------------------------------
-
-const REFRAMES: Record<number, string> = {
-  0: "Figuring out the right strategy before building is the smartest move you can make.",
-  1: "Finding the right person to build your app is half the battle.",
-  2: "Growth is a completely different skill than building — and it's where most apps stall.",
-  3: "Having one person who handles both strategy and execution makes everything faster.",
-};
-
-function getReframe(answers: Record<string, number>): string {
-  return REFRAMES[answers["q3"]] ?? "Sounds like you're at a turning point.";
-}
-
-// ---------------------------------------------------------------------------
-// Message templates
-// ---------------------------------------------------------------------------
-
-function hasApp(answers: Record<string, number>): boolean {
-  return answers["q2"] === 2 || answers["q2"] === 3;
+  return facts.slice(0, -1).join(", and ") + ", and " + facts[facts.length - 1];
 }
 
 function bookedMessage(
   firstName: string,
   mirror: string,
-  appOwner: boolean,
+  profileType: "scale" | "build" | "disqualified",
 ): string {
-  const appLine = appOwner
-    ? "Send me a link or screenshots of your app before the call so I can review everything and give you real feedback."
-    : "Looking forward to learning more about your project and figuring out the best approach.";
+  const line =
+    profileType === "scale"
+      ? "Send me your app link plus any current channel data before the call so I can review it properly."
+      : "Send me your app, mockups, or current build status before the call so I can prepare useful feedback.";
 
   return `Hey ${firstName}
 
-Just saw you booked a call, nice! I read your answers. ${mirror}.
+Just saw you booked a call. ${mirror}.
 
-${appLine}
+${line}
 
 Talk soon!`;
 }
 
-function hotMessage(
-  firstName: string,
-  mirror: string,
-  appOwner: boolean,
-): string {
-  const appLine = appOwner
-    ? `Send me a link or screenshots of your app, and book a call here: ${BOOKING_LINK}`
-    : `Book a call here and let's figure out the best approach for your project: ${BOOKING_LINK}`;
-
+function hotMessage(firstName: string, mirror: string): string {
   return `Hey ${firstName}
 
-Just read your answers. ${mirror}. Sounds like a solid project.
+Just read your answers. ${mirror}.
 
-${appLine}
+You look like a real fit for the scaling conversation. Book your call here: ${BOOKING_LINK}
 
-I'll review everything before we talk so I can give you real, specific feedback on your situation.
+If you send me the app link and your current acquisition setup before the call, I will review it in advance.
 
 Talk soon!`;
 }
 
-function warmMessage(
-  firstName: string,
-  mirror: string,
-  reframe: string,
-): string {
+function warmMessage(firstName: string, mirror: string): string {
   return `Hey ${firstName}
 
-Just read your answers. ${mirror}. ${reframe}
+Just read your answers. ${mirror}.
 
-Quick question before I send you anything: are you actively looking to move forward on this, or still in research mode?`;
+You look closer to the build path than the scaling path right now. If you want to move forward, book here: ${BOOKING_LINK}
+
+Happy to help you figure out the product and execution side.
+`;
 }
 
 function coldMessage(firstName: string, mirror: string): string {
@@ -164,14 +123,8 @@ function coldMessage(firstName: string, mirror: string): string {
 
 Just read your answers. ${mirror}.
 
-When you're ready to move forward on your app project, feel free to book a call: ${BOOKING_LINK}
-
-No rush — happy to chat whenever the timing is right.`;
+This offer is mainly for live B2C apps already showing traction. When that changes, you can book here: ${BOOKING_LINK}`;
 }
-
-// ---------------------------------------------------------------------------
-// WhatsApp URL
-// ---------------------------------------------------------------------------
 
 function buildWhatsAppUrl(
   countryCode: string,
@@ -181,14 +134,6 @@ function buildWhatsAppUrl(
   const cleanPhone = (countryCode + phone).replace(/[^\d]/g, "");
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Follow-up message (24h after "show")
-// ---------------------------------------------------------------------------
 
 interface GenerateFollowUpMessageInput {
   firstName: string;
@@ -215,35 +160,28 @@ export function generateFollowUpMessage(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Initial outreach message
-// ---------------------------------------------------------------------------
-
 export function generateLeadMessage(
   input: GenerateLeadMessageInput,
 ): GenerateLeadMessageResult {
   const { firstName, countryCode, phone, answers, booked } = input;
   const temperature = scoreTemperature(answers);
-  const appOwner = hasApp(answers);
+  const profileType = getProfileType(answers);
+  const mirror = buildMirror(answers, profileType === "scale" ? 3 : 2);
 
   let message: string;
 
   if (booked) {
-    const mirror = buildMirror(answers, 2);
-    message = bookedMessage(firstName, mirror, appOwner);
+    message = bookedMessage(firstName, mirror, profileType);
   } else if (temperature === "HOT") {
-    const mirror = buildMirror(answers, 2);
-    message = hotMessage(firstName, mirror, appOwner);
+    message = hotMessage(firstName, mirror);
   } else if (temperature === "WARM") {
-    const mirror = buildMirror(answers, 2);
-    const reframe = getReframe(answers);
-    message = warmMessage(firstName, mirror, reframe);
+    message = warmMessage(firstName, mirror);
   } else {
-    const mirror = buildMirror(answers, 1);
     message = coldMessage(firstName, mirror);
   }
 
-  const whatsappUrl = buildWhatsAppUrl(countryCode, phone, message);
-
+  const whatsappUrl = phone
+    ? buildWhatsAppUrl(countryCode, phone, message)
+    : undefined;
   return { temperature, message, whatsappUrl };
 }

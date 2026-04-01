@@ -2,10 +2,6 @@
 
 import { useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
-import { isValidPhoneNumber, parsePhoneNumber } from "react-phone-number-input";
-import type { Country } from "react-phone-number-input";
-import type { E164Number } from "libphonenumber-js/core";
-import PhoneInput from "./PhoneInput";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -22,11 +18,17 @@ export default function OptinScreen({
 }) {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
-  const [phoneCountry, setPhoneCountry] = useState<Country>("US");
-  const [phoneValue, setPhoneValue] = useState<E164Number | undefined>();
-  const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const heading =
+    profileType === "scale"
+      ? "Last step before booking your call"
+      : "Last step before booking your call";
+  const subheading =
+    profileType === "scale"
+      ? "Enter your details to unlock the booking link."
+      : "Enter your details to unlock the booking link.";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,27 +42,16 @@ export default function OptinScreen({
       setError("Please enter a valid email address");
       return;
     }
-    if (!phoneValue || !isValidPhoneNumber(phoneValue)) {
-      setError("Please enter a valid phone number");
-      return;
-    }
-    if (!consent) {
-      setError("You must accept the privacy policy");
-      return;
-    }
 
     setLoading(true);
 
     try {
-      const parsed = parsePhoneNumber(phoneValue);
       const res = await fetch("/api/quiz-lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           firstName: firstName.trim(),
           email: email.trim(),
-          phone: parsed?.nationalNumber || "",
-          countryCode: parsed ? `+${parsed.countryCallingCode}` : "+1",
           profileType,
           answers,
           source: source || undefined,
@@ -74,7 +65,7 @@ export default function OptinScreen({
         return;
       }
 
-      onSuccess(firstName.trim(), data.id, email.trim(), phoneValue || "");
+      onSuccess(firstName.trim(), data.id, email.trim(), "");
     } catch {
       setError("Something went wrong, please try again");
       setLoading(false);
@@ -84,18 +75,16 @@ export default function OptinScreen({
   const canSubmit =
     !loading &&
     firstName.trim().length > 0 &&
-    EMAIL_REGEX.test(email) &&
-    !!phoneValue && isValidPhoneNumber(phoneValue) &&
-    consent;
+    EMAIL_REGEX.test(email);
 
   return (
     <div className="flex flex-col items-center text-center max-w-lg mx-auto w-full">
       <h2 className="text-4xl font-extrabold tracking-tight leading-tight sm:text-5xl mb-3 w-[120%]">
-        Last step before getting your personalized recommendation 👇
+        {heading}
       </h2>
 
       <p className="text-[#c9c4bc] mb-8 text-lg sm:text-xl">
-        Enter your details to access your results.
+        {subheading}
       </p>
 
       <form onSubmit={handleSubmit} className="w-full space-y-4">
@@ -115,32 +104,17 @@ export default function OptinScreen({
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[#f1ebe2] placeholder:text-[#c9c4bc]/40 outline-none focus:border-[#f4cf8f]/50 focus:ring-1 focus:ring-[#f4cf8f]/20"
         />
 
-        <PhoneInput
-          country={phoneCountry}
-          value={phoneValue}
-          onCountryChange={setPhoneCountry}
-          onChange={setPhoneValue}
-        />
-
-        <label className="flex items-start gap-3 text-left cursor-pointer">
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-            className="mt-1 h-4 w-4 shrink-0 accent-[#f4cf8f]"
-          />
-          <span className="text-sm text-[#c9c4bc]">
-            I agree to the{" "}
-            <a
-              href="/app-sprint/privacy"
-              target="_blank"
-              className="underline underline-offset-2 hover:text-[#f1ebe2]"
-            >
-              privacy policy
-            </a>{" "}
-            and to being contacted by email and phone.
-          </span>
-        </label>
+        <p className="text-left text-sm leading-relaxed text-[#c9c4bc]">
+          By continuing, you agree to the{" "}
+          <a
+            href="/app-sprint/privacy"
+            target="_blank"
+            className="underline underline-offset-2 hover:text-[#f1ebe2]"
+          >
+            privacy policy
+          </a>
+          . Non-serious bookings and missed calls are blacklisted.
+        </p>
 
         {error && (
           <p className="text-red-400 text-sm">{error}</p>
@@ -156,7 +130,7 @@ export default function OptinScreen({
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <>
-              See my recommendation
+              Continue to booking
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </>
           )}

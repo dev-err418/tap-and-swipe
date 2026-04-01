@@ -14,7 +14,7 @@ export default function QuestionScreen({
 }) {
   return (
     <div className="flex flex-col items-center text-center max-w-2xl mx-auto w-full">
-      <h2 className="font-serif text-3xl font-bold tracking-tight leading-tight sm:text-4xl mb-10">
+      <h2 className="text-4xl font-extrabold tracking-tight leading-tight sm:text-5xl mb-10 w-[120%]">
         {question.title}
       </h2>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
@@ -8,16 +8,16 @@ import {
   type QuizStep,
   type QuestionKey,
   questionOrder,
-  questions,
+  getQuestionConfig,
   getProfileType,
   getNextQuestion,
   getPrevQuestion,
+  getResultStep,
+  getStepProgress,
 } from "./quizData";
 import HeroScreen from "./HeroScreen";
 import QuestionScreen from "./QuestionScreen";
 import OptinScreen from "./OptinScreen";
-import WaitingScreen from "./WaitingScreen";
-import NoteScreen from "./NoteScreen";
 import ResultBusiness from "./ResultBusiness";
 
 const slideVariants = {
@@ -35,8 +35,6 @@ const slideVariants = {
   }),
 };
 
-const TOTAL_STEPS = 8; // 5 questions + note + optin + buffer
-
 function trackEvent(type: string, sessionId: string, source?: string) {
   if (process.env.NODE_ENV === "development") return;
   fetch("/api/quiz-event", {
@@ -46,7 +44,13 @@ function trackEvent(type: string, sessionId: string, source?: string) {
   }).catch(() => {});
 }
 
-export default function QuizFunnel({ serverReferrer, serverAppSource }: { serverReferrer?: string; serverAppSource?: string }) {
+export default function QuizFunnel({
+  serverReferrer,
+  serverAppSource,
+}: {
+  serverReferrer?: string;
+  serverAppSource?: string;
+}) {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<QuizStep>("hero");
   const [direction, setDirection] = useState(1);
@@ -55,12 +59,10 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
   const [leadId, setLeadId] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const sessionIdRef = useRef(
-    typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36),
-  );
+  const [source, setSource] = useState<string | undefined>(undefined);
+  const sessionId = useId();
   const sourceRef = useRef<string | undefined>(undefined);
 
-  // Capture UTM / referrer source on mount
   useEffect(() => {
     const utm =
       searchParams.get("utm") ||
@@ -85,47 +87,34 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
         sourceRef.current = serverAppSource;
       }
     }
-    trackEvent("page_view", sessionIdRef.current, sourceRef.current);
-  }, [searchParams, serverReferrer, serverAppSource]);
-
-  // Debug: ?step=optin or ?step=waiting or ?step=result-business
-  useEffect(() => {
-    const debugStep = searchParams.get("step") as QuizStep | null;
-    if (debugStep && ["note", "optin", "waiting", "result-business"].includes(debugStep)) {
-      setFirstName("Debug");
-      setStep(debugStep);
-    }
-  }, [searchParams]);
+    setSource(sourceRef.current);
+    trackEvent("page_view", sessionId, sourceRef.current);
+  }, [searchParams, serverReferrer, serverAppSource, sessionId]);
 
   const currentQuestionIndex = questionOrder.indexOf(step as QuestionKey);
   const isQuestion = currentQuestionIndex !== -1;
-
-  const showProgressBar = isQuestion || step === "note" || step === "optin";
-  const showBack = isQuestion || step === "note" || step === "optin";
-
-  const progressValue =
-    step === "optin"
-      ? (TOTAL_STEPS - 1) / TOTAL_STEPS
-      : step === "note"
-        ? (questionOrder.length + 1) / TOTAL_STEPS
-        : isQuestion
-          ? (currentQuestionIndex + 1) / TOTAL_STEPS
-          : 0;
+  const isResult = step.startsWith("result-");
+  const profileType = getProfileType(answers);
+  const showProgressBar = isQuestion || step === "optin";
+  const showBack = isQuestion || step === "optin";
+  const progressValue = isQuestion || step === "optin"
+    ? getStepProgress(step as QuestionKey | "optin", answers)
+    : 0;
 
   function goNext(questionKey: QuestionKey, answerIndex: number) {
     const newAnswers = { ...answers, [questionKey]: answerIndex };
     setAnswers(newAnswers);
     setDirection(1);
     const next = getNextQuestion(questionKey, newAnswers);
-    if (next === "note") {
-      trackEvent("quiz_complete", sessionIdRef.current, sourceRef.current);
+    if (next === "optin" || next === "result-disqualified") {
+      trackEvent("quiz_complete", sessionId, sourceRef.current);
     }
     setStep(next);
   }
 
   function goBack() {
     setDirection(-1);
-    setStep(getPrevQuestion(step as QuestionKey | "note" | "optin", answers));
+    setStep(getPrevQuestion(step as QuestionKey | "optin", answers));
   }
 
   function goToWaiting(name: string, id: string, em: string, ph: string) {
@@ -134,22 +123,13 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
     setEmail(em);
     setPhone(ph);
     setDirection(1);
-    setStep("waiting");
+    setStep(getResultStep({ ...answers, firstName: name }));
   }
 
-  const goToResult = useCallback(() => {
-    setDirection(1);
-    setStep("result-business");
-  }, []);
-
-  const isResult = step === "result-business";
-
   return (
-    <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30 relative">
-      {/* Background glow */}
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#f4cf8f]/[0.03] blur-[120px]" />
+    <div className="relative min-h-screen bg-[#2a2725] font-sans text-[#f1ebe2] selection:bg-[#f4cf8f]/30">
+      <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f4cf8f]/[0.03] blur-[120px]" />
 
-      {/* Progress bar */}
       {showProgressBar && (
         <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-white/5">
           <motion.div
@@ -161,11 +141,10 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
         </div>
       )}
 
-      {/* Back button */}
       {showBack && (
         <button
           onClick={goBack}
-          className="fixed top-6 left-6 z-50 flex items-center gap-1.5 text-sm text-[#c9c4bc] hover:text-[#f1ebe2] transition-colors cursor-pointer"
+          className="fixed top-6 left-6 z-50 flex cursor-pointer items-center gap-1.5 text-sm text-[#c9c4bc] transition-colors hover:text-[#f1ebe2]"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
@@ -184,13 +163,13 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
           className={
             isResult
               ? "min-h-screen px-6 pt-36 pb-16"
-              : "flex min-h-screen items-center justify-center px-6 py-16 overflow-hidden"
+              : "flex min-h-screen items-center justify-center overflow-hidden px-6 py-16"
           }
         >
           {step === "hero" && (
             <HeroScreen
               onStart={() => {
-                trackEvent("quiz_start", sessionIdRef.current, sourceRef.current);
+                trackEvent("quiz_start", sessionId, sourceRef.current);
                 setDirection(1);
                 setStep("q1");
               }}
@@ -199,43 +178,33 @@ export default function QuizFunnel({ serverReferrer, serverAppSource }: { server
 
           {isQuestion && (
             <QuestionScreen
-              question={questions[step as QuestionKey]}
+              question={getQuestionConfig(step as QuestionKey, answers)}
               questionKey={step as QuestionKey}
               onAnswer={(answerIndex) => goNext(step as QuestionKey, answerIndex)}
-            />
-          )}
-
-          {step === "note" && (
-            <NoteScreen
-              initialValue={(answers.note as string) ?? ""}
-              onSubmit={(note) => {
-                setAnswers((prev) => ({ ...prev, note }));
-                setDirection(1);
-                setStep("optin");
-              }}
             />
           )}
 
           {step === "optin" && (
             <OptinScreen
               answers={answers}
-              profileType={getProfileType((answers.q3 as number) ?? 0)}
-              source={sourceRef.current}
+              profileType={profileType}
+              source={source}
               onSuccess={goToWaiting}
             />
           )}
 
-          {step === "waiting" && <WaitingScreen onComplete={goToResult} />}
-
-          {step === "result-business" && (
+          {(step === "result-scale" ||
+            step === "result-build" ||
+            step === "result-disqualified") && (
             <ResultBusiness
               firstName={firstName}
               answers={answers}
               leadId={leadId}
               email={email}
               phone={phone}
-              source={sourceRef.current}
-              onBookingClick={() => trackEvent("booking_click", sessionIdRef.current, sourceRef.current)}
+              onBookingClick={() =>
+                trackEvent("booking_click", sessionId, sourceRef.current)
+              }
             />
           )}
         </motion.div>
