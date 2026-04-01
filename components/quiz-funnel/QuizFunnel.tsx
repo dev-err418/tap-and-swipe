@@ -12,7 +12,6 @@ import {
   getProfileType,
   getNextQuestion,
   getPrevQuestion,
-  getResultStep,
   getStepProgress,
 } from "./quizData";
 import HeroScreen from "./HeroScreen";
@@ -55,10 +54,6 @@ export default function QuizFunnel({
   const [step, setStep] = useState<QuizStep>("hero");
   const [direction, setDirection] = useState(1);
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
-  const [firstName, setFirstName] = useState("");
-  const [leadId, setLeadId] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [source, setSource] = useState<string | undefined>(undefined);
   const sessionId = useId();
   const sourceRef = useRef<string | undefined>(undefined);
@@ -93,7 +88,7 @@ export default function QuizFunnel({
 
   const currentQuestionIndex = questionOrder.indexOf(step as QuestionKey);
   const isQuestion = currentQuestionIndex !== -1;
-  const isResult = step.startsWith("result-");
+  const isResult = step === "result-disqualified";
   const profileType = getProfileType(answers);
   const showProgressBar = isQuestion || step === "optin";
   const showBack = isQuestion || step === "optin";
@@ -117,13 +112,15 @@ export default function QuizFunnel({
     setStep(getPrevQuestion(step as QuestionKey | "optin", answers));
   }
 
-  function goToWaiting(name: string, id: string, em: string, ph: string) {
-    setFirstName(name);
-    setLeadId(id);
-    setEmail(em);
-    setPhone(ph);
-    setDirection(1);
-    setStep(getResultStep({ ...answers, firstName: name }));
+  function goToBooking(name: string, id: string, em: string, ph: string) {
+    const params = new URLSearchParams();
+    params.set("utm_notes", id);
+    params.set("name", name);
+    params.set("email", em);
+    if (ph) params.set("attendeePhoneNumber", ph);
+    localStorage.setItem("quiz_lead_id", id);
+    trackEvent("booking_click", sessionId, sourceRef.current);
+    window.location.href = `https://cal.com/arthur-builds-stuff/app-sprint-application?${params.toString()}`;
   }
 
   return (
@@ -189,22 +186,13 @@ export default function QuizFunnel({
               answers={answers}
               profileType={profileType}
               source={source}
-              onSuccess={goToWaiting}
+              onSuccess={goToBooking}
             />
           )}
 
-          {(step === "result-scale" ||
-            step === "result-build" ||
-            step === "result-disqualified") && (
+          {step === "result-disqualified" && (
             <ResultBusiness
-              firstName={firstName}
               answers={answers}
-              leadId={leadId}
-              email={email}
-              phone={phone}
-              onBookingClick={() =>
-                trackEvent("booking_click", sessionId, sourceRef.current)
-              }
             />
           )}
         </motion.div>
