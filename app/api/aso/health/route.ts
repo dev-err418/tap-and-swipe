@@ -6,13 +6,7 @@ export async function GET() {
   if (session?.discordId !== process.env.ADMIN_DISCORD_ID) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
-  const base = process.env.ASO_API_URL;
-  if (!base) {
-    return NextResponse.json(
-      { error: "ASO_API_URL not configured" },
-      { status: 500 }
-    );
-  }
+  const base = "https://api.tap-and-swipe.com";
   try {
     const res = await fetch(`${base}/health`, { next: { revalidate: 0 } });
     return NextResponse.json(await res.json());
