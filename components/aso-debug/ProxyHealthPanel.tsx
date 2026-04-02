@@ -23,6 +23,12 @@ interface QueueInfo {
   peakQueued: number;
 }
 
+interface BurnHistoryEntry {
+  proxy_ip: string;
+  burns: number;
+  last_burned: string;
+}
+
 interface HealthData {
   status: string;
   upstream: {
@@ -41,6 +47,7 @@ interface HealthData {
     proxyStats: ProxyStat[];
     queueing?: Record<string, QueueInfo>;
   };
+  burnHistory?: BurnHistoryEntry[];
   routes?: Record<string, { active: number; maxActive: number; rejected: number; peakActive: number }>;
 }
 
@@ -114,10 +121,11 @@ export default function ProxyHealthPanel() {
   if (error) return <p className="text-sm text-red-400">Health fetch error: {error}</p>;
   if (!data) return <p className="text-sm text-[#c9c4bc]/60">Loading live health...</p>;
 
-  const { upstream: u, routes } = data;
+  const { upstream: u, routes, burnHistory } = data;
   const burnedCount = u.proxyStats.filter((p) => p.burned).length;
   const totalHitMiss = u.cache.hits + u.cache.misses;
   const hitRate = totalHitMiss > 0 ? Math.round((u.cache.hits / totalHitMiss) * 1000) / 10 : 0;
+  const burnMap = new Map((burnHistory || []).map((b) => [b.proxy_ip, b]));
 
   return (
     <div className="space-y-4">
@@ -135,6 +143,9 @@ export default function ProxyHealthPanel() {
         const sorted = [...u.proxyStats].sort((a, b) => {
           if (a.burned !== b.burned) return a.burned ? -1 : 1;
           if (a.coolingDown !== b.coolingDown) return a.coolingDown ? -1 : 1;
+          const aBurns = burnMap.get(a.ip)?.burns ?? 0;
+          const bBurns = burnMap.get(b.ip)?.burns ?? 0;
+          if (aBurns !== bBurns) return bBurns - aBurns;
           return b.windowUsed - a.windowUsed;
         });
         const COLLAPSED_COUNT = 8; // 2 rows × 4 cols
@@ -167,6 +178,11 @@ export default function ProxyHealthPanel() {
                       {p.windowUsed}/{p.windowLimit} req/5s
                       {p.consecutive403 > 0 && <span className="text-red-400 ml-1">({p.consecutive403} 403s)</span>}
                     </p>
+                    {burnMap.get(p.ip) && (
+                      <p className={`text-[10px] mt-0.5 ${(burnMap.get(p.ip)?.burns ?? 0) >= 5 ? "text-red-400 font-semibold" : "text-orange-400/70"}`}>
+                        {burnMap.get(p.ip)!.burns}x burned (48h)
+                      </p>
+                    )}
                   </div>
                 );
               })}

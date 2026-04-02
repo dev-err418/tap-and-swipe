@@ -113,11 +113,13 @@ export async function GET(req: Request) {
   const periodDays = Math.max(1, Math.ceil(minutes / 1440));
   const { rows: usageRows } = await pool.query(
     `
-    SELECT license_key, SUM(requests)::int as total_requests,
-           (array_agg(requests ORDER BY day DESC))[1] as today_requests
-    FROM aso_license_usage
-    WHERE day >= CURRENT_DATE - ($1 || ' days')::interval
-    GROUP BY license_key
+    SELECT u.license_key, SUM(u.requests)::int as total_requests,
+           (array_agg(u.requests ORDER BY u.day DESC))[1] as today_requests,
+           l.plan, l.active, l.email
+    FROM aso_license_usage u
+    LEFT JOIN aso_licenses l ON l.key = u.license_key
+    WHERE u.day >= CURRENT_DATE - ($1 || ' days')::interval
+    GROUP BY u.license_key, l.plan, l.active, l.email
     ORDER BY total_requests DESC
     LIMIT 50
     `,

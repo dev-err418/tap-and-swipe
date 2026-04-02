@@ -6,16 +6,31 @@ interface LicenseUsageRow {
   license_key: string;
   total_requests: number;
   today_requests: number;
+  plan: string | null;
+  active: boolean | null;
+  email: string | null;
 }
 
 type Period = "1h" | "6h" | "24h" | "7d" | "30d";
 type SortKey = "total" | "today";
+
+function StatusPill({ plan, active }: { plan: string | null; active: boolean | null }) {
+  if (active === false) {
+    return <span className="rounded px-1.5 py-0.5 text-[10px] font-bold bg-red-400/20 text-red-400">INACTIVE</span>;
+  }
+  const label = (plan || "solo").toUpperCase();
+  const colors = plan === "pro"
+    ? "bg-purple-400/20 text-purple-400"
+    : "bg-emerald-400/20 text-emerald-400";
+  return <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${colors}`}>{label}</span>;
+}
 
 export default function LicenseUsagePanel() {
   const [period, setPeriod] = useState<Period>("7d");
   const [rows, setRows] = useState<LicenseUsageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortKey>("total");
+  const [copied, setCopied] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -43,6 +58,12 @@ export default function LicenseUsagePanel() {
 
   const periodDays = { "1h": 1, "6h": 1, "24h": 1, "7d": 7, "30d": 30 }[period];
 
+  function copyKey(key: string) {
+    navigator.clipboard.writeText(key);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 1500);
+  }
+
   return (
     <div className="space-y-4">
       {/* Period selector */}
@@ -69,6 +90,7 @@ export default function LicenseUsagePanel() {
             <thead>
               <tr className="text-[#c9c4bc]/60 border-b border-white/10">
                 <th className="text-left px-4 py-2 font-medium">License Key</th>
+                <th className="text-left px-4 py-2 font-medium">Status</th>
                 <th
                   className="text-right px-4 py-2 font-medium cursor-pointer hover:text-[#f4cf8f]"
                   onClick={() => setSortBy("today")}
@@ -93,8 +115,22 @@ export default function LicenseUsagePanel() {
                     key={r.license_key}
                     className={`border-b border-white/5 ${hot ? "bg-red-400/5" : ""}`}
                   >
-                    <td className="px-4 py-2 font-mono text-[#c9c4bc]">
-                      {r.license_key.slice(0, 12)}...
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => copyKey(r.license_key)}
+                        className="font-mono text-[#c9c4bc] hover:text-[#f4cf8f] transition-colors cursor-pointer text-left"
+                        title={`Click to copy: ${r.license_key}`}
+                      >
+                        {copied === r.license_key ? (
+                          <span className="text-emerald-400">Copied!</span>
+                        ) : (
+                          r.license_key.slice(0, 12) + "..."
+                        )}
+                      </button>
+                      {r.email && <p className="text-[10px] text-[#c9c4bc]/40 truncate max-w-[160px]">{r.email}</p>}
+                    </td>
+                    <td className="px-4 py-2">
+                      <StatusPill plan={r.plan} active={r.active} />
                     </td>
                     <td className="px-4 py-2 text-right tabular-nums text-[#f4cf8f]">
                       {(r.today_requests ?? 0).toLocaleString()}
