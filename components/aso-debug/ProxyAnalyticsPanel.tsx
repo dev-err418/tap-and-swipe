@@ -81,7 +81,7 @@ function SemaphoreGauge({ label, peakActive, peakQueued, max }: { label: string;
   );
 }
 
-export default function ProxyAnalyticsPanel() {
+export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: number; itunesMax?: number } = {}) {
   const [period, setPeriod] = useState<Period>("24h");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,9 +114,9 @@ export default function ProxyAnalyticsPanel() {
     return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   }
 
-  // Semaphore limits scale with proxy count: 11 proxies × 10 = 110 concurrent
-  const AMP_MAX = 110;
-  const ITUNES_MAX = 110;
+  // Semaphore limits — dynamic from health endpoint, fallback 110
+  const AMP_MAX = ampMax ?? 110;
+  const ITUNES_MAX = itunesMax ?? 110;
 
   return (
     <div className="space-y-6">

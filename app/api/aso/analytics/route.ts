@@ -109,10 +109,26 @@ export async function GET(req: Request) {
       ? Math.round((summary.cacheHits / totalCacheOps) * 1000) / 10
       : 0;
 
+  // Per-license usage data
+  const periodDays = Math.max(1, Math.ceil(minutes / 1440));
+  const { rows: usageRows } = await pool.query(
+    `
+    SELECT license_key, SUM(requests)::int as total_requests,
+           (array_agg(requests ORDER BY day DESC))[1] as today_requests
+    FROM aso_license_usage
+    WHERE day >= CURRENT_DATE - ($1 || ' days')::interval
+    GROUP BY license_key
+    ORDER BY total_requests DESC
+    LIMIT 50
+    `,
+    [periodDays]
+  );
+
   return NextResponse.json({
     period,
     granMinutes,
     summary: { ...summary, cacheHitRate },
     timeseries: rows,
+    licenseUsage: usageRows,
   });
 }

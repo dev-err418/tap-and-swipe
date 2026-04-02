@@ -7,6 +7,8 @@ import InviteModal from "@/components/analytics/InviteModal";
 import ExpandableGroup from "@/components/analytics/ExpandableGroup";
 import LicensesModal from "@/components/aso-debug/LicensesModal";
 import ProxyAnalyticsPanel from "@/components/aso-debug/ProxyAnalyticsPanel";
+import ProxyHealthPanel from "@/components/aso-debug/ProxyHealthPanel";
+import LicenseUsagePanel from "@/components/aso-debug/LicenseUsagePanel";
 import FeedbackPanel from "@/components/aso-debug/FeedbackPanel";
 
 export const dynamic = "force-dynamic";
@@ -132,9 +134,19 @@ export default async function AnalyticsPage({
             <LicensesModal />
           </div>
 
+          <h3 className="text-lg font-bold mb-4">Live proxy health</h3>
+          <div className="mb-10">
+            <ProxyHealthPanel />
+          </div>
+
           <h3 className="text-lg font-bold mb-4">Proxy analytics</h3>
           <div className="mb-10">
             <ProxyAnalyticsPanel />
+          </div>
+
+          <h3 className="text-lg font-bold mb-4">License usage</h3>
+          <div className="mb-10">
+            <LicenseUsagePanel />
           </div>
 
           <h3 className="text-lg font-bold mb-4">Feedback</h3>
