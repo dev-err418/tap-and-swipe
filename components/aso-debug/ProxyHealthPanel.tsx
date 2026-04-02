@@ -89,6 +89,7 @@ function formatBytes(bytes: number) {
 export default function ProxyHealthPanel() {
   const [data, setData] = useState<HealthData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const fetchHealth = useCallback(async () => {
     try {
@@ -129,38 +130,58 @@ export default function ProxyHealthPanel() {
         </div>
       )}
 
-      {/* Proxy grid */}
-      {u.proxyStats.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {u.proxyStats.map((p) => {
-            const status = p.burned ? "burned" : p.coolingDown ? "cooling" : "healthy";
-            const usagePct = p.windowLimit > 0 ? Math.min(100, (p.windowUsed / p.windowLimit) * 100) : 0;
-            return (
-              <div
-                key={p.ip}
-                className={`rounded-xl border p-3 ${
-                  p.burned ? "border-red-400/30 bg-red-400/5" : "border-white/5 bg-white/5"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-mono text-[#c9c4bc] truncate">{p.ip}</p>
-                  <StatusBadge status={status} />
-                </div>
-                <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden mb-1">
+      {/* Proxy grid — sorted burned first, collapsed to 2 rows by default */}
+      {u.proxyStats.length > 0 && (() => {
+        const sorted = [...u.proxyStats].sort((a, b) => {
+          if (a.burned !== b.burned) return a.burned ? -1 : 1;
+          if (a.coolingDown !== b.coolingDown) return a.coolingDown ? -1 : 1;
+          return b.windowUsed - a.windowUsed;
+        });
+        const COLLAPSED_COUNT = 8; // 2 rows × 4 cols
+        const shown = expanded ? sorted : sorted.slice(0, COLLAPSED_COUNT);
+        const hasMore = sorted.length > COLLAPSED_COUNT;
+        return (
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {shown.map((p) => {
+                const status = p.burned ? "burned" : p.coolingDown ? "cooling" : "healthy";
+                const usagePct = p.windowLimit > 0 ? Math.min(100, (p.windowUsed / p.windowLimit) * 100) : 0;
+                return (
                   <div
-                    className={`h-full rounded-full ${p.burned ? "bg-red-400" : p.coolingDown ? "bg-yellow-400" : "bg-[#f4cf8f]"}`}
-                    style={{ width: `${usagePct}%` }}
-                  />
-                </div>
-                <p className="text-[10px] text-[#c9c4bc]/60">
-                  {p.windowUsed}/{p.windowLimit} req/5s
-                  {p.consecutive403 > 0 && <span className="text-red-400 ml-1">({p.consecutive403} 403s)</span>}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                    key={p.ip}
+                    className={`rounded-xl border p-3 ${
+                      p.burned ? "border-red-400/30 bg-red-400/5" : "border-white/5 bg-white/5"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-mono text-[#c9c4bc] truncate">{p.ip}</p>
+                      <StatusBadge status={status} />
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden mb-1">
+                      <div
+                        className={`h-full rounded-full ${p.burned ? "bg-red-400" : p.coolingDown ? "bg-yellow-400" : "bg-[#f4cf8f]"}`}
+                        style={{ width: `${usagePct}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-[#c9c4bc]/60">
+                      {p.windowUsed}/{p.windowLimit} req/5s
+                      {p.consecutive403 > 0 && <span className="text-red-400 ml-1">({p.consecutive403} 403s)</span>}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            {hasMore && (
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="text-xs text-[#c9c4bc]/60 hover:text-[#f4cf8f] transition-colors"
+              >
+                {expanded ? "Show less" : `Show all ${sorted.length} proxies`}
+              </button>
+            )}
+          </>
+        );
+      })()}
 
       {/* Cache + concurrency row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
