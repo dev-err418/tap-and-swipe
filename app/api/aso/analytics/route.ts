@@ -128,11 +128,26 @@ export async function GET(req: Request) {
   // Unique licenses = distinct licenses that made requests in this period
   summary.uniqueLicenses = usageRows.length;
 
+  // Trial abuse: machine_ids with 2+ licenses where none are active
+  const { rows: trialAbuse } = await pool.query(`
+    SELECT machine_id,
+           COUNT(*)::int as license_count,
+           array_agg(email ORDER BY created_at) as emails,
+           array_agg(key ORDER BY created_at) as keys,
+           array_agg(created_at ORDER BY created_at) as created_dates
+    FROM aso_licenses
+    WHERE machine_id IS NOT NULL
+    GROUP BY machine_id
+    HAVING COUNT(*) >= 2 AND bool_or(active) = false
+    ORDER BY COUNT(*) DESC
+  `);
+
   return NextResponse.json({
     period,
     granMinutes,
     summary: { ...summary, cacheHitRate },
     timeseries: rows,
     licenseUsage: usageRows,
+    trialAbuse,
   });
 }

@@ -10,6 +10,7 @@ import ProxyAnalyticsPanel from "@/components/aso-debug/ProxyAnalyticsPanel";
 import ProxyHealthPanel from "@/components/aso-debug/ProxyHealthPanel";
 import LicenseUsagePanel from "@/components/aso-debug/LicenseUsagePanel";
 import FeedbackPanel from "@/components/aso-debug/FeedbackPanel";
+import TrialAbusePanel from "@/components/aso-debug/TrialAbusePanel";
 
 export const dynamic = "force-dynamic";
 
@@ -147,6 +148,11 @@ export default async function AnalyticsPage({
           <h3 className="text-lg font-bold mb-4">License usage</h3>
           <div className="mb-10">
             <LicenseUsagePanel />
+          </div>
+
+          <h3 className="text-lg font-bold mb-4">Trial abuse</h3>
+          <div className="mb-10">
+            <TrialAbusePanel />
           </div>
 
           <h3 className="text-lg font-bold mb-4">Feedback</h3>
