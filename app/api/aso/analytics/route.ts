@@ -121,10 +121,12 @@ export async function GET(req: Request) {
     WHERE u.day >= CURRENT_DATE - ($1 || ' days')::interval
     GROUP BY u.license_key, l.plan, l.active, l.email
     ORDER BY total_requests DESC
-    LIMIT 50
     `,
     [periodDays]
   );
+
+  // Unique licenses = distinct licenses that made requests in this period
+  summary.uniqueLicenses = usageRows.length;
 
   return NextResponse.json({
     period,

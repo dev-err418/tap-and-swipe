@@ -31,6 +31,7 @@ export default function LicenseUsagePanel() {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortKey>("total");
   const [copied, setCopied] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -55,6 +56,8 @@ export default function LicenseUsagePanel() {
       ? b.total_requests - a.total_requests
       : (b.today_requests ?? 0) - (a.today_requests ?? 0)
   );
+
+  const visible = showAll ? sorted : sorted.slice(0, 10);
 
   const periodDays = { "1h": 1, "6h": 1, "24h": 1, "7d": 7, "30d": 30 }[period];
 
@@ -107,7 +110,7 @@ export default function LicenseUsagePanel() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((r) => {
+              {visible.map((r) => {
                 const avg = periodDays > 0 ? Math.round(r.total_requests / periodDays) : r.total_requests;
                 const hot = avg > 5000;
                 return (
@@ -146,6 +149,14 @@ export default function LicenseUsagePanel() {
               })}
             </tbody>
           </table>
+          {sorted.length > 10 && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="w-full py-2 text-xs font-semibold text-[#c9c4bc]/60 hover:text-[#f4cf8f] transition-colors border-t border-white/5"
+            >
+              {showAll ? "Show top 10" : `Show all (${sorted.length})`}
+            </button>
+          )}
         </div>
       )}
     </div>
