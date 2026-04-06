@@ -96,3 +96,32 @@ export async function inviteToOrg(
   console.error(`[inviteToOrg] Failed for ${username}: ${res.status} ${text}`);
   return "error";
 }
+
+/**
+ * Add a user to a GitHub team inside the org.
+ * Uses the same PAT as inviteToOrg.
+ */
+export async function addToTeam(username: string): Promise<void> {
+  const org = process.env.GITHUB_ORG_NAME!;
+  const team = process.env.GITHUB_TEAM_SLUG!;
+  const token = process.env.GITHUB_ORG_ADMIN_TOKEN!;
+
+  const res = await fetch(
+    `${GITHUB_API}/orgs/${org}/teams/${team}/memberships/${username}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+      },
+      body: JSON.stringify({ role: "member" }),
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(
+      `[addToTeam] Failed for ${username}: ${res.status} ${text}`
+    );
+  }
+}

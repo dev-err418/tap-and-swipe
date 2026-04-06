@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { exchangeCode, getUser, inviteToOrg } from "@/lib/github";
+import { exchangeCode, getUser, inviteToOrg, addToTeam } from "@/lib/github";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
@@ -59,8 +59,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Invite to org
+    // Invite to org and add to team
     const inviteStatus = await inviteToOrg(githubUser.login);
+    await addToTeam(githubUser.login);
 
     return NextResponse.redirect(`${BUILD_URL}?github_status=${inviteStatus}`);
   } catch (err) {
