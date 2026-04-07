@@ -129,12 +129,15 @@ export async function GET(req: Request) {
   summary.uniqueLicenses = usageRows.length;
 
   // Trial abuse: machine_ids with 2+ licenses (all statuses)
+  // Use active boolean as fallback for pre-migration licenses where status='active' but active=false
   const { rows: trialAbuse } = await pool.query(`
     SELECT machine_id,
            COUNT(*)::int as license_count,
            array_agg(email ORDER BY created_at) as emails,
            array_agg(key ORDER BY created_at) as keys,
-           array_agg(COALESCE(status, 'active') ORDER BY created_at) as statuses,
+           array_agg(CASE WHEN status IN ('warned','revoked','appeal_pending') THEN status
+                          WHEN NOT active THEN 'revoked'
+                          ELSE 'active' END ORDER BY created_at) as statuses,
            array_agg(warned_at ORDER BY created_at) as warned_dates,
            array_agg(created_at ORDER BY created_at) as created_dates,
            bool_or(active) as has_active
@@ -142,7 +145,7 @@ export async function GET(req: Request) {
     WHERE machine_id IS NOT NULL
     GROUP BY machine_id
     HAVING COUNT(*) >= 2
-    ORDER BY MAX(warned_at) DESC NULLS LAST, COUNT(*) DESC
+    ORDER BY MAX(warned_at) DESC NULLS LAST, MAX(created_at) DESC
   `);
 
   return NextResponse.json({
