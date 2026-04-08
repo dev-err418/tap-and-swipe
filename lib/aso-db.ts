@@ -69,3 +69,64 @@ export async function reactivateAsoLicenses(
     [stripeCustomerId]
   );
 }
+
+/**
+ * Generate a license key for a Whop membership. Idempotent — returns existing key if one exists.
+ */
+export async function generateAsoLicenseWhop(
+  email: string,
+  whopMembershipId: string,
+  plan: AsoPlan = "pro"
+): Promise<{ key: string; isNew: boolean }> {
+  // Idempotency: check for existing license by Whop membership
+  const existing = await asoPool.query(
+    "SELECT key FROM aso_licenses WHERE whop_membership_id = $1 AND active = true LIMIT 1",
+    [whopMembershipId]
+  );
+  if (existing.rows.length > 0) {
+    await asoPool.query(
+      "UPDATE aso_licenses SET plan = $1 WHERE whop_membership_id = $2 AND active = true",
+      [plan, whopMembershipId]
+    );
+    return { key: existing.rows[0].key, isNew: false };
+  }
+
+  // Check by email — catches duplicate checkouts
+  const existingByEmail = await asoPool.query(
+    "SELECT key FROM aso_licenses WHERE LOWER(email) = LOWER($1) AND active = true LIMIT 1",
+    [email]
+  );
+  if (existingByEmail.rows.length > 0) {
+    return { key: existingByEmail.rows[0].key, isNew: false };
+  }
+
+  const segments = Array.from({ length: 4 }, () =>
+    crypto.randomBytes(2).toString("hex").toUpperCase()
+  );
+  const key = `ASO-${segments.join("-")}`;
+
+  await asoPool.query(
+    "INSERT INTO aso_licenses (key, email, whop_membership_id, plan, provider) VALUES ($1, $2, $3, $4, $5)",
+    [key, email, whopMembershipId, plan, "whop"]
+  );
+
+  return { key, isNew: true };
+}
+
+export async function deactivateAsoLicensesByWhop(
+  whopMembershipId: string
+): Promise<void> {
+  await asoPool.query(
+    "UPDATE aso_licenses SET active = false WHERE whop_membership_id = $1 AND active = true",
+    [whopMembershipId]
+  );
+}
+
+export async function reactivateAsoLicensesByWhop(
+  whopMembershipId: string
+): Promise<void> {
+  await asoPool.query(
+    "UPDATE aso_licenses SET active = true WHERE whop_membership_id = $1 AND active = false",
+    [whopMembershipId]
+  );
+}

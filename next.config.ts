@@ -38,6 +38,11 @@ const nextConfig: NextConfig = {
         destination: "/app-sprint/roadmap/:slug*",
         permanent: true,
       },
+      {
+        source: "/aso",
+        destination: "https://appsprint.app/aso",
+        permanent: true,
+      },
     ];
   },
 };

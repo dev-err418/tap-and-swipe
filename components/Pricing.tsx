@@ -39,7 +39,7 @@ const Pricing = () => {
 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-extrabold text-[#f1ebe2]">137&euro;</span>
+                                <span className="text-5xl font-extrabold text-[#f1ebe2]">127&euro;</span>
                                 <span className="text-lg text-[#c9c4bc]">/mo</span>
                             </div>
                         </div>
