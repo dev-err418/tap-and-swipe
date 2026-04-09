@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 export default function BundleButton() {
     return (
         <a
-            href="/api/auth/discord?flow=bundle-community"
+            href="/api/checkout/bundle"
             data-fast-goal="cta_pricing_clicked"
             className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer mb-4"
         >

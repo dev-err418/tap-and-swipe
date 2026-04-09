@@ -1,18 +1,11 @@
 import { NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { getSession, clearSession } from "@/lib/session";
 import { getWhop, WHOP_COMMUNITY_PLAN_ID } from "@/lib/whop";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
 export async function GET() {
-  const session = await getSession();
-
-  if (!session) {
-    return NextResponse.redirect(`${APP_URL}/aso?error=session_expired`);
-  }
-
   try {
     const headersList = await headers();
     const country = headersList.get("cf-ipcountry") || "";
@@ -25,7 +18,6 @@ export async function GET() {
       plan_id: WHOP_COMMUNITY_PLAN_ID,
       redirect_url: `${APP_URL}/app-sprint-community?status=success`,
       metadata: {
-        discordId: session.discordId,
         visitorId,
         country,
         product: "bundle-aso",
@@ -40,8 +32,6 @@ export async function GET() {
         update: {},
       }).catch(() => {});
     }
-
-    await clearSession();
 
     const checkoutUrl = checkout.purchase_url.startsWith("http")
       ? checkout.purchase_url
