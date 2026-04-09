@@ -76,7 +76,8 @@ export async function reactivateAsoLicenses(
 export async function generateAsoLicenseWhop(
   email: string,
   whopMembershipId: string,
-  plan: AsoPlan = "pro"
+  plan: AsoPlan = "pro",
+  manageUrl?: string
 ): Promise<{ key: string; isNew: boolean }> {
   // Idempotency: check for existing license by Whop membership
   const existing = await asoPool.query(
@@ -85,8 +86,8 @@ export async function generateAsoLicenseWhop(
   );
   if (existing.rows.length > 0) {
     await asoPool.query(
-      "UPDATE aso_licenses SET plan = $1 WHERE whop_membership_id = $2 AND active = true",
-      [plan, whopMembershipId]
+      "UPDATE aso_licenses SET plan = $1, whop_manage_url = COALESCE($2, whop_manage_url) WHERE whop_membership_id = $3 AND active = true",
+      [plan, manageUrl ?? null, whopMembershipId]
     );
     return { key: existing.rows[0].key, isNew: false };
   }
@@ -106,8 +107,8 @@ export async function generateAsoLicenseWhop(
   const key = `ASO-${segments.join("-")}`;
 
   await asoPool.query(
-    "INSERT INTO aso_licenses (key, email, whop_membership_id, plan, provider) VALUES ($1, $2, $3, $4, $5)",
-    [key, email, whopMembershipId, plan, "whop"]
+    "INSERT INTO aso_licenses (key, email, whop_membership_id, whop_manage_url, plan, provider) VALUES ($1, $2, $3, $4, $5, $6)",
+    [key, email, whopMembershipId, manageUrl ?? null, plan, "whop"]
   );
 
   return { key, isNew: true };

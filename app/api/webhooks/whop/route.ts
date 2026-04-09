@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
           // ASO Pro license generation
           if (email) {
             const { key: licenseKey, isNew: isNewLicense } =
-              await generateAsoLicenseWhop(email, membershipId, "pro");
+              await generateAsoLicenseWhop(email, membershipId, "pro", manageUrl);
 
             if (isNewLicense || isNew) {
               await sendLicenseKeyEmail(
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
           // No Discord — still generate ASO license if we have email
           if (email) {
             const { key: licenseKey, isNew: isNewLicense } =
-              await generateAsoLicenseWhop(email, membershipId, "pro");
+              await generateAsoLicenseWhop(email, membershipId, "pro", manageUrl);
 
             if (isNewLicense) {
               await sendLicenseKeyEmail(email, licenseKey, "community", manageUrl);
