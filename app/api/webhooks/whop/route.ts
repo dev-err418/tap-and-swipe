@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getWhop } from "@/lib/whop";
 import { prisma } from "@/lib/prisma";
-import { addRole, removeRole } from "@/lib/discord";
-import { isDisposableEmail } from "@/lib/fraud";
+import { addToGuild, addRole, removeRole } from "@/lib/discord";
 import {
   generateAsoLicenseWhop,
   deactivateAsoLicensesByWhop,
@@ -28,6 +27,31 @@ function extractDiscord(data: Record<string, unknown>): {
     return { id: discord, username: discord };
   }
   return null;
+}
+
+function extractDiscordFromMetadata(
+  data: Record<string, unknown>
+): { id: string; username: string } | null {
+  const metadata = data.metadata as Record<string, unknown> | undefined;
+  if (!metadata) return null;
+  const discordId = metadata.discordId;
+  if (typeof discordId === "string" && discordId.length > 0) {
+    return { id: discordId, username: discordId };
+  }
+  return null;
+}
+
+function extractEmail(data: Record<string, unknown>): string | undefined {
+  // v1 SDK-typed shape: data.user.email (user is an object)
+  const user = data.user;
+  if (typeof user === "object" && user !== null) {
+    const nested = (user as Record<string, unknown>).email;
+    if (typeof nested === "string" && nested.length > 0) return nested;
+  }
+  // v2 shape: data.email at top level (user is a string ID)
+  const top = data.email;
+  if (typeof top === "string" && top.length > 0) return top;
+  return undefined;
 }
 
 async function fetchDiscordFromWhop(
@@ -71,20 +95,57 @@ export async function POST(request: NextRequest) {
     const data = webhookData.data as unknown as Record<string, unknown>;
     let discord = extractDiscord(data);
 
-    // Fallback: fetch from Whop API when webhook payload lacks discord data
+    // Fallback 1: check metadata.discordId (set during our checkout flow)
     if (!discord) {
-      discord = await fetchDiscordFromWhop(String(data.id));
+      discord = extractDiscordFromMetadata(data);
+    }
+
+    // For payment events, the metadata lives on the nested membership object
+    if (!discord) {
+      const membership = data.membership as Record<string, unknown> | undefined;
+      if (membership) {
+        discord = extractDiscord(membership) ?? extractDiscordFromMetadata(membership);
+      }
+    }
+
+    // Fallback 2: fetch from Whop API when webhook payload lacks discord data
+    if (!discord) {
+      const membershipIdForLookup =
+        (data.id as string | undefined) ??
+        ((data.membership as Record<string, unknown> | undefined)?.id as string | undefined);
+      if (membershipIdForLookup) {
+        discord = await fetchDiscordFromWhop(membershipIdForLookup);
+      }
     }
 
     switch (webhookData.type) {
       case "membership.activated": {
         const membershipId = String(data.id);
-        const email = (data.user as Record<string, unknown> | undefined)?.email as string | undefined;
+        const email = extractEmail(data);
         const manageUrl = data.manage_url as string | undefined;
         const isTrial = data.status === "trialing";
 
         // Discord role granting
         if (discord) {
+          const existingUser = await prisma.user.findUnique({
+            where: { discordId: discord.id },
+          });
+
+          // Add user to guild using stored OAuth access token, then assign role
+          if (existingUser?.discordAccessToken) {
+            await addToGuild(discord.id, existingUser.discordAccessToken).catch(
+              (err) =>
+                console.warn(
+                  `[whop] addToGuild failed for ${discord.id}:`,
+                  err
+                )
+            );
+          } else {
+            console.warn(
+              `[whop] No access token stored for ${discord.id} — cannot add to guild`
+            );
+          }
+
           const roleGranted = await addRole(discord.id);
           if (!roleGranted) {
             console.warn(
@@ -92,9 +153,6 @@ export async function POST(request: NextRequest) {
             );
           }
 
-          const existingUser = await prisma.user.findUnique({
-            where: { discordId: discord.id },
-          });
           const isNew = !existingUser;
           const isActiveElsewhere =
             existingUser &&
@@ -120,20 +178,16 @@ export async function POST(request: NextRequest) {
 
           // ASO Pro license generation
           if (email) {
-            if (isDisposableEmail(email)) {
-              console.warn(`[whop] Disposable email detected: ${email}`);
-            } else {
-              const { key: licenseKey, isNew: isNewLicense } =
-                await generateAsoLicenseWhop(email, membershipId, "pro");
+            const { key: licenseKey, isNew: isNewLicense } =
+              await generateAsoLicenseWhop(email, membershipId, "pro");
 
-              if (isNewLicense || isNew) {
-                await sendLicenseKeyEmail(
-                  email,
-                  licenseKey,
-                  "community",
-                  manageUrl
-                );
-              }
+            if (isNewLicense || isNew) {
+              await sendLicenseKeyEmail(
+                email,
+                licenseKey,
+                "community",
+                manageUrl
+              );
             }
           }
 
@@ -155,7 +209,7 @@ export async function POST(request: NextRequest) {
           );
         } else {
           // No Discord — still generate ASO license if we have email
-          if (email && !isDisposableEmail(email)) {
+          if (email) {
             const { key: licenseKey, isNew: isNewLicense } =
               await generateAsoLicenseWhop(email, membershipId, "pro");
 
