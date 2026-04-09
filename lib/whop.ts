@@ -6,7 +6,7 @@ export function getWhop(): Whop {
   if (!_whop) {
     _whop = new Whop({
       apiKey: process.env.WHOP_API_KEY,
-      webhookKey: process.env.WHOP_WEBHOOK_SECRET,
+      webhookKey: btoa(process.env.WHOP_WEBHOOK_SECRET ?? ""),
     });
   }
   return _whop;
