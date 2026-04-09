@@ -23,7 +23,7 @@ export async function GET(req: Request) {
 
   if (search) {
     params.push(`%${search}%`);
-    query += ` WHERE key ILIKE $1 OR email ILIKE $1 OR stripe_customer_id ILIKE $1`;
+    query += ` WHERE key ILIKE $1 OR email ILIKE $1 OR stripe_customer_id ILIKE $1 OR whop_membership_id ILIKE $1`;
   }
 
   query += " ORDER BY created_at DESC";

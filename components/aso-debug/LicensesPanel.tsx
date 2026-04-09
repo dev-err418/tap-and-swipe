@@ -8,6 +8,7 @@ interface License {
   key: string;
   email: string | null;
   stripe_customer_id: string | null;
+  whop_membership_id: string | null;
   active: boolean;
   plan: string | null;
   created_at: string;
@@ -155,7 +156,7 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c9c4bc]/50" />
           <input
             type="text"
-            placeholder="Search key, email, customer..."
+            placeholder="Search key, email, customer, whop id..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-10 w-72 rounded-lg border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-[#f1ebe2] placeholder:text-[#c9c4bc]/50 outline-none transition-colors focus:border-[#f4cf8f]/40"
@@ -231,7 +232,25 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                     {renderCell(l, "email", l.email, 24)}
                   </td>
                   <td className="px-4 py-3 text-[#c9c4bc]">
-                    {renderCell(l, "stripe_customer_id", l.stripe_customer_id, 16)}
+                    {l.stripe_customer_id ? (
+                      renderCell(l, "stripe_customer_id", l.stripe_customer_id, 16)
+                    ) : l.whop_membership_id ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-block rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-purple-400">
+                          Whop
+                        </span>
+                        <span
+                          className="font-mono text-xs text-[#c9c4bc]/80"
+                          title={l.whop_membership_id}
+                        >
+                          {l.whop_membership_id.length > 16
+                            ? `${l.whop_membership_id.slice(0, 16)}...`
+                            : l.whop_membership_id}
+                        </span>
+                      </div>
+                    ) : (
+                      renderCell(l, "stripe_customer_id", l.stripe_customer_id, 16)
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {editing?.key === l.key && editing?.field === "plan" ? (
