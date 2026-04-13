@@ -71,17 +71,6 @@ const LandingPage = ({
 
                 {/* Centered content: badge + title + subtitle */}
                 <div className="mx-auto max-w-7xl">
-                    <FadeIn delay={0.05} y={16}>
-                    <a href="#pricing" className="mb-8 inline-flex items-center gap-2 rounded-full border border-black/15 bg-black/[0.03] pl-2.5 pr-2.5 py-1 text-xs text-black/60 backdrop-blur-sm transition-colors hover:bg-black/[0.06]">
-                        <span className="relative inline-flex h-2 w-2 mr-[0.375rem]">
-                            <span className="absolute -inset-0.5 animate-ping [animation-duration:2s] rounded-full bg-[#FF9500] opacity-20" />
-                            <span className="relative inline-block h-2 w-2 rounded-full bg-[#FF9500] shadow-[0_0_4px_rgba(255,149,0,0.3)]" />
-                        </span>
-                        Get AppSprint ASO for free with your sub
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5"><path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
-                    </a>
-                    </FadeIn>
-
                     <FadeIn delay={0.15} y={20}>
                     <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[1] sm:text-7xl">
                         Build a mobile app in{" "}
@@ -329,11 +318,6 @@ const LandingPage = ({
                             <li>
                                 <Link href="/app-sprint-community" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
                                     AppSprint Community
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/aso" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    AppSprint ASO
                                 </Link>
                             </li>
                         </ul>

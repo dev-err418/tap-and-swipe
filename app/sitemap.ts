@@ -29,12 +29,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: "https://tap-and-swipe.com/aso",
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
       url: "https://tap-and-swipe.com/versy",
       lastModified: new Date(),
       changeFrequency: "monthly",
