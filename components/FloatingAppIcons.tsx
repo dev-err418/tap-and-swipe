@@ -115,7 +115,7 @@ export function FloatingAppIcons({ icons, label, hideStrip }: { icons?: string[]
         {label && (
           <motion.div
             className="absolute"
-            style={{ left: "6%", top: "22%" }}
+            style={{ right: "12%", bottom: "12%" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, y: [0, -6, 0] }}
             transition={{
@@ -123,12 +123,9 @@ export function FloatingAppIcons({ icons, label, hideStrip }: { icons?: string[]
               y: { duration: 4, delay: 1.2, ease: "easeInOut", repeat: Infinity, repeatType: "reverse" },
             }}
           >
-            <div className="flex items-start gap-1">
-              <svg width="32" height="28" viewBox="0 0 32 28" fill="none" className="text-black/30 -rotate-12 mt-1 -scale-x-100">
-                <path d="M2 2C8 8 16 14 26 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-                <path d="M22 6L26 10L20 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              </svg>
-              <span className="text-sm text-black/40 italic rotate-2 whitespace-nowrap">{label}</span>
+            <div className="flex flex-col items-end">
+              <img src="/community-icons/arrow.png" alt="" className="w-10 h-10 opacity-25 rotate-12 -scale-x-100 -mb-1 mr-2" />
+              <span className="text-sm text-black/40 italic -rotate-[8deg] whitespace-nowrap mr-8">{label}</span>
             </div>
           </motion.div>
         )}
