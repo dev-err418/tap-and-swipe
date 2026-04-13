@@ -92,7 +92,7 @@ export default async function RoadmapLayout({
   ]);
 
   return (
-    <div className="min-h-screen bg-[#2a2725]">
+    <div className="min-h-screen bg-white">
       <RoadmapHeader
         discordUsername={session?.discordUsername ?? "Dev User"}
         discordAvatar={session?.discordAvatar ?? null}

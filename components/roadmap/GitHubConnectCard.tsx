@@ -24,24 +24,24 @@ export default function GitHubConnectCard({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05, duration: 0.3 }}
-        className="rounded-2xl border border-white/5 bg-white/5 overflow-hidden"
+        className="rounded-2xl border border-black/10 bg-black/[0.02] overflow-hidden"
       >
         <div className="flex items-center gap-4 p-5 opacity-50">
           <div className="shrink-0">
-            <Circle className="h-6 w-6 text-[#c9c4bc]/20" />
+            <Circle className="h-6 w-6 text-black/15" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[#c9c4bc]/60 font-medium">{order}.</span>
-              <h3 className="font-medium truncate text-[#c9c4bc]/60">
+              <span className="text-black/30 font-medium">{order}.</span>
+              <h3 className="font-medium truncate text-black/30">
                 Connect your GitHub account
               </h3>
             </div>
-            <p className="text-sm text-[#c9c4bc]/40 mt-0.5">
+            <p className="text-sm text-black/20 mt-0.5">
               Link your GitHub to get access to the private boilerplate repository
             </p>
           </div>
-          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs text-[#c9c4bc]/40">
+          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] px-3 py-1.5 text-xs text-black/30">
             <Lock className="h-3 w-3" />
             Premium
           </span>
@@ -62,41 +62,41 @@ export default function GitHubConnectCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className="rounded-2xl border border-white/5 bg-white/5 overflow-hidden"
+      className="rounded-2xl border border-black/10 bg-black/[0.02] overflow-hidden"
     >
       <div className="p-5">
         <div className="flex items-center gap-4 mb-4">
           {isConnected ? (
-            <CheckCircle2 className="h-6 w-6 text-[#f4cf8f] shrink-0" />
+            <CheckCircle2 className="h-6 w-6 text-[#FF9500] shrink-0" />
           ) : (
-            <div className="h-6 w-6 rounded-full border-2 border-[#c9c4bc]/40 shrink-0" />
+            <div className="h-6 w-6 rounded-full border-2 border-black/20 shrink-0" />
           )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[#c9c4bc]/60 font-medium">{order}.</span>
+              <span className="text-black/30 font-medium">{order}.</span>
               <h3
                 className={`font-medium truncate ${
                   isConnected
-                    ? "text-[#c9c4bc] line-through"
-                    : "text-[#f1ebe2]"
+                    ? "text-black/40 line-through"
+                    : "text-black"
                 }`}
               >
                 Connect your GitHub account
               </h3>
             </div>
-            <p className="text-sm text-[#c9c4bc]/60 mt-0.5">
+            <p className="text-sm text-black/40 mt-0.5">
               Link your GitHub to get access to the private boilerplate
               repository
             </p>
           </div>
         </div>
 
-        <div className="rounded-xl bg-black/10 p-6">
+        <div className="rounded-xl bg-black/[0.03] p-6">
           {isConnected ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <Github className="h-5 w-5 text-[#f4cf8f]" />
-                <span className="text-[#f1ebe2] font-medium">
+                <Github className="h-5 w-5 text-[#FF9500]" />
+                <span className="text-black font-medium">
                   Connected as @{githubUsername}
                 </span>
                 {process.env.NODE_ENV === "development" && (
@@ -116,19 +116,19 @@ export default function GitHubConnectCard({
                   href="https://github.com/settings/organizations"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-[#f4cf8f] hover:text-[#f4cf8f]/80 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm text-[#FF9500] hover:text-[#FF9500]/80 transition-colors"
                 >
                   Accept the org invitation on GitHub
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               )}
               {statusMessage && (
-                <p className="text-sm text-[#c9c4bc]/80">{statusMessage}</p>
+                <p className="text-sm text-black/50">{statusMessage}</p>
               )}
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-[#c9c4bc]">
+              <p className="text-sm text-black/50">
                 Connect your GitHub account to get invited to the private
                 boilerplate repository. You&apos;ll receive an org invitation
                 automatically.
@@ -138,7 +138,7 @@ export default function GitHubConnectCard({
               )}
               <a
                 href="/api/auth/github"
-                className="inline-flex items-center gap-2 rounded-full bg-[#f1ebe2] px-5 py-2.5 text-sm font-medium text-[#2a2725] hover:bg-[#f1ebe2]/90 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-black/85 transition-colors"
               >
                 <Github className="h-4 w-4" />
                 Connect with GitHub

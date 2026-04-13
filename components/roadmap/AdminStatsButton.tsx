@@ -73,7 +73,7 @@ export default function AdminStatsButton() {
     <>
       <button
         onClick={loadStats}
-        className="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-5 py-2.5 text-sm font-medium text-[#c9c4bc] hover:bg-white/10 transition-colors cursor-pointer"
+        className="inline-flex items-center gap-2 rounded-full bg-black/[0.04] border border-black/10 px-5 py-2.5 text-sm font-medium text-black/50 hover:bg-black/[0.08] transition-colors cursor-pointer"
       >
         <BarChart3 className="h-4 w-4" />
         Admin Stats
@@ -85,7 +85,7 @@ export default function AdminStatsButton() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
             onClick={() => setOpen(false)}
           >
             <motion.div
@@ -93,30 +93,30 @@ export default function AdminStatsButton() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-3xl border border-white/10 bg-[#2a2725] p-8 shadow-2xl"
+              className="w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-3xl border border-black/10 bg-white p-8 shadow-2xl"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-[#f1ebe2]">
+                <h2 className="text-xl font-bold text-black">
                   User Progress Stats
                 </h2>
                 <button
                   onClick={() => setOpen(false)}
-                  className="p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                  className="p-1 rounded-full hover:bg-black/[0.04] transition-colors cursor-pointer"
                 >
-                  <X className="h-5 w-5 text-[#c9c4bc]" />
+                  <X className="h-5 w-5 text-black/50" />
                 </button>
               </div>
 
               {!loading && stats && stats.length > 0 && (
                 <div className="flex items-center gap-3 mb-4">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c9c4bc]/50" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black/30" />
                     <input
                       type="text"
                       placeholder="Search by name or Discord ID..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-3 py-2 text-sm text-[#f1ebe2] placeholder-[#c9c4bc]/40 outline-none focus:border-[#f4cf8f]/40 transition-colors"
+                      className="w-full rounded-xl border border-black/10 bg-black/[0.02] pl-9 pr-3 py-2 text-sm text-black placeholder-black/30 outline-none focus:border-[#FF9500]/40 transition-colors"
                     />
                   </div>
                   <button
@@ -125,7 +125,7 @@ export default function AdminStatsButton() {
                         s === "recent" ? "progress" : "recent"
                       )
                     }
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-[#c9c4bc] hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-black/[0.02] px-3 py-2 text-xs font-medium text-black/50 hover:bg-black/[0.06] transition-colors cursor-pointer whitespace-nowrap"
                   >
                     <ArrowUpDown className="h-3.5 w-3.5" />
                     {sortBy === "recent" ? "Recent" : "Progress"}
@@ -135,12 +135,12 @@ export default function AdminStatsButton() {
 
               {loading && (
                 <div className="flex justify-center py-12">
-                  <Loader2 className="h-6 w-6 text-[#f4cf8f] animate-spin" />
+                  <Loader2 className="h-6 w-6 text-[#FF9500] animate-spin" />
                 </div>
               )}
 
               {!loading && stats && stats.length === 0 && (
-                <p className="text-[#c9c4bc] text-center py-8">
+                <p className="text-black/50 text-center py-8">
                   No user progress yet.
                 </p>
               )}
@@ -148,7 +148,7 @@ export default function AdminStatsButton() {
               {!loading && stats && stats.length > 0 && (
                 <div className="space-y-4">
                   {filtered.length === 0 && (
-                    <p className="text-[#c9c4bc] text-center py-8">
+                    <p className="text-black/50 text-center py-8">
                       No users match your search.
                     </p>
                   )}
@@ -162,25 +162,25 @@ export default function AdminStatsButton() {
                     return (
                       <div
                         key={user.discordId}
-                        className="rounded-2xl border border-white/5 bg-white/5 p-4"
+                        className="rounded-2xl border border-black/10 bg-black/[0.02] p-4"
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div>
-                            <span className="font-medium text-[#f1ebe2]">
+                            <span className="font-medium text-black">
                               {user.discordUsername}
                             </span>
-                            <p className="text-xs text-[#c9c4bc]/40 font-mono">
+                            <p className="text-xs text-black/30 font-mono">
                               {user.discordId}
                             </p>
                           </div>
                           <div className="text-right">
-                            <span className="text-sm text-[#c9c4bc]">
+                            <span className="text-sm text-black/50">
                               {user.currentCompleted}/{totalLessons} ({pct}%)
                             </span>
                             {user.hasDiscrepancy && (
                               <div className="flex items-center gap-1 justify-end mt-0.5">
-                                <AlertTriangle className="h-3 w-3 text-amber-400" />
-                                <span className="text-xs text-amber-400">
+                                <AlertTriangle className="h-3 w-3 text-amber-500" />
+                                <span className="text-xs text-amber-500">
                                   Ever completed: {user.everCompleted}
                                 </span>
                               </div>
@@ -197,10 +197,10 @@ export default function AdminStatsButton() {
                               return (
                                 <span
                                   key={cat}
-                                  className={`rounded-full bg-white/5 px-2.5 py-0.5 text-xs ${
+                                  className={`rounded-full bg-black/[0.04] px-2.5 py-0.5 text-xs ${
                                     catDiscrepancy
-                                      ? "text-amber-400"
-                                      : "text-[#c9c4bc]"
+                                      ? "text-amber-500"
+                                      : "text-black/50"
                                   }`}
                                 >
                                   {cat}: {count as number}
@@ -218,14 +218,14 @@ export default function AdminStatsButton() {
                             .map(([cat, count]) => (
                               <span
                                 key={cat}
-                                className="rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-amber-400"
+                                className="rounded-full bg-black/[0.04] px-2.5 py-0.5 text-xs text-amber-500"
                               >
                                 {cat}: 0 (was {count as number})
                               </span>
                             ))}
                         </div>
                         {user.lastActivity && (
-                          <p className="text-xs text-[#c9c4bc]/50">
+                          <p className="text-xs text-black/30">
                             Last active:{" "}
                             {new Date(user.lastActivity).toLocaleDateString()}
                           </p>
