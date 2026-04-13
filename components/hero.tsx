@@ -6,23 +6,23 @@ import { FadeIn } from "./fade-in";
 
 const ICONS = [
   // Left col 1
-  { left: "2%", top: "8%", size: 64, rounded: "2xl", color: "bg-gradient-to-br from-gray-800 to-gray-900", rotate: -12 },
-  { left: "1%", top: "40%", size: 56, rounded: "2xl", color: "bg-gray-900", rotate: 8 },
-  { left: "-1%", top: "62%", size: 48, rounded: "2xl", color: "bg-red-500", rotate: -18 },
-  { left: "1%", top: "82%", size: 56, rounded: "full", color: "bg-emerald-400", rotate: 6 },
+  { left: "5%", top: "8%", size: 64, rotate: -12, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/18/73/96/187396d0-9ea0-cd65-83f6-42550506b3f3/Prod-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/120x120bb.jpg" },
+  { left: "4%", top: "40%", size: 56, rotate: 8, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/c4/8c/93/c48c9331-24df-f7ba-2837-1719d1eb0a23/AppIcon-0-0-1x_U007epad-0-1-0-0-sRGB-85-220.png/120x120bb.jpg" },
+  { left: "2%", top: "62%", size: 48, rotate: -18, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/bb/a5/cc/bba5ccb8-d4df-94d4-4a82-69efab6e4494/logo_youtube_2024_q4_color-0-0-1x_U007emarketing-0-0-0-7-0-0-0-85-220.png/120x120bb.jpg" },
+  { left: "4%", top: "82%", size: 56, rotate: 6, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/3e/51/9d/3e519dbc-b0b0-b292-837b-97027c235050/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/120x120bb.jpg" },
   // Left col 2
-  { left: "10%", top: "5%", size: 48, rounded: "2xl", color: "bg-violet-500", rotate: 15 },
-  { left: "11%", top: "35%", size: 40, rounded: "full", color: "bg-gray-900", rotate: -10 },
-  { left: "10%", top: "70%", size: 48, rounded: "full", color: "bg-gray-800", rotate: 20 },
+  { left: "13%", top: "5%", size: 48, rotate: 15, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/10/a5/0e/10a50e08-cf0c-13e8-8f09-6e34f9fe0071/AppIcon-0-0-1x_U007emarketing-0-11-0-sRGB-0-85-220.png/120x120bb.jpg" },
+  { left: "14%", top: "35%", size: 40, rotate: -10, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/26/bd/a8/26bda865-2595-a1c4-0c22-3090585566b3/AppIcon-0-0-1x_U007emarketing-0-8-0-0-85-220.png/120x120bb.jpg" },
+  { left: "13%", top: "70%", size: 48, rotate: 20, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/22/f8/8d/22f88d97-0776-74fe-6769-1851540ae0c8/AppIcon-0-0-1x_U007epad-0-1-85-220.png/120x120bb.jpg" },
   // Right col 1
-  { right: "10%", top: "4%", size: 56, rounded: "2xl", color: "bg-gray-900", rotate: 12 },
-  { right: "9%", top: "42%", size: 40, rounded: "2xl", color: "bg-orange-500", rotate: -14 },
-  { right: "10%", top: "68%", size: 48, rounded: "2xl", color: "bg-red-400/80", rotate: 18 },
+  { right: "13%", top: "4%", size: 56, rotate: 12, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/f8/bf/77/f8bf774c-079c-a4ef-ac20-0b9cbb3cbb05/TikTok_AppIcon26-0-0-1x_U007epad-0-1-0-85-220.png/120x120bb.jpg" },
+  { right: "12%", top: "42%", size: 40, rotate: -14, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/7f/77/5e/7f775e63-96bf-b789-b2f2-6ce264a7b6a7/AppIconProd-0-0-1x_U007epad-0-0-0-1-0-0-P3-85-220.png/120x120bb.jpg" },
+  { right: "13%", top: "68%", size: 48, rotate: 18, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/95/32/df/9532df9f-b41b-6d94-088d-1b927ab32d23/AppIcon-0-0-1x_U007epad-0-1-0-0-0-85-220.png/120x120bb.jpg" },
   // Right col 2
-  { right: "1%", top: "10%", size: 48, rounded: "2xl", color: "bg-blue-400/60", rotate: -8 },
-  { right: "0%", top: "38%", size: 64, rounded: "2xl", color: "bg-gradient-to-br from-pink-400 to-violet-400", rotate: 10 },
-  { right: "-1%", top: "65%", size: 56, rounded: "2xl", color: "bg-gray-900", rotate: -16 },
-  { right: "2%", top: "85%", size: 40, rounded: "full", color: "bg-gray-700", rotate: 22 },
+  { right: "4%", top: "10%", size: 48, rotate: -8, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/4e/69/82/4e698215-47f1-536b-3b0f-b8bc421983ea/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-sRGB-0-85-220.png/120x120bb.jpg" },
+  { right: "3%", top: "38%", size: 64, rotate: 10, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/4e/8f/58/4e8f581c-d875-5002-ff4f-085b9961f895/slack_icon_prod-0-0-1x_U007epad-0-1-sRGB-85-220.png/120x120bb.jpg" },
+  { right: "2%", top: "65%", size: 56, rotate: -16, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/e0/eb/dc/e0ebdc61-273c-45da-8aea-28e2d5a9e9fb/ProductionAppIcon-0-0-1x_U007emarketing-0-8-0-0-0-85-220.png/120x120bb.jpg" },
+  { right: "5%", top: "85%", size: 40, rotate: 22, icon: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/cf/5e/96/cf5e96b5-cbdf-79f6-8f30-10a95c7ea19f/AppIcon-0-0-1x_U007epad-0-1-0-0-0-85-220.png/120x120bb.jpg" },
 ] as const;
 
 const EASE: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
@@ -74,8 +74,10 @@ function FloatingIcon({
         },
       }}
     >
-      <motion.div
-        className={`${icon.color} rounded-${icon.rounded}`}
+      <motion.img
+        src={icon.icon}
+        alt=""
+        className="rounded-[22%] shadow-lg"
         style={{ width: icon.size, height: icon.size }}
         initial={{ opacity: 0, scale: 0.8, rotate: icon.rotate }}
         animate={{ opacity: 1, scale: 1, rotate: icon.rotate }}
@@ -150,7 +152,7 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
                   <button
                     type="submit"
                     disabled={status === "loading"}
-                    className="relative -my-px -mr-px h-[calc(100%+2px)] shrink-0 rounded-full bg-black px-5 text-sm font-bold text-white transition-all hover:bg-black/85 disabled:opacity-50"
+                    className="relative -my-px -mr-px h-[calc(100%+2px)] shrink-0 cursor-pointer rounded-full bg-black px-5 text-sm font-bold text-white transition-all hover:bg-black/85 disabled:opacity-50"
                   >
                     <span className={status === "loading" ? "invisible" : ""}>Subscribe</span>
                     {status === "loading" && (
