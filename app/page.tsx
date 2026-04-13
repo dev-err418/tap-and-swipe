@@ -1,6 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { Hero } from "@/components/hero";
+
+const BLOCKED_COUNTRIES = new Set([
+  // Africa
+  "DZ","AO","BJ","BW","BF","BI","CV","CM","CF","TD","KM","CG","CD","CI","DJ",
+  "EG","GQ","ER","SZ","ET","GA","GM","GH","GN","GW","KE","LS","LR","LY","MG",
+  "MW","ML","MR","MU","MA","MZ","NA","NE","NG","RW","ST","SN","SC","SL","SO",
+  "ZA","SS","SD","TZ","TG","TN","UG","ZM","ZW",
+  // India
+  "IN",
+]);
 
 export const metadata: Metadata = {
   title: "Tap & Swipe: Real Stories From People Building Mobile Apps",
@@ -32,7 +43,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const h = await headers();
+  const country = h.get("cf-ipcountry") || "";
+  const showSubscribe = !BLOCKED_COUNTRIES.has(country);
+
   return (
     <>
     <style>{`html, body { background-color: #fff !important; }`}</style>
@@ -50,7 +65,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <Hero />
+      <Hero showSubscribe={showSubscribe} />
 
       {/* Footer */}
       <footer className="border-t border-black/10 px-6 py-10 text-sm text-black/40">

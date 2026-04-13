@@ -19,6 +19,7 @@ export async function POST(req: Request) {
         email,
         reactivate_existing: true,
         send_welcome_email: true,
+        double_opt_override: "on",
         utm_source: "tapandswipe",
         utm_medium: "website",
       }),
