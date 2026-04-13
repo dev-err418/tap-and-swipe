@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { Hero } from "@/components/hero";
+import { EpisodesSection } from "@/components/episodes-section";
 
 const BLOCKED_COUNTRIES = new Set([
   // Africa
@@ -66,6 +67,8 @@ export default async function Home() {
       </nav>
 
       <Hero showSubscribe={showSubscribe} />
+
+      <EpisodesSection />
 
       {/* Footer */}
       <footer className="border-t border-black/10 px-6 py-10 text-sm text-black/40">

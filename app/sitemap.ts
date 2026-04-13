@@ -1,12 +1,32 @@
 import type { MetadataRoute } from "next";
+import { getAllEpisodes } from "@/lib/episodes";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const episodes = getAllEpisodes();
+
+  const latestEpisodeDate = episodes.length > 0
+    ? new Date(episodes[0].date)
+    : new Date();
+
+  const episodeEntries: MetadataRoute.Sitemap = episodes.map((ep) => ({
+    url: `https://tap-and-swipe.com/episodes/${ep.slug}`,
+    lastModified: new Date(ep.updatedDate || ep.date),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
   return [
     {
       url: "https://tap-and-swipe.com",
-      lastModified: new Date(),
-      changeFrequency: "monthly",
+      lastModified: latestEpisodeDate,
+      changeFrequency: "weekly",
       priority: 1.0,
+    },
+    {
+      url: "https://tap-and-swipe.com/episodes",
+      lastModified: latestEpisodeDate,
+      changeFrequency: "weekly",
+      priority: 0.9,
     },
     {
       url: "https://tap-and-swipe.com/app-sprint",
@@ -56,5 +76,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    ...episodeEntries,
   ];
 }
