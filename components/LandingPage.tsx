@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
     ArrowRight,
     Star
@@ -8,6 +9,7 @@ import { Suspense } from "react";
 import SuccessOverlay from "./SuccessOverlay";
 import ErrorOverlay from "./ErrorOverlay";
 import Pricing from "./Pricing";
+import FaqSection from "./FaqSection";
 import PageTracker from "./PageTracker";
 
 const LandingPage = ({
@@ -16,44 +18,39 @@ const LandingPage = ({
     searchParams?: Promise<{ status?: string }>;
 }) => {
     return (
-        <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] font-sans selection:bg-[#f4cf8f]/30">
+        <>
+        <style>{`html, body { background-color: #fff !important; }`}</style>
+        <div className="min-h-screen bg-white text-black font-sans selection:bg-black/10">
             <PageTracker product="community" ctaSelector='[data-fast-goal="cta_pricing_clicked"]' />
             <Suspense fallback={null}>
                 <SuccessOverlay />
                 <ErrorOverlay />
             </Suspense>
 
+            {/* Navbar */}
+            <nav className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-center px-6 py-5">
+                <Link href="/" className="flex items-center gap-2.5">
+                    <img
+                        src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
+                        alt="ArthurBuildsStuff"
+                        className="h-8 w-8 rounded-full"
+                    />
+                    <span className="text-sm font-semibold text-black/90">Tap &amp; Swipe</span>
+                    <span className="text-sm text-black/40">by ArthurBuildsStuff</span>
+                </Link>
+            </nav>
+
             {/* Hero Section */}
-            <header className="relative overflow-hidden pt-32 pb-32">
+            <header className="relative overflow-hidden pt-16 pb-32">
                 <div className="mx-auto max-w-7xl px-6 text-center">
-                    <a
-                        href="https://www.youtube.com/@ArthurBuildsStuff"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mb-6 flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
-                    >
-                        <img
-                            src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
-                            alt="ArthurBuildsStuff"
-                            className="h-8 w-8 rounded-full border border-[#f4cf8f]/20"
-                        />
-                        <span className="text-sm font-medium text-[#c9c4bc]">By ArthurBuildsStuff</span>
-                    </a>
                     <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[1] sm:text-7xl">
                         Build a mobile app in{" "}
                         weeks{" "}
-                        <span
-                            className="text-[#f4cf8f] box-decoration-clone px-2 -mx-2"
-                            style={{
-                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`,
-                                backgroundSize: "100% 100%",
-                                backgroundRepeat: "no-repeat",
-                            }}
-                        >
+                        <span className="box-decoration-clone px-2 -mx-2 underline decoration-black/20 underline-offset-8 decoration-4">
                             not months
                         </span>
                     </h1>
-                    <p className="mx-auto mt-8 max-w-2xl text-lg text-[#c9c4bc] sm:text-xl">
+                    <p className="mx-auto mt-8 max-w-2xl text-lg text-black/50 sm:text-xl">
                         Stop dreaming and start shipping. The complete roadmap to validating, designing, building, and scaling your own mobile app business.
                     </p>
 
@@ -61,16 +58,12 @@ const LandingPage = ({
                         <a
                             href="#pricing"
                             data-fast-goal="cta_hero_clicked"
-                            className="group flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
+                            className="group flex h-12 items-center gap-2 rounded-full bg-black px-8 text-base font-bold text-white transition-all hover:bg-black/85 hover:ring-4 hover:ring-black/20 cursor-pointer"
                         >
                             Get instant access
                             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </a>
                     </div>
-
-                    <p className="mt-4 text-sm font-medium text-[#c9c4bc]">
-                        Limited spots available (<span className="text-[#f4cf8f]">9 seats left</span>)
-                    </p>
 
                     <div className="mt-8 flex flex-col items-center gap-3">
                         <div className="flex -space-x-3">
@@ -83,27 +76,27 @@ const LandingPage = ({
                             ].map((src, i) => (
                                 <img
                                     key={i}
-                                    className="h-10 w-10 rounded-full border-2 border-[#2a2725] object-cover"
+                                    className="h-10 w-10 rounded-full border-2 border-white object-cover"
                                     src={src}
                                     alt="User avatar"
                                 />
                             ))}
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="flex text-[#f4cf8f]">
+                            <div className="flex text-black">
                                 {[...Array(5)].map((_, i) => (
                                     <Star key={i} className="h-4 w-4 fill-current" />
                                 ))}
                             </div>
-                            <p className="text-sm font-medium text-[#c9c4bc]">
-                                <span className="font-bold text-[#f1ebe2]">51</span> makers building together
+                            <p className="text-sm font-medium text-black/50">
+                                <span className="font-bold text-black">63</span> makers building together
                             </p>
                         </div>
                     </div>
 
 
                     <div className="mt-16 flex justify-center">
-                        <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-[#f4cf8f]/10 ring-1 ring-white/10">
+                        <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-black/10 ring-1 ring-black/10">
                             <video
                                 src="https://assets.whop.com/uploads-optimized/2026-02-05/10143289-4fe6-4555-b43e-26d66a821835.mp4"
                                 autoPlay
@@ -122,16 +115,16 @@ const LandingPage = ({
             <Roadmap />
 
             {/* Group Calls Section */}
-            <section id="group-calls" data-fast-scroll="scroll_to_group_calls" className="bg-[#2a2725] py-24 border-t border-white/5">
+            <section id="group-calls" data-fast-scroll="scroll_to_group_calls" className="bg-white py-24 border-t border-black/10">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center max-w-3xl mx-auto">
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
+                        <h2 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">
                             Weekly group calls
-                            <span className="block mt-2 text-xl font-sans font-medium text-[#f4cf8f]">Twice per week</span>
+                            <span className="block mt-2 text-xl font-sans font-medium text-black/60">Twice per week</span>
                         </h2>
 
-                        <p className="mt-8 text-lg text-[#c9c4bc] leading-relaxed">
-                            This isn't just a video course you'll watch and forget. This is a builder's program designed to take you from a blank screen to your first <strong>revenue</strong>.
+                        <p className="mt-8 text-lg text-black/50 leading-relaxed">
+                            This isn&apos;t just a video course you&apos;ll watch and forget. This is a builder&apos;s program designed to take you from a blank screen to your first <strong className="text-black">revenue</strong>.
                         </p>
 
                         <div className="mt-8 text-left space-y-6">
@@ -139,15 +132,15 @@ const LandingPage = ({
                                 <li className="flex gap-4">
                                     <span className="text-2xl mt-1">📞</span>
                                     <div>
-                                        <strong className="text-[#f1ebe2] block text-lg">Strategy group calls</strong>
-                                        <p className="text-[#c9c4bc]">We hop on a call to dissect your specific roadblocks, look at your code, and fix your strategy.</p>
+                                        <strong className="text-black block text-lg">Strategy group calls</strong>
+                                        <p className="text-black/50">We hop on a call to dissect your specific roadblocks, look at your code, and fix your strategy.</p>
                                     </div>
                                 </li>
                                 <li className="flex gap-4">
                                     <span className="text-2xl mt-1">👥</span>
                                     <div>
-                                        <strong className="text-[#f1ebe2] block text-lg">Weekly group masterminds</strong>
-                                        <p className="text-[#c9c4bc]">Showcase your progress, get live feedback, and solve problems with a community of builders who are in the trenches with you.</p>
+                                        <strong className="text-black block text-lg">Weekly group masterminds</strong>
+                                        <p className="text-black/50">Showcase your progress, get live feedback, and solve problems with a community of builders who are in the trenches with you.</p>
                                     </div>
                                 </li>
                             </ul>
@@ -155,24 +148,24 @@ const LandingPage = ({
                     </div>
                     {/* Group Call Image: Matches Hero Video Style */}
                     <div className="flex justify-center">
-                        <div className="relative overflow-hidden rounded-[32px] ring-1 ring-white/10 group">
+                        <div className="relative overflow-hidden rounded-[32px] ring-1 ring-black/10 group">
                             <img
                                 src="/group-calls.jpg"
                                 alt="Weekly Group Calls"
                                 className="w-full max-w-4xl opacity-90 transition-opacity duration-500 group-hover:opacity-100"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#2a2725]/50 via-transparent to-transparent pointer-events-none" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-white/50 via-transparent to-transparent pointer-events-none" />
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* Testimonials Section */}
-            <section id="testimonials" data-fast-scroll="scroll_to_testimonials" className="bg-[#2a2725] py-24 border-t border-white/5">
+            <section id="testimonials" data-fast-scroll="scroll_to_testimonials" className="bg-white py-24 border-t border-black/10">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">What makers are saying</h2>
-                        <p className="mt-4 text-lg text-[#c9c4bc]">Join the community of builders shipping their dreams.</p>
+                        <h2 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">What makers are saying</h2>
+                        <p className="mt-4 text-lg text-black/50">Join the community of builders shipping their dreams.</p>
                     </div>
                     <div className="columns-1 gap-6 md:columns-2 lg:columns-3 space-y-6">
                         {[
@@ -219,25 +212,25 @@ const LandingPage = ({
                                 image: "/raphael.png"
                             }
                         ].map((testimonial, i) => (
-                            <div key={i} className="break-inside-avoid rounded-3xl border border-white/5 bg-white/5 p-6 shadow-sm transition-all hover:bg-white/10">
+                            <div key={i} className="break-inside-avoid rounded-3xl border border-black/10 bg-black/[0.02] p-6 shadow-sm transition-all hover:bg-black/[0.04]">
                                 <div className="flex items-center gap-2 mb-4">
-                                    <div className="flex text-[#f4cf8f]">
+                                    <div className="flex text-black">
                                         {[...Array(5)].map((_, i) => (
                                             <Star key={i} className="h-4 w-4 fill-current" />
                                         ))}
                                     </div>
                                 </div>
-                                <p className="text-[#f1ebe2] leading-relaxed text-sm mb-6">"{testimonial.text}"</p>
-                                <div className="flex items-center justify-between border-t border-white/5 pt-4">
+                                <p className="text-black/70 leading-relaxed text-sm mb-6">&ldquo;{testimonial.text}&rdquo;</p>
+                                <div className="flex items-center justify-between border-t border-black/10 pt-4">
                                     <div className="flex items-center gap-3">
                                         <img
                                             src={testimonial.image}
                                             alt={testimonial.name}
-                                            className="h-8 w-8 rounded-full border border-[#f4cf8f]/20 object-cover"
+                                            className="h-8 w-8 rounded-full border border-black/10 object-cover"
                                         />
-                                        <span className="font-medium text-sm text-[#f1ebe2]">{testimonial.name}</span>
+                                        <span className="font-medium text-sm text-black">{testimonial.name}</span>
                                     </div>
-                                    <span className="text-xs text-[#c9c4bc]">{testimonial.time}</span>
+                                    <span className="text-xs text-black/40">{testimonial.time}</span>
                                 </div>
                             </div>
                         ))}
@@ -249,73 +242,76 @@ const LandingPage = ({
             <Pricing />
 
             {/* FAQ Section */}
-            <section id="faq" data-fast-scroll="scroll_to_faq" className="bg-[#2a2725] py-24 border-t border-white/5">
-                <div className="mx-auto max-w-4xl px-6">
-                    <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">Frequently asked questions</h2>
-                        <p className="mt-4 text-lg text-[#c9c4bc]">Everything you need to know before joining.</p>
-                    </div>
-
-                    <div className="space-y-4">
-                        {[
-                            {
-                                question: "Is this program for me?",
-                                answer: "This is for you if you dream of building your own app but have no idea where to start. If you want to become financially independent through your own ideas, you're ready to learn even the boring stuff, and you want to build something real instead of just dreaming."
-                            },
-                            {
-                                question: "Who should NOT join?",
-                                answer: "If you expect AI to do all the work while you sit back and watch, this isn't for you. Same if you're not willing to do the parts that aren't fun, if freedom and flexibility aren't priorities for you, or if you expect magic results without putting in the work."
-                            },
-                            {
-                                question: "Do I need to know how to code?",
-                                answer: "If you already know how to code, you'll move faster. If you use AI tools like Cursor or Claude Code, that works great too. You don't need to be an expert, but you need to be willing to get your hands dirty and learn as you go."
-                            },
-                            {
-                                question: "What do I need to start?",
-                                answer: "A code editor (IDE), an AI coding tool, an Apple Developer account, and ideally a Mac (it makes everything easier). If you want to earn money from your app, you'll also need a business structure depending on your country."
-                            },
-                            {
-                                question: "How long before my app is live?",
-                                answer: "It depends on you. Some people speed run it in a few weeks, others take their time over a few months. The roadmap is there, the community is there, you set the pace."
-                            }
-                        ].map((faq, i) => (
-                            <details key={i} className="group rounded-3xl border border-white/5 bg-white/5 [&_summary::-webkit-details-marker]:hidden">
-                                <summary className="flex cursor-pointer items-center justify-between gap-1.5 p-6 text-[#f1ebe2] transition hover:bg-white/5 rounded-3xl focus:outline-none">
-                                    <h3 className="font-medium text-lg">{faq.question}</h3>
-                                    <span className="relative h-5 w-5 shrink-0">
-                                        <svg
-                                            className="absolute inset-0 h-5 w-5 opacity-100 transition duration-300 group-open:rotate-180"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </span>
-                                </summary>
-                                <div className="px-6 pb-6 text-[#c9c4bc] leading-relaxed">
-                                    <p>{faq.answer}</p>
-                                </div>
-                            </details>
-                        ))}
-                    </div>
-                </div>
-            </section>
+            <FaqSection />
 
             {/* Footer */}
-            <footer className="border-t border-white/10 bg-[#2a2725] py-8">
-                <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
-                    <p className="text-sm text-[#c9c4bc]">&copy; {new Date().getFullYear()} Tap & Swipe. All rights reserved.</p>
-                    <div className="flex gap-6">
-                        <a href="/tos" className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]">Terms of Service</a>
-                        <a href="/privacy" className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]">Privacy Policy</a>
-                        <a href="/tos#refund" className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]">Refund Policy</a>
+            <footer className="border-t border-black/10 px-6 py-10 text-sm text-black/40">
+                <div className="mx-auto grid max-w-6xl gap-8 sm:grid-cols-[2fr_1fr_1fr_1fr]">
+                    <div>
+                        <p className="font-semibold text-black/80">Tap &amp; Swipe</p>
+                        <p className="mt-1">Made with ❤️ in 🇫🇷</p>
+                        <p className="mt-3">&copy; {new Date().getFullYear()} &middot; TAP &amp; SWIPE SAS</p>
+                        <p className="mt-1">SIREN: 100454206 &middot; TVA: FR23100454206</p>
+                    </div>
+                    <div>
+                        <p className="font-medium text-black/60">Products</p>
+                        <ul className="-mx-2 mt-2">
+                            <li>
+                                <Link href="/app-sprint-community" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                    App Sprint Community
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/aso" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                    App Sprint ASO
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p className="font-medium text-black/60">Social</p>
+                        <ul className="-mx-2 mt-2">
+                            <li>
+                                <a href="https://www.youtube.com/@ArthurBuildsStuff" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                    YouTube
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.linkedin.com/in/arthur-spalanzani/" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                    LinkedIn
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://x.com/arthursbuilds" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                    X
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p className="font-medium text-black/60">Legal</p>
+                        <ul className="-mx-2 mt-2">
+                            <li>
+                                <Link href="/tos" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                    Terms of Service
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/privacy" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                    Privacy Policy
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/tos#refund" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                    Refund Policy
+                                </Link>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </footer>
         </div>
+        </>
     );
 };
 

@@ -2,12 +2,6 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
-const crimsonPro = localFont({
-  src: "./fonts/CrimsonPro-Variable.ttf",
-  variable: "--font-crimson",
-  display: "swap",
-});
-
 const uncutSans = localFont({
   src: "./fonts/UncutSans-Variable.ttf",
   variable: "--font-uncut",
@@ -105,7 +99,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${uncutSans.variable} ${crimsonPro.variable} antialiased`}
+        className={`${uncutSans.variable} antialiased`}
       >
         {children}
       </body>

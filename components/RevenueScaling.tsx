@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, TrendingUp, DollarSign } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 const RevenueScaling = () => {
     return (
@@ -10,11 +10,11 @@ const RevenueScaling = () => {
 
                 {/* Section Header */}
                 <div className="mb-16 text-center max-w-3xl mx-auto">
-                    <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
+                    <h2 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">
                         The ultimate goal
                     </h2>
-                    <p className="mt-4 text-lg text-[#c9c4bc]">
-                        From your <span className="text-[#f4cf8f] font-bold">first internet dollar</span> to a scalable recurring revenue business.
+                    <p className="mt-4 text-lg text-black/50">
+                        From your <span className="font-bold text-black">first internet dollar</span> to a scalable recurring revenue business.
                     </p>
                 </div>
 
@@ -29,8 +29,8 @@ const RevenueScaling = () => {
                     >
                         <div className="relative h-full min-h-[320px] flex flex-col">
                             <div className="flex items-center gap-3 mb-8 px-4">
-                                <div className="h-8 w-8 rounded-full bg-[#f4cf8f]/10 flex items-center justify-center text-[#f4cf8f] font-bold text-sm">1</div>
-                                <h3 className="text-xl font-bold text-[#f1ebe2]">The First Dollar</h3>
+                                <div className="h-8 w-8 rounded-full bg-black/10 flex items-center justify-center text-black font-bold text-sm">1</div>
+                                <h3 className="text-xl font-bold text-black">The First Dollar</h3>
                             </div>
 
                             {/* Visual: Payment Notification */}
@@ -38,19 +38,19 @@ const RevenueScaling = () => {
                                 <img
                                     src="/first-sale.webp"
                                     alt="RevenueCat mobile dashboard showing app revenue from multiple countries"
-                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 max-h-[300px] w-auto mx-auto"
+                                    className="relative z-10 rounded-xl border border-black/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 max-h-[300px] w-auto mx-auto"
                                 />
                             </div>
                         </div>
                     </motion.div>
 
                     {/* Arrow (Desktop) */}
-                    <div className="hidden md:flex justify-center text-[#f4cf8f]">
+                    <div className="hidden md:flex justify-center text-black">
                         <ArrowRight className="h-8 w-8" />
                     </div>
 
                     {/* Mobile Arrow */}
-                    <div className="md:hidden flex justify-center py-2 text-[#f4cf8f]">
+                    <div className="md:hidden flex justify-center py-2 text-black">
                         <ArrowRight className="h-8 w-8 rotate-90" />
                     </div>
 
@@ -64,8 +64,8 @@ const RevenueScaling = () => {
                     >
                         <div className="relative h-full min-h-[320px] flex flex-col">
                             <div className="flex items-center gap-3 mb-8 px-4">
-                                <div className="h-8 w-8 rounded-full bg-[#f4cf8f]/10 flex items-center justify-center text-[#f4cf8f] font-bold text-sm">2</div>
-                                <h3 className="text-xl font-bold text-[#f1ebe2]">Recurring Revenue</h3>
+                                <div className="h-8 w-8 rounded-full bg-black/10 flex items-center justify-center text-black font-bold text-sm">2</div>
+                                <h3 className="text-xl font-bold text-black">Recurring Revenue</h3>
                             </div>
 
                             {/* Visual: MRR Chart */}
@@ -73,7 +73,7 @@ const RevenueScaling = () => {
                                 <img
                                     src="/recurring-revenue.jpg"
                                     alt="Recurring revenue chart"
-                                    className="relative z-10 rounded-xl border border-white/10 shadow-2xl transform rotate-[2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-full"
+                                    className="relative z-10 rounded-xl border border-black/10 shadow-2xl transform rotate-[2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-full"
                                 />
                             </div>
                         </div>

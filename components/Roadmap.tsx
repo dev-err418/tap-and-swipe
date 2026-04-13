@@ -6,7 +6,6 @@ import {
     Sparkles,
     CheckCircle2,
 } from "lucide-react";
-import AIFormula from "./AIFormula";
 import RevenueScaling from "./RevenueScaling";
 
 // --- Real course categories from seed data ---
@@ -113,14 +112,14 @@ const Roadmap = () => {
     };
 
     return (
-        <section id="roadmap" data-fast-scroll="scroll_to_roadmap" className="bg-[#2a2725] py-24 border-t border-white/5 overflow-hidden">
+        <section id="roadmap" data-fast-scroll="scroll_to_roadmap" className="bg-white py-24 border-t border-black/10 overflow-hidden">
             <div className="mx-auto max-w-7xl px-6">
 
                 {/* 1. Horizontal Simplified Timeline */}
                 <div className="relative mb-20 overflow-x-auto pb-8 -mx-6 px-6 no-scrollbar">
                     <div className="min-w-[860px] mx-auto relative">
                         {/* Horizontal Line */}
-                        <div className="absolute top-[5.5rem] left-0 w-full h-px bg-white/10" />
+                        <div className="absolute top-[5.5rem] left-0 w-full h-px bg-black/10" />
 
                         <div className="grid grid-cols-6 gap-4">
                             {categories.map((cat, i) => (
@@ -133,20 +132,20 @@ const Roadmap = () => {
                                     className="relative flex flex-col items-center text-center"
                                 >
                                     {/* Emoji */}
-                                    <div className="mb-8 p-4 rounded-2xl bg-white/5 border border-white/5 shadow-sm">
+                                    <div className="mb-8 p-4 rounded-2xl bg-black/[0.03] border border-black/10 shadow-sm">
                                         <span className="text-4xl">{cat.emoji}</span>
                                     </div>
 
                                     {/* Dot on line */}
-                                    <div className="absolute top-[5.2rem] left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#2a2725] border-4 border-[#2a2725] z-10">
-                                        <div className="w-full h-full rounded-full bg-[#f4cf8f]" />
+                                    <div className="absolute top-[5.2rem] left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white border-4 border-white z-10">
+                                        <div className="w-full h-full rounded-full bg-black" />
                                     </div>
 
                                     {/* Content */}
-                                    <h3 className="text-lg font-bold text-[#f1ebe2] mb-1 font-serif">
+                                    <h3 className="text-lg font-bold text-black mb-1">
                                         {i + 1}. {cat.title}
                                     </h3>
-                                    <p className="text-[#c9c4bc] text-xs max-w-[140px] leading-relaxed">
+                                    <p className="text-black/50 text-xs max-w-[140px] leading-relaxed">
                                         {cat.lessons.length} lesson{cat.lessons.length !== 1 ? "s" : ""}
                                     </p>
                                 </motion.div>
@@ -164,19 +163,19 @@ const Roadmap = () => {
             </div>
 
             {/* Full-width divider */}
-            <hr className="border-white/5 mb-24" />
+            <hr className="border-black/10 mb-24" />
 
             <div className="mx-auto max-w-7xl px-6 pt-4">
 
                 {/* Section header */}
                 <div className="mb-16 text-center">
-                    <h2 className="text-3xl font-serif font-bold tracking-tight text-[#f1ebe2] sm:text-4xl">
+                    <h2 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">
                         The full App Sprint roadmap
                     </h2>
-                    <p className="mt-4 text-lg text-[#c9c4bc]">
+                    <p className="mt-4 text-lg text-black/50">
                         6 modules, 23 lessons. From first idea to first revenue on the App Store.
                     </p>
-                    <p className="mt-3 text-sm text-[#c9c4bc]/70">
+                    <p className="mt-3 text-sm text-black/35">
                         Here&apos;s exactly what you get when you join.
                     </p>
                 </div>
@@ -184,19 +183,19 @@ const Roadmap = () => {
                 {/* 2. Tabbed Detailed View */}
                 <div className="max-w-5xl mx-auto">
                     {/* Tabs */}
-                    <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-12 border-b border-white/10 pb-8">
+                    <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-12 border-b border-black/10 pb-8">
                         {categories.map((cat, index) => {
                             const isActive = activeTab === index;
                             return (
                                 <button
                                     key={cat.id}
                                     onClick={() => handleTabClick(index)}
-                                    className={`group flex flex-col items-center gap-3 transition-all duration-300 outline-none cursor-pointer ${isActive ? "text-[#f4cf8f] scale-105" : "text-[#c9c4bc] hover:text-[#f1ebe2]"
+                                    className={`group flex flex-col items-center gap-3 transition-all duration-300 outline-none cursor-pointer ${isActive ? "text-black scale-105" : "text-black/40 hover:text-black/70"
                                         }`}
                                 >
                                     <div className={`h-12 w-12 flex items-center justify-center rounded-xl transition-all ${isActive
-                                        ? "bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 shadow-[0_0_15px_rgba(244,207,143,0.1)]"
-                                        : "bg-white/5 border border-transparent group-hover:bg-white/10"
+                                        ? "bg-black/10 border border-black/20"
+                                        : "bg-black/[0.03] border border-transparent group-hover:bg-black/[0.06]"
                                         }`}>
                                         <span className="text-2xl">{cat.emoji}</span>
                                     </div>
@@ -218,23 +217,23 @@ const Roadmap = () => {
                                 className="max-w-xl mx-auto"
                             >
                                 <div>
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f4cf8f]/10 border border-[#f4cf8f]/20 text-[#f4cf8f] text-xs font-bold uppercase tracking-wider mb-6">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 border border-black/10 text-black text-xs font-bold uppercase tracking-wider mb-6">
                                         <Sparkles className="h-3 w-3" />
                                         {categories[activeTab].lessons.length} lesson{categories[activeTab].lessons.length !== 1 ? "s" : ""}
                                     </div>
 
-                                    <h3 className="text-3xl font-serif font-bold text-[#f1ebe2] mb-4">
+                                    <h3 className="text-3xl font-bold text-black mb-4">
                                         {categories[activeTab].title}
                                     </h3>
-                                    <p className="text-[#c9c4bc] text-lg leading-relaxed mb-8">
+                                    <p className="text-black/50 text-lg leading-relaxed mb-8">
                                         {categories[activeTab].description}
                                     </p>
 
                                     <div className="space-y-4">
                                         {categories[activeTab].lessons.map((lesson, i) => (
                                             <div key={i} className="flex items-start gap-3">
-                                                <CheckCircle2 className="h-5 w-5 text-[#f4cf8f] shrink-0 mt-0.5" />
-                                                <span className="text-[#f1ebe2]/90">{lesson}</span>
+                                                <CheckCircle2 className="h-5 w-5 text-black shrink-0 mt-0.5" />
+                                                <span className="text-black/70">{lesson}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -247,7 +246,7 @@ const Roadmap = () => {
                     <div className="mt-12 flex justify-center">
                         <button
                             onClick={() => setShowPreview(true)}
-                            className="group flex items-center gap-2 rounded-full bg-[#f4cf8f] px-6 py-3 text-sm font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
+                            className="group flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-bold text-white transition-all hover:bg-black/85 hover:ring-4 hover:ring-black/20 cursor-pointer"
                         >
                             <span className="text-lg">👀</span>
                             Watch a preview
@@ -289,11 +288,6 @@ const Roadmap = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
-
-                {/* AI Formula Visualization */}
-                <div className="mt-24 pt-24 border-t border-white/5">
-                    <AIFormula />
                 </div>
 
             </div>
