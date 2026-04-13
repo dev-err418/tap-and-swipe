@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import AppLegalPage from "@/components/AppLegalPage";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — App Sprint ASO",
+  title: "Privacy Policy — AppSprint ASO",
   description:
-    "Privacy policy for App Sprint ASO, the macOS App Store Optimization tool.",
+    "Privacy policy for AppSprint ASO, the macOS App Store Optimization tool.",
   alternates: {
     canonical: "/aso/privacy",
   },
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function ASOPrivacyPage() {
   return (
     <AppLegalPage
-      appName="App Sprint ASO"
+      appName="AppSprint ASO"
       appSlug="aso"
       primaryColor="#f4cf8f"
       backgroundColor="#2a2725"

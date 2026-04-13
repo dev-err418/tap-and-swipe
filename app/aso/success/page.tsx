@@ -92,7 +92,7 @@ function AsoSuccessContent() {
                             href="/aso"
                             className="inline-flex items-center gap-2 text-sm text-[#f4cf8f] hover:underline"
                         >
-                            Back to App Sprint ASO
+                            Back to AppSprint ASO
                         </a>
                     </motion.div>
                 ) : (
@@ -158,7 +158,7 @@ function AsoSuccessContent() {
                             className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] hover:bg-[#f4cf8f]/90 transition-all hover:ring-4 hover:ring-[#f4cf8f]/20"
                         >
                             <Download className="h-4 w-4" />
-                            Download App Sprint ASO
+                            Download AppSprint ASO
                         </a>
 
                         {/* Yearly Pro Discord bonus */}
@@ -173,7 +173,7 @@ function AsoSuccessContent() {
                                     You unlocked 1 month free Community access!
                                 </p>
                                 <p className="text-sm text-[#c9c4bc] mb-4">
-                                    Connect your Discord to join the App Sprint Community for 30 days, on us.
+                                    Connect your Discord to join the AppSprint Community for 30 days, on us.
                                 </p>
                                 <a
                                     href="/api/auth/discord?flow=aso-yearly-bonus"
@@ -195,7 +195,7 @@ function AsoSuccessContent() {
                                     Community access activated!
                                 </p>
                                 <p className="text-sm text-[#c9c4bc]">
-                                    You now have 30 days of free access to the App Sprint Community on Discord.
+                                    You now have 30 days of free access to the AppSprint Community on Discord.
                                 </p>
                             </motion.div>
                         )}

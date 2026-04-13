@@ -18,7 +18,7 @@ const Pricing = () => {
 
             <div className="mx-auto max-w-7xl px-6">
                 <div className="mb-16 text-center">
-                    <h2 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">
+                    <h2 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">
                         Code your idea fast, build your freedom
                     </h2>
                     <p className="mt-4 text-lg text-black/50 max-w-2xl mx-auto">
@@ -34,7 +34,7 @@ const Pricing = () => {
                         className="relative rounded-3xl border border-black/10 bg-black/[0.02] p-8 md:p-10 flex flex-col"
                     >
                         <p className="text-lg font-bold text-black mb-4">
-                            App Sprint Community
+                            AppSprint Community
                         </p>
 
                         <div className="mb-6">
@@ -53,14 +53,14 @@ const Pricing = () => {
                             ))}
                             <li className="flex items-start gap-3">
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
-                                <span className="text-sm font-bold text-black">App Sprint ASO Pro included (worth 24€/mo)</span>
+                                <span className="text-sm font-bold text-black">AppSprint ASO Pro included (worth 24€/mo)</span>
                             </li>
                         </ul>
 
                         {/* ASO included */}
                         <div className="mt-6">
                             <BundleMiniCard
-                                name="App Sprint ASO"
+                                name="AppSprint ASO"
                                 tagline="The all-in-one macOS app for ASO"
                                 icon="/aso/app-icon.png"
                                 value=""

@@ -130,8 +130,8 @@ export async function POST(request: NextRequest) {
 
     await sendDiscordNotification(
       lead.profileType === "scale"
-        ? "\u{1F4C5} [App Sprint] Scale call booked"
-        : "\u{1F4C5} [App Sprint] Build call booked",
+        ? "\u{1F4C5} [AppSprint] Scale call booked"
+        : "\u{1F4C5} [AppSprint] Build call booked",
       undefined,
       fields,
       0x5865f2,

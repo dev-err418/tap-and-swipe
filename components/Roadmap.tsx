@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Sparkles,
     CheckCircle2,
 } from "lucide-react";
 import RevenueScaling from "./RevenueScaling";
@@ -115,50 +114,10 @@ const Roadmap = () => {
         <section id="roadmap" data-fast-scroll="scroll_to_roadmap" className="bg-white py-24 border-t border-black/10 overflow-hidden">
             <div className="mx-auto max-w-7xl px-6">
 
-                {/* 1. Horizontal Simplified Timeline */}
-                <div className="relative mb-20 overflow-x-auto pb-8 -mx-6 px-6 no-scrollbar">
-                    <div className="min-w-[860px] mx-auto relative">
-                        {/* Horizontal Line */}
-                        <div className="absolute top-[5.5rem] left-0 w-full h-px bg-black/10" />
-
-                        <div className="grid grid-cols-6 gap-4">
-                            {categories.map((cat, i) => (
-                                <motion.div
-                                    key={cat.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="relative flex flex-col items-center text-center"
-                                >
-                                    {/* Emoji */}
-                                    <div className="mb-8 p-4 rounded-2xl bg-black/[0.03] border border-black/10 shadow-sm">
-                                        <span className="text-4xl">{cat.emoji}</span>
-                                    </div>
-
-                                    {/* Dot on line */}
-                                    <div className="absolute top-[5.2rem] left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white border-4 border-white z-10">
-                                        <div className="w-full h-full rounded-full bg-black" />
-                                    </div>
-
-                                    {/* Content */}
-                                    <h3 className="text-lg font-bold text-black mb-1">
-                                        {i + 1}. {cat.title}
-                                    </h3>
-                                    <p className="text-black/50 text-xs max-w-[140px] leading-relaxed">
-                                        {cat.lessons.length} lesson{cat.lessons.length !== 1 ? "s" : ""}
-                                    </p>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
                 {/* Revenue Scaling Visualization */}
                 <div className="mb-24">
                     <RevenueScaling />
                 </div>
-
 
             </div>
 
@@ -169,14 +128,11 @@ const Roadmap = () => {
 
                 {/* Section header */}
                 <div className="mb-16 text-center">
-                    <h2 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">
-                        The full App Sprint roadmap
+                    <h2 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">
+                        The full AppSprint roadmap
                     </h2>
                     <p className="mt-4 text-lg text-black/50">
                         6 modules, 23 lessons. From first idea to first revenue on the App Store.
-                    </p>
-                    <p className="mt-3 text-sm text-black/35">
-                        Here&apos;s exactly what you get when you join.
                     </p>
                 </div>
 
@@ -217,10 +173,9 @@ const Roadmap = () => {
                                 className="max-w-xl mx-auto"
                             >
                                 <div>
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 border border-black/10 text-black text-xs font-bold uppercase tracking-wider mb-6">
-                                        <Sparkles className="h-3 w-3" />
+                                    <span className="inline-flex items-center rounded-full border border-black/15 bg-black/[0.03] px-3 py-1 text-xs text-black/60 mb-6">
                                         {categories[activeTab].lessons.length} lesson{categories[activeTab].lessons.length !== 1 ? "s" : ""}
-                                    </div>
+                                    </span>
 
                                     <h3 className="text-3xl font-bold text-black mb-4">
                                         {categories[activeTab].title}

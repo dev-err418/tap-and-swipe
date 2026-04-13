@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import QuizFunnel from "@/components/quiz-funnel/QuizFunnel";
 
 export const metadata: Metadata = {
-  title: "App Sprint — Get Your Mobile App Built Right",
+  title: "AppSprint — Get Your Mobile App Built Right",
   description:
     "Take a 2-minute quiz to get a personalized recommendation for your mobile app project. Strategy, development, and launch — tailored to your business.",
   keywords: [
@@ -16,12 +16,12 @@ export const metadata: Metadata = {
     "app development services",
   ],
   openGraph: {
-    title: "App Sprint — Get Your Mobile App Built Right",
+    title: "AppSprint — Get Your Mobile App Built Right",
     description:
       "Take a 2-minute quiz to get a personalized recommendation for your mobile app project.",
   },
   twitter: {
-    title: "App Sprint — Get Your Mobile App Built Right",
+    title: "AppSprint — Get Your Mobile App Built Right",
     description:
       "Take a 2-minute quiz to get a personalized recommendation for your mobile app project.",
   },

@@ -140,8 +140,8 @@ export async function POST(request: NextRequest) {
 
     await sendDiscordNotification(
       profileType === "scale"
-        ? "🎯 [App Sprint] New scale lead"
-        : "🎯 [App Sprint] New build lead",
+        ? "🎯 [AppSprint] New scale lead"
+        : "🎯 [AppSprint] New build lead",
       undefined,
       fields
     ).catch((err) => console.error("Discord notification failed:", err));

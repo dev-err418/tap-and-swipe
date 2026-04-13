@@ -84,12 +84,12 @@ export default async function Home() {
             <ul className="-mx-2 mt-2">
               <li>
                 <Link href="/app-sprint-community" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                  App Sprint Community
+                  AppSprint Community
                 </Link>
               </li>
               <li>
                 <Link href="/aso" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                  App Sprint ASO
+                  AppSprint ASO
                 </Link>
               </li>
             </ul>

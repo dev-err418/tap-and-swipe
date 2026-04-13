@@ -4,6 +4,7 @@ import {
     Star
 } from "lucide-react";
 import Roadmap from "./Roadmap";
+import { FadeIn } from "./fade-in";
 
 import { Suspense } from "react";
 import SuccessOverlay from "./SuccessOverlay";
@@ -41,8 +42,27 @@ const LandingPage = ({
             </nav>
 
             {/* Hero Section */}
-            <header className="relative overflow-hidden pt-16 pb-32">
-                <div className="mx-auto max-w-7xl px-6 text-center">
+            <header
+                className="relative flex min-h-[600px] flex-col items-center overflow-hidden px-6 text-center"
+                style={{ minHeight: "max(600px, calc(100dvh - 72px))" }}
+            >
+                {/* Top spacer */}
+                <div className="flex-1" />
+
+                {/* Centered content: badge + title + subtitle */}
+                <div className="mx-auto max-w-7xl">
+                    <FadeIn delay={0.05} y={16}>
+                    <a href="#pricing" className="mb-8 inline-flex items-center gap-2 rounded-full border border-black/15 bg-black/[0.03] pl-2.5 pr-2.5 py-1 text-xs text-black/60 backdrop-blur-sm transition-colors hover:bg-black/[0.06]">
+                        <span className="relative inline-flex h-2 w-2 mr-[0.375rem]">
+                            <span className="absolute -inset-0.5 animate-ping [animation-duration:2s] rounded-full bg-black opacity-20" />
+                            <span className="relative inline-block h-2 w-2 rounded-full bg-black shadow-[0_0_4px_rgba(0,0,0,0.2)]" />
+                        </span>
+                        Get AppSprint ASO for free with your sub
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5"><path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
+                    </a>
+                    </FadeIn>
+
+                    <FadeIn delay={0.15} y={20}>
                     <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[1] sm:text-7xl">
                         Build a mobile app in{" "}
                         weeks{" "}
@@ -50,11 +70,19 @@ const LandingPage = ({
                             not months
                         </span>
                     </h1>
+                    </FadeIn>
+
+                    <FadeIn delay={0.3} y={20}>
                     <p className="mx-auto mt-8 max-w-2xl text-lg text-black/50 sm:text-xl">
                         Stop dreaming and start shipping. The complete roadmap to validating, designing, building, and scaling your own mobile app business.
                     </p>
+                    </FadeIn>
+                </div>
 
-                    <div className="mt-10 pt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                {/* Bottom section: CTA + social proof (not affecting vertical center) */}
+                <div className="flex-1 flex flex-col items-center justify-start pt-10">
+                    <FadeIn delay={0.45} y={20}>
+                    <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                         <a
                             href="#pricing"
                             data-fast-goal="cta_hero_clicked"
@@ -93,9 +121,13 @@ const LandingPage = ({
                             </p>
                         </div>
                     </div>
+                    </FadeIn>
+                </div>
+            </header>
 
-
-                    <div className="mt-16 flex justify-center">
+                    <div className="mx-auto max-w-7xl px-6 pb-32">
+                    <FadeIn delay={0.6} y={20}>
+                    <div className="flex justify-center">
                         <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-black/10 ring-1 ring-black/10">
                             <video
                                 src="https://assets.whop.com/uploads-optimized/2026-02-05/10143289-4fe6-4555-b43e-26d66a821835.mp4"
@@ -108,8 +140,8 @@ const LandingPage = ({
                             />
                         </div>
                     </div>
-                </div>
-            </header>
+                    </FadeIn>
+                    </div>
 
             {/* Roadmap Section */}
             <Roadmap />
@@ -118,9 +150,11 @@ const LandingPage = ({
             <section id="group-calls" data-fast-scroll="scroll_to_group_calls" className="bg-white py-24 border-t border-black/10">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center max-w-3xl mx-auto">
-                        <h2 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">
+                        <span className="mb-4 inline-flex items-center rounded-full border border-black/15 bg-black/[0.03] px-3 py-1 text-xs text-black/60">
+                            Twice per week
+                        </span>
+                        <h2 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">
                             Weekly group calls
-                            <span className="block mt-2 text-xl font-sans font-medium text-black/60">Twice per week</span>
                         </h2>
 
                         <p className="mt-8 text-lg text-black/50 leading-relaxed">
@@ -154,7 +188,6 @@ const LandingPage = ({
                                 alt="Weekly Group Calls"
                                 className="w-full max-w-4xl opacity-90 transition-opacity duration-500 group-hover:opacity-100"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-white/50 via-transparent to-transparent pointer-events-none" />
                         </div>
                     </div>
                 </div>
@@ -164,7 +197,7 @@ const LandingPage = ({
             <section id="testimonials" data-fast-scroll="scroll_to_testimonials" className="bg-white py-24 border-t border-black/10">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center">
-                        <h2 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">What makers are saying</h2>
+                        <h2 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">What makers are saying</h2>
                         <p className="mt-4 text-lg text-black/50">Join the community of builders shipping their dreams.</p>
                     </div>
                     <div className="columns-1 gap-6 md:columns-2 lg:columns-3 space-y-6">
@@ -258,12 +291,12 @@ const LandingPage = ({
                         <ul className="-mx-2 mt-2">
                             <li>
                                 <Link href="/app-sprint-community" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    App Sprint Community
+                                    AppSprint Community
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/aso" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    App Sprint ASO
+                                    AppSprint ASO
                                 </Link>
                             </li>
                         </ul>

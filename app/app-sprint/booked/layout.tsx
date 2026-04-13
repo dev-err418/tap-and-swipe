@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Your Call is Booked — App Sprint",
+  title: "Your Call is Booked — AppSprint",
   description:
     "Your discovery call with Arthur is confirmed. Watch the preparation video before your appointment.",
   robots: { index: false, follow: false },

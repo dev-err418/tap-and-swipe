@@ -73,7 +73,7 @@ function BundleSuccessContent() {
                             href="/app-sprint-community"
                             className="inline-flex items-center gap-2 text-sm text-[#f4cf8f] hover:underline"
                         >
-                            Back to App Sprint Community
+                            Back to AppSprint Community
                         </a>
                     </motion.div>
                 ) : (
@@ -139,7 +139,7 @@ function BundleSuccessContent() {
                             className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] hover:bg-[#f4cf8f]/90 transition-all hover:ring-4 hover:ring-[#f4cf8f]/20"
                         >
                             <Download className="h-4 w-4" />
-                            Download App Sprint ASO
+                            Download AppSprint ASO
                         </a>
 
                         <motion.div

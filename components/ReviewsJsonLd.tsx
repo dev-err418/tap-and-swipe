@@ -2,7 +2,7 @@ export default function ReviewsJsonLd() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: "App Sprint",
+    name: "AppSprint",
     description:
       "A complete program to build and launch your own mobile app in weeks, not months.",
     url: "https://tap-and-swipe.com/app-sprint-community",

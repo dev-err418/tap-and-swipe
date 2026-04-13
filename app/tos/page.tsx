@@ -3,7 +3,7 @@ import Link from "next/link";
 export const metadata = {
   title: "Terms of Service",
   description:
-    "Terms of Service for Tap & Swipe App Sprint — usage rights, refund policy, and governing law.",
+    "Terms of Service for Tap & Swipe AppSprint — usage rights, refund policy, and governing law.",
   alternates: {
     canonical: "/tos",
   },
@@ -23,7 +23,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-[#f1ebe2]">1. Overview</h2>
             <p className="mt-2">
-              Tap &amp; Swipe provides App Sprint, a course designed to help you
+              Tap &amp; Swipe provides AppSprint, a course designed to help you
               build and launch mobile apps. Upon purchase, users receive access
               to:
             </p>
@@ -82,7 +82,7 @@ export default function TermsPage() {
             </p>
             <p className="mt-2">
               As part of your subscription, you receive a complimentary Pro
-              license for App Sprint ASO at no additional cost. This license is
+              license for AppSprint ASO at no additional cost. This license is
               provided as a free benefit of your membership and will be revoked
               upon cancellation of your subscription.
             </p>

@@ -254,7 +254,7 @@ Copy both into your app's environment variables. That's it, your backend is read
   // Build with the boilerplate (premium)
   {
     category: "build-with-boilerplate",
-    title: "What is App Sprint's boilerplate?",
+    title: "What is AppSprint's boilerplate?",
     description: "An overview of the boilerplate and how it accelerates your launch",
     type: "video",
     youtubeUrl: "https://youtu.be/m10gr6S05yA",
@@ -316,7 +316,7 @@ Done. You can now clone repos, push code, and use Git anywhere on your Mac.`,
   },
   {
     category: "build-with-boilerplate",
-    title: "How to setup App Sprint's boilerplate",
+    title: "How to setup AppSprint's boilerplate",
     description: "Step-by-step setup of the boilerplate for you project",
     type: "video",
     youtubeUrl: "https://youtu.be/GJrtl5IfTfU",

@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export const metadata = {
   title: "Apple Ads Integration",
-  description: "Connect your Apple Search Ads API to App Sprint ASO.",
+  description: "Connect your Apple Search Ads API to AppSprint ASO.",
 };
 
 type Step = {
@@ -74,7 +74,7 @@ const steps: Step[] = [
   {
     title: "You're on the API page",
     description:
-      'You\'ll land on the API settings with a Public Key field. In App Sprint ASO, click "Generate Key Pair" — this creates a private key (stored in the app) and a public key. Copy the public key.',
+      'You\'ll land on the API settings with a Public Key field. In AppSprint ASO, click "Generate Key Pair" — this creates a private key (stored in the app) and a public key. Copy the public key.',
     image: "/aso/apple-ads/step-8.webp",
   },
   {
@@ -84,9 +84,9 @@ const steps: Step[] = [
     image: "/aso/apple-ads/step-9.webp",
   },
   {
-    title: "Copy your credentials into App Sprint ASO",
+    title: "Copy your credentials into AppSprint ASO",
     description:
-      "Apple will display your clientId, teamId, and keyId. Copy all three values and paste them into the corresponding fields in App Sprint ASO. You're all set!",
+      "Apple will display your clientId, teamId, and keyId. Copy all three values and paste them into the corresponding fields in AppSprint ASO. You're all set!",
     image: "/aso/apple-ads/step-10.webp",
   },
 ];
@@ -102,7 +102,7 @@ export default function AppleAdsPage() {
 
         <div className="mt-10 space-y-8 text-[#c9c4bc] leading-relaxed">
           <p>
-            Connect your Apple Search Ads API so App Sprint ASO can pull your
+            Connect your Apple Search Ads API so AppSprint ASO can pull your
             campaign data and keyword analytics. This requires creating a
             dedicated Apple Account for API access, then linking it to your
             organization.
@@ -157,7 +157,7 @@ export default function AppleAdsPage() {
           </div>
 
           <p className="pt-4 text-sm text-[#c9c4bc]">
-            That&apos;s it! Your Apple Search Ads data will now sync with App Sprint ASO.
+            That&apos;s it! Your Apple Search Ads data will now sync with AppSprint ASO.
           </p>
         </div>
       </article>

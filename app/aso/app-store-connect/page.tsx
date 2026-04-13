@@ -3,7 +3,7 @@ import Image from "next/image";
 export const metadata = {
   title: "App Store Connect Integration",
   description:
-    "Connect your App Store Connect API key to App Sprint ASO.",
+    "Connect your App Store Connect API key to AppSprint ASO.",
 };
 
 const steps = [
@@ -28,25 +28,25 @@ const steps = [
   {
     title: 'Name it and select "App Manager"',
     description:
-      'Enter any name (e.g. "App Sprint ASO") and select the "App Manager" role, then click Generate.',
+      'Enter any name (e.g. "AppSprint ASO") and select the "App Manager" role, then click Generate.',
     image: "/aso/app-store-connect/step-4.webp",
   },
   {
     title: "Copy your Issuer ID",
     description:
-      "The Issuer ID is shown at the top of the page. Click Copy, then paste it into the Issuer ID field in App Sprint ASO.",
+      "The Issuer ID is shown at the top of the page. Click Copy, then paste it into the Issuer ID field in AppSprint ASO.",
     image: "/aso/app-store-connect/step-5.webp",
   },
   {
     title: "Copy your Key ID",
     description:
-      "Find your newly created key in the list, copy the Key ID, and paste it into the Key ID field in App Sprint ASO.",
+      "Find your newly created key in the list, copy the Key ID, and paste it into the Key ID field in AppSprint ASO.",
     image: "/aso/app-store-connect/step-6.webp",
   },
   {
     title: "Download the .p8 file",
     description:
-      'Click "Download" to save the API key file. You can only download it once, so keep it safe. Select it in the .p8 file field in App Sprint ASO.',
+      'Click "Download" to save the API key file. You can only download it once, so keep it safe. Select it in the .p8 file field in AppSprint ASO.',
     image: "/aso/app-store-connect/step-7.webp",
   },
 ];
@@ -62,7 +62,7 @@ export default function AppStoreConnectPage() {
 
         <div className="mt-10 space-y-8 text-[#c9c4bc] leading-relaxed">
           <p>
-            Connect your App Store Connect API key so App Sprint ASO can pull
+            Connect your App Store Connect API key so AppSprint ASO can pull
             your app metadata, keywords, and performance data. Follow the steps
             below to generate a key and link it.
           </p>
@@ -89,7 +89,7 @@ export default function AppStoreConnectPage() {
           </div>
 
           <p className="pt-4 text-sm text-[#c9c4bc]">
-            That&apos;s it! Once all three fields are filled in App Sprint ASO, click Connect and you&apos;re good to go.
+            That&apos;s it! Once all three fields are filled in AppSprint ASO, click Connect and you&apos;re good to go.
           </p>
         </div>
       </article>

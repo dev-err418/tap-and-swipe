@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Tap & Swipe",
     short_name: "Tap & Swipe",
     description:
-      "Build and launch your own mobile app with App Sprint — the complete program for indie makers.",
+      "Build and launch your own mobile app with AppSprint — the complete program for indie makers.",
     start_url: "/",
     display: "standalone",
     background_color: "#2a2725",

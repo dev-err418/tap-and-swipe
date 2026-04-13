@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s | Tap & Swipe",
   },
   description:
-    "Tap & Swipe — indie developer studio building mobile apps and helping others do the same. Makers of Versy, Lua, Glow, and the App Sprint program.",
+    "Tap & Swipe — indie developer studio building mobile apps and helping others do the same. Makers of Versy, Lua, Glow, and the AppSprint program.",
   keywords: [
     "Tap & Swipe",
     "indie app developer",

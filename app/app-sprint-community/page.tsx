@@ -5,9 +5,9 @@ import FaqJsonLd from "@/components/FaqJsonLd";
 import ReviewsJsonLd from "@/components/ReviewsJsonLd";
 
 export const metadata: Metadata = {
-  title: "App Sprint — Build a Mobile App in Weeks, Not Months",
+  title: "AppSprint — Build a Mobile App in Weeks, Not Months",
   description:
-    "Join the 6-week App Sprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating. €137/mo.",
+    "Join the 6-week AppSprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating. €137/mo.",
   keywords: [
     "app sprint",
     "build a mobile app",
@@ -21,14 +21,14 @@ export const metadata: Metadata = {
     "app building community",
   ],
   openGraph: {
-    title: "App Sprint — Build a Mobile App in Weeks, Not Months",
+    title: "AppSprint — Build a Mobile App in Weeks, Not Months",
     description:
-      "Join the 6-week App Sprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating.",
+      "Join the 6-week AppSprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating.",
   },
   twitter: {
-    title: "App Sprint — Build a Mobile App in Weeks, Not Months",
+    title: "AppSprint — Build a Mobile App in Weeks, Not Months",
     description:
-      "Join the 6-week App Sprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating.",
+      "Join the 6-week AppSprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating.",
   },
   alternates: {
     canonical: "/app-sprint-community",

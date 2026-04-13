@@ -106,7 +106,7 @@ export default function RoadmapHeader({
                 Discord DM
               </a>
               <a
-                href="mailto:arthurs.dev@gmail.com?subject=App Sprint Support"
+                href="mailto:arthurs.dev@gmail.com?subject=AppSprint Support"
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#c9c4bc] hover:bg-white/10 transition-colors"
               >
                 <Mail className="h-4 w-4" />

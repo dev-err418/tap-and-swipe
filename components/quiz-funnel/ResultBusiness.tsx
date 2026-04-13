@@ -27,7 +27,7 @@ export default function ResultBusiness() {
             href="/app-sprint-community"
             className="group inline-flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20"
           >
-            Go to App Sprint Community
+            Go to AppSprint Community
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </a>
         </motion.div>

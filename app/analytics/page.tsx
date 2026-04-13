@@ -52,7 +52,7 @@ function getDateFilter(period: Period) {
 type Tab = "sprint" | "aso";
 
 const TAB_LABELS: Record<Tab, string> = {
-  sprint: "App Sprint",
+  sprint: "AppSprint",
   aso: "ASO",
 };
 
@@ -165,7 +165,7 @@ export default async function AnalyticsPage({
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // App Sprint Tab — 3-column layout: 1:1, Community, ASO web funnels
+  // AppSprint Tab — 3-column layout: 1:1, Community, ASO web funnels
   // ═══════════════════════════════════════════════════════════════════════════
 
   const since = gte ?? new Date("2000-01-01");

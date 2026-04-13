@@ -25,7 +25,7 @@ export default async function InvitePage({
           You&apos;re invited
         </h1>
         <p className="mt-6 text-lg text-[#c9c4bc]">
-          Click below to join the App Sprint community and unlock your course access.
+          Click below to join the AppSprint community and unlock your course access.
         </p>
 
         <div className="mt-10">

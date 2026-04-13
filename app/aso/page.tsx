@@ -16,7 +16,7 @@ import HeroVideo from "./hero-video";
 const softwareApplicationJsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "App Sprint ASO",
+    name: "AppSprint ASO",
     operatingSystem: "macOS",
     applicationCategory: "BusinessApplication",
     description:
@@ -62,7 +62,7 @@ const faqJsonLd = {
             name: "Does it work with Apple Search Ads?",
             acceptedAnswer: {
                 "@type": "Answer",
-                text: "Absolutely. App Sprint ASO integrates with the Apple Search Ads API so you can create campaigns, manage ad groups, edit bids and budgets, and cross-reference ad performance with your organic keyword data, all from one place.",
+                text: "Absolutely. AppSprint ASO integrates with the Apple Search Ads API so you can create campaigns, manage ad groups, edit bids and budgets, and cross-reference ad performance with your organic keyword data, all from one place.",
             },
         },
         {
@@ -70,7 +70,7 @@ const faqJsonLd = {
             name: "What macOS version do I need?",
             acceptedAnswer: {
                 "@type": "Answer",
-                text: "App Sprint ASO requires macOS 14.6 (Sonoma) or later. It's a native macOS app built with Swift and SwiftUI for the best performance.",
+                text: "AppSprint ASO requires macOS 14.6 (Sonoma) or later. It's a native macOS app built with Swift and SwiftUI for the best performance.",
             },
         },
         {
@@ -143,7 +143,7 @@ export default function AsoPage() {
                             href="#pricing"
                             className="group flex h-12 items-center gap-2 rounded-full bg-[#f4cf8f] px-8 text-base font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 cursor-pointer"
                         >
-                            Get App Sprint ASO
+                            Get AppSprint ASO
                             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </a>
                     </div>
@@ -262,7 +262,7 @@ export default function AsoPage() {
                                 url: "https://apps.apple.com/es/app/fix-old-photos-ai-restory/id6757200644",
                             },
                             {
-                                quote: <>I{"'"}ve tried every ASO tool out there. Astro, AppTweak, you name it. None of them come close to what App Sprint does. Simply put: <span className="text-[#f4cf8f] box-decoration-clone px-1 -mx-1" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }}>the app dev{"'"}s best friend.</span></>,
+                                quote: <>I{"'"}ve tried every ASO tool out there. Astro, AppTweak, you name it. None of them come close to what AppSprint does. Simply put: <span className="text-[#f4cf8f] box-decoration-clone px-1 -mx-1" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(244,207,143,0.15)'/%3E%3C/svg%3E")`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" }}>the app dev{"'"}s best friend.</span></>,
                                 name: "Daniel",
                                 flag: "\ud83c\uddfa\ud83c\uddf8",
                                 site: "",
@@ -412,11 +412,11 @@ export default function AsoPage() {
                             },
                             {
                                 question: "Does it work with Apple Search Ads?",
-                                answer: "Absolutely. App Sprint ASO integrates with the Apple Search Ads API so you can create campaigns, manage ad groups, edit bids and budgets, and cross-reference ad performance with your organic keyword data, all from one place.",
+                                answer: "Absolutely. AppSprint ASO integrates with the Apple Search Ads API so you can create campaigns, manage ad groups, edit bids and budgets, and cross-reference ad performance with your organic keyword data, all from one place.",
                             },
                             {
                                 question: "What macOS version do I need?",
-                                answer: "App Sprint ASO requires macOS 14.6 (Sonoma) or later. It's a native macOS app built with Swift and SwiftUI for the best performance.",
+                                answer: "AppSprint ASO requires macOS 14.6 (Sonoma) or later. It's a native macOS app built with Swift and SwiftUI for the best performance.",
                             },
                             {
                                 question: "Can I track competitor keywords?",

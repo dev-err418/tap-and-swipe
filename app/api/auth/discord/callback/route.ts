@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
         const welcomeMsg = `Hey <@${discordUser.id}>, it's Arthur! 👋
 
-Welcome to the App Sprint program 🎉
+Welcome to the AppSprint program 🎉
 
 To get started, here's a short intro video:
 https://youtu.be/AOH2aOJwp_Y`;

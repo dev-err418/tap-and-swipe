@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Privacy Policy — App Sprint Quiz",
+  title: "Privacy Policy — AppSprint Quiz",
   description:
-    "Privacy Policy for the App Sprint Quiz — learn how we collect, use, and protect your personal information.",
+    "Privacy Policy for the AppSprint Quiz — learn how we collect, use, and protect your personal information.",
   alternates: {
     canonical: "/app-sprint/privacy",
   },
@@ -20,7 +20,7 @@ export default function QuizPrivacyPage() {
         <div className="mt-10 space-y-8 text-[#c9c4bc] leading-relaxed">
           <p>
             This Privacy Policy explains how we collect, use, and protect your
-            personal information when you complete the App Sprint Quiz on
+            personal information when you complete the AppSprint Quiz on
             tap-and-swipe.com. By submitting your information through the quiz,
             you agree to the terms outlined below.
           </p>
@@ -43,7 +43,7 @@ export default function QuizPrivacyPage() {
               </li>
               <li>
                 <strong className="text-[#f1ebe2]">Phone number</strong> — to contact you
-                about your results and the App Sprint program if relevant.
+                about your results and the AppSprint program if relevant.
               </li>
               <li>
                 <strong className="text-[#f1ebe2]">Quiz answers</strong> — to determine
@@ -58,7 +58,7 @@ export default function QuizPrivacyPage() {
             </h2>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>Generate your personalized quiz results and action plan.</li>
-              <li>Send you follow-up emails related to the App Sprint program.</li>
+              <li>Send you follow-up emails related to the AppSprint program.</li>
               <li>
                 Contact you by phone or email to discuss your goals and how we can
                 help.
@@ -156,7 +156,7 @@ export default function QuizPrivacyPage() {
           </section>
 
           <p className="pt-4 text-sm text-[#c9c4bc]">
-            By submitting the App Sprint Quiz, you agree to the terms outlined in
+            By submitting the AppSprint Quiz, you agree to the terms outlined in
             this Privacy Policy.
           </p>
         </div>

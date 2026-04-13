@@ -74,7 +74,7 @@ const SuccessOverlay = () => {
                                 transition={{ delay: 0.4 }}
                                 className="mb-10 text-lg text-[#c9c4bc] leading-relaxed"
                             >
-                                Welcome to the App Sprint. You’ve taken the first step toward launching your own mobile app business.
+                                Welcome to the AppSprint. You’ve taken the first step toward launching your own mobile app business.
                             </motion.p>
 
                             {/* Action Steps */}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "App Sprint ASO — App Store Optimization for macOS",
+    title: "AppSprint ASO — App Store Optimization for macOS",
     description:
         "The all-in-one macOS app for App Store Optimization. Keyword research, metadata editing via App Store Connect, and Apple Ads campaign management.",
     keywords: [
@@ -11,16 +11,16 @@ export const metadata: Metadata = {
         "Apple Search Ads",
         "App Store Connect",
         "macOS app",
-        "App Sprint",
+        "AppSprint",
     ],
     openGraph: {
-        title: "App Sprint ASO — App Store Optimization for macOS",
+        title: "AppSprint ASO — App Store Optimization for macOS",
         description:
             "The all-in-one macOS app for App Store Optimization. Keywords, metadata, and Apple Ads — in one place.",
         type: "website",
     },
     twitter: {
-        title: "App Sprint ASO — App Store Optimization for macOS",
+        title: "AppSprint ASO — App Store Optimization for macOS",
         description:
             "The all-in-one macOS app for App Store Optimization. Keywords, metadata, and Apple Ads — in one place.",
     },
