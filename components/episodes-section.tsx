@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { getAllEpisodes } from "@/lib/episodes";
+import Link from "next/link";
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -18,19 +18,11 @@ export function EpisodesSection() {
 
   return (
     <section className="mx-auto w-full max-w-5xl px-6 py-20">
-      <div className="flex items-end justify-between">
-        <h2 className="text-2xl font-semibold tracking-tight">Latest Episodes</h2>
-        <Link
-          href="/episodes"
-          className="text-sm text-black/40 transition-colors hover:text-black/70"
-        >
-          View all &rarr;
-        </Link>
-      </div>
+      <h2 className="text-2xl font-semibold tracking-tight">Latest Episodes</h2>
 
       {/* Latest episode — big card */}
       <Link
-        href={`/episodes/${latest.slug}`}
+        href={`/${latest.slug}`}
         className="group mt-8 block rounded-2xl border border-black/10 p-6 transition-colors hover:border-black/20 sm:p-8"
       >
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-black/40">
@@ -64,7 +56,7 @@ export function EpisodesSection() {
           {shown.map((ep) => (
             <Link
               key={ep.slug}
-              href={`/episodes/${ep.slug}`}
+              href={`/${ep.slug}`}
               className="group rounded-2xl border border-black/10 p-5 transition-colors hover:border-black/20"
             >
               <div className="text-sm text-black/40">

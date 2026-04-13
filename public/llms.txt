@@ -17,15 +17,14 @@ Tap & Swipe is an indie developer studio and media brand run by Arthur Spalanzan
 
 - [App Sprint Community](https://tap-and-swipe.com/app-sprint-community): Paid community + course roadmap teaching users to build and monetize iOS apps
 - [App Sprint ASO](https://tap-and-swipe.com/aso): App Store Optimization Mac app for keyword research and tracking
-- [Episodes](https://tap-and-swipe.com/episodes): Blog-style writeups of our conversations with app builders
+- [Episodes](https://tap-and-swipe.com): Blog-style writeups of our conversations with app builders (on homepage)
 
 ## Pages
 
-- Homepage: https://tap-and-swipe.com
-- Episodes: https://tap-and-swipe.com/episodes
+- Homepage + Episodes: https://tap-and-swipe.com
 - App Sprint Community: https://tap-and-swipe.com/app-sprint-community
 - ASO Tool: https://tap-and-swipe.com/aso
-- RSS Feed: https://tap-and-swipe.com/episodes/rss.xml
+- RSS Feed: https://tap-and-swipe.com/rss.xml
 
 ## Apps by Tap & Swipe
 

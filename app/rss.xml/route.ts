@@ -18,8 +18,8 @@ export function GET() {
     .map(
       (ep) => `    <item>
       <title>${escapeXml(ep.title)}</title>
-      <link>${BASE_URL}/episodes/${ep.slug}</link>
-      <guid isPermaLink="true">${BASE_URL}/episodes/${ep.slug}</guid>
+      <link>${BASE_URL}/${ep.slug}</link>
+      <guid isPermaLink="true">${BASE_URL}/${ep.slug}</guid>
       <description>${escapeXml(ep.description)}</description>
       <pubDate>${new Date(ep.date).toUTCString()}</pubDate>${
         ep.tags
@@ -34,10 +34,10 @@ export function GET() {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tap &amp; Swipe — Episodes</title>
-    <link>${BASE_URL}/episodes</link>
+    <link>${BASE_URL}</link>
     <description>Real stories from people building mobile apps.</description>
     <language>en</language>
-    <atom:link href="${BASE_URL}/episodes/rss.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="${BASE_URL}/rss.xml" rel="self" type="application/rss+xml"/>
 ${items}
   </channel>
 </rss>`;
