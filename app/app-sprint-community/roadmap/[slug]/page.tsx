@@ -107,7 +107,7 @@ export default async function CategoryPage({
     <div className="pt-8">
       <Link
         href="/app-sprint-community/roadmap"
-        className="inline-flex items-center gap-2 text-sm text-black/50 hover:text-black transition-colors mb-8"
+        className="inline-flex items-center gap-2 text-sm text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors mb-8"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to roadmap
@@ -116,7 +116,7 @@ export default async function CategoryPage({
       <div className="mb-10">
         <div className="flex items-center gap-4 mb-4">
           <span className="text-4xl">{category.emoji}</span>
-          <h1 className="text-3xl font-bold tracking-tight text-black">
+          <h1 className="text-3xl font-bold tracking-tight text-black dark:text-white">
             {category.title}
           </h1>
         </div>

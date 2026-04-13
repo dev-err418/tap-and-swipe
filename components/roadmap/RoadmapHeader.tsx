@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, LifeBuoy, Mail, MessageCircle } from "lucide-react";
+import { LogOut, Mail, MessageCircle, Sun, Moon } from "lucide-react";
 import ProgressBar from "./ProgressBar";
 import TierSwitcher from "./TierSwitcher";
 import type { UserTier } from "@/lib/premium";
@@ -15,6 +15,7 @@ export default function RoadmapHeader({
   completedLessons,
   isAdmin,
   debugTier,
+  theme,
 }: {
   discordUsername: string;
   discordAvatar: string | null;
@@ -23,6 +24,7 @@ export default function RoadmapHeader({
   completedLessons: number;
   isAdmin?: boolean;
   debugTier?: UserTier;
+  theme: "light" | "dark";
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -45,13 +47,18 @@ export default function RoadmapHeader({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
 
+  function setTheme(t: "light" | "dark") {
+    document.cookie = `roadmap-theme=${t};path=/;max-age=${60 * 60 * 24 * 365}`;
+    router.refresh();
+  }
+
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/app-sprint-community");
   }
 
   return (
-    <header className="border-b border-black/10 bg-white">
+    <header className="border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a]">
       <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-4">
         <div className="hidden sm:block">
           {isAdmin && debugTier ? (
@@ -64,7 +71,7 @@ export default function RoadmapHeader({
         <div className="flex-1 max-w-xs hidden sm:block">
           <div className="flex items-center gap-3">
             <ProgressBar completed={completedLessons} total={totalLessons} />
-            <span className="text-xs text-black/50 whitespace-nowrap">
+            <span className="text-xs text-black/50 dark:text-white/50 whitespace-nowrap">
               {percent}%
             </span>
           </div>
@@ -75,7 +82,7 @@ export default function RoadmapHeader({
             onClick={() => setMenuOpen(!menuOpen)}
             className="flex items-center gap-3 cursor-pointer"
           >
-            <span className="text-sm text-black/50 hidden sm:inline">
+            <span className="text-sm text-black/50 dark:text-white/50 hidden sm:inline">
               {discordUsername}
             </span>
             {avatarUrl ? (
@@ -92,30 +99,58 @@ export default function RoadmapHeader({
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-44 rounded-xl border border-black/10 bg-white shadow-xl overflow-hidden z-50">
-              <div className="px-4 py-2 text-xs font-medium text-black/30 uppercase tracking-wider">
+            <div className="absolute right-0 mt-2 w-44 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#252525] shadow-xl overflow-hidden z-50">
+              <div className="px-4 py-2 text-xs font-medium text-black/30 dark:text-white/30 uppercase tracking-wider">
+                Theme
+              </div>
+              <div className="flex items-center gap-1 px-4 pb-2">
+                <button
+                  onClick={() => setTheme("light")}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors cursor-pointer ${
+                    theme === "light"
+                      ? "bg-[#FF9500]/10 text-[#FF9500]"
+                      : "bg-black/[0.04] dark:bg-white/[0.06] text-black/50 dark:text-white/50 hover:bg-black/[0.08] dark:hover:bg-white/[0.10]"
+                  }`}
+                >
+                  <Sun className="h-3.5 w-3.5" />
+                  Light
+                </button>
+                <button
+                  onClick={() => setTheme("dark")}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors cursor-pointer ${
+                    theme === "dark"
+                      ? "bg-[#FF9500]/10 text-[#FF9500]"
+                      : "bg-black/[0.04] dark:bg-white/[0.06] text-black/50 dark:text-white/50 hover:bg-black/[0.08] dark:hover:bg-white/[0.10]"
+                  }`}
+                >
+                  <Moon className="h-3.5 w-3.5" />
+                  Dark
+                </button>
+              </div>
+              <div className="border-t border-black/10 dark:border-white/10" />
+              <div className="px-4 py-2 text-xs font-medium text-black/30 dark:text-white/30 uppercase tracking-wider">
                 Support
               </div>
               <a
                 href="https://discord.com/users/1261628273465626725"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-black/60 hover:bg-black/[0.04] transition-colors"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-black/60 dark:text-white/60 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
               >
                 <MessageCircle className="h-4 w-4" />
                 Discord DM
               </a>
               <a
                 href="mailto:arthurs.dev@gmail.com?subject=AppSprint Support"
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-black/60 hover:bg-black/[0.04] transition-colors"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-black/60 dark:text-white/60 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
               >
                 <Mail className="h-4 w-4" />
                 Email
               </a>
-              <div className="border-t border-black/10" />
+              <div className="border-t border-black/10 dark:border-white/10" />
               <button
                 onClick={handleLogout}
-                className="flex w-full items-center gap-2 px-4 py-3 text-sm text-black/60 hover:bg-black/[0.04] transition-colors cursor-pointer"
+                className="flex w-full items-center gap-2 px-4 py-3 text-sm text-black/60 dark:text-white/60 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 <LogOut className="h-4 w-4" />
                 Log out

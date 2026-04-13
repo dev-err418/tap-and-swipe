@@ -62,7 +62,7 @@ export default function LessonListClient({
           <div className="flex-1 max-w-xs">
             <ProgressBar completed={completedCount} total={lessons.length} />
           </div>
-          <span className="text-sm text-black/50">
+          <span className="text-sm text-black/50 dark:text-white/50">
             {completedCount}/{lessons.length} completed
           </span>
         </div>
@@ -107,7 +107,7 @@ export default function LessonListClient({
         <div className="flex justify-end mt-8">
           <Link
             href={`/app-sprint-community/roadmap/${nextCategory.slug}`}
-            className="inline-flex items-center gap-2 text-sm text-black/50 hover:text-black transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors"
           >
             Next: {nextCategory.title}
             <ArrowRight className="h-4 w-4" />

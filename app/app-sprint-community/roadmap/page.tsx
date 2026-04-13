@@ -56,10 +56,10 @@ export default async function RoadmapPage() {
   return (
     <div className="pt-8">
       <div className="mb-12">
-        <h1 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">
+        <h1 className="text-4xl font-bold tracking-tight text-black dark:text-white sm:text-5xl">
           Course roadmap
         </h1>
-        <p className="mt-3 text-lg text-black/50">
+        <p className="mt-3 text-lg text-black/50 dark:text-white/50">
           Follow the steps below to build and launch your app. Track your
           progress as you go.
         </p>
@@ -86,7 +86,7 @@ export default async function RoadmapPage() {
         .filter((cat) => cat.slug === "weekly-calls")
         .map((cat) => (
           <div key={cat.slug} className="mt-16">
-            <h2 className="text-2xl font-bold tracking-tight text-black mb-6">
+            <h2 className="text-2xl font-bold tracking-tight text-black dark:text-white mb-6">
               Bonus
             </h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

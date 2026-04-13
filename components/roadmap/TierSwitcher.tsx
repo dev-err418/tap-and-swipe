@@ -31,7 +31,7 @@ export default function TierSwitcher({ currentTier }: { currentTier: UserTier })
           className={`px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
             currentTier === t.value
               ? "bg-[#FF9500]/10 border-[#FF9500]/30 text-[#FF9500]"
-              : "bg-black/[0.04] border-black/10 text-black/50 hover:bg-black/[0.08]"
+              : "bg-black/[0.04] dark:bg-white/[0.06] border-black/10 dark:border-white/10 text-black/50 dark:text-white/50 hover:bg-black/[0.08] dark:hover:bg-white/[0.10]"
           }`}
         >
           {t.label}
@@ -39,7 +39,7 @@ export default function TierSwitcher({ currentTier }: { currentTier: UserTier })
       ))}
       <button
         onClick={clearOverride}
-        className="px-2 py-1 text-xs text-black/30 hover:text-black/60 transition-colors cursor-pointer"
+        className="px-2 py-1 text-xs text-black/30 dark:text-white/30 hover:text-black/60 dark:hover:text-white/60 transition-colors cursor-pointer"
         title="Reset to real tier"
       >
         ×

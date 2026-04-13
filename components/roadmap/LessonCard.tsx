@@ -110,26 +110,26 @@ export default function LessonCard({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05, duration: 0.3 }}
-        className="rounded-2xl border border-black/10 bg-black/[0.02] overflow-hidden"
+        className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] overflow-hidden"
       >
         <div className="flex items-center gap-4 p-5 opacity-50">
           <div className="shrink-0">
-            <Circle className="h-6 w-6 text-black/15" />
+            <Circle className="h-6 w-6 text-black/15 dark:text-white/15" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-black/30 font-medium">{order}.</span>
-              <h3 className="font-medium truncate text-black/30">
+              <span className="text-black/30 dark:text-white/30 font-medium">{order}.</span>
+              <h3 className="font-medium truncate text-black/30 dark:text-white/30">
                 {title}
               </h3>
             </div>
             {description && (
-              <p className="text-sm text-black/20 mt-0.5 truncate">
+              <p className="text-sm text-black/20 dark:text-white/20 mt-0.5 truncate">
                 {description}
               </p>
             )}
           </div>
-          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] px-3 py-1.5 text-xs text-black/30">
+          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-3 py-1.5 text-xs text-black/30 dark:text-white/30">
             <Lock className="h-3 w-3" />
             Premium
           </span>
@@ -144,7 +144,7 @@ export default function LessonCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className="rounded-2xl border border-black/10 bg-black/[0.02] overflow-hidden"
+      className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] overflow-hidden"
     >
       <div className={`flex items-center gap-4 p-5 ${comingSoon ? "opacity-50" : ""}`}>
         {hideProgress ? null : !comingSoon ? (
@@ -156,27 +156,27 @@ export default function LessonCard({
             {completed ? (
               <CheckCircle2 className="h-6 w-6 text-[#FF9500]" />
             ) : (
-              <Circle className="h-6 w-6 text-black/20 hover:text-black/40" />
+              <Circle className="h-6 w-6 text-black/20 dark:text-white/20 hover:text-black/40 dark:hover:text-white/40" />
             )}
           </button>
         ) : (
           <div className="shrink-0">
-            <Circle className="h-6 w-6 text-black/15" />
+            <Circle className="h-6 w-6 text-black/15 dark:text-white/15" />
           </div>
         )}
 
         {comingSoon ? (
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-black/30 font-medium">
+              <span className="text-black/30 dark:text-white/30 font-medium">
                 {order}.
               </span>
-              <h3 className="font-medium truncate text-black/30">
+              <h3 className="font-medium truncate text-black/30 dark:text-white/30">
                 {title}
               </h3>
             </div>
             {description && (
-              <p className="text-sm text-black/20 mt-0.5 truncate">
+              <p className="text-sm text-black/20 dark:text-white/20 mt-0.5 truncate">
                 {description}
               </p>
             )}
@@ -187,21 +187,21 @@ export default function LessonCard({
             className="flex-1 min-w-0 text-left cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <span className="text-black/30 font-medium">
+              <span className="text-black/30 dark:text-white/30 font-medium">
                 {order}.
               </span>
               <h3
                 className={`font-medium truncate ${
                   completed
-                    ? "text-black/40 line-through"
-                    : "text-black"
+                    ? "text-black/40 dark:text-white/40 line-through"
+                    : "text-black dark:text-white"
                 }`}
               >
                 {title}
               </h3>
             </div>
             {description && (
-              <p className="text-sm text-black/40 mt-0.5 truncate">
+              <p className="text-sm text-black/40 dark:text-white/40 mt-0.5 truncate">
                 {description}
               </p>
             )}
@@ -209,13 +209,13 @@ export default function LessonCard({
         )}
 
         {comingSoon ? (
-          <span className="shrink-0 rounded-full bg-black/[0.04] px-3 py-1.5 text-xs text-black/30">
+          <span className="shrink-0 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-3 py-1.5 text-xs text-black/30 dark:text-white/30">
             Coming soon
           </span>
         ) : (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="shrink-0 flex items-center gap-1 rounded-full bg-black/[0.04] px-3 py-1.5 text-sm text-black/50 hover:bg-black/[0.08] transition-colors cursor-pointer"
+            className="shrink-0 flex items-center gap-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-3 py-1.5 text-sm text-black/50 dark:text-white/50 hover:bg-black/[0.08] dark:hover:bg-white/[0.10] transition-colors cursor-pointer"
           >
             {isVideo ? (
               <Play className="h-3.5 w-3.5" />
@@ -236,7 +236,7 @@ export default function LessonCard({
 
       {expanded && isVideo && ytId && (
         <div className="px-5 pb-5">
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/5">
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/5 dark:bg-white/5">
             <iframe
               src={`https://www.youtube.com/embed/${ytId}`}
               title={title}
@@ -250,7 +250,7 @@ export default function LessonCard({
 
       {expanded && isVideo && markdownContent && (
         <div className="px-5 pb-5">
-          <div className="rounded-xl bg-black/[0.03] px-6 pt-4 pb-1">
+          <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] px-6 pt-4 pb-1">
             <MarkdownContent content={markdownContent} />
           </div>
         </div>
@@ -258,7 +258,7 @@ export default function LessonCard({
 
       {expanded && !isVideo && markdownContent && (
         <div className="px-5 pb-5">
-          <div className="rounded-xl bg-black/[0.03] p-6">
+          <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-6">
             <MarkdownContent content={markdownContent} />
           </div>
         </div>

@@ -71,6 +71,9 @@ export default async function RoadmapLayout({
 
   const tier = debugTier ?? realTier;
 
+  const theme = cookieStore.get("roadmap-theme")?.value === "dark" ? "dark" : "light";
+  const isDark = theme === "dark";
+
   // Exclude weekly-calls and categories that are hidden or locked from global progress
   const excludedCategories = CATEGORIES
     .filter((c) => c.slug === "weekly-calls" || getCategoryAccess(tier, c.slug) !== "unlocked")
@@ -93,8 +96,8 @@ export default async function RoadmapLayout({
 
   return (
     <>
-    <style>{`html, body { background-color: #fff !important; }`}</style>
-    <div className="min-h-screen bg-white">
+    <style>{`html, body { background-color: ${isDark ? "#1a1a1a" : "#fff"} !important; }`}</style>
+    <div className={`min-h-screen bg-white dark:bg-[#1a1a1a]${isDark ? " dark" : ""}`}>
       <RoadmapHeader
         discordUsername={session?.discordUsername ?? "Dev User"}
         discordAvatar={session?.discordAvatar ?? null}
@@ -103,6 +106,7 @@ export default async function RoadmapLayout({
         completedLessons={completedLessons}
         isAdmin={isAdmin}
         debugTier={debugTier ?? tier}
+        theme={theme}
       />
       <main className="mx-auto max-w-7xl px-6 pb-24">{children}</main>
     </div>
