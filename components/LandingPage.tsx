@@ -153,7 +153,6 @@ const LandingPage = ({
             </header>
 
                     <div className="mx-auto max-w-7xl px-6 pb-32">
-                    <FadeIn delay={0.6} y={20}>
                     <div className="flex justify-center">
                         <div className="relative overflow-hidden rounded-[32px] shadow-2xl shadow-black/10 ring-1 ring-black/10">
                             <video
@@ -167,7 +166,6 @@ const LandingPage = ({
                             />
                         </div>
                     </div>
-                    </FadeIn>
                     </div>
 
             {/* Roadmap Section */}
@@ -270,9 +268,21 @@ const LandingPage = ({
                                 text: "This Discord guide is complete and covers everything needed to ship your first app. Arthur is super helpful and always there to share his expertise. Highly recommended for aspiring app creators! (The community is also a huge plus for feedback).",
                                 time: "10 days after purchase",
                                 image: "/raphael.png"
+                            },
+                            {
+                                name: "PauPi10",
+                                text: "The community pushed me to launch an app and now I do this full-time. Arthur is a legend. Highly recommend.",
+                                time: "1 month after purchase",
+                                image: "/paupi.webp"
+                            },
+                            {
+                                name: "Steven",
+                                text: "Great community animated by Arthur, a lot of value and understandings are given. Basic learnings and advanced ones are studied here. Shout out to Arthur!",
+                                time: "1 month after purchase",
+                                image: "/steven.webp"
                             }
                         ].map((testimonial, i) => (
-                            <div key={i} className="break-inside-avoid rounded-3xl border border-black/10 bg-black/[0.02] p-6 shadow-sm transition-all hover:bg-black/[0.04]">
+                            <div key={i} className="break-inside-avoid rounded-3xl border border-black/10 bg-black/[0.02] p-6 transition-all hover:bg-black/[0.04]">
                                 <div className="flex items-center gap-2 mb-4">
                                     <div className="flex text-black">
                                         {[...Array(5)].map((_, i) => (
@@ -343,7 +353,7 @@ const LandingPage = ({
                             </li>
                             <li>
                                 <a href="https://x.com/arthursbuilds" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    X
+                                    X (Twitter)
                                 </a>
                             </li>
                         </ul>

@@ -62,6 +62,7 @@ const Pricing = () => {
                             <BundleMiniCard
                                 name="AppSprint ASO"
                                 tagline="The all-in-one macOS app for ASO"
+                                href="https://appsprint.app/aso"
                                 icon="/aso/app-icon.png"
                                 value=""
                                 features={[

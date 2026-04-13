@@ -15,7 +15,7 @@ export default function ReviewsJsonLd() {
       ratingValue: "5.0",
       bestRating: "5",
       worstRating: "1",
-      ratingCount: "7",
+      ratingCount: "9",
     },
     review: [
       {
@@ -94,6 +94,28 @@ export default function ReviewsJsonLd() {
         },
         reviewBody:
           "This Discord guide is complete and covers everything needed to ship your first app. Arthur is super helpful and always there to share his expertise. Highly recommended for aspiring app creators! (The community is also a huge plus for feedback).",
+      },
+      {
+        "@type": "Review",
+        author: { "@type": "Person", name: "PauPi10" },
+        reviewRating: {
+          "@type": "Rating",
+          ratingValue: "5",
+          bestRating: "5",
+        },
+        reviewBody:
+          "The community pushed me to launch an app and now I do this full-time. Arthur is a legend. Highly recommend.",
+      },
+      {
+        "@type": "Review",
+        author: { "@type": "Person", name: "Steven" },
+        reviewRating: {
+          "@type": "Rating",
+          ratingValue: "5",
+          bestRating: "5",
+        },
+        reviewBody:
+          "Great community animated by Arthur, a lot of value and understandings are given. Basic learnings and advanced ones are studied here. Shout out to Arthur!",
       },
     ],
   };

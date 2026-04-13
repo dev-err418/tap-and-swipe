@@ -33,7 +33,7 @@ export default function AppSprintJsonLd() {
       "@type": "AggregateRating",
       ratingValue: "5.0",
       bestRating: "5",
-      ratingCount: "7",
+      ratingCount: "9",
     },
     teaches: [
       "Mobile app development with Expo and React Native",

@@ -7,14 +7,18 @@ interface BundleMiniCardProps {
     features: string[];
     avatars?: string[];
     icon?: string;
+    href?: string;
 }
 
-export default function BundleMiniCard({ name, tagline, value, features, avatars, icon }: BundleMiniCardProps) {
+export default function BundleMiniCard({ name, tagline, value, features, avatars, icon, href }: BundleMiniCardProps) {
+    const Wrapper = href ? "a" : "div";
+    const wrapperProps = href ? { href, target: "_blank", rel: "noopener noreferrer" } : {};
+
     return (
-        <div className="w-full rounded-2xl border border-black/10 bg-black/[0.03] p-5 relative">
+        <Wrapper {...wrapperProps} className="block w-full rounded-2xl border border-black/10 bg-black/[0.03] p-5 relative transition-colors hover:bg-black/[0.06]">
             {icon && (
                 <div className="absolute -top-3 -right-2 h-11 w-11">
-                    <div className="absolute inset-0 rounded-[12px] bg-gradient-to-b from-black/5 to-black/10 border border-black/10 shadow-sm" />
+                    <div className="absolute inset-0 rounded-[12px] bg-black/85 border border-black/15" />
                     <img src={icon} alt={name} className="relative h-full w-full rounded-[12px] p-1" />
                 </div>
             )}
@@ -46,6 +50,6 @@ export default function BundleMiniCard({ name, tagline, value, features, avatars
                     </li>
                 ))}
             </ul>
-        </div>
+        </Wrapper>
     );
 }

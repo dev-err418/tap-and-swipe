@@ -109,7 +109,7 @@ export default async function Home() {
               </li>
               <li>
                 <a href="https://x.com/arthursbuilds" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                  X
+                  X (Twitter)
                 </a>
               </li>
             </ul>
