@@ -170,12 +170,12 @@ export default function TermsPage() {
         <div className="mx-auto grid max-w-6xl gap-8 sm:grid-cols-[2fr_1fr_1fr_1fr]">
           <div>
             <p className="font-semibold text-black/80">Tap &amp; Swipe</p>
-            <p className="mt-1">Made with ❤️ in 🇫🇷</p>
+            <p className="mt-1 text-black/80">Made with ❤️ in 🇫🇷</p>
             <p className="mt-3">&copy; {new Date().getFullYear()} &middot; TAP &amp; SWIPE SAS</p>
             <p className="mt-1">SIREN: 100454206 &middot; TVA: FR23100454206</p>
           </div>
           <div>
-            <p className="font-medium text-black/60">Products</p>
+            <p className="font-medium text-black/80">Products</p>
             <ul className="-mx-2 mt-2">
               <li>
                 <Link href="/app-sprint-community" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
@@ -190,7 +190,7 @@ export default function TermsPage() {
             </ul>
           </div>
           <div>
-            <p className="font-medium text-black/60">Social</p>
+            <p className="font-medium text-black/80">Social</p>
             <ul className="-mx-2 mt-2">
               <li>
                 <a href="https://www.youtube.com/@ArthurBuildsStuff" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
@@ -210,7 +210,7 @@ export default function TermsPage() {
             </ul>
           </div>
           <div>
-            <p className="font-medium text-black/60">Legal</p>
+            <p className="font-medium text-black/80">Legal</p>
             <ul className="-mx-2 mt-2">
               <li>
                 <Link href="/app-sprint-community/tos" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">

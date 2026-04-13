@@ -285,7 +285,7 @@ export default async function EpisodePage({
               <p className="mt-1">SIREN: 100454206 &middot; TVA: FR23100454206</p>
             </div>
             <div>
-              <p className="font-medium text-black/60">Products</p>
+              <p className="font-medium text-black/80">Products</p>
               <ul className="-mx-2 mt-2">
                 <li>
                   <Link href="/app-sprint-community" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
@@ -300,7 +300,7 @@ export default async function EpisodePage({
               </ul>
             </div>
             <div>
-              <p className="font-medium text-black/60">Social</p>
+              <p className="font-medium text-black/80">Social</p>
               <ul className="-mx-2 mt-2">
                 <li>
                   <a href="https://www.youtube.com/@ArthurBuildsStuff" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
