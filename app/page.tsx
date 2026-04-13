@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Hero } from "@/components/hero";
 
 export const metadata: Metadata = {
   title: "Tap & Swipe: Real Stories From People Building Mobile Apps",
@@ -35,9 +36,9 @@ export default function Home() {
   return (
     <>
     <style>{`html, body { background-color: #fff !important; }`}</style>
-    <main className="relative z-10 flex min-h-screen flex-col bg-white text-black selection:bg-black/10">
+    <main className="relative z-10 flex flex-col bg-white text-black selection:bg-black/10">
       {/* Navbar */}
-      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-5">
+      <nav className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-center px-6 py-5">
         <div className="flex items-center gap-2.5">
           <img
             src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
@@ -49,34 +50,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-        <h1 className="max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
-          Real stories from people building mobile apps
-        </h1>
-        <p className="mt-6 max-w-xl text-base text-black/50 sm:text-lg">
-          Every week I sit down with an app builder and ask them everything: the idea, the grind, the failures, and what finally worked.
-        </p>
-
-        <form className="mt-10 flex w-full max-w-md flex-col gap-2">
-          <div className="flex gap-2">
-            <input
-              type="email"
-              name="email"
-              placeholder="you@email.com"
-              required
-              className="h-12 flex-1 rounded-full border border-black/15 bg-black/5 px-5 text-sm text-black placeholder:text-black/30 outline-none transition-colors focus:border-black/40 focus:ring-1 focus:ring-black/40"
-            />
-            <button
-              type="submit"
-              className="h-12 rounded-full bg-black px-6 text-sm font-bold text-white transition-all hover:bg-black/85"
-            >
-              Get new episodes
-            </button>
-          </div>
-          <p className="pl-5 text-xs text-black/30">One email per episode. No spam, ever.</p>
-        </form>
-      </section>
+      <Hero />
 
       {/* Footer */}
       <footer className="border-t border-black/10 px-6 py-10 text-sm text-black/40">
