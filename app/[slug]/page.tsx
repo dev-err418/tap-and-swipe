@@ -251,7 +251,7 @@ export default async function EpisodePage({
           {otherEpisodes.length > 0 && (
             <aside className="hidden lg:block">
               <div className="sticky top-28">
-                <h3 className="mb-4 text-sm uppercase tracking-wider text-black/30">
+                <h3 className="mb-4 text-sm text-black/30">
                   You might also like
                 </h3>
                 <div className="divide-y divide-black/10">
