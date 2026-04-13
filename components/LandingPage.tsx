@@ -5,6 +5,24 @@ import {
 } from "lucide-react";
 import Roadmap from "./Roadmap";
 import { FadeIn } from "./fade-in";
+import { FloatingAppIcons } from "./FloatingAppIcons";
+
+const COMMUNITY_ICONS = [
+    "/community-icons/calmerra.jpg",
+    "/community-icons/divvy.jpg",
+    "/community-icons/axiom.jpg",
+    "/community-icons/bump-chat.jpg",
+    "/community-icons/glow.jpg",
+    "/community-icons/plume.jpg",
+    "/community-icons/betme.jpg",
+    "/community-icons/netpay.jpg",
+    "/community-icons/revive.jpg",
+    "/community-icons/daily-founder.jpg",
+    "/community-icons/block-reels.jpg",
+    "/community-icons/versy.jpg",
+    "/community-icons/murmur.jpg",
+    "/community-icons/budgetapp.jpg",
+];
 
 import { Suspense } from "react";
 import SuccessOverlay from "./SuccessOverlay";
@@ -46,6 +64,8 @@ const LandingPage = ({
                 className="relative flex min-h-[600px] flex-col items-center overflow-hidden px-6 text-center"
                 style={{ minHeight: "max(600px, calc(100dvh - 72px))" }}
             >
+                <FloatingAppIcons icons={COMMUNITY_ICONS} label="Apps built by members" hideStrip />
+
                 {/* Top spacer */}
                 <div className="flex-1" />
 
@@ -66,7 +86,14 @@ const LandingPage = ({
                     <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[1] sm:text-7xl">
                         Build a mobile app in{" "}
                         weeks{" "}
-                        <span className="box-decoration-clone px-2 -mx-2 underline decoration-black/20 underline-offset-8 decoration-4">
+                        <span
+                            className="box-decoration-clone px-2 -mx-2"
+                            style={{
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(0,0,0,0.12)'/%3E%3C/svg%3E")`,
+                                backgroundSize: "100% 100%",
+                                backgroundRepeat: "no-repeat",
+                            }}
+                        >
                             not months
                         </span>
                     </h1>
