@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Check, ArrowRight, Star } from "lucide-react";
+import BundleMiniCard from "./BundleMiniCard";
 const features = [
     "Complete 6-week roadmap",
     "30+ video lessons",
@@ -50,7 +51,28 @@ const Pricing = () => {
                                     <span className="text-sm font-medium text-black">{feature}</span>
                                 </li>
                             ))}
+                            <li className="flex items-start gap-3">
+                                <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
+                                <span className="text-sm font-bold text-black">AppSprint ASO Pro included (worth 39€/mo)</span>
+                            </li>
                         </ul>
+
+                        {/* ASO included */}
+                        <div className="mt-6">
+                            <BundleMiniCard
+                                name="AppSprint ASO"
+                                tagline="The all-in-one macOS app for ASO"
+                                href="https://appsprint.app/aso"
+                                icon="/aso/app-icon.png"
+                                value=""
+                                features={[
+                                    "Keyword research & tracking",
+                                    "Competitor MRR estimates",
+                                    "Apple Search Ads management",
+                                    "Unlimited keywords & apps",
+                                ]}
+                            />
+                        </div>
 
                         <div className="flex -space-x-2 mt-6 justify-center">
                             {["/jx_op.png", "/luka.png", "/jesse.png", "/hnythng.png", "/raphael.png"].map((src, i) => (
