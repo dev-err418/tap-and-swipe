@@ -106,7 +106,7 @@ export default function LessonListClient({
       {nextCategory && (
         <div className="flex justify-end mt-8">
           <Link
-            href={`/app-sprint/roadmap/${nextCategory.slug}`}
+            href={`/app-sprint-community/roadmap/${nextCategory.slug}`}
             className="inline-flex items-center gap-2 text-sm text-[#c9c4bc] hover:text-[#f1ebe2] transition-colors"
           >
             Next: {nextCategory.title}

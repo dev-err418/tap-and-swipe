@@ -5,37 +5,18 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: "/app-sprint",
-        has: [
-          {
-            type: "header",
-            key: "cf-ipcountry",
-            value: "IN",
-          },
-        ],
-        destination: "/app-sprint-community",
-        permanent: false,
-      },
-      {
-        source: "/app-sprint",
-        has: [
-          {
-            type: "header",
-            key: "cf-ipcountry",
-            value: "BR",
-          },
-        ],
-        destination: "/app-sprint-community",
-        permanent: false,
-      },
-      {
-        source: "/app-sprint-community/roadmap",
-        destination: "/app-sprint/roadmap",
+        source: "/app-sprint/roadmap/:slug*",
+        destination: "/app-sprint-community/roadmap/:slug*",
         permanent: true,
       },
       {
-        source: "/app-sprint-community/roadmap/:slug*",
-        destination: "/app-sprint/roadmap/:slug*",
+        source: "/app-sprint/roadmap",
+        destination: "/app-sprint-community/roadmap",
+        permanent: true,
+      },
+      {
+        source: "/app-sprint",
+        destination: "/app-sprint-community",
         permanent: true,
       },
       {

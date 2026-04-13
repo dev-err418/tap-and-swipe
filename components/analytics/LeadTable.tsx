@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { X, Trash2 } from "lucide-react";
-import { questions, type QuestionKey } from "@/components/quiz-funnel/quizData";
-
 interface Lead {
   id: string;
   firstName: string;
@@ -29,11 +27,8 @@ const STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
   no_show: { label: "No Show", classes: "bg-red-500/10 text-red-400" },
 };
 
-function getAnswerLabel(questionKey: string, answerIndex: number): string {
-  const q = questions[questionKey as QuestionKey];
-  if (!q) return `#${answerIndex}`;
-  const a = q.answers[answerIndex];
-  return a ? `${a.emoji} ${a.label}` : `#${answerIndex}`;
+function getAnswerLabel(_questionKey: string, answerIndex: number): string {
+  return `Option ${answerIndex}`;
 }
 
 export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
@@ -206,12 +201,10 @@ export default function LeadTable({ initialLeads }: { initialLeads: Lead[] }) {
                         </div>
                       ) : null;
                     }
-                    const q = questions[key as QuestionKey];
-                    if (!q) return null;
                     return (
                       <div key={key} className="rounded-xl border border-white/5 bg-white/5 p-3">
                         <div className="text-xs text-[#c9c4bc] mb-1">
-                          {key.toUpperCase()}: {q.title}
+                          {key.toUpperCase()}
                         </div>
                         <div className="text-sm">{getAnswerLabel(key, value)}</div>
                       </div>

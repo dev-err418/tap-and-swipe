@@ -116,7 +116,7 @@ https://youtu.be/AOH2aOJwp_Y`;
 
         const stepsMsg = `Here are the next steps:
 1️⃣ Watch the video above
-2️⃣ Access your course on the platform: https://tap-and-swipe.com/app-sprint/roadmap
+2️⃣ Access your course on the platform: https://tap-and-swipe.com/app-sprint-community/roadmap
 3️⃣ Have a read through this report on the state of subscription apps, great insights on the mobile app market: https://www.revenuecat.com/pdf/state-of-subscription-apps-2025.pdf
 
 We're super excited to kick this off with you!
@@ -188,7 +188,7 @@ Feel free to reach out here if you have any questions 😉`;
           },
           "7d"
         );
-        return NextResponse.redirect(`${APP_URL}/app-sprint/roadmap`);
+        return NextResponse.redirect(`${APP_URL}/app-sprint-community/roadmap`);
       }
 
       await createSession({
@@ -232,7 +232,7 @@ Feel free to reach out here if you have any questions 😉`;
         "7d"
       );
 
-      return NextResponse.redirect(`${APP_URL}/app-sprint/${redirectTarget}`);
+      return NextResponse.redirect(`${APP_URL}/app-sprint-community/${redirectTarget}`);
     }
 
     // Already-subscribed user: create session and send to roadmap
@@ -245,7 +245,7 @@ Feel free to reach out here if you have any questions 😉`;
         },
         "7d"
       );
-      return NextResponse.redirect(`${APP_URL}/app-sprint/roadmap`);
+      return NextResponse.redirect(`${APP_URL}/app-sprint-community/roadmap`);
     }
 
     // Set session cookie with Discord identity for checkout

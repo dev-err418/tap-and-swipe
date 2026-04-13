@@ -74,8 +74,8 @@ const LandingPage = ({
                     <FadeIn delay={0.05} y={16}>
                     <a href="#pricing" className="mb-8 inline-flex items-center gap-2 rounded-full border border-black/15 bg-black/[0.03] pl-2.5 pr-2.5 py-1 text-xs text-black/60 backdrop-blur-sm transition-colors hover:bg-black/[0.06]">
                         <span className="relative inline-flex h-2 w-2 mr-[0.375rem]">
-                            <span className="absolute -inset-0.5 animate-ping [animation-duration:2s] rounded-full bg-black opacity-20" />
-                            <span className="relative inline-block h-2 w-2 rounded-full bg-black shadow-[0_0_4px_rgba(0,0,0,0.2)]" />
+                            <span className="absolute -inset-0.5 animate-ping [animation-duration:2s] rounded-full bg-[#FF9500] opacity-20" />
+                            <span className="relative inline-block h-2 w-2 rounded-full bg-[#FF9500] shadow-[0_0_4px_rgba(255,149,0,0.3)]" />
                         </span>
                         Get AppSprint ASO for free with your sub
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5"><path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
@@ -89,7 +89,7 @@ const LandingPage = ({
                         <span
                             className="box-decoration-clone px-2 -mx-2"
                             style={{
-                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(0,0,0,0.12)'/%3E%3C/svg%3E")`,
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(255,149,0,0.3)'/%3E%3C/svg%3E")`,
                                 backgroundSize: "100% 100%",
                                 backgroundRepeat: "no-repeat",
                             }}
@@ -113,7 +113,7 @@ const LandingPage = ({
                         <a
                             href="#pricing"
                             data-fast-goal="cta_hero_clicked"
-                            className="group flex h-12 items-center gap-2 rounded-full bg-black px-8 text-base font-bold text-white transition-all hover:bg-black/85 hover:ring-4 hover:ring-black/20 cursor-pointer"
+                            className="group flex h-12 items-center gap-2 rounded-full bg-[#FF9500] px-8 text-base font-bold text-white transition-all hover:bg-[#FF9500]/85 hover:ring-4 hover:ring-[#FF9500]/20 cursor-pointer"
                         >
                             Get instant access
                             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -138,7 +138,7 @@ const LandingPage = ({
                             ))}
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="flex text-black">
+                            <div className="flex text-[#FF9500]">
                                 {[...Array(5)].map((_, i) => (
                                     <Star key={i} className="h-4 w-4 fill-current" />
                                 ))}
@@ -172,10 +172,10 @@ const LandingPage = ({
             <Roadmap />
 
             {/* Group Calls Section */}
-            <section id="group-calls" data-fast-scroll="scroll_to_group_calls" className="bg-white py-24 border-t border-black/10">
+            <section id="group-calls" data-fast-scroll="scroll_to_group_calls" className="bg-white py-24">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center max-w-3xl mx-auto">
-                        <span className="mb-4 inline-flex items-center rounded-full border border-black/15 bg-black/[0.03] px-3 py-1 text-xs text-black/60">
+                        <span className="mb-4 inline-flex items-center rounded-full border border-[#FF9500]/30 bg-[#FF9500]/10 px-3 py-1 text-xs text-[#FF9500] font-medium">
                             Twice per week
                         </span>
                         <h2 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">
@@ -219,7 +219,7 @@ const LandingPage = ({
             </section>
 
             {/* Testimonials Section */}
-            <section id="testimonials" data-fast-scroll="scroll_to_testimonials" className="bg-white py-24 border-t border-black/10">
+            <section id="testimonials" data-fast-scroll="scroll_to_testimonials" className="bg-white py-24">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center">
                         <h2 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">What makers are saying</h2>
@@ -284,7 +284,7 @@ const LandingPage = ({
                         ].map((testimonial, i) => (
                             <div key={i} className="break-inside-avoid rounded-3xl border border-black/10 bg-black/[0.02] p-6 transition-all hover:bg-black/[0.04]">
                                 <div className="flex items-center gap-2 mb-4">
-                                    <div className="flex text-black">
+                                    <div className="flex text-[#FF9500]">
                                         {[...Array(5)].map((_, i) => (
                                             <Star key={i} className="h-4 w-4 fill-current" />
                                         ))}

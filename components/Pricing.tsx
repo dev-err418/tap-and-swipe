@@ -92,13 +92,13 @@ const Pricing = () => {
                             <a
                                 href="/api/auth/discord"
                                 data-fast-goal="cta_pricing_clicked"
-                                className="group flex w-full h-12 items-center justify-center gap-2 rounded-full bg-black text-sm font-bold text-white transition-all hover:bg-black/85 hover:ring-4 hover:ring-black/20 cursor-pointer mb-4"
+                                className="group flex w-full h-12 items-center justify-center gap-2 rounded-full bg-[#FF9500] text-sm font-bold text-white transition-all hover:bg-[#FF9500]/85 hover:ring-4 hover:ring-[#FF9500]/20 cursor-pointer mb-4"
                             >
                                 <span>Launch your app, now</span>
                                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                             </a>
                             <div className="flex items-center justify-center gap-2 text-xs text-black/50">
-                                <div className="flex text-black">
+                                <div className="flex text-[#FF9500]">
                                     {[...Array(5)].map((_, i) => (
                                         <Star key={i} className="h-3 w-3 fill-current" />
                                     ))}

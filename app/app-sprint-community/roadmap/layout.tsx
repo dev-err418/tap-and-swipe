@@ -52,7 +52,7 @@ export default async function RoadmapLayout({
 
   const hasAccess =
     user?.subscriptionStatus === "active" ||
-    WHITELISTED_DISCORD_IDS.has(session!.discordId) ||
+    WHITELISTED_DISCORD_IDS.has(session?.discordId ?? "") ||
     !!premiumUser;
 
   if (!isDev && (!user || !hasAccess)) {

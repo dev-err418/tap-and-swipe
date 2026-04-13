@@ -111,7 +111,7 @@ const Roadmap = () => {
     };
 
     return (
-        <section id="roadmap" data-fast-scroll="scroll_to_roadmap" className="bg-white py-24 border-t border-black/10 overflow-hidden">
+        <section id="roadmap" data-fast-scroll="scroll_to_roadmap" className="bg-white py-24 overflow-hidden">
             <div className="mx-auto max-w-7xl px-6">
 
                 {/* Revenue Scaling Visualization */}
@@ -121,10 +121,7 @@ const Roadmap = () => {
 
             </div>
 
-            {/* Full-width divider */}
-            <hr className="border-black/10 mb-24" />
-
-            <div className="mx-auto max-w-7xl px-6 pt-4">
+            <div className="mx-auto max-w-7xl px-6 pt-24">
 
                 {/* Section header */}
                 <div className="mb-16 text-center">
@@ -146,11 +143,11 @@ const Roadmap = () => {
                                 <button
                                     key={cat.id}
                                     onClick={() => handleTabClick(index)}
-                                    className={`group flex flex-col items-center gap-3 transition-all duration-300 outline-none cursor-pointer ${isActive ? "text-black scale-105" : "text-black/40 hover:text-black/70"
+                                    className={`group flex flex-col items-center gap-3 transition-all duration-300 outline-none cursor-pointer ${isActive ? "text-[#FF9500] scale-105" : "text-black/40 hover:text-black/70"
                                         }`}
                                 >
                                     <div className={`h-12 w-12 flex items-center justify-center rounded-xl transition-all ${isActive
-                                        ? "bg-black/10 border border-black/20"
+                                        ? "bg-[#FF9500]/10 border border-[#FF9500]/30"
                                         : "bg-black/[0.03] border border-transparent group-hover:bg-black/[0.06]"
                                         }`}>
                                         <span className="text-2xl">{cat.emoji}</span>
@@ -173,7 +170,7 @@ const Roadmap = () => {
                                 className="max-w-xl mx-auto"
                             >
                                 <div>
-                                    <span className="inline-flex items-center rounded-full border border-black/15 bg-black/[0.03] px-3 py-1 text-xs text-black/60 mb-6">
+                                    <span className="inline-flex items-center rounded-full border border-[#FF9500]/30 bg-[#FF9500]/10 px-3 py-1 text-xs text-[#FF9500] font-medium mb-6">
                                         {categories[activeTab].lessons.length} lesson{categories[activeTab].lessons.length !== 1 ? "s" : ""}
                                     </span>
 
@@ -201,7 +198,7 @@ const Roadmap = () => {
                     <div className="mt-12 flex justify-center">
                         <button
                             onClick={() => setShowPreview(true)}
-                            className="group flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-bold text-white transition-all hover:bg-black/85 hover:ring-4 hover:ring-black/20 cursor-pointer"
+                            className="group flex items-center gap-2 rounded-full bg-[#FF9500] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#FF9500]/85 hover:ring-4 hover:ring-[#FF9500]/20 cursor-pointer"
                         >
                             <span className="text-lg">👀</span>
                             Watch a preview

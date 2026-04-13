@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 const STATE_COOKIE = "github_oauth_state";
 const SECRET = new TextEncoder().encode(process.env.SESSION_SECRET!);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
-const BUILD_URL = `${APP_URL}/app-sprint/roadmap/build-with-boilerplate`;
+const BUILD_URL = `${APP_URL}/app-sprint-community/roadmap/build-with-boilerplate`;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;

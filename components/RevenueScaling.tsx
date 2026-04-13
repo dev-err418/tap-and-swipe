@@ -14,7 +14,7 @@ const RevenueScaling = () => {
                         The ultimate goal
                     </h2>
                     <p className="mt-4 text-lg text-black/50">
-                        From your <span className="font-bold text-black">first internet dollar</span> to a scalable recurring revenue business.
+                        From your <span className="font-bold text-black">first internet dollar</span> to a scalable <span className="font-bold text-black">recurring revenue business</span>.
                     </p>
                 </div>
 
@@ -29,7 +29,7 @@ const RevenueScaling = () => {
                     >
                         <div className="relative h-full min-h-[320px] flex flex-col">
                             <div className="flex items-center gap-3 mb-8 px-4">
-                                <div className="h-8 w-8 rounded-full bg-black/10 flex items-center justify-center text-black font-bold text-sm">1</div>
+                                <div className="h-8 w-8 rounded-full bg-[#FF9500] flex items-center justify-center text-white font-bold text-sm">1</div>
                                 <h3 className="text-xl font-bold text-black">The First Dollar</h3>
                             </div>
 
@@ -64,7 +64,7 @@ const RevenueScaling = () => {
                     >
                         <div className="relative h-full min-h-[320px] flex flex-col">
                             <div className="flex items-center gap-3 mb-8 px-4">
-                                <div className="h-8 w-8 rounded-full bg-black/10 flex items-center justify-center text-black font-bold text-sm">2</div>
+                                <div className="h-8 w-8 rounded-full bg-[#FF9500] flex items-center justify-center text-white font-bold text-sm">2</div>
                                 <h3 className="text-xl font-bold text-black">Recurring Revenue</h3>
                             </div>
 
