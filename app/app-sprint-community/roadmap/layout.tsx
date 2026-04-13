@@ -92,6 +92,8 @@ export default async function RoadmapLayout({
   ]);
 
   return (
+    <>
+    <style>{`html, body { background-color: #fff !important; }`}</style>
     <div className="min-h-screen bg-white">
       <RoadmapHeader
         discordUsername={session?.discordUsername ?? "Dev User"}
@@ -104,5 +106,6 @@ export default async function RoadmapLayout({
       />
       <main className="mx-auto max-w-7xl px-6 pb-24">{children}</main>
     </div>
+    </>
   );
 }
