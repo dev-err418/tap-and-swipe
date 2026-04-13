@@ -114,10 +114,29 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
       className="relative flex min-h-[600px] flex-1 flex-col items-center justify-center px-6 text-center"
       style={{ minHeight: "max(600px, calc(100dvh - 72px))" }}
     >
-      {/* Floating icons */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {/* Floating icons — scattered (2xl+) */}
+      <div className="pointer-events-none absolute inset-0 hidden overflow-hidden xl:block" aria-hidden="true">
         {ICONS.map((icon, i) => (
           <FloatingIcon key={i} icon={icon} index={i} />
+        ))}
+      </div>
+
+      {/* Icon strip (below 2xl) */}
+      <div className="pointer-events-none flex gap-3 mb-8 xl:hidden" aria-hidden="true">
+        {ICONS.slice(0, 7).map((icon, i) => (
+          <motion.img
+            key={i}
+            src={icon.icon}
+            alt=""
+            className="rounded-[22%] shadow-md"
+            style={{ width: 40, height: 40 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              opacity: { duration: 0.5, delay: 0.1 + i * 0.05, ease: EASE },
+              scale: { duration: 0.5, delay: 0.1 + i * 0.05, ease: EASE },
+            }}
+          />
         ))}
       </div>
 
@@ -171,6 +190,7 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
           </FadeIn>
         )}
       </div>
+
     </section>
   );
 }

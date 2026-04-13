@@ -104,6 +104,11 @@ export default async function Home() {
                   LinkedIn
                 </a>
               </li>
+              <li>
+                <a href="https://x.com/arthursbuilds" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                  X
+                </a>
+              </li>
             </ul>
           </div>
         </div>
