@@ -320,6 +320,11 @@ const LandingPage = ({
                                     AppSprint Community
                                 </Link>
                             </li>
+                            <li>
+                                <a href="https://appsprint.app/aso" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                    AppSprint ASO
+                                </a>
+                            </li>
                         </ul>
                     </div>
                     <div>
