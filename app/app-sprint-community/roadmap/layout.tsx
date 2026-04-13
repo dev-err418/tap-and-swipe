@@ -97,7 +97,7 @@ export default async function RoadmapLayout({
   return (
     <>
     <style>{`html, body { background-color: ${isDark ? "#1a1a1a" : "#fff"} !important; }`}</style>
-    <div className={`min-h-screen bg-white dark:bg-[#1a1a1a]${isDark ? " dark" : ""}`}>
+    <div className={`min-h-screen ${isDark ? "dark bg-[#1a1a1a]" : "bg-white"}`}>
       <RoadmapHeader
         discordUsername={session?.discordUsername ?? "Dev User"}
         discordAvatar={session?.discordAvatar ?? null}
