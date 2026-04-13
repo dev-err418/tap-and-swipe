@@ -48,7 +48,7 @@ const LandingPage = ({
 
             {/* Navbar */}
             <nav className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-center px-6 py-5">
-                <Link href="/" className="flex items-center gap-2.5">
+                <Link href="/app-sprint-community" className="flex items-center gap-2.5">
                     <img
                         src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
                         alt="ArthurBuildsStuff"
@@ -362,17 +362,17 @@ const LandingPage = ({
                         <p className="font-medium text-black/60">Legal</p>
                         <ul className="-mx-2 mt-2">
                             <li>
-                                <Link href="/tos" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                <Link href="/app-sprint-community/tos" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
                                     Terms of Service
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/privacy" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                <Link href="/app-sprint-community/privacy" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
                                     Privacy Policy
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/tos#refund" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                                <Link href="/app-sprint-community/tos#refund" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
                                     Refund Policy
                                 </Link>
                             </li>
