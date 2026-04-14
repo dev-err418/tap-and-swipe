@@ -71,7 +71,7 @@ function StatCard({
 }) {
   return (
     <div className="relative flex min-w-0 flex-1 flex-col rounded-lg border border-border px-4 py-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p key={label} className="animate-fade-in text-xs text-muted-foreground">{label}</p>
       {estimate && (
         <span className="group absolute -top-0.5 right-2">
           <span className="cursor-help text-[11px] text-muted-foreground/50">
@@ -84,10 +84,10 @@ function StatCard({
       )}
       {value ? (
         <div className="flex flex-1 items-center justify-center">
-          <span className="text-4xl font-bold">{value}</span>
+          <span key={value} className="animate-fade-in text-4xl font-bold">{value}</span>
         </div>
       ) : (
-        <div className="mt-1 text-sm font-medium">{children}</div>
+        <div key={String(children)} className="mt-1 animate-fade-in text-sm font-medium">{children}</div>
       )}
     </div>
   );
@@ -200,7 +200,7 @@ export function AppShowcase({ data }: { data: AppData }) {
 
       {/* Stat cards — react to platform toggle */}
       {hasStats && (
-        <div key={activePlatform} className="flex animate-fade-in items-stretch gap-3 overflow-x-auto px-5 pb-4 scrollbar-none">
+        <div className="flex items-stretch gap-3 overflow-x-auto px-5 pb-4 scrollbar-none">
           {active.rating != null && active.ratingCount != null && (
             <StatCard
               label={`Rating (${active.ratingCount.toLocaleString()})`}
@@ -227,7 +227,7 @@ export function AppShowcase({ data }: { data: AppData }) {
 
       {/* Screenshots — based on active platform */}
       {active.screenshots.length > 0 && (
-        <div key={`ss-${activePlatform}`} className="flex animate-fade-in gap-3 overflow-x-auto px-5 pb-5 scrollbar-none">
+        <div className="flex gap-3 overflow-x-auto px-5 pb-5 scrollbar-none">
           {active.screenshots.map((src, i) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
