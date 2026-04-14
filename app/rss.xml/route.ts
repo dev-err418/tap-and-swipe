@@ -18,8 +18,8 @@ export function GET() {
     .map(
       (ep) => `    <item>
       <title>${escapeXml(ep.title)}</title>
-      <link>${BASE_URL}/${ep.slug}</link>
-      <guid isPermaLink="true">${BASE_URL}/${ep.slug}</guid>
+      <link>${BASE_URL}/episodes/${ep.slug}</link>
+      <guid isPermaLink="true">${BASE_URL}/episodes/${ep.slug}</guid>
       <description>${escapeXml(ep.description)}</description>
       <pubDate>${new Date(ep.date).toUTCString()}</pubDate>${
         ep.tags

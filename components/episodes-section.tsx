@@ -22,7 +22,7 @@ export function EpisodesSection() {
 
       {/* Latest episode — big card */}
       <Link
-        href={`/${latest.slug}`}
+        href={`/episodes/${latest.slug}`}
         className="group mt-8 block rounded-2xl border border-black/10 p-6 transition-colors hover:border-black/20 sm:p-8"
       >
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-black/40">
@@ -56,7 +56,7 @@ export function EpisodesSection() {
           {shown.map((ep) => (
             <Link
               key={ep.slug}
-              href={`/${ep.slug}`}
+              href={`/episodes/${ep.slug}`}
               className="group rounded-2xl border border-black/10 p-5 transition-colors hover:border-black/20"
             >
               <div className="text-sm text-black/40">

@@ -9,7 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     : new Date();
 
   const episodeEntries: MetadataRoute.Sitemap = episodes.map((ep) => ({
-    url: `https://tap-and-swipe.com/${ep.slug}`,
+    url: `https://tap-and-swipe.com/episodes/${ep.slug}`,
     lastModified: new Date(ep.updatedDate || ep.date),
     changeFrequency: "monthly",
     priority: 0.7,
