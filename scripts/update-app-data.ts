@@ -41,6 +41,7 @@ interface AppData {
   lastUpdated: string;
   downloadsEstimate?: string;
   revenueEstimate?: string;
+  topCountries?: string[];
   ios?: PlatformData;
   android?: PlatformData;
 }
@@ -195,6 +196,68 @@ async function fetchAndroidData(
   }
 }
 
+// ── SensorTower (batched) ──────────────────────────────────────────
+
+interface SensorTowerData {
+  downloadsEstimate?: string;
+  revenueEstimate?: string;
+  topCountries?: string[];
+}
+
+// Keyed by app ID (numeric iOS ID or Android package name)
+type SensorTowerMap = Map<string, SensorTowerData>;
+
+async function fetchSensorTowerBatch(
+  platform: "ios" | "android",
+  appIds: string[]
+): Promise<SensorTowerMap> {
+  const map: SensorTowerMap = new Map();
+  if (appIds.length === 0) return map;
+
+  const ids = appIds.join(",");
+  console.log(`\nFetching SensorTower (${platform}) for ${appIds.length} app(s)...`);
+
+  try {
+    const res = await fetch(
+      `https://app.sensortower.com/api/${platform}/apps?app_ids=${ids}`
+    );
+    if (!res.ok) {
+      console.warn(`  ⚠ SensorTower ${platform} returned ${res.status}, skipping`);
+      return map;
+    }
+
+    const json = (await res.json()) as {
+      apps: Array<Record<string, unknown>>;
+    };
+    if (!json.apps?.length) return map;
+
+    for (const app of json.apps) {
+      const appId = String(app.app_id ?? app.bundle_id ?? "");
+      if (!appId) continue;
+
+      const downloads = app.humanized_worldwide_last_month_downloads as
+        | { string: string }
+        | undefined;
+      const revenue = app.humanized_worldwide_last_month_revenue as
+        | { string: string }
+        | undefined;
+      const topCountries = app.top_countries as string[] | undefined;
+
+      map.set(appId, {
+        downloadsEstimate: downloads?.string,
+        revenueEstimate: revenue?.string,
+        topCountries,
+      });
+    }
+
+    console.log(`  ✓ Got data for ${map.size} app(s)`);
+  } catch (err) {
+    console.warn(`  ⚠ SensorTower ${platform} failed:`, (err as Error).message);
+  }
+
+  return map;
+}
+
 // ── Main ───────────────────────────────────────────────────────────
 
 async function main() {
@@ -220,6 +283,14 @@ async function main() {
 
   ensureDir(APP_DATA_DIR);
 
+  // Batch SensorTower requests (one per platform, all IDs at once)
+  const iosIds = episodes.map((ep) => ep.appStoreId).filter(Boolean) as string[];
+  const androidIds = episodes.map((ep) => ep.playStoreId).filter(Boolean) as string[];
+  const [stIos, stAndroid] = await Promise.all([
+    fetchSensorTowerBatch("ios", iosIds),
+    fetchSensorTowerBatch("android", androidIds),
+  ]);
+
   for (const ep of episodes) {
     console.log(`\n── ${ep.slug} ──`);
 
@@ -234,6 +305,15 @@ async function main() {
     if (ep.playStoreId) {
       appData.android = await fetchAndroidData(ep.playStoreId, ep.slug);
     }
+
+    // SensorTower estimates — prefer iOS, fall back to Android
+    const st =
+      (ep.appStoreId && stIos.get(ep.appStoreId)) ||
+      (ep.playStoreId && stAndroid.get(ep.playStoreId)) ||
+      {};
+    appData.downloadsEstimate = st.downloadsEstimate;
+    appData.revenueEstimate = st.revenueEstimate;
+    appData.topCountries = st.topCountries;
 
     // Write JSON
     const outPath = path.join(APP_DATA_DIR, `${ep.slug}.json`);

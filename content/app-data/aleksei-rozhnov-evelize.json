@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-14T19:12:55.706Z",
+  "lastUpdated": "2026-04-14T20:15:16.230Z",
   "ios": {
     "title": "Video Teleprompter - Evelize",
     "icon": "/apps/aleksei-rozhnov-evelize/icon-ios.webp",
@@ -18,7 +18,7 @@
   },
   "android": {
     "title": "Video Teleprompter - Evelize",
-    "subtitle": "Teleprompter &amp; video editing app. Text prompter for seamless video creation.",
+    "subtitle": "Teleprompter & video editing app. Text prompter for seamless video creation.",
     "icon": "/apps/aleksei-rozhnov-evelize/icon-android.webp",
     "screenshots": [
       "/apps/aleksei-rozhnov-evelize/android-1.webp",
@@ -32,5 +32,12 @@
     "price": "Free",
     "genre": "Video Players & Editors",
     "storeUrl": "https://play.google.com/store/apps/details?id=com.evelize.teleprompter&hl=en&gl=us"
-  }
+  },
+  "downloadsEstimate": "< 5k",
+  "revenueEstimate": "$9k",
+  "topCountries": [
+    "GB",
+    "US",
+    "TW"
+  ]
 }

@@ -63,15 +63,7 @@ function timeAgo(dateStr: string): string {
   return `${months} months ago`;
 }
 
-export function AppShowcase({
-  data,
-  downloadsEstimate,
-  revenueEstimate,
-}: {
-  data: AppData;
-  downloadsEstimate?: string;
-  revenueEstimate?: string;
-}) {
+export function AppShowcase({ data }: { data: AppData }) {
   // Pick primary platform data (prefer iOS, fall back to Android)
   const primary: PlatformData | undefined = data.ios || data.android;
   if (!primary) return null;
@@ -151,24 +143,27 @@ export function AppShowcase({
       )}
 
       {/* Metrics + last updated */}
-      {(downloadsEstimate || revenueEstimate || data.lastUpdated) && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border px-5 py-3 text-sm text-muted-foreground">
-          {downloadsEstimate && <span>📥 {downloadsEstimate} downloads</span>}
-          {revenueEstimate && <span>💰 {revenueEstimate}/mo revenue</span>}
-          {(secondary?.rating != null && secondary.ratingCount != null) && (
-            <span className="flex items-center gap-1">
-              <span className="text-amber-500">★</span>
-              {Math.round(secondary.rating * 10) / 10} on{" "}
-              {data.ios && data.android
-                ? "Google Play"
-                : "App Store"}
-            </span>
-          )}
-          <span className="ml-auto text-xs text-foreground/25">
-            Updated {timeAgo(data.lastUpdated)}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border px-5 py-3 text-sm text-muted-foreground">
+        {data.downloadsEstimate && (
+          <span>{data.downloadsEstimate} downloads/mo</span>
+        )}
+        {data.revenueEstimate && (
+          <span>{data.revenueEstimate}/mo revenue</span>
+        )}
+        {(secondary?.rating != null && secondary.ratingCount != null) && (
+          <span className="flex items-center gap-1">
+            <span className="text-amber-500">★</span>
+            {Math.round(secondary.rating * 10) / 10} on{" "}
+            {data.ios && data.android ? "Google Play" : "App Store"}
           </span>
-        </div>
-      )}
+        )}
+        {data.topCountries && data.topCountries.length > 0 && (
+          <span>Top: {data.topCountries.join(", ")}</span>
+        )}
+        <span className="ml-auto text-xs text-foreground/25">
+          Updated {timeAgo(data.lastUpdated)}
+        </span>
+      </div>
     </div>
   );
 }
