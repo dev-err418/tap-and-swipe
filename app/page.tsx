@@ -75,7 +75,7 @@ function buildJsonLd() {
   const person = {
     "@context": "https://schema.org",
     "@type": "Person",
-    name: "Arthur",
+    name: "Arthur Spalanzani",
     alternateName: "ArthurBuildsStuff",
     url: BASE_URL,
     image:

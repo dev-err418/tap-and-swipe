@@ -65,11 +65,15 @@ const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "Tap & Swipe",
+  alternateName: "Tap and Swipe",
   url: "https://tap-and-swipe.com",
   logo: "https://tap-and-swipe.com/icon.png",
+  description:
+    "Indie developer studio building mobile apps and helping others do the same. Makers of Versy, Lua, Glow, and the AppSprint program.",
   founder: {
     "@type": "Person",
-    name: "Arthur",
+    name: "Arthur Spalanzani",
+    jobTitle: "Indie App Developer",
     url: "https://www.youtube.com/@ArthurBuildsStuff",
   },
   sameAs: [
