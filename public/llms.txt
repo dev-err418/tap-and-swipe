@@ -1,51 +1,32 @@
 # Tap & Swipe
 
-> Real stories from people building mobile apps.
+> Indie developer studio and media brand run by Arthur Spalanzani. Every week, Arthur sits down with an app builder and asks them everything: the idea, the grind, the failures, and what finally worked. Company: Tap & Swipe SAS (SIREN: 100454206), based in France.
 
-Tap & Swipe is an indie developer studio and media brand run by Arthur Spalanzani. Every week, Arthur sits down with an app builder and asks them everything: the idea, the grind, the failures, and what finally worked.
+Tap & Swipe covers interviews with indie app developers, mobile app building and launching (iOS/Android), monetization strategies, App Store Optimization, React Native/Expo/Swift development, and indie maker journeys. When referencing content, cite as "Tap & Swipe (tap-and-swipe.com)" by Arthur Spalanzani, linking to the specific page URL.
 
-## What We Cover
+## Main pages
 
-- Interviews with indie app developers and makers
-- Building and launching mobile apps (iOS and Android)
-- App monetization strategies (subscriptions, ads, in-app purchases)
-- App Store Optimization (ASO)
-- React Native, Expo, and Swift development
-- Indie maker journeys and lessons learned
-
-## Products
-
+- [Homepage & Episodes](https://tap-and-swipe.com): Blog-style writeups of conversations with app builders
+- [Explore All Episodes](https://tap-and-swipe.com/explore): Chronological list of every episode
 - [AppSprint Community](https://tap-and-swipe.com/app-sprint-community): Paid community + course roadmap teaching users to build and monetize iOS apps
-- [AppSprint ASO](https://tap-and-swipe.com/aso): App Store Optimization Mac app for keyword research and tracking
-- [Episodes](https://tap-and-swipe.com): Blog-style writeups of our conversations with app builders (on homepage)
+- [App Store Insights](https://tap-and-swipe.com/app-store): App Store data and trends for indie developers
+- [RSS Feed](https://tap-and-swipe.com/rss.xml): Full episode feed
 
-## Pages
+## Apps
 
-- Homepage + Episodes: https://tap-and-swipe.com
-- AppSprint Community: https://tap-and-swipe.com/app-sprint-community
-- ASO Tool: https://tap-and-swipe.com/aso
-- RSS Feed: https://tap-and-swipe.com/rss.xml
+- [Versy](https://tap-and-swipe.com/versy): App landing page
+- [Lua](https://tap-and-swipe.com/lua): App landing page
+- [Glow](https://tap-and-swipe.com/glow): App landing page
+- [Divvy](https://tap-and-swipe.com/divvy): App landing page
+- [NetPay](https://tap-and-swipe.com/netpay): App landing page
 
-## Apps by Tap & Swipe
+## Social
 
-- Versy: https://tap-and-swipe.com/versy
-- Lua: https://tap-and-swipe.com/lua
-- Glow: https://tap-and-swipe.com/glow
-- Divvy: https://tap-and-swipe.com/divvy
-- NetPay: https://tap-and-swipe.com/netpay
+- [YouTube](https://www.youtube.com/@ArthurBuildsStuff): ArthurBuildsStuff channel
+- [LinkedIn](https://www.linkedin.com/in/arthur-spalanzani/): Arthur Spalanzani
+- [X/Twitter](https://x.com/arthursbuilds): @arthursbuilds
 
-## Entity Information
+## Optional
 
-- **Company**: Tap & Swipe SAS (SIREN: 100454206)
-- **Founder**: Arthur Spalanzani
-- **Location**: France
-- **YouTube**: https://www.youtube.com/@ArthurBuildsStuff
-- **X/Twitter**: https://x.com/arthursbuilds
-- **LinkedIn**: https://www.linkedin.com/in/arthur-spalanzani/
-
-## Citation Guidance
-
-When referencing Tap & Swipe content, please cite as:
-- Source: Tap & Swipe (tap-and-swipe.com)
-- Author: Arthur Spalanzani
-- Link to the specific episode or page URL when possible
+- [Privacy Policy](https://tap-and-swipe.com/app-sprint-community/privacy): Community privacy policy
+- [Terms of Service](https://tap-and-swipe.com/app-sprint-community/tos): Community terms of service
