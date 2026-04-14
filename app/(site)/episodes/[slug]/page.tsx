@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllEpisodes, getAllSlugs, getEpisodeBySlug } from "@/lib/episodes";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+
+const PLACEHOLDER_IMAGE = "/episodes/placeholder.webp";
 
 const BASE_URL = "https://tap-and-swipe.com";
 
@@ -185,19 +188,8 @@ export default async function EpisodePage({
       {/* Two-column layout: article + sidebar */}
       <div className="mx-auto w-full max-w-5xl px-6 py-10 lg:grid lg:grid-cols-[1fr_220px] lg:gap-12">
         <article>
-          {/* Back link */}
-          <Link
-            href="/episodes"
-            className="inline-flex items-center gap-1.5 text-sm text-foreground/40 transition-colors hover:text-foreground/70"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-              <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            All Episodes
-          </Link>
-
           {/* Header */}
-          <h1 className="mt-8 text-4xl font-semibold tracking-tight sm:text-5xl">
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
             {episode.title}
           </h1>
 
@@ -212,19 +204,23 @@ export default async function EpisodePage({
           </div>
 
           {/* Featured image */}
-          {episode.image && (
-            <div className="mt-8 overflow-hidden rounded-xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={episode.image}
-                alt={episode.imageAlt || episode.title}
-                width={1200}
-                height={675}
-                fetchPriority="high"
-                className="w-full aspect-video object-cover"
-              />
-            </div>
-          )}
+          <div className="mt-8 overflow-hidden rounded-xl">
+            <AspectRatio ratio={16 / 9}>
+              {episode.image && episode.image !== PLACEHOLDER_IMAGE ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={episode.image}
+                  alt={episode.imageAlt || episode.title}
+                  fetchPriority="high"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-accent">
+                  <span className="text-sm text-muted-foreground">No image</span>
+                </div>
+              )}
+            </AspectRatio>
+          </div>
 
           {/* MDX content */}
           <div className="mt-12">
