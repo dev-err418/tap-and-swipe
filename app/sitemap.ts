@@ -47,13 +47,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: "https://tap-and-swipe.com/privacy",
+      url: "https://tap-and-swipe.com/app-sprint-community/privacy",
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
-      url: "https://tap-and-swipe.com/tos",
+      url: "https://tap-and-swipe.com/app-sprint-community/tos",
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.3,
