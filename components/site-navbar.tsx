@@ -18,6 +18,12 @@ export function SiteNavbar() {
         >
           All Episodes
         </Link>
+        <Link
+          href="/about"
+          className="text-sm text-muted-foreground transition-colors hover:text-foreground/70"
+        >
+          About
+        </Link>
       </div>
     </nav>
   );
