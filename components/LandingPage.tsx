@@ -38,8 +38,7 @@ const LandingPage = ({
 }) => {
     return (
         <>
-        <style>{`html, body { background-color: #fff !important; }`}</style>
-        <div className="min-h-screen bg-white text-black font-sans selection:bg-black/10">
+        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-black/10">
             <PageTracker product="community" ctaSelector='[data-fast-goal="cta_pricing_clicked"]' />
             <Suspense fallback={null}>
                 <SuccessOverlay />

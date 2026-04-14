@@ -12,8 +12,7 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <>
-    <style>{`html, body { background-color: #fff !important; }`}</style>
-    <div className="min-h-screen bg-white text-black font-sans selection:bg-black/10">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-black/10">
 
       {/* Navbar */}
       <nav className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-center px-6 py-5">

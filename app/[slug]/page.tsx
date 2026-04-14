@@ -171,7 +171,6 @@ export default async function EpisodePage({
 
   return (
     <>
-      <style>{`html, body { background-color: #fff !important; }`}</style>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

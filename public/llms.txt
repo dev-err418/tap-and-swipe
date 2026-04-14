@@ -7,7 +7,7 @@ Tap & Swipe covers interviews with indie app developers, mobile app building and
 ## Main pages
 
 - [Homepage & Episodes](https://tap-and-swipe.com): Blog-style writeups of conversations with app builders
-- [Explore All Episodes](https://tap-and-swipe.com/explore): Chronological list of every episode
+- [All Episodes](https://tap-and-swipe.com/episodes): Chronological list of every episode
 - [AppSprint Community](https://tap-and-swipe.com/app-sprint-community): Paid community + course roadmap teaching users to build and monetize iOS apps
 - [App Store Insights](https://tap-and-swipe.com/app-store): App Store data and trends for indie developers
 - [RSS Feed](https://tap-and-swipe.com/rss.xml): Full episode feed

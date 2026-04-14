@@ -4,8 +4,7 @@ import { ArrowRight } from "lucide-react";
 export default function NotFound() {
     return (
         <>
-            <style>{`html, body { background-color: #fff !important; }`}</style>
-            <div className="min-h-screen bg-white text-black font-sans selection:bg-black/10">
+            <div className="min-h-screen bg-background text-foreground font-sans selection:bg-black/10">
                 <main className="flex flex-col items-center justify-center px-6 text-center min-h-screen">
                     <p className="text-sm font-medium text-[#FF9500]">404</p>
                     <h1 className="mt-4 text-5xl font-extrabold tracking-tight sm:text-7xl">

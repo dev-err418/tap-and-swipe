@@ -115,29 +115,19 @@ export default async function Home() {
 
   return (
     <>
-    <style>{`html, body { background-color: #fff !important; }`}</style>
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
     <main className="relative z-10 flex flex-col bg-white text-black selection:bg-black/10">
       {/* Navbar */}
-      <nav className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-5">
+      <nav className="relative z-20 mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
         <div className="flex items-center gap-2.5">
-          <img
-            src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
-            alt="ArthurBuildsStuff"
-            width={32}
-            height={32}
-            loading="eager"
-            className="h-8 w-8 rounded-full"
-          />
           <span className="text-sm font-semibold text-black/90">Tap &amp; Swipe</span>
           <a href="https://www.youtube.com/@ArthurBuildsStuff" target="_blank" rel="noopener noreferrer" className="text-sm text-black/40 transition-colors hover:text-black/60 hidden sm:inline">by ArthurBuildsStuff</a>
         </div>
         <div className="flex items-center gap-6">
-          <Link href="/app-store" className="text-sm text-black/40 transition-colors hover:text-black/70">Case Studies</Link>
-          <Link href="/explore" className="text-sm text-black/40 transition-colors hover:text-black/70">Episodes</Link>
+          <Link href="/episodes" className="text-sm text-black/40 transition-colors hover:text-black/70">All Episodes</Link>
         </div>
       </nav>
 

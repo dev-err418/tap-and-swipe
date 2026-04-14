@@ -59,7 +59,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.1,
     },
     {
-      url: "https://tap-and-swipe.com/explore",
+      url: "https://tap-and-swipe.com/episodes",
       lastModified: latestEpisodeDate,
       changeFrequency: "weekly",
       priority: 0.8,
