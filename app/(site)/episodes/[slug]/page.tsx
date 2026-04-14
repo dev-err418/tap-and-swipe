@@ -4,8 +4,19 @@ import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllEpisodes, getAllSlugs, getEpisodeBySlug } from "@/lib/episodes";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { extractToc } from "@/lib/toc";
+import { DocsToc } from "@/components/docs-toc";
 
 const PLACEHOLDER_IMAGE = "/episodes/placeholder.webp";
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
+}
 
 const BASE_URL = "https://tap-and-swipe.com";
 
@@ -51,13 +62,16 @@ export async function generateMetadata({
   };
 }
 
-const mdxComponents = {
-  h2: (props: React.ComponentProps<"h2">) => (
-    <h2 className="mt-12 mb-4 text-2xl font-semibold tracking-tight" {...props} />
-  ),
-  h3: (props: React.ComponentProps<"h3">) => (
-    <h3 className="mt-8 mb-3 text-xl font-semibold tracking-tight" {...props} />
-  ),
+function createMdxComponents(slugifyFn: (text: string) => string) {
+  return {
+  h2: (props: React.ComponentProps<"h2">) => {
+    const text = typeof props.children === "string" ? props.children : "";
+    return <h2 id={slugifyFn(text)} className="mt-12 mb-4 text-2xl font-semibold tracking-tight scroll-mt-24" {...props} />;
+  },
+  h3: (props: React.ComponentProps<"h3">) => {
+    const text = typeof props.children === "string" ? props.children : "";
+    return <h3 id={slugifyFn(text)} className="mt-8 mb-3 text-xl font-semibold tracking-tight scroll-mt-24" {...props} />;
+  },
   p: (props: React.ComponentProps<"p">) => (
     <p className="mb-5 leading-relaxed text-foreground/70" {...props} />
   ),
@@ -84,6 +98,7 @@ const mdxComponents = {
     <em className="text-muted-foreground" {...props} />
   ),
 };
+}
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -105,6 +120,9 @@ export default async function EpisodePage({
   const otherEpisodes = getAllEpisodes()
     .filter((ep) => ep.slug !== slug)
     .slice(0, 3);
+
+  const tocItems = extractToc(episode.content);
+  const mdxComponents = createMdxComponents(slugify);
 
   const jsonLd = [
     {
@@ -227,59 +245,37 @@ export default async function EpisodePage({
             <MDXRemote source={episode.content} components={mdxComponents} />
           </div>
 
-          {/* Author bio */}
-          <footer className="mt-16 border-t border-border pt-8">
-            <div className="flex items-center gap-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
-                alt="Arthur"
-                width={48}
-                height={48}
-                loading="lazy"
-                className="h-12 w-12 rounded-full"
-              />
-              <div>
-                <p className="font-semibold">Arthur</p>
-                <p className="text-sm text-muted-foreground">
-                  Building apps and talking to the people who do the same.{" "}
-                  <a
-                    href="https://www.youtube.com/@ArthurBuildsStuff"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60"
-                  >
-                    YouTube
-                  </a>
-                </p>
-              </div>
-            </div>
-          </footer>
-        </article>
-
-        {/* Sidebar — You might also like */}
-        {otherEpisodes.length > 0 && (
-          <aside className="hidden lg:block">
-            <div className="sticky top-28">
-              <h3 className="mb-4 text-sm text-foreground/30">
+          {/* You might also like */}
+          {otherEpisodes.length > 0 && (
+            <section className="mt-32 border-t border-border pt-12 pb-20">
+              <h3 className="mb-6 text-lg font-semibold tracking-tight">
                 You might also like
               </h3>
-              <div className="divide-y divide-border">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {otherEpisodes.map((ep) => (
                   <Link
                     key={ep.slug}
                     href={`/episodes/${ep.slug}`}
-                    className="group block py-3 first:pt-0"
+                    className="group"
                   >
-                    <p className="text-sm font-semibold leading-snug transition-colors group-hover:text-foreground/60">
+                    <p className="font-semibold leading-snug transition-colors group-hover:text-foreground/60">
                       {ep.title}
                     </p>
-                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-foreground/40">
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                       {ep.description}
                     </p>
                   </Link>
                 ))}
               </div>
+            </section>
+          )}
+        </article>
+
+        {/* Sidebar — Table of contents */}
+        {tocItems.length > 0 && (
+          <aside className="hidden lg:block">
+            <div className="sticky top-28">
+              <DocsToc items={tocItems} />
             </div>
           </aside>
         )}
