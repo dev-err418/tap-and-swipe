@@ -76,7 +76,7 @@ function buildJsonLd() {
     "@context": "https://schema.org",
     "@type": "Person",
     name: "Arthur Spalanzani",
-    alternateName: "ArthurBuildsStuff",
+    alternateName: ["ArthurBuildsStuff", "Arthur Builds Stuff"],
     url: BASE_URL,
     image:
       "https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj",
