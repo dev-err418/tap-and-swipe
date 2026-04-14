@@ -13,13 +13,13 @@ export interface PlatformData {
   price: string;
   genre?: string;
   storeUrl?: string;
+  downloadsEstimate?: string;
+  revenueEstimate?: string;
+  topCountries?: string[];
 }
 
 export interface AppData {
   lastUpdated: string;
-  downloadsEstimate?: string;
-  revenueEstimate?: string;
-  topCountries?: string[];
   ios?: PlatformData;
   android?: PlatformData;
 }

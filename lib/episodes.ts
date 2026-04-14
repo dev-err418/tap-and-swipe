@@ -10,6 +10,7 @@ export interface GuestInfo {
   role?: string;
   twitter?: string;
   linkedin?: string;
+  threads?: string;
   website?: string;
 }
 

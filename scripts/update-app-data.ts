@@ -35,13 +35,13 @@ interface PlatformData {
   price: string;
   genre?: string;
   storeUrl?: string;
+  downloadsEstimate?: string;
+  revenueEstimate?: string;
+  topCountries?: string[];
 }
 
 interface AppData {
   lastUpdated: string;
-  downloadsEstimate?: string;
-  revenueEstimate?: string;
-  topCountries?: string[];
   ios?: PlatformData;
   android?: PlatformData;
 }
@@ -244,8 +244,8 @@ async function fetchSensorTowerBatch(
       const topCountries = app.top_countries as string[] | undefined;
 
       map.set(appId, {
-        downloadsEstimate: downloads?.string,
-        revenueEstimate: revenue?.string,
+        downloadsEstimate: downloads?.string?.replace(/k\b/g, "K"),
+        revenueEstimate: revenue?.string?.replace(/k\b/g, "K"),
         topCountries,
       });
     }
@@ -300,20 +300,23 @@ async function main() {
 
     if (ep.appStoreId) {
       appData.ios = await fetchIosData(ep.appStoreId, ep.slug);
+      const stData = stIos.get(ep.appStoreId);
+      if (appData.ios && stData) {
+        appData.ios.downloadsEstimate = stData.downloadsEstimate;
+        appData.ios.revenueEstimate = stData.revenueEstimate;
+        appData.ios.topCountries = stData.topCountries;
+      }
     }
 
     if (ep.playStoreId) {
       appData.android = await fetchAndroidData(ep.playStoreId, ep.slug);
+      const stData = stAndroid.get(ep.playStoreId);
+      if (appData.android && stData) {
+        appData.android.downloadsEstimate = stData.downloadsEstimate;
+        appData.android.revenueEstimate = stData.revenueEstimate;
+        appData.android.topCountries = stData.topCountries;
+      }
     }
-
-    // SensorTower estimates — prefer iOS, fall back to Android
-    const st =
-      (ep.appStoreId && stIos.get(ep.appStoreId)) ||
-      (ep.playStoreId && stAndroid.get(ep.playStoreId)) ||
-      {};
-    appData.downloadsEstimate = st.downloadsEstimate;
-    appData.revenueEstimate = st.revenueEstimate;
-    appData.topCountries = st.topCountries;
 
     // Write JSON
     const outPath = path.join(APP_DATA_DIR, `${ep.slug}.json`);

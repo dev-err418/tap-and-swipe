@@ -1,49 +1,42 @@
+"use client";
+
+import { useState } from "react";
 import type { AppData, PlatformData } from "@/lib/app-data";
+import { SiApple, SiAndroid } from "@icons-pack/react-simple-icons";
+import { ArrowUpRight } from "lucide-react";
 
-function StarRating({ rating, count }: { rating: number; count: number }) {
-  const rounded = Math.round(rating * 10) / 10;
-  return (
-    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-      <span className="text-amber-500">★</span>
-      <span>{rounded}</span>
-      <span className="text-foreground/30">·</span>
-      <span>{count.toLocaleString()} ratings</span>
-    </span>
-  );
+// ── Country helpers ────────────────────────────────────────────────
+
+const COUNTRY_NAMES: Record<string, string> = {
+  US: "United States", GB: "United Kingdom", DE: "Germany", FR: "France",
+  BR: "Brazil", IN: "India", CA: "Canada", AU: "Australia", JP: "Japan",
+  KR: "South Korea", CN: "China", TW: "Taiwan", IT: "Italy", ES: "Spain",
+  MX: "Mexico", NL: "Netherlands", SE: "Sweden", NO: "Norway", DK: "Denmark",
+  FI: "Finland", PL: "Poland", TR: "Turkey", RU: "Russia", SA: "Saudi Arabia",
+  AE: "UAE", SG: "Singapore", ID: "Indonesia", TH: "Thailand",
+  PH: "Philippines", VN: "Vietnam", MY: "Malaysia", AR: "Argentina",
+  CO: "Colombia", CL: "Chile", ZA: "South Africa", NG: "Nigeria",
+  EG: "Egypt", IL: "Israel", AT: "Austria", CH: "Switzerland", BE: "Belgium",
+  PT: "Portugal", IE: "Ireland", NZ: "New Zealand", CZ: "Czech Republic",
+  RO: "Romania", HU: "Hungary", GR: "Greece", UA: "Ukraine", PK: "Pakistan",
+  HK: "Hong Kong",
+};
+
+function countryFlag(code: string): string {
+  return code
+    .toUpperCase()
+    .split("")
+    .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
+    .join("");
 }
 
-function PlatformBadge({
-  platform,
-  url,
-}: {
-  platform: "ios" | "android";
-  url: string;
-}) {
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
-    >
-      {platform === "ios" ? (
-        <>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-          </svg>
-          App Store
-        </>
-      ) : (
-        <>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3.18 23.04c.17.3.44.56.78.56.12 0 .25-.03.37-.09l2.6-1.42c1.18.52 2.48.81 3.84.81s2.66-.29 3.84-.81l2.6 1.42c.12.06.25.09.37.09.34 0 .61-.26.78-.56.53-.93-.07-1.86-.66-2.46l-.64-.56c1.46-1.62 2.35-3.76 2.35-6.12 0-5.04-4.03-9.12-9-9.12S1.77 8.86 1.77 13.9c0 2.36.89 4.5 2.35 6.12l-.64.56c-.59.6-1.19 1.53-.66 2.46h.36zM10.77 6.5c3.87 0 7 2.92 7 6.52s-3.13 6.52-7 6.52-7-2.92-7-6.52 3.13-6.52 7-6.52z" />
-          </svg>
-          Google Play
-        </>
-      )}
-    </a>
-  );
+function countryName(code: string): string {
+  if (code === "US") return "US";
+  if (code === "GB") return "UK";
+  return COUNTRY_NAMES[code] || code;
 }
+
+// ── Helpers ────────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -63,107 +56,189 @@ function timeAgo(dateStr: string): string {
   return `${months} months ago`;
 }
 
+// ── Stat Card ──────────────────────────────────────────────────────
+
+function StatCard({
+  label,
+  value,
+  estimate,
+  children,
+}: {
+  label: string;
+  value?: string;
+  estimate?: boolean;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="relative flex min-w-0 flex-1 flex-col rounded-lg border border-border px-4 py-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      {estimate && (
+        <span className="group absolute -top-0.5 right-2">
+          <span className="cursor-help text-[11px] text-muted-foreground/50">
+            ?
+          </span>
+          <span className="pointer-events-none absolute right-0 top-full z-10 mt-1 w-48 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+            This is an estimate and may not reflect exact figures. Use as an indicator only.
+          </span>
+        </span>
+      )}
+      {value ? (
+        <div className="flex flex-1 items-center justify-center">
+          <span className="text-4xl font-bold">{value}</span>
+        </div>
+      ) : (
+        <div className="mt-1 text-sm font-medium">{children}</div>
+      )}
+    </div>
+  );
+}
+
+// ── Component ──────────────────────────────────────────────────────
+
+type Platform = "ios" | "android";
+
 export function AppShowcase({ data }: { data: AppData }) {
-  // Pick primary platform data (prefer iOS, fall back to Android)
-  const primary: PlatformData | undefined = data.ios || data.android;
+  const hasIos = !!data.ios;
+  const hasAndroid = !!data.android;
+  const hasBoth = hasIos && hasAndroid;
+  const defaultPlatform: Platform = hasIos ? "ios" : "android";
+
+  const [activePlatform, setActivePlatform] = useState<Platform>(defaultPlatform);
+
+  const primary = data.ios || data.android;
   if (!primary) return null;
 
-  const secondary: PlatformData | undefined = data.ios ? data.android : undefined;
+  const active: PlatformData = (activePlatform === "ios" ? data.ios : data.android) || primary;
 
-  // Use iOS screenshots by default, fall back to Android
-  const screenshots = data.ios?.screenshots?.length
-    ? data.ios.screenshots
-    : data.android?.screenshots || [];
+  const hasStats =
+    active.rating != null ||
+    active.downloadsEstimate ||
+    active.revenueEstimate ||
+    active.topCountries?.length;
 
   return (
     <div className="my-8 overflow-hidden rounded-xl border border-border bg-card">
       {/* Header */}
-      <div className="p-5">
+      <div className="relative p-5">
+        <span className="absolute top-4 right-5 text-xs text-foreground/25">
+          Updated {timeAgo(data.lastUpdated)}
+        </span>
         <div className="flex items-start gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={primary.icon}
-            alt={primary.title}
-            width={64}
-            height={64}
-            className="h-16 w-16 shrink-0 rounded-[14px]"
-          />
+          {/* App icons */}
+          <div className="flex shrink-0 items-end -space-x-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={primary.icon}
+              alt={primary.title}
+              width={64}
+              height={64}
+              className="h-16 w-16 rounded-[14px] ring-2 ring-card"
+            />
+            {hasBoth && data.android && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={data.android.icon}
+                alt={`${data.android.title} (Android)`}
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-[8px] ring-2 ring-card"
+              />
+            )}
+          </div>
+
           <div className="min-w-0">
             <h3 className="font-semibold leading-snug">{primary.title}</h3>
-            {primary.subtitle && (
-              <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
-                {primary.subtitle}
-              </p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {primary.genre || primary.subtitle}
+            </p>
+            {primary.price && (
+              <p className="mt-1 text-sm text-muted-foreground">{primary.price}</p>
             )}
-            {!primary.subtitle && primary.genre && (
-              <p className="mt-0.5 text-sm text-muted-foreground">
-                {primary.genre}
-              </p>
-            )}
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-              {primary.rating != null && primary.ratingCount != null && (
-                <StarRating
-                  rating={primary.rating}
-                  count={primary.ratingCount}
-                />
-              )}
-              {primary.price && (
-                <span className="text-sm text-muted-foreground">
-                  {primary.price}
-                </span>
-              )}
-            </div>
           </div>
         </div>
 
-        {/* Platform badges */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {data.ios?.storeUrl && (
-            <PlatformBadge platform="ios" url={data.ios.storeUrl} />
+        {/* Store link + platform toggle */}
+        <div className="mt-4 flex items-center justify-between">
+          {/* "See on ..." link — follows active platform */}
+          {active.storeUrl && (
+            <a
+              href={active.storeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              See on {activePlatform === "ios" ? "App Store" : "Google Play"}
+              <ArrowUpRight size={14} />
+            </a>
           )}
-          {data.android?.storeUrl && (
-            <PlatformBadge platform="android" url={data.android.storeUrl} />
+          {hasBoth && (
+            <div className="flex rounded-lg border border-border p-0.5">
+              <button
+                onClick={() => setActivePlatform("ios")}
+                className={`inline-flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                  activePlatform === "ios"
+                    ? "bg-foreground/10 text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <SiApple size={12} color="currentColor" /> iOS
+              </button>
+              <button
+                onClick={() => setActivePlatform("android")}
+                className={`inline-flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                  activePlatform === "android"
+                    ? "bg-foreground/10 text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <SiAndroid size={12} color="currentColor" /> Android
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Screenshots */}
-      {screenshots.length > 0 && (
+      {/* Stat cards — react to platform toggle */}
+      {hasStats && (
+        <div className="flex items-stretch gap-3 overflow-x-auto px-5 pb-4 scrollbar-none">
+          {active.rating != null && active.ratingCount != null && (
+            <StatCard
+              label={`Rating (${active.ratingCount.toLocaleString()})`}
+              value={(Math.round(active.rating * 10) / 10).toFixed(1)}
+            />
+          )}
+          {active.downloadsEstimate && (
+            <StatCard label="Downloads / mo" value={active.downloadsEstimate} estimate />
+          )}
+          {active.revenueEstimate && (
+            <StatCard label="Revenue / mo" value={active.revenueEstimate} estimate />
+          )}
+          {active.topCountries && active.topCountries.length > 0 && (
+            <StatCard label="Top countries">
+              <div className="flex flex-col gap-0.5">
+                {active.topCountries.map((c) => (
+                  <span key={c}>{countryFlag(c)} {countryName(c)}</span>
+                ))}
+              </div>
+            </StatCard>
+          )}
+        </div>
+      )}
+
+      {/* Screenshots — based on active platform */}
+      {active.screenshots.length > 0 && (
         <div className="flex gap-3 overflow-x-auto px-5 pb-5 scrollbar-none">
-          {screenshots.map((src, i) => (
+          {active.screenshots.map((src, i) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              key={i}
+              key={`${activePlatform}-${i}`}
               src={src}
-              alt={`Screenshot ${i + 1}`}
+              alt={`${activePlatform === "ios" ? "iOS" : "Android"} screenshot ${i + 1}`}
               className="h-[280px] w-auto shrink-0 rounded-lg"
             />
           ))}
         </div>
       )}
-
-      {/* Metrics + last updated */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border px-5 py-3 text-sm text-muted-foreground">
-        {data.downloadsEstimate && (
-          <span>{data.downloadsEstimate} downloads/mo</span>
-        )}
-        {data.revenueEstimate && (
-          <span>{data.revenueEstimate}/mo revenue</span>
-        )}
-        {(secondary?.rating != null && secondary.ratingCount != null) && (
-          <span className="flex items-center gap-1">
-            <span className="text-amber-500">★</span>
-            {Math.round(secondary.rating * 10) / 10} on{" "}
-            {data.ios && data.android ? "Google Play" : "App Store"}
-          </span>
-        )}
-        {data.topCountries && data.topCountries.length > 0 && (
-          <span>Top: {data.topCountries.join(", ")}</span>
-        )}
-        <span className="ml-auto text-xs text-foreground/25">
-          Updated {timeAgo(data.lastUpdated)}
-        </span>
-      </div>
     </div>
   );
 }
