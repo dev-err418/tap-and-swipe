@@ -1,0 +1,36 @@
+{
+  "lastUpdated": "2026-04-14T19:12:55.706Z",
+  "ios": {
+    "title": "Video Teleprompter - Evelize",
+    "icon": "/apps/aleksei-rozhnov-evelize/icon-ios.webp",
+    "screenshots": [
+      "/apps/aleksei-rozhnov-evelize/ios-1.webp",
+      "/apps/aleksei-rozhnov-evelize/ios-2.webp",
+      "/apps/aleksei-rozhnov-evelize/ios-3.webp",
+      "/apps/aleksei-rozhnov-evelize/ios-4.webp",
+      "/apps/aleksei-rozhnov-evelize/ios-5.webp"
+    ],
+    "rating": 4.79675,
+    "ratingCount": 123,
+    "price": "Free",
+    "genre": "Photo & Video",
+    "storeUrl": "https://apps.apple.com/us/app/video-teleprompter-evelize/id6446815796?uo=4"
+  },
+  "android": {
+    "title": "Video Teleprompter - Evelize",
+    "subtitle": "Teleprompter &amp; video editing app. Text prompter for seamless video creation.",
+    "icon": "/apps/aleksei-rozhnov-evelize/icon-android.webp",
+    "screenshots": [
+      "/apps/aleksei-rozhnov-evelize/android-1.webp",
+      "/apps/aleksei-rozhnov-evelize/android-2.webp",
+      "/apps/aleksei-rozhnov-evelize/android-3.webp",
+      "/apps/aleksei-rozhnov-evelize/android-4.webp",
+      "/apps/aleksei-rozhnov-evelize/android-5.webp"
+    ],
+    "rating": 4.7821784,
+    "ratingCount": 723,
+    "price": "Free",
+    "genre": "Video Players & Editors",
+    "storeUrl": "https://play.google.com/store/apps/details?id=com.evelize.teleprompter&hl=en&gl=us"
+  }
+}

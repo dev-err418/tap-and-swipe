@@ -4,6 +4,15 @@ import matter from "gray-matter";
 
 const EPISODES_DIR = path.join(process.cwd(), "content", "episodes");
 
+export interface GuestInfo {
+  name: string;
+  photo?: string;
+  role?: string;
+  twitter?: string;
+  linkedin?: string;
+  website?: string;
+}
+
 export interface EpisodeMeta {
   title: string;
   description: string;
@@ -12,7 +21,10 @@ export interface EpisodeMeta {
   image?: string;
   imageAlt?: string;
   guest?: string;
+  guestInfo?: GuestInfo;
   tags?: string[];
+  appStoreId?: string;
+  playStoreId?: string;
   readingTime: number;
   slug: string;
 }
@@ -45,7 +57,10 @@ export function getAllEpisodes(): EpisodeMeta[] {
         image: data.image,
         imageAlt: data.imageAlt,
         guest: data.guest,
+        guestInfo: data.guestInfo,
         tags: data.tags,
+        appStoreId: data.appStoreId,
+        playStoreId: data.playStoreId,
         readingTime: calculateReadingTime(content),
         slug,
       } satisfies EpisodeMeta;
@@ -68,7 +83,10 @@ export function getEpisodeBySlug(slug: string): Episode | null {
     image: data.image,
     imageAlt: data.imageAlt,
     guest: data.guest,
+    guestInfo: data.guestInfo,
     tags: data.tags,
+    appStoreId: data.appStoreId,
+    playStoreId: data.playStoreId,
     readingTime: calculateReadingTime(content),
     slug,
     content,

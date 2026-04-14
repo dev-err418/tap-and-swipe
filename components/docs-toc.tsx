@@ -91,7 +91,7 @@ export function DocsToc({ items }: DocsTocProps) {
 
   return (
     <nav>
-      <p className="mb-3 text-xs font-medium text-muted-foreground">
+      <p className="mt-0 mb-3 text-xs font-medium text-muted-foreground">
         On this page
       </p>
       <div className="relative">
