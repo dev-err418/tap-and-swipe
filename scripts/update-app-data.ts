@@ -244,8 +244,8 @@ async function fetchSensorTowerBatch(
       const topCountries = app.top_countries as string[] | undefined;
 
       map.set(appId, {
-        downloadsEstimate: downloads?.string?.replace(/k\b/g, "K"),
-        revenueEstimate: revenue?.string?.replace(/k\b/g, "K"),
+        downloadsEstimate: downloads?.string?.replace(/k\b/g, "K").replace(/< /g, "<"),
+        revenueEstimate: revenue?.string?.replace(/k\b/g, "K").replace(/< /g, "<"),
         topCountries,
       });
     }

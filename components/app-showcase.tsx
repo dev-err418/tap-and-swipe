@@ -200,7 +200,7 @@ export function AppShowcase({ data }: { data: AppData }) {
 
       {/* Stat cards — react to platform toggle */}
       {hasStats && (
-        <div className="flex items-stretch gap-3 overflow-x-auto px-5 pb-4 scrollbar-none">
+        <div key={activePlatform} className="flex animate-fade-in items-stretch gap-3 overflow-x-auto px-5 pb-4 scrollbar-none">
           {active.rating != null && active.ratingCount != null && (
             <StatCard
               label={`Rating (${active.ratingCount.toLocaleString()})`}
@@ -227,7 +227,7 @@ export function AppShowcase({ data }: { data: AppData }) {
 
       {/* Screenshots — based on active platform */}
       {active.screenshots.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto px-5 pb-5 scrollbar-none">
+        <div key={`ss-${activePlatform}`} className="flex animate-fade-in gap-3 overflow-x-auto px-5 pb-5 scrollbar-none">
           {active.screenshots.map((src, i) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img

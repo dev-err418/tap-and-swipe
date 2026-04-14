@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-14T20:42:58.172Z",
+  "lastUpdated": "2026-04-14T20:48:32.068Z",
   "ios": {
     "title": "Video Teleprompter - Evelize",
     "icon": "/apps/aleksei-rozhnov-evelize/icon-ios.webp",
@@ -15,7 +15,7 @@
     "price": "Free",
     "genre": "Photo & Video",
     "storeUrl": "https://apps.apple.com/us/app/video-teleprompter-evelize/id6446815796?uo=4",
-    "downloadsEstimate": "< 5K",
+    "downloadsEstimate": "<5K",
     "revenueEstimate": "$9K",
     "topCountries": [
       "GB",
@@ -39,8 +39,8 @@
     "price": "Free",
     "genre": "Video Players & Editors",
     "storeUrl": "https://play.google.com/store/apps/details?id=com.evelize.teleprompter&hl=en&gl=us",
-    "downloadsEstimate": "< 5K",
-    "revenueEstimate": "< $5K",
+    "downloadsEstimate": "<5K",
+    "revenueEstimate": "<$5K",
     "topCountries": [
       "PH",
       "US",
