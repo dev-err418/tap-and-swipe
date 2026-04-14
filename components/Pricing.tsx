@@ -81,6 +81,8 @@ const Pricing = () => {
                                     className="h-9 w-9 rounded-full border-2 border-white object-cover"
                                     src={src}
                                     alt="Member"
+                                    width={36}
+                                    height={36}
                                 />
                             ))}
                             <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-black/10 text-xs font-bold text-black/50">

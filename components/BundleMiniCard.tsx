@@ -19,7 +19,7 @@ export default function BundleMiniCard({ name, tagline, value, features, avatars
             {icon && (
                 <div className="absolute -top-3 -right-2 h-11 w-11">
                     <div className="absolute inset-0 rounded-[12px] bg-black/85 border border-black/15" />
-                    <img src={icon} alt={name} className="relative h-full w-full rounded-[12px] p-1" />
+                    <img src={icon} alt={name} width={44} height={44} className="relative h-full w-full rounded-[12px] p-1" />
                 </div>
             )}
             <div className="flex items-center justify-between mb-2">
@@ -35,6 +35,8 @@ export default function BundleMiniCard({ name, tagline, value, features, avatars
                             className="h-9 w-9 rounded-full border-2 border-white object-cover"
                             src={src}
                             alt="Member"
+                            width={36}
+                            height={36}
                         />
                     ))}
                     <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-black/10 text-xs font-bold text-black/50">

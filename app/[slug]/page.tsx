@@ -167,6 +167,8 @@ export default async function EpisodePage({
             <img
               src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
               alt="ArthurBuildsStuff"
+              width={32}
+              height={32}
               className="h-8 w-8 rounded-full"
             />
             <span className="text-sm font-semibold text-black/90">Tap &amp; Swipe</span>
@@ -210,7 +212,7 @@ export default async function EpisodePage({
                 <img
                   src={episode.image}
                   alt={episode.imageAlt || episode.title}
-                  className="w-full"
+                  className="w-full aspect-video object-cover"
                 />
               </div>
             )}
@@ -227,6 +229,8 @@ export default async function EpisodePage({
                 <img
                   src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
                   alt="Arthur"
+                  width={48}
+                  height={48}
                   className="h-12 w-12 rounded-full"
                 />
                 <div>

@@ -52,6 +52,8 @@ const LandingPage = ({
                     <img
                         src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
                         alt="ArthurBuildsStuff"
+                        width={32}
+                        height={32}
                         className="h-8 w-8 rounded-full"
                     />
                     <span className="text-sm font-semibold text-black/90">Tap &amp; Swipe</span>
@@ -123,6 +125,8 @@ const LandingPage = ({
                                     className="h-10 w-10 rounded-full border-2 border-white object-cover"
                                     src={src}
                                     alt="User avatar"
+                                    width={40}
+                                    height={40}
                                 />
                             ))}
                         </div>
@@ -200,6 +204,8 @@ const LandingPage = ({
                             <img
                                 src="/group-calls.jpg"
                                 alt="Weekly Group Calls"
+                                width={1920}
+                                height={1080}
                                 className="w-full max-w-4xl opacity-90 transition-opacity duration-500 group-hover:opacity-100"
                             />
                         </div>
@@ -285,6 +291,8 @@ const LandingPage = ({
                                         <img
                                             src={testimonial.image}
                                             alt={testimonial.name}
+                                            width={32}
+                                            height={32}
                                             className="h-8 w-8 rounded-full border border-black/10 object-cover"
                                         />
                                         <span className="font-medium text-sm text-black">{testimonial.name}</span>

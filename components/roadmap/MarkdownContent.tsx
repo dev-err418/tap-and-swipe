@@ -63,11 +63,14 @@ const components: Components = {
     );
   },
   pre: ({ children }) => <pre className="mb-4">{children}</pre>,
-  img: ({ src, alt }) => (
+  img: ({ src, alt, width, height }) => (
     <img
       src={src}
       alt={alt || ""}
+      width={width}
+      height={height}
       className="rounded-xl max-w-full my-4 border border-black/10 dark:border-white/10"
+      style={{ aspectRatio: width && height ? `${width}/${height}` : undefined }}
     />
   ),
   hr: () => <hr className="border-black/10 dark:border-white/10 my-6" />,
