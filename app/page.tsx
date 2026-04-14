@@ -3,6 +3,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { Hero } from "@/components/hero";
 import { EpisodesSection } from "@/components/episodes-section";
+import { getAllEpisodes } from "@/lib/episodes";
 
 const BLOCKED_COUNTRIES = new Set([
   // Africa
@@ -44,14 +45,81 @@ export const metadata: Metadata = {
   },
 };
 
+const BASE_URL = "https://tap-and-swipe.com";
+
+function buildJsonLd() {
+  const episodes = getAllEpisodes();
+
+  const podcastSeries = {
+    "@context": "https://schema.org",
+    "@type": "PodcastSeries",
+    name: "Tap & Swipe",
+    description:
+      "Every week I sit down with an app builder and ask them everything: the idea, the grind, the failures, and what finally worked.",
+    url: BASE_URL,
+    webFeed: `${BASE_URL}/rss.xml`,
+    author: { "@type": "Person", name: "Arthur", url: `${BASE_URL}` },
+    image: `${BASE_URL}/icon.png`,
+    inLanguage: "en",
+    ...(episodes.length > 0 && {
+      episode: episodes.map((ep) => ({
+        "@type": "PodcastEpisode",
+        name: ep.title,
+        description: ep.description,
+        datePublished: new Date(ep.date).toISOString(),
+        url: `${BASE_URL}/${ep.slug}`,
+      })),
+    }),
+  };
+
+  const person = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Arthur",
+    alternateName: "ArthurBuildsStuff",
+    url: BASE_URL,
+    image:
+      "https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj",
+    jobTitle: "Indie App Developer",
+    sameAs: [
+      "https://www.youtube.com/@ArthurBuildsStuff",
+      "https://www.linkedin.com/in/arthur-spalanzani/",
+      "https://x.com/arthursbuilds",
+    ],
+  };
+
+  const webSite = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Tap & Swipe",
+    url: BASE_URL,
+    description:
+      "Real stories from people building mobile apps — the ideas, the grind, and what finally worked.",
+    inLanguage: "en",
+    publisher: {
+      "@type": "Organization",
+      name: "Tap & Swipe",
+      url: BASE_URL,
+    },
+  };
+
+  return [podcastSeries, person, webSite];
+}
+
 export default async function Home() {
   const h = await headers();
   const country = h.get("cf-ipcountry") || "";
   const showSubscribe = !BLOCKED_COUNTRIES.has(country);
 
+  const jsonLd = buildJsonLd();
+
   return (
     <>
     <style>{`html, body { background-color: #fff !important; }`}</style>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
     <main className="relative z-10 flex flex-col bg-white text-black selection:bg-black/10">
       {/* Navbar */}
       <nav className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-center px-6 py-5">

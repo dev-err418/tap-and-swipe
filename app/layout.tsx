@@ -72,7 +72,11 @@ const organizationJsonLd = {
     name: "Arthur",
     url: "https://www.youtube.com/@ArthurBuildsStuff",
   },
-  sameAs: ["https://www.youtube.com/@ArthurBuildsStuff"],
+  sameAs: [
+    "https://www.youtube.com/@ArthurBuildsStuff",
+    "https://www.linkedin.com/in/arthur-spalanzani/",
+    "https://x.com/arthursbuilds",
+  ],
   contactPoint: {
     "@type": "ContactPoint",
     email: "arthurs.dev@gmail.com",

@@ -134,6 +134,23 @@ export default async function EpisodePage({
     },
     {
       "@context": "https://schema.org",
+      "@type": "PodcastEpisode",
+      name: episode.title,
+      description: episode.description,
+      datePublished: new Date(episode.date).toISOString(),
+      url: `${BASE_URL}/${slug}`,
+      timeRequired: `PT${episode.readingTime}M`,
+      ...(episode.guest && {
+        contributor: { "@type": "Person", name: episode.guest },
+      }),
+      partOfSeries: {
+        "@type": "PodcastSeries",
+        name: "Tap & Swipe",
+        url: BASE_URL,
+      },
+    },
+    {
+      "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       itemListElement: [
         {
