@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
 import "./globals.css";
 
 const uncutSans = localFont({
@@ -105,7 +105,15 @@ export default function RootLayout({
         {children}
       </body>
       {process.env.NEXT_PUBLIC_GA_ID && (
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+            strategy="lazyOnload"
+          />
+          <Script id="ga-init" strategy="lazyOnload">
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${process.env.NEXT_PUBLIC_GA_ID}');`}
+          </Script>
+        </>
       )}
     </html>
   );

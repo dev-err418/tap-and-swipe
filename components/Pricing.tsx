@@ -75,7 +75,7 @@ const Pricing = () => {
                         </div>
 
                         <div className="flex -space-x-2 mt-6 justify-center">
-                            {["/jx_op.png", "/luka.png", "/jesse.png", "/hnythng.png", "/raphael.png"].map((src, i) => (
+                            {["/jx_op.webp", "/luka.webp", "/jesse.webp", "/hnythng.webp", "/raphael.webp"].map((src, i) => (
                                 <img
                                     key={i}
                                     className="h-9 w-9 rounded-full border-2 border-white object-cover"

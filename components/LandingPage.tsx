@@ -114,11 +114,11 @@ const LandingPage = ({
                     <div className="mt-8 flex flex-col items-center gap-3">
                         <div className="flex -space-x-3">
                             {[
-                                "/jx_op.png",
-                                "/luka.png",
-                                "/jesse.png",
-                                "/hnythng.png",
-                                "/raphael.png"
+                                "/jx_op.webp",
+                                "/luka.webp",
+                                "/jesse.webp",
+                                "/hnythng.webp",
+                                "/raphael.webp"
                             ].map((src, i) => (
                                 <img
                                     key={i}
@@ -226,43 +226,43 @@ const LandingPage = ({
                                 name: "JX_Op",
                                 text: "This is by far the best small community for people wanting to build apps I have been in the community for about 5 days or so I am still in the early stages of building my app but Arthur has helped every step of the way have been on multiple 1on1 calls also there was s a full roadmap to get started and everyone is always building their own thing or helping each other so very like minded couldn't recommend it enough",
                                 time: "10 days after purchase",
-                                image: "/jx_op.png"
+                                image: "/jx_op.webp"
                             },
                             {
                                 name: "Luka",
                                 text: "I have been in this community for few days, and overall experience is great. Arthur is very enthusiastic and really helpful, and other members are also nice, willing to help each other improve. I never paid for community before, but this one is definitely worth it. Changing your mind and to pivot is a difficult task to do, and I definitely needed more experienced people to teach me correct approaches. Shortly, this community is awesome, and looking forward to see how it grows.",
                                 time: "8 days after purchase",
-                                image: "/luka.png"
+                                image: "/luka.webp"
                             },
                             {
                                 name: "jesse",
                                 text: "If you're wanting to build apps this is the clear best community that provides step by step instructions, constant advice and a like minded community.",
                                 time: "7 days after purchase",
-                                image: "/jesse.png"
+                                image: "/jesse.webp"
                             },
                             {
                                 name: "Hnythng",
                                 text: "Finally found a community where I can share progress and get feedback or ask questions and get answers from someone that is at another level in the app game, joining this group has been the best investment for my personal app development",
                                 time: "9 days after purchase",
-                                image: "/hnythng.png"
+                                image: "/hnythng.webp"
                             },
                             {
                                 name: "Ilya",
                                 text: "Found a lot of useful materials and a very supportive community",
                                 time: "8 days after purchase",
-                                image: "/ilya.png"
+                                image: "/ilya.webp"
                             },
                             {
                                 name: "user1a1a586904",
                                 text: "Three days in and I already submitted my first app. Arthur's insane... constant feedback, always jumping on 1:1s, sharing value nonstop. 100% recommend the community, no-code or dev.",
                                 time: "3 days after purchase",
-                                image: "/user1a1a.png"
+                                image: "/user1a1a.webp"
                             },
                             {
                                 name: "raphael adouane",
                                 text: "This Discord guide is complete and covers everything needed to ship your first app. Arthur is super helpful and always there to share his expertise. Highly recommended for aspiring app creators! (The community is also a huge plus for feedback).",
                                 time: "10 days after purchase",
-                                image: "/raphael.png"
+                                image: "/raphael.webp"
                             },
                             {
                                 name: "PauPi10",
