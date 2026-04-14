@@ -73,7 +73,7 @@ const organizationJsonLd = {
   founder: {
     "@type": "Person",
     name: "Arthur Spalanzani",
-    jobTitle: "Indie App Developer",
+    jobTitle: "Founder",
     url: "https://www.youtube.com/@ArthurBuildsStuff",
   },
   sameAs: [

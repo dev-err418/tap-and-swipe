@@ -80,7 +80,7 @@ function buildJsonLd() {
     url: BASE_URL,
     image:
       "https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj",
-    jobTitle: "Indie App Developer",
+    jobTitle: "Founder",
     sameAs: [
       "https://www.youtube.com/@ArthurBuildsStuff",
       "https://www.linkedin.com/in/arthur-spalanzani/",
