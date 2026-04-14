@@ -69,6 +69,7 @@ const components: Components = {
       alt={alt || ""}
       width={width}
       height={height}
+      loading="lazy"
       className="rounded-xl max-w-full my-4 border border-black/10 dark:border-white/10"
       style={{ aspectRatio: width && height ? `${width}/${height}` : undefined }}
     />

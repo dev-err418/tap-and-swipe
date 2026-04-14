@@ -40,6 +40,7 @@ const RevenueScaling = () => {
                                     alt="RevenueCat mobile dashboard showing app revenue from multiple countries"
                                     width={711}
                                     height={886}
+                                    loading="lazy"
                                     className="relative z-10 rounded-xl border border-black/10 shadow-2xl transform rotate-[-2deg] transition-transform duration-500 group-hover:rotate-0 max-h-[300px] w-auto mx-auto"
                                 />
                             </div>
@@ -74,9 +75,10 @@ const RevenueScaling = () => {
                             <div className="flex-1 flex items-center justify-center relative">
                                 <img
                                     src="/recurring-revenue.jpg"
-                                    alt="Recurring revenue chart"
+                                    alt="App subscription recurring revenue growth chart"
                                     width={1920}
                                     height={1080}
+                                    loading="lazy"
                                     className="relative z-10 rounded-xl border border-black/10 shadow-2xl transform rotate-[2deg] transition-transform duration-500 group-hover:rotate-0 w-full md:w-full"
                                 />
                             </div>

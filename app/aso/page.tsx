@@ -114,6 +114,7 @@ export default function AsoPage() {
                             alt="ArthurBuildsStuff"
                             width={32}
                             height={32}
+                            loading="eager"
                             className="h-8 w-8 rounded-full border border-[#f4cf8f]/20"
                         />
                         <span className="text-sm font-medium text-[#c9c4bc]">
@@ -210,6 +211,7 @@ export default function AsoPage() {
                                             alt={item.title}
                                             width={800}
                                             height={500}
+                                            loading="lazy"
                                             className="w-full h-full object-cover object-top"
                                         />
                                     </div>
@@ -376,6 +378,7 @@ export default function AsoPage() {
                                     alt={item.title}
                                     width={800}
                                     height={500}
+                                    loading="lazy"
                                     className="w-full"
                                 />
                             </div>

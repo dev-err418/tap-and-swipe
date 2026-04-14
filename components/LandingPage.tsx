@@ -54,6 +54,7 @@ const LandingPage = ({
                         alt="ArthurBuildsStuff"
                         width={32}
                         height={32}
+                        loading="eager"
                         className="h-8 w-8 rounded-full"
                     />
                     <span className="text-sm font-semibold text-black/90">Tap &amp; Swipe</span>
@@ -124,9 +125,10 @@ const LandingPage = ({
                                     key={i}
                                     className="h-10 w-10 rounded-full border-2 border-white object-cover"
                                     src={src}
-                                    alt="User avatar"
+                                    alt="Community member"
                                     width={40}
                                     height={40}
+                                    loading="eager"
                                 />
                             ))}
                         </div>
@@ -203,9 +205,10 @@ const LandingPage = ({
                         <div className="relative overflow-hidden rounded-[32px] ring-1 ring-black/10 group">
                             <img
                                 src="/group-calls.jpg"
-                                alt="Weekly Group Calls"
+                                alt="Weekly group call with community members discussing app development"
                                 width={1920}
                                 height={1080}
+                                loading="lazy"
                                 className="w-full max-w-4xl opacity-90 transition-opacity duration-500 group-hover:opacity-100"
                             />
                         </div>
@@ -290,9 +293,10 @@ const LandingPage = ({
                                     <div className="flex items-center gap-3">
                                         <img
                                             src={testimonial.image}
-                                            alt={testimonial.name}
+                                            alt={`${testimonial.name} avatar`}
                                             width={32}
                                             height={32}
+                                            loading="lazy"
                                             className="h-8 w-8 rounded-full border border-black/10 object-cover"
                                         />
                                         <span className="font-medium text-sm text-black">{testimonial.name}</span>

@@ -84,6 +84,7 @@ function FloatingIcon({
         src={icon.icon}
         alt=""
         className="rounded-[22%] shadow-lg"
+        loading="lazy"
         style={{ width: icon.size, height: icon.size }}
         initial={{ opacity: 0, scale: 0.8, rotate: icon.rotate }}
         animate={{ opacity: 1, scale: 1, rotate: icon.rotate }}
@@ -124,7 +125,7 @@ export function FloatingAppIcons({ icons, label, hideStrip }: { icons?: string[]
             }}
           >
             <div className="flex flex-col items-end">
-              <img src="/community-icons/arrow.png" alt="" className="w-10 h-10 opacity-25 rotate-12 -scale-x-100 -mb-1 mr-2" />
+              <img src="/community-icons/arrow.png" alt="" width={40} height={40} loading="lazy" className="w-10 h-10 opacity-25 rotate-12 -scale-x-100 -mb-1 mr-2" />
               <span className="text-sm text-black/40 italic -rotate-[8deg] whitespace-nowrap mr-8">{label}</span>
             </div>
           </motion.div>
@@ -139,6 +140,7 @@ export function FloatingAppIcons({ icons, label, hideStrip }: { icons?: string[]
             src={icon.icon}
             alt=""
             className="rounded-[22%] shadow-md"
+            loading="lazy"
             style={{ width: 40, height: 40 }}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}

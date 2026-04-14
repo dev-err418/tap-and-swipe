@@ -169,6 +169,7 @@ export default async function EpisodePage({
               alt="ArthurBuildsStuff"
               width={32}
               height={32}
+              loading="eager"
               className="h-8 w-8 rounded-full"
             />
             <span className="text-sm font-semibold text-black/90">Tap &amp; Swipe</span>
@@ -212,6 +213,9 @@ export default async function EpisodePage({
                 <img
                   src={episode.image}
                   alt={episode.imageAlt || episode.title}
+                  width={1200}
+                  height={675}
+                  fetchPriority="high"
                   className="w-full aspect-video object-cover"
                 />
               </div>
@@ -231,6 +235,7 @@ export default async function EpisodePage({
                   alt="Arthur"
                   width={48}
                   height={48}
+                  loading="lazy"
                   className="h-12 w-12 rounded-full"
                 />
                 <div>

@@ -61,6 +61,7 @@ export default async function Home() {
             alt="ArthurBuildsStuff"
             width={32}
             height={32}
+            loading="eager"
             className="h-8 w-8 rounded-full"
           />
           <span className="text-sm font-semibold text-black/90">Tap &amp; Swipe</span>
