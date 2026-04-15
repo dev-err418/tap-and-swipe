@@ -11,6 +11,7 @@ export interface GuestInfo {
   twitter?: string;
   linkedin?: string;
   threads?: string;
+  mastodon?: string;
   website?: string;
 }
 

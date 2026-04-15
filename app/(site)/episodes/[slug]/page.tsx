@@ -8,7 +8,7 @@ import { extractToc } from "@/lib/toc";
 import { DocsToc } from "@/components/docs-toc";
 import { getAppData, type AppData } from "@/lib/app-data";
 import { AppShowcase } from "@/components/app-showcase";
-import { SiX, SiThreads } from "@icons-pack/react-simple-icons";
+import { SiX, SiThreads, SiMastodon } from "@icons-pack/react-simple-icons";
 import { Globe, Linkedin } from "lucide-react";
 
 const PLACEHOLDER_IMAGE = "/episodes/placeholder.webp";
@@ -98,6 +98,11 @@ function FounderCard({ guest }: { guest: GuestInfo }) {
         {guest.threads && (
           <a href={guest.threads} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Threads">
             <SiThreads size={16} color="currentColor" />
+          </a>
+        )}
+        {guest.mastodon && (
+          <a href={guest.mastodon} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Mastodon">
+            <SiMastodon size={16} color="currentColor" />
           </a>
         )}
         {guest.website && (
