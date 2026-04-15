@@ -1,0 +1,12 @@
+{{ define "message" }}
+{{ template "header" . }}
+
+<section>
+  <h2>{{ .Data.Title }}</h2>
+  <div>
+    {{ .Data.Message }}
+  </div>
+</section>
+
+{{ template "footer" . }}
+{{ end }}

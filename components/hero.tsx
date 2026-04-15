@@ -28,12 +28,14 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("loading");
-    const email = new FormData(e.currentTarget).get("email") as string;
+    const fd = new FormData(e.currentTarget);
+    const email = fd.get("email") as string;
+    const website = fd.get("website") as string;
     try {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, website }),
       });
       setStatus(res.ok ? "ok" : "error");
     } catch {
@@ -65,9 +67,10 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
         {showSubscribe && (
           <FadeIn delay={0.35} y={20}>
             {status === "ok" ? (
-              <p className="mt-10 text-sm font-medium text-emerald-600">Check your inbox to confirm your subscription.</p>
+              <p className="mt-10 text-sm font-medium text-emerald-600">You're in! Welcome aboard.</p>
             ) : (
               <form onSubmit={handleSubmit} className="mt-10 mx-auto flex w-full max-w-sm flex-col gap-2">
+                <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute opacity-0 h-0 w-0 pointer-events-none" />
                 <div className="flex h-12 rounded-full border border-black/15 bg-black/5 transition-colors focus-within:border-black/40 focus-within:ring-1 focus-within:ring-black/40">
                   <input
                     type="email"

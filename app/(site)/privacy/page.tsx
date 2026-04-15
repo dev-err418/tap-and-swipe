@@ -46,10 +46,8 @@ export default function PrivacyPage() {
           </h3>
           <p className="mt-2">
             When you subscribe to our newsletter, we collect your{" "}
-            <strong className="text-foreground">email address</strong>.
-            Subscription requires double opt-in: after submitting your email, you
-            will receive a confirmation email and must click the confirmation
-            link before being added to our mailing list.
+            <strong className="text-foreground">email address</strong>. You are
+            added to our mailing list as soon as you submit the form.
           </p>
 
           <h3 className="mt-4 font-semibold text-foreground">

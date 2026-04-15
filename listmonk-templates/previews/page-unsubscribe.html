@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Unsubscribe - Tap & Swipe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #1a1a1a;
+      background: #fafafa;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .wrap {
+      background: #fff;
+      max-width: 480px;
+      width: 100%;
+      border-radius: 16px;
+      padding: 40px 36px;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .header {
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+    .header .logo a {
+      text-decoration: none;
+      color: #000;
+    }
+    .header .logo img {
+      height: 36px;
+      width: auto;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    p { margin-bottom: 16px; }
+
+    a { color: #000; }
+
+    .button {
+      display: inline-block;
+      background: #000;
+      color: #fff !important;
+      border: none;
+      border-radius: 100px;
+      padding: 12px 32px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .button:hover { background: #333; }
+
+    .button-outline {
+      background: transparent;
+      color: #000 !important;
+      border: 1px solid rgba(0,0,0,0.15);
+    }
+    .button-outline:hover { background: #f5f5f5; }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      margin-right: 8px;
+      accent-color: #000;
+    }
+
+    label {
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    section { margin-bottom: 24px; }
+
+    .row {
+      padding: 12px 0;
+      font-size: 14px;
+    }
+
+    footer.container {
+      text-align: center;
+      font-size: 12px;
+      color: #999;
+      margin-top: 24px;
+    }
+
+    @media screen and (max-width: 600px) {
+      body { padding: 20px 12px; }
+      .wrap { padding: 28px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="header">
+      <div class="logo">
+        <a href="https://tap-and-swipe.com">
+          <img src="https://tap-and-swipe.com/icon.png" alt="Tap & Swipe" />
+        </a>
+      </div>
+    </header>
+
+    <section>
+      <h2>Unsubscribe</h2>
+      <p>You will be unsubscribed from the selected lists.</p>
+      <p>
+        <input id="privacy-blocklist" type="checkbox" />
+        <label for="privacy-blocklist">Unsubscribe from all future emails</label>
+      </p>
+      <p>
+        <button type="button" class="button">Unsubscribe</button>
+      </p>
+      <p style="margin-top: 12px;"><a href="#">Manage preferences instead</a></p>
+    </section>
+
+    <section>
+      <h2>Your data</h2>
+      <div class="row">
+        <input id="privacy-export" type="radio" name="data-action" value="export" />
+        <label for="privacy-export"><strong>Export your data</strong></label>
+        <br />
+        <span style="font-size: 13px; color: #666;">Download your data as a file.</span>
+      </div>
+      <div class="row">
+        <input id="privacy-wipe" type="radio" name="data-action" value="wipe" />
+        <label for="privacy-wipe"><strong>Delete your data</strong></label>
+        <br />
+        <span style="font-size: 13px; color: #666;">Delete all your data permanently.</span>
+      </div>
+      <p>
+        <button type="button" class="button button-outline">Continue</button>
+      </p>
+    </section>
+  </div>
+
+  <footer class="container">
+    <strong style="color: #666;">Tap & Swipe</strong><br />
+    Made with ❤️ in 🇫🇷<br />
+
+    SIREN: 100454206
+  </footer>
+</body>
+</html>
