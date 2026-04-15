@@ -112,7 +112,7 @@ export function EpisodesSection() {
         </div>
       )}
 
-      <div className="mt-10 text-center">
+      <div className="mt-16 text-center">
         <Link
           href="/episodes"
           className="inline-block text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
