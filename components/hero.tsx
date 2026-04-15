@@ -64,6 +64,7 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
 
         {showSubscribe && (
           <FadeIn delay={0.35} y={20}>
+            {/* TODO: Re-enable when newsletter is live
             {status === "ok" ? (
               <p className="mt-10 text-sm font-medium text-emerald-600">Check your inbox to confirm your subscription.</p>
             ) : (
@@ -95,6 +96,24 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
                 <p className="pl-5 text-xs text-black/30">One email per episode. No spam, ever.</p>
               </form>
             )}
+            */}
+            <div className="mt-10 mx-auto flex w-full max-w-sm flex-col gap-2">
+              <div className="flex h-12 rounded-full border border-black/15 bg-black/5 opacity-60">
+                <input
+                  type="email"
+                  disabled
+                  placeholder="you@email.com"
+                  className="h-full flex-1 rounded-full bg-transparent px-5 text-sm text-black placeholder:text-black/30 outline-none cursor-not-allowed"
+                />
+                <button
+                  disabled
+                  className="relative -my-px -mr-px h-[calc(100%+2px)] shrink-0 rounded-full bg-black px-5 text-sm font-bold text-white opacity-50 cursor-not-allowed"
+                >
+                  Subscribe
+                </button>
+              </div>
+              <p className="pl-5 text-xs text-black/30">Newsletter launching in a few days — stay tuned!</p>
+            </div>
           </FadeIn>
         )}
       </div>
