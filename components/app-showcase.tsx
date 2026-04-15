@@ -149,7 +149,7 @@ export function AppShowcase({ data }: { data: AppData }) {
           <div className="min-w-0">
             <h3 className="font-semibold leading-snug">{primary.title}</h3>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              {primary.genre || primary.subtitle}
+              {primary.genres?.[0] || primary.subtitle}
             </p>
             {primary.price && (
               <p className="mt-1 text-sm text-muted-foreground">{primary.price}</p>

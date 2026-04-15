@@ -11,7 +11,7 @@ export interface PlatformData {
   rating?: number;
   ratingCount?: number;
   price: string;
-  genre?: string;
+  genres?: string[];
   storeUrl?: string;
   downloadsEstimate?: string;
   revenueEstimate?: string;

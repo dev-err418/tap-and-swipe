@@ -33,7 +33,7 @@ interface PlatformData {
   rating?: number;
   ratingCount?: number;
   price: string;
-  genre?: string;
+  genres?: string[];
   storeUrl?: string;
   downloadsEstimate?: string;
   revenueEstimate?: string;
@@ -138,7 +138,6 @@ async function fetchIosData(
     rating: app.averageUserRating as number | undefined,
     ratingCount: app.userRatingCount as number | undefined,
     price: (app.formattedPrice as string) || "Free",
-    genre: app.primaryGenreName as string | undefined,
     storeUrl: app.trackViewUrl as string | undefined,
   };
 }
@@ -184,7 +183,6 @@ async function fetchAndroidData(
       rating: app.score || undefined,
       ratingCount: app.ratings || undefined,
       price: app.free ? "Free" : `${app.priceText || app.price}`,
-      genre: app.genre || undefined,
       storeUrl: app.url || undefined,
     };
   } catch (err) {
@@ -196,12 +194,88 @@ async function fetchAndroidData(
   }
 }
 
+// ── Category mappings ─────────────────────────────────────────────
+
+const IOS_CATEGORIES: Record<number, string> = {
+  6000: "Business",
+  6001: "Weather",
+  6002: "Utilities",
+  6003: "Travel",
+  6004: "Sports",
+  6005: "Social Networking",
+  6006: "Reference",
+  6007: "Productivity",
+  6008: "Photo & Video",
+  6009: "News",
+  6010: "Navigation",
+  6011: "Music",
+  6012: "Lifestyle",
+  6013: "Health & Fitness",
+  6014: "Games",
+  6015: "Finance",
+  6016: "Entertainment",
+  6017: "Education",
+  6018: "Books",
+  6020: "Medical",
+  6021: "Magazines & Newspapers",
+  6023: "Food & Drink",
+  6024: "Shopping",
+  6026: "Developer Tools",
+  6027: "Graphics & Design",
+};
+
+const ANDROID_CATEGORIES: Record<string, string> = {
+  art_and_design: "Art & Design",
+  auto_and_vehicles: "Auto & Vehicles",
+  beauty: "Beauty",
+  books_and_reference: "Books & Reference",
+  business: "Business",
+  comics: "Comics",
+  communication: "Communication",
+  dating: "Dating",
+  education: "Education",
+  entertainment: "Entertainment",
+  events: "Events",
+  finance: "Finance",
+  food_and_drink: "Food & Drink",
+  health_and_fitness: "Health & Fitness",
+  house_and_home: "House & Home",
+  libraries_and_demo: "Libraries & Demo",
+  lifestyle: "Lifestyle",
+  maps_and_navigation: "Maps & Navigation",
+  medical: "Medical",
+  music_and_audio: "Music & Audio",
+  news_and_magazines: "News & Magazines",
+  parenting: "Parenting",
+  personalization: "Personalization",
+  photography: "Photography",
+  productivity: "Productivity",
+  shopping: "Shopping",
+  social: "Social",
+  sports: "Sports",
+  tools: "Tools",
+  travel_and_local: "Travel & Local",
+  video_players: "Video Players & Editors",
+  weather: "Weather",
+};
+
+function mapCategories(
+  platform: "ios" | "android",
+  ids: Array<number | string>
+): string[] {
+  const map = platform === "ios" ? IOS_CATEGORIES : ANDROID_CATEGORIES;
+  return ids
+    .map((id) => (map as Record<string | number, string>)[id])
+    .filter(Boolean);
+}
+
 // ── SensorTower (batched) ──────────────────────────────────────────
 
 interface SensorTowerData {
   downloadsEstimate?: string;
   revenueEstimate?: string;
   topCountries?: string[];
+  genres?: string[];
 }
 
 // Keyed by app ID (numeric iOS ID or Android package name)
@@ -242,11 +316,16 @@ async function fetchSensorTowerBatch(
         | { string: string }
         | undefined;
       const topCountries = app.top_countries as string[] | undefined;
+      const categories = app.categories as Array<number | string> | undefined;
+      const genres = categories?.length
+        ? mapCategories(platform, categories)
+        : undefined;
 
       map.set(appId, {
         downloadsEstimate: downloads?.string?.replace(/k\b/g, "K").replace(/< /g, "<"),
         revenueEstimate: revenue?.string?.replace(/k\b/g, "K").replace(/< /g, "<"),
         topCountries,
+        genres,
       });
     }
 
@@ -305,6 +384,7 @@ async function main() {
         appData.ios.downloadsEstimate = stData.downloadsEstimate;
         appData.ios.revenueEstimate = stData.revenueEstimate;
         appData.ios.topCountries = stData.topCountries;
+        if (stData.genres?.length) appData.ios.genres = stData.genres;
       }
     }
 
@@ -315,6 +395,7 @@ async function main() {
         appData.android.downloadsEstimate = stData.downloadsEstimate;
         appData.android.revenueEstimate = stData.revenueEstimate;
         appData.android.topCountries = stData.topCountries;
+        if (stData.genres?.length) appData.android.genres = stData.genres;
       }
     }
 
