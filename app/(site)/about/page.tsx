@@ -228,6 +228,18 @@ export default function AboutPage() {
               private community of mobile app builders that I genuinely love
               running.
             </p>
+            <figure className="mt-6">
+              <Image
+                src="/arthur-youtube.webp"
+                alt="Arthur Builds Stuff YouTube channel"
+                width={529}
+                height={204}
+                className="mx-auto max-w-md rounded-xl"
+              />
+              <figcaption className="mt-2 text-center text-xs italic text-muted-foreground">
+                20K subs in 3 videos, not bad
+              </figcaption>
+            </figure>
           </section>
 
           <section>
