@@ -47,6 +47,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.2,
     },
     {
+      url: "https://tap-and-swipe.com/privacy",
+      lastModified: new Date("2026-04-15"),
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    {
       url: "https://tap-and-swipe.com/app-sprint-community/privacy",
       lastModified: new Date(),
       changeFrequency: "yearly",
