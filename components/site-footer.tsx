@@ -3,7 +3,7 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer className="border-t border-border px-6 py-10 text-sm text-foreground/40">
-      <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-[2fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-[2fr_1fr_1fr_1fr]">
         <div>
           <p className="font-semibold text-foreground/80">Tap &amp; Swipe</p>
           <p className="mt-1 text-foreground/80">Made with ❤️ in 🇫🇷</p>
@@ -65,6 +65,19 @@ export function SiteFooter() {
               >
                 X (Twitter)
               </a>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <p className="font-medium text-foreground/80">Legal</p>
+          <ul className="-mx-2 mt-2">
+            <li>
+              <Link
+                href="/privacy"
+                className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
+              >
+                Privacy Policy
+              </Link>
             </li>
           </ul>
         </div>
