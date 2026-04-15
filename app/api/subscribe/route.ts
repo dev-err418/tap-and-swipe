@@ -7,28 +7,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
 
-  const res = await fetch(
-    `https://api.beehiiv.com/v2/publications/${process.env.BEEHIIV_PUBLICATION_ID}/subscriptions`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.BEEHIIV_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        reactivate_existing: true,
-        send_welcome_email: true,
-        double_opt_override: "on",
-        utm_source: "tapandswipe",
-        utm_medium: "website",
-      }),
-    },
-  );
+  const listmonkUrl = process.env.LISTMONK_URL;
+  const listUuid = process.env.LISTMONK_LIST_UUID;
+
+  if (!listmonkUrl || !listUuid) {
+    console.error("Missing LISTMONK_URL or LISTMONK_LIST_UUID env vars");
+    return NextResponse.json({ error: "Newsletter not configured" }, { status: 500 });
+  }
+
+  const res = await fetch(`${listmonkUrl}/api/public/subscription`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email,
+      list_uuids: [listUuid],
+    }),
+  });
 
   if (!res.ok) {
     const body = await res.text();
-    console.error("beehiiv error:", res.status, body);
+    console.error("Listmonk error:", res.status, body);
     return NextResponse.json({ error: "Subscription failed" }, { status: 500 });
   }
 
