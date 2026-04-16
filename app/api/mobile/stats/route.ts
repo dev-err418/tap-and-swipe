@@ -47,18 +47,18 @@ async function posthogQuery(query: string): Promise<Record<string, unknown>> {
 }
 
 async function fetchWebTraffic(days: number): Promise<Metric> {
-  const current7 = dateStr(days);
-  const current1 = dateStr(1);
-  const prev14 = dateStr(days * 2);
+  const current0 = dateStr(0);
+  const currentStart = dateStr(days);
+  const prevStart = dateStr(days * 2);
 
   const result = (await posthogQuery(`
     SELECT
-      if(timestamp >= toDate('${current7}') AND timestamp <= toDate('${current1}'), 'current', 'previous') AS period,
+      if(timestamp >= toDate('${currentStart}'), 'current', 'previous') AS period,
       count(DISTINCT "$session_id") AS sessions
     FROM events
     WHERE event = '$pageview'
-      AND timestamp >= toDate('${prev14}')
-      AND timestamp <= toDate('${current1}')
+      AND timestamp >= toDate('${prevStart}')
+      AND timestamp <= toDate('${current0}')
     GROUP BY period
   `)) as { results?: unknown[][] };
 
@@ -73,17 +73,17 @@ async function fetchWebTraffic(days: number): Promise<Metric> {
 }
 
 async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
-  const current7 = dateStr(days);
-  const current1 = dateStr(1);
-  const prev14 = dateStr(days * 2);
+  const current0 = dateStr(0);
+  const currentStart = dateStr(days);
+  const prevStart = dateStr(days * 2);
 
   // Top countries from newsletter_subscribe events
   const countriesResult = (await posthogQuery(`
     SELECT properties.$geoip_country_code AS country, count() AS cnt
     FROM events
     WHERE event = 'newsletter_subscribe'
-      AND timestamp >= toDate('${current7}')
-      AND timestamp <= toDate('${current1}')
+      AND timestamp >= toDate('${currentStart}')
+      AND timestamp <= toDate('${current0}')
       AND country IS NOT NULL AND country != ''
     GROUP BY country
     ORDER BY cnt DESC
@@ -100,21 +100,21 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     FROM events
     WHERE event = '$pageview'
       AND properties.$pathname = '/'
-      AND timestamp >= toDate('${current7}')
-      AND timestamp <= toDate('${current1}')
+      AND timestamp >= toDate('${currentStart}')
+      AND timestamp <= toDate('${current0}')
   `)) as { results?: unknown[][] };
 
   const visits = Number(visitsResult.results?.[0]?.[0] ?? 0);
 
-  // Newsletter subscribe events (current vs previous week)
+  // Newsletter subscribe events (current vs previous period)
   const convResult = (await posthogQuery(`
     SELECT
-      if(timestamp >= toDate('${current7}') AND timestamp <= toDate('${current1}'), 'current', 'previous') AS period,
+      if(timestamp >= toDate('${currentStart}'), 'current', 'previous') AS period,
       count() AS cnt
     FROM events
     WHERE event = 'newsletter_subscribe'
-      AND timestamp >= toDate('${prev14}')
-      AND timestamp <= toDate('${current1}')
+      AND timestamp >= toDate('${prevStart}')
+      AND timestamp <= toDate('${current0}')
     GROUP BY period
   `)) as { results?: unknown[][] };
 
@@ -129,13 +129,13 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     ? Math.round((convCurrent / visits) * 1000) / 10
     : 0;
 
-  // Top referrers (last 7 days)
+  // Top referrers
   const referrersResult = (await posthogQuery(`
     SELECT properties.$referring_domain AS referrer, count() AS cnt
     FROM events
     WHERE event = '$pageview'
-      AND timestamp >= toDate('${current7}')
-      AND timestamp <= toDate('${current1}')
+      AND timestamp >= toDate('${currentStart}')
+      AND timestamp <= toDate('${current0}')
       AND referrer IS NOT NULL AND referrer != '' AND referrer != '$direct'
     GROUP BY referrer
     ORDER BY cnt DESC
@@ -146,13 +146,13 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     (row) => String(row[0])
   );
 
-  // Top pages (last 7 days)
+  // Top pages
   const pagesResult = (await posthogQuery(`
     SELECT properties.$pathname AS page, count() AS cnt
     FROM events
     WHERE event = '$pageview'
-      AND timestamp >= toDate('${current7}')
-      AND timestamp <= toDate('${current1}')
+      AND timestamp >= toDate('${currentStart}')
+      AND timestamp <= toDate('${current0}')
       AND page IS NOT NULL AND page != ''
     GROUP BY page
     ORDER BY cnt DESC
