@@ -12,7 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `https://tap-and-swipe.com/episodes/${ep.slug}`,
     lastModified: new Date(ep.updatedDate || ep.date),
     changeFrequency: "monthly",
-    priority: 0.7,
+    priority: 0.8,
   }));
 
   return [
@@ -24,27 +24,51 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: "https://tap-and-swipe.com/app-sprint-community",
-      lastModified: new Date(),
+      lastModified: new Date("2026-04-15"),
       changeFrequency: "weekly",
-      priority: 0.5,
+      priority: 0.7,
+    },
+    {
+      url: "https://tap-and-swipe.com/episodes",
+      lastModified: latestEpisodeDate,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: "https://tap-and-swipe.com/about",
+      lastModified: new Date("2026-04-15"),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: "https://tap-and-swipe.com/divvy",
+      lastModified: new Date("2026-04-15"),
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+    {
+      url: "https://tap-and-swipe.com/netpay",
+      lastModified: new Date("2026-04-15"),
+      changeFrequency: "monthly",
+      priority: 0.3,
     },
     {
       url: "https://tap-and-swipe.com/versy",
-      lastModified: new Date(),
+      lastModified: new Date("2026-04-15"),
       changeFrequency: "monthly",
-      priority: 0.2,
+      priority: 0.3,
     },
     {
       url: "https://tap-and-swipe.com/lua",
-      lastModified: new Date(),
+      lastModified: new Date("2026-04-15"),
       changeFrequency: "monthly",
-      priority: 0.2,
+      priority: 0.3,
     },
     {
       url: "https://tap-and-swipe.com/glow",
-      lastModified: new Date(),
+      lastModified: new Date("2026-04-15"),
       changeFrequency: "monthly",
-      priority: 0.2,
+      priority: 0.3,
     },
     {
       url: "https://tap-and-swipe.com/privacy",
@@ -54,33 +78,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: "https://tap-and-swipe.com/app-sprint-community/privacy",
-      lastModified: new Date(),
+      lastModified: new Date("2026-04-15"),
       changeFrequency: "yearly",
       priority: 0.1,
     },
     {
       url: "https://tap-and-swipe.com/app-sprint-community/tos",
-      lastModified: new Date(),
+      lastModified: new Date("2026-04-15"),
       changeFrequency: "yearly",
       priority: 0.1,
-    },
-    {
-      url: "https://tap-and-swipe.com/about",
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    {
-      url: "https://tap-and-swipe.com/episodes",
-      lastModified: latestEpisodeDate,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    {
-      url: "https://tap-and-swipe.com/app-store",
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.7,
     },
     ...episodeEntries,
   ];

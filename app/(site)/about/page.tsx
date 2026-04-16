@@ -6,7 +6,7 @@ import { SiX } from "@icons-pack/react-simple-icons";
 const BASE_URL = "https://tap-and-swipe.com";
 
 export const metadata: Metadata = {
-  title: "About Arthur Spalanzani — Tap & Swipe",
+  title: "About Arthur Spalanzani",
   description:
     "I'm Arthur. I'm 22, French, and I build mobile apps. Learn about my journey from freelancing to building a portfolio of apps hitting 12K EUR MRR.",
   openGraph: {

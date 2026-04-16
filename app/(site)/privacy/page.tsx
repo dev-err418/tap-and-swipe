@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Tap & Swipe",
+  title: "Privacy Policy",
   description:
     "How Tap & Swipe collects, uses, and protects your personal data.",
   alternates: {

@@ -7,7 +7,7 @@ import {
 } from "@/components/episodes-page-client";
 
 export const metadata: Metadata = {
-  title: "All Episodes — Tap & Swipe",
+  title: "All Episodes",
   description:
     "Browse every Tap & Swipe episode. Real stories from indie app makers — the ideas, the grind, and what finally worked.",
   openGraph: {

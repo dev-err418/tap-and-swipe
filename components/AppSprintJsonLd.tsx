@@ -20,7 +20,7 @@ export default function AppSprintJsonLd() {
       "@type": "CourseInstance",
       courseMode: "online",
       duration: "P6W",
-      courseWorkload: "PT10H per week",
+      courseWorkload: "PT10H",
     },
     offers: {
       "@type": "Offer",

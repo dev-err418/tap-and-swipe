@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "App Store Insights — Tap & Swipe",
+  title: "App Store Insights",
   description:
     "App Store data and insights: top grossing apps, trends, and what indie developers can learn from the charts.",
+  robots: { index: false, follow: false },
   openGraph: {
     title: "App Store Insights — Tap & Swipe",
     description:

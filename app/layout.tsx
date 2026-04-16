@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://tap-and-swipe.com"),
   title: {
     default: "Tap & Swipe — Build & Launch Mobile Apps",
-    template: "%s | Tap & Swipe",
+    template: "%s — Tap & Swipe",
   },
   description:
     "Tap & Swipe — indie developer studio building mobile apps and helping others do the same. Makers of Versy, Lua, Glow, and the AppSprint program.",
@@ -41,6 +41,7 @@ export const metadata: Metadata = {
       follow: true,
       "max-image-preview": "large",
       "max-snippet": -1,
+      "max-video-preview": -1,
     },
   },
   openGraph: {
@@ -50,6 +51,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    creator: "@arthursbuilds",
   },
   alternates: {
     canonical: "/",
