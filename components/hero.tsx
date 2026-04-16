@@ -67,7 +67,7 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
         {showSubscribe && (
           <FadeIn delay={0.35} y={20}>
             {status === "ok" ? (
-              <p className="mt-10 text-sm font-medium text-emerald-600">You're in! Welcome aboard.</p>
+              <p className="mt-10 text-sm font-medium text-emerald-600">Check your inbox! Welcome in.</p>
             ) : (
               <form onSubmit={handleSubmit} className="mt-10 mx-auto flex w-full max-w-sm flex-col gap-2">
                 <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute opacity-0 h-0 w-0 pointer-events-none" />
