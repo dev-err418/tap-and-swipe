@@ -47,7 +47,6 @@ async function posthogQuery(query: string): Promise<Record<string, unknown>> {
 }
 
 async function fetchWebTraffic(days: number): Promise<Metric> {
-  const current0 = dateStr(0);
   const currentStart = dateStr(days);
   const prevStart = dateStr(days * 2);
 
@@ -58,7 +57,7 @@ async function fetchWebTraffic(days: number): Promise<Metric> {
     FROM events
     WHERE event = '$pageview'
       AND timestamp >= toDate('${prevStart}')
-      AND timestamp <= toDate('${current0}')
+      AND timestamp <= now()
     GROUP BY period
   `)) as { results?: unknown[][] };
 
@@ -73,7 +72,6 @@ async function fetchWebTraffic(days: number): Promise<Metric> {
 }
 
 async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
-  const current0 = dateStr(0);
   const currentStart = dateStr(days);
   const prevStart = dateStr(days * 2);
 
@@ -83,7 +81,7 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     FROM events
     WHERE event = 'newsletter_subscribe'
       AND timestamp >= toDate('${currentStart}')
-      AND timestamp <= toDate('${current0}')
+      AND timestamp <= now()
       AND country IS NOT NULL AND country != ''
     GROUP BY country
     ORDER BY cnt DESC
@@ -101,7 +99,7 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     WHERE event = '$pageview'
       AND properties.$pathname = '/'
       AND timestamp >= toDate('${currentStart}')
-      AND timestamp <= toDate('${current0}')
+      AND timestamp <= now()
   `)) as { results?: unknown[][] };
 
   const visits = Number(visitsResult.results?.[0]?.[0] ?? 0);
@@ -114,7 +112,7 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     FROM events
     WHERE event = 'newsletter_subscribe'
       AND timestamp >= toDate('${prevStart}')
-      AND timestamp <= toDate('${current0}')
+      AND timestamp <= now()
     GROUP BY period
   `)) as { results?: unknown[][] };
 
@@ -135,7 +133,7 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     FROM events
     WHERE event = '$pageview'
       AND timestamp >= toDate('${currentStart}')
-      AND timestamp <= toDate('${current0}')
+      AND timestamp <= now()
       AND referrer IS NOT NULL AND referrer != '' AND referrer != '$direct'
     GROUP BY referrer
     ORDER BY cnt DESC
@@ -152,7 +150,7 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     FROM events
     WHERE event = '$pageview'
       AND timestamp >= toDate('${currentStart}')
-      AND timestamp <= toDate('${current0}')
+      AND timestamp <= now()
       AND page IS NOT NULL AND page != ''
     GROUP BY page
     ORDER BY cnt DESC

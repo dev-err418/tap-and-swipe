@@ -135,12 +135,12 @@ export async function GET(request: NextRequest) {
   // Send push notifications (these can still fail the route)
   try {
     await sendPush(
-      "MRR Update",
+      "\u{1F4B0} MRR Update",
       `ASO: ${fmtDollars(Math.round(asoMrr))} · Community: ${fmtDollars(Math.round(commuMrr))} · Total: ${fmtDollars(totalMrr)}`
     );
 
     await sendPush(
-      "Today's Stats",
+      "\u{1F4C8} Today's Stats",
       `+${todaySubs} subs · ${fmtRevenue(todayRevenue)} revenue`
     );
   } catch (err) {
