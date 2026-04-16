@@ -22,7 +22,6 @@ export async function PATCH(
   const updates: Record<string, unknown> = {};
   if (body.title !== undefined) updates.title = body.title;
   if (body.guest_id !== undefined) updates.guest_id = body.guest_id;
-  if (body.scheduled_date !== undefined) updates.scheduled_date = body.scheduled_date;
   if (body.notes !== undefined) updates.notes = body.notes;
 
   // Pipeline: merge partial updates into existing pipeline

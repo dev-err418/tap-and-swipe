@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   const { data, error } = await supabase
     .from("episodes")
     .select("*")
-    .order("scheduled_date", { ascending: true, nullsFirst: false });
+    .order("created_at", { ascending: true });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -38,7 +38,6 @@ export async function POST(req: Request) {
     .insert({
       guest_id: body.guest_id ?? null,
       title: body.title,
-      scheduled_date: body.scheduled_date ?? null,
       notes: body.notes ?? null,
     })
     .select()
