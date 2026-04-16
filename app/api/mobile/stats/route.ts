@@ -92,7 +92,7 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
       AND country IS NOT NULL AND country != ''
     GROUP BY country
     ORDER BY cnt DESC
-    LIMIT 5
+    LIMIT 3
   `)) as { results?: unknown[][] };
 
   const topCountries: RankedItem[] = (countriesResult.results ?? []).map(
