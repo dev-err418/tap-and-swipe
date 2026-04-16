@@ -162,7 +162,7 @@ export default function AboutPage() {
                 alt="Arthur and his team at their agency office"
                 width={2000}
                 height={2000}
-                className="mx-auto max-w-md rounded-xl"
+                className="mx-auto w-full max-w-md rounded-xl"
               />
               <figcaption className="mt-2 text-center text-xs italic text-muted-foreground">
                 The team at our little office
@@ -193,7 +193,7 @@ export default function AboutPage() {
                 alt="Jérémie and Arthur in shirts at their startup"
                 width={2000}
                 height={2000}
-                className="mx-auto max-w-md rounded-xl"
+                className="mx-auto w-full max-w-md rounded-xl"
               />
               <figcaption className="mt-2 text-center text-xs italic text-muted-foreground">
                 Jérémie & me. Shirts to
@@ -234,7 +234,7 @@ export default function AboutPage() {
                 alt="Arthur Builds Stuff YouTube channel"
                 width={529}
                 height={204}
-                className="mx-auto max-w-md rounded-xl"
+                className="mx-auto w-full max-w-md rounded-xl"
               />
               <figcaption className="mt-2 text-center text-xs italic text-muted-foreground">
                 20K subs in 3 videos, not bad
@@ -272,7 +272,7 @@ export default function AboutPage() {
                 alt="Arthur recording Tap & Swipe"
                 width={2000}
                 height={2000}
-                className="mx-auto max-w-md rounded-xl"
+                className="mx-auto w-full max-w-md rounded-xl"
               />
               <figcaption className="mt-2 text-center text-xs italic text-muted-foreground">
                 First recording, just bought that new mic hehe
