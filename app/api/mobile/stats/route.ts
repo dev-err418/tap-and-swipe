@@ -52,7 +52,7 @@ async function fetchWhopMrr(apiKey: string): Promise<number> {
 
     const pagination = body.pagination;
     hasMorePlans =
-      pagination && pagination.current_page < pagination.total_pages;
+      pagination && pagination.current_page < pagination.total_page;
     planPage++;
   }
 
@@ -70,13 +70,13 @@ async function fetchWhopMrr(apiKey: string): Promise<number> {
     const memberships = body.data ?? body;
 
     for (const m of Array.isArray(memberships) ? memberships : []) {
-      const planId = m.plan_id as string;
+      const planId = m.plan as string;
       mrr += planPrices.get(planId) ?? 0;
     }
 
     const pagination = body.pagination;
     hasMore =
-      pagination && pagination.current_page < pagination.total_pages;
+      pagination && pagination.current_page < pagination.total_page;
     memberPage++;
   }
 
