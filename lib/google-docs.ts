@@ -31,11 +31,12 @@ export async function copyTemplateForGuest(
   const drive = new drive_v3.Drive({ auth });
   const docs = new docs_v1.Docs({ auth });
 
-  // 1. Copy the template
+  // 1. Copy the template into the shared folder
   const copy = await drive.files.copy({
     fileId: templateId,
     requestBody: {
       name: `Tap & Swipe — Guest Prep: ${guestName}`,
+      parents: [process.env.GOOGLE_DOCS_FOLDER_ID ?? ""],
     },
   });
 
