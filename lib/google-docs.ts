@@ -1,29 +1,22 @@
-import { GoogleAuth } from "google-auth-library";
+import { OAuth2Client } from "google-auth-library";
 import { drive_v3 } from "@googleapis/drive";
 import { docs_v1 } from "@googleapis/docs";
-import { Readable } from "stream";
-
-function getCredentials() {
-  const base64 = process.env.GOOGLE_DOCS_SERVICE_ACCOUNT_JSON ?? process.env.GOOGLE_SERVICE_ACCOUNT_JSON!;
-  const json = Buffer.from(base64, "base64").toString("utf-8");
-  return JSON.parse(json);
-}
 
 function getAuth() {
-  return new GoogleAuth({
-    credentials: getCredentials(),
-    scopes: [
-      "https://www.googleapis.com/auth/drive",
-      "https://www.googleapis.com/auth/documents",
-    ],
+  const client = new OAuth2Client(
+    process.env.GOOGLE_OAUTH_CLIENT_ID,
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+  );
+  client.setCredentials({
+    refresh_token: process.env.GOOGLE_OAUTH_REFRESH_TOKEN,
   });
+  return client;
 }
 
 export async function copyTemplateForGuest(
   guestName: string
 ): Promise<string | null> {
   const templateId = process.env.GOOGLE_DOCS_GUEST_TEMPLATE_ID;
-  const folderId = process.env.GOOGLE_DOCS_FOLDER_ID;
   if (!templateId) {
     console.error("[google-docs] Missing GOOGLE_DOCS_GUEST_TEMPLATE_ID");
     return null;
@@ -33,28 +26,19 @@ export async function copyTemplateForGuest(
   const drive = new drive_v3.Drive({ auth });
   const docs = new docs_v1.Docs({ auth });
 
-  // 1. Export template as docx
-  const exported = await drive.files.export({
+  // 1. Copy the template
+  const folderId = process.env.GOOGLE_DOCS_FOLDER_ID;
+  const copy = await drive.files.copy({
     fileId: templateId,
-    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  }, { responseType: "arraybuffer" });
-
-  // 2. Upload as new Google Doc in the shared folder
-  const created = await drive.files.create({
     requestBody: {
       name: `Tap & Swipe — Guest Prep: ${guestName}`,
-      mimeType: "application/vnd.google-apps.document",
       ...(folderId ? { parents: [folderId] } : {}),
-    },
-    media: {
-      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      body: Readable.from(Buffer.from(exported.data as ArrayBuffer)),
     },
   });
 
-  const docId = created.data.id!;
+  const docId = copy.data.id!;
 
-  // 3. Replace placeholders with guest name
+  // 2. Replace placeholders with guest name
   await docs.documents.batchUpdate({
     documentId: docId,
     requestBody: {
@@ -69,7 +53,7 @@ export async function copyTemplateForGuest(
     },
   });
 
-  // 4. Make it shareable — anyone with the link can edit
+  // 3. Make it shareable — anyone with the link can edit
   await drive.permissions.create({
     fileId: docId,
     requestBody: {
