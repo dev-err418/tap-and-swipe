@@ -154,16 +154,16 @@ async function fetchWebTraffic(): Promise<Metric> {
 
 interface NewsletterStats {
   topCountries: string[];
-  visits: Metric;
   conversions: Metric;
-  cr: Metric;
+  cr: number;
+  topReferrers: string[];
+  topPages: string[];
 }
 
 async function fetchNewsletterStats(): Promise<NewsletterStats> {
   const current7 = dateStr(7);
   const current1 = dateStr(1);
   const prev14 = dateStr(14);
-  const prev8 = dateStr(8);
 
   // Top countries from newsletter_subscribe events
   const countriesResult = (await posthogQuery(`
@@ -182,25 +182,17 @@ async function fetchNewsletterStats(): Promise<NewsletterStats> {
     (row) => String(row[0])
   );
 
-  // Homepage visits (current vs previous week)
+  // Homepage visits for CR calculation
   const visitsResult = (await posthogQuery(`
-    SELECT
-      if(timestamp >= toDate('${current7}') AND timestamp <= toDate('${current1}'), 'current', 'previous') AS period,
-      count() AS views
+    SELECT count() AS views
     FROM events
     WHERE event = '$pageview'
       AND properties.$pathname = '/'
-      AND timestamp >= toDate('${prev14}')
+      AND timestamp >= toDate('${current7}')
       AND timestamp <= toDate('${current1}')
-    GROUP BY period
   `)) as { results?: unknown[][] };
 
-  let visitsCurrent = 0;
-  let visitsPrevious = 0;
-  for (const row of visitsResult.results ?? []) {
-    if (row[0] === "current") visitsCurrent = Number(row[1]);
-    else if (row[0] === "previous") visitsPrevious = Number(row[1]);
-  }
+  const visits = Number(visitsResult.results?.[0]?.[0] ?? 0);
 
   // Newsletter subscribe events (current vs previous week)
   const convResult = (await posthogQuery(`
@@ -221,26 +213,53 @@ async function fetchNewsletterStats(): Promise<NewsletterStats> {
     else if (row[0] === "previous") convPrevious = Number(row[1]);
   }
 
-  const crCurrent =
-    visitsCurrent > 0
-      ? Math.round((convCurrent / visitsCurrent) * 1000) / 10
-      : 0;
-  const crPrevious =
-    visitsPrevious > 0
-      ? Math.round((convPrevious / visitsPrevious) * 1000) / 10
-      : 0;
+  const cr = visits > 0
+    ? Math.round((convCurrent / visits) * 1000) / 10
+    : 0;
+
+  // Top referrers (last 7 days)
+  const referrersResult = (await posthogQuery(`
+    SELECT properties.$referring_domain AS referrer, count() AS cnt
+    FROM events
+    WHERE event = '$pageview'
+      AND timestamp >= toDate('${current7}')
+      AND timestamp <= toDate('${current1}')
+      AND referrer IS NOT NULL AND referrer != '' AND referrer != '$direct'
+    GROUP BY referrer
+    ORDER BY cnt DESC
+    LIMIT 3
+  `)) as { results?: unknown[][] };
+
+  const topReferrers = (referrersResult.results ?? []).map(
+    (row) => String(row[0])
+  );
+
+  // Top pages (last 7 days)
+  const pagesResult = (await posthogQuery(`
+    SELECT properties.$pathname AS page, count() AS cnt
+    FROM events
+    WHERE event = '$pageview'
+      AND timestamp >= toDate('${current7}')
+      AND timestamp <= toDate('${current1}')
+      AND page IS NOT NULL AND page != ''
+    GROUP BY page
+    ORDER BY cnt DESC
+    LIMIT 3
+  `)) as { results?: unknown[][] };
+
+  const topPages = (pagesResult.results ?? []).map(
+    (row) => String(row[0])
+  );
 
   return {
     topCountries,
-    visits: {
-      value: visitsCurrent,
-      change: pctChange(visitsCurrent, visitsPrevious),
-    },
     conversions: {
       value: convCurrent,
       change: pctChange(convCurrent, convPrevious),
     },
-    cr: { value: crCurrent, change: pctChange(crCurrent, crPrevious) },
+    cr,
+    topReferrers,
+    topPages,
   };
 }
 
@@ -274,9 +293,10 @@ export async function GET(req: Request) {
       ? newsletterResult.value
       : {
           topCountries: [],
-          visits: { value: 0, change: null },
           conversions: { value: 0, change: null },
-          cr: { value: 0, change: null },
+          cr: 0,
+          topReferrers: [],
+          topPages: [],
         };
 
   // Log any errors for debugging
