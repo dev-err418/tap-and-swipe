@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { copyTemplateForGuest } from "@/lib/google-docs";
 
 function isAuthorized(req: Request): boolean {
   const header = req.headers.get("authorization") ?? "";
@@ -47,6 +48,17 @@ export async function POST(req: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Auto-generate a Guest Prep Sheet Google Doc
+  try {
+    const docUrl = await copyTemplateForGuest(data.name);
+    if (docUrl) {
+      await supabase.from("guests").update({ doc_url: docUrl }).eq("id", data.id);
+      data.doc_url = docUrl;
+    }
+  } catch (err) {
+    console.error("[guests] Failed to create prep sheet:", err);
   }
 
   return NextResponse.json(data, { status: 201 });

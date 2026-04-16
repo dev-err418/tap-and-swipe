@@ -20,8 +20,10 @@ export async function PATCH(
   const body = await req.json();
 
   const updates: Record<string, unknown> = {};
+  if (body.name !== undefined) updates.name = body.name;
   if (body.title !== undefined) updates.title = body.title;
-  if (body.guest_id !== undefined) updates.guest_id = body.guest_id;
+  if (body.contact_method !== undefined) updates.contact_method = body.contact_method;
+  if (body.contact_handle !== undefined) updates.contact_handle = body.contact_handle;
   if (body.notes !== undefined) updates.notes = body.notes;
   if (body.youtube_url !== undefined) updates.youtube_url = body.youtube_url;
   if (body.blog_url !== undefined) updates.blog_url = body.blog_url;

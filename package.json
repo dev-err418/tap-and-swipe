@@ -23,6 +23,7 @@
     "clsx": "^2.1.1",
     "discord-interactions": "^4.4.0",
     "framer-motion": "^12.31.1",
+    "googleapis": "^171.4.0",
     "gray-matter": "^4.0.3",
     "jose": "^6.1.3",
     "libphonenumber-js": "^1.12.37",
