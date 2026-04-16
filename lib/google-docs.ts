@@ -1,4 +1,6 @@
-import { google } from "googleapis";
+import { GoogleAuth } from "google-auth-library";
+import { drive_v3 } from "@googleapis/drive";
+import { docs_v1 } from "@googleapis/docs";
 
 function getCredentials() {
   const base64 = process.env.GOOGLE_DOCS_SERVICE_ACCOUNT_JSON ?? process.env.GOOGLE_SERVICE_ACCOUNT_JSON!;
@@ -7,9 +9,8 @@ function getCredentials() {
 }
 
 function getAuth() {
-  const credentials = getCredentials();
-  return new google.auth.GoogleAuth({
-    credentials,
+  return new GoogleAuth({
+    credentials: getCredentials(),
     scopes: [
       "https://www.googleapis.com/auth/drive.file",
       "https://www.googleapis.com/auth/documents",
@@ -27,8 +28,8 @@ export async function copyTemplateForGuest(
   }
 
   const auth = getAuth();
-  const drive = google.drive({ version: "v3", auth });
-  const docs = google.docs({ version: "v1", auth });
+  const drive = new drive_v3.Drive({ auth });
+  const docs = new docs_v1.Docs({ auth });
 
   // 1. Copy the template
   const copy = await drive.files.copy({
