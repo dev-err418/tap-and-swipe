@@ -137,7 +137,7 @@ export default function AboutPage() {
         <div className="mt-16 space-y-10 text-[15px] leading-relaxed text-foreground/70">
           <section>
             <h2 className="mb-4 text-xl font-semibold text-foreground">
-              How did I start programming?
+              The early days
             </h2>
             <p>
               I&apos;m Arthur, I&apos;m{" "}
@@ -146,9 +146,6 @@ export default function AboutPage() {
                   (365.25 * 24 * 60 * 60 * 1000)
               )}{" "}
               and I build cool stuff :)
-            </p>
-            <p className="mt-4">
-              So far that&apos;s meant apps hitting <strong>$12K EUR MRR</strong>, a YouTube channel that crossed <strong>20K subs</strong>, and a community I run for indie app builders.
             </p>
             <p className="mt-4">
               I started programming as a teenager, alone in my room, just
@@ -179,7 +176,7 @@ export default function AboutPage() {
 
           <section>
             <h2 className="mb-4 text-xl font-semibold text-foreground">
-              What was my startup experience like?
+              The startup detour
             </h2>
             <p>
               So we pivoted. At the agency, we&apos;d built a proprietary
