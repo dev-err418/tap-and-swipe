@@ -145,9 +145,32 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     LIMIT 5
   `)) as { results?: unknown[][] };
 
-  const topReferrers: RankedItem[] = (referrersResult.results ?? []).map(
-    (row) => ({ label: String(row[0]), count: Number(row[1]) })
-  );
+  const referrerNames: Record<string, string> = {
+    "www.youtube.com": "YouTube",
+    "youtube.com": "YouTube",
+    "m.youtube.com": "YouTube",
+    "youtu.be": "YouTube",
+    "www.google.com": "Google",
+    "google.com": "Google",
+    "t.co": "X/Twitter",
+    "www.reddit.com": "Reddit",
+    "www.facebook.com": "Facebook",
+    "www.instagram.com": "Instagram",
+    "www.tiktok.com": "TikTok",
+    "www.linkedin.com": "LinkedIn",
+  };
+
+  // Merge referrer variants (e.g. www.youtube.com + m.youtube.com → YouTube)
+  const referrerMap = new Map<string, number>();
+  for (const row of referrersResult.results ?? []) {
+    const domain = String(row[0]);
+    const name = referrerNames[domain] ?? domain;
+    referrerMap.set(name, (referrerMap.get(name) ?? 0) + Number(row[1]));
+  }
+  const topReferrers: RankedItem[] = [...referrerMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([label, count]) => ({ label, count }));
 
   // Top pages
   const pagesResult = (await posthogQuery(`
@@ -162,8 +185,12 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     LIMIT 5
   `)) as { results?: unknown[][] };
 
+  const pageNames: Record<string, string> = {
+    "/app-sprint-community": "/community",
+  };
+
   const topPages: RankedItem[] = (pagesResult.results ?? []).map(
-    (row) => ({ label: String(row[0]), count: Number(row[1]) })
+    (row) => ({ label: pageNames[String(row[0])] ?? String(row[0]), count: Number(row[1]) })
   );
 
   return {
