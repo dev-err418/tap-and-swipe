@@ -125,11 +125,10 @@ async function posthogQuery(query: string): Promise<Record<string, unknown>> {
   return res.json();
 }
 
-async function fetchWebTraffic(): Promise<Metric> {
-  const current7 = dateStr(7);
+async function fetchWebTraffic(days: number): Promise<Metric> {
+  const current7 = dateStr(days);
   const current1 = dateStr(1);
-  const prev14 = dateStr(14);
-  const prev8 = dateStr(8);
+  const prev14 = dateStr(days * 2);
 
   const result = (await posthogQuery(`
     SELECT
@@ -160,10 +159,10 @@ interface NewsletterStats {
   topPages: string[];
 }
 
-async function fetchNewsletterStats(): Promise<NewsletterStats> {
-  const current7 = dateStr(7);
+async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
+  const current7 = dateStr(days);
   const current1 = dateStr(1);
-  const prev14 = dateStr(14);
+  const prev14 = dateStr(days * 2);
 
   // Top countries from newsletter_subscribe events
   const countriesResult = (await posthogQuery(`
@@ -269,13 +268,17 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const url = new URL(req.url);
+  const daysParam = parseInt(url.searchParams.get("days") ?? "7", 10);
+  const days = [1, 3, 7, 30].includes(daysParam) ? daysParam : 7;
+
   const [asoResult, commuResult, subsResult, trafficResult, newsletterResult] =
     await Promise.allSettled([
       fetchWhopMrr(process.env.WHOP_ASO_API_KEY!),
       fetchWhopMrr(process.env.WHOP_COMMUNITY_API_KEY!),
       fetchSubscriberCount(),
-      fetchWebTraffic(),
-      fetchNewsletterStats(),
+      fetchWebTraffic(days),
+      fetchNewsletterStats(days),
     ]);
 
   const asoMrr =
