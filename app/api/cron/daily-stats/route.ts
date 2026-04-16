@@ -160,5 +160,10 @@ export async function GET(request: NextRequest) {
     todaySubs,
     todayRevenue,
     ...(errors.length > 0 ? { errors } : {}),
+    _debug: {
+      apnsHost: process.env.APNS_SANDBOX === "true" ? "sandbox" : "production",
+      tokenPrefix: process.env.APNS_DEVICE_TOKEN?.slice(0, 8),
+      bundleId: process.env.APP_BUNDLE_ID,
+    },
   });
 }
