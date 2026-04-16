@@ -174,7 +174,7 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
       AND country IS NOT NULL AND country != ''
     GROUP BY country
     ORDER BY cnt DESC
-    LIMIT 3
+    LIMIT 5
   `)) as { results?: unknown[][] };
 
   const topCountries = (countriesResult.results ?? []).map(
@@ -226,7 +226,7 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
       AND referrer IS NOT NULL AND referrer != '' AND referrer != '$direct'
     GROUP BY referrer
     ORDER BY cnt DESC
-    LIMIT 3
+    LIMIT 5
   `)) as { results?: unknown[][] };
 
   const topReferrers = (referrersResult.results ?? []).map(
@@ -243,7 +243,7 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
       AND page IS NOT NULL AND page != ''
     GROUP BY page
     ORDER BY cnt DESC
-    LIMIT 3
+    LIMIT 5
   `)) as { results?: unknown[][] };
 
   const topPages = (pagesResult.results ?? []).map(
