@@ -1,6 +1,7 @@
 import { GoogleAuth } from "google-auth-library";
 import { drive_v3 } from "@googleapis/drive";
 import { docs_v1 } from "@googleapis/docs";
+import { Readable } from "stream";
 
 function getCredentials() {
   const base64 = process.env.GOOGLE_DOCS_SERVICE_ACCOUNT_JSON ?? process.env.GOOGLE_SERVICE_ACCOUNT_JSON!;
@@ -22,6 +23,7 @@ export async function copyTemplateForGuest(
   guestName: string
 ): Promise<string | null> {
   const templateId = process.env.GOOGLE_DOCS_GUEST_TEMPLATE_ID;
+  const folderId = process.env.GOOGLE_DOCS_FOLDER_ID;
   if (!templateId) {
     console.error("[google-docs] Missing GOOGLE_DOCS_GUEST_TEMPLATE_ID");
     return null;
@@ -31,18 +33,28 @@ export async function copyTemplateForGuest(
   const drive = new drive_v3.Drive({ auth });
   const docs = new docs_v1.Docs({ auth });
 
-  // 1. Copy the template into the shared folder
-  const copy = await drive.files.copy({
+  // 1. Export template as docx
+  const exported = await drive.files.export({
     fileId: templateId,
+    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  }, { responseType: "arraybuffer" });
+
+  // 2. Upload as new Google Doc in the shared folder
+  const created = await drive.files.create({
     requestBody: {
       name: `Tap & Swipe — Guest Prep: ${guestName}`,
-      parents: [process.env.GOOGLE_DOCS_FOLDER_ID ?? ""],
+      mimeType: "application/vnd.google-apps.document",
+      ...(folderId ? { parents: [folderId] } : {}),
+    },
+    media: {
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      body: Readable.from(Buffer.from(exported.data as ArrayBuffer)),
     },
   });
 
-  const docId = copy.data.id!;
+  const docId = created.data.id!;
 
-  // 2. Replace placeholders with guest name
+  // 3. Replace placeholders with guest name
   await docs.documents.batchUpdate({
     documentId: docId,
     requestBody: {
@@ -57,7 +69,7 @@ export async function copyTemplateForGuest(
     },
   });
 
-  // 3. Make it shareable — anyone with the link can edit
+  // 4. Make it shareable — anyone with the link can edit
   await drive.permissions.create({
     fileId: docId,
     requestBody: {
