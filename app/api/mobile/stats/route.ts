@@ -36,13 +36,15 @@ interface NewsletterStats {
 const PH_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
 
 async function posthogQuery(query: string): Promise<Record<string, unknown>> {
+  // Add unique comment to bust PostHog's query cache
+  const bustQuery = `/* ${Date.now()} */ ${query}`;
   const res = await fetch(`${PH_HOST}/api/projects/@current/query`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.POSTHOG_PERSONAL_API_KEY}`,
     },
-    body: JSON.stringify({ query: { kind: "HogQLQuery", query } }),
+    body: JSON.stringify({ query: { kind: "HogQLQuery", query: bustQuery } }),
   });
   if (!res.ok) {
     const text = await res.text();
