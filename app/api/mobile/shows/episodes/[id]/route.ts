@@ -23,6 +23,8 @@ export async function PATCH(
   if (body.title !== undefined) updates.title = body.title;
   if (body.guest_id !== undefined) updates.guest_id = body.guest_id;
   if (body.notes !== undefined) updates.notes = body.notes;
+  if (body.youtube_url !== undefined) updates.youtube_url = body.youtube_url;
+  if (body.blog_url !== undefined) updates.blog_url = body.blog_url;
 
   // Pipeline: merge partial updates into existing pipeline
   if (body.pipeline !== undefined) {
