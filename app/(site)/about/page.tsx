@@ -137,7 +137,7 @@ export default function AboutPage() {
         <div className="mt-16 space-y-10 text-[15px] leading-relaxed text-foreground/70">
           <section>
             <h2 className="mb-4 text-xl font-semibold text-foreground">
-              The early days
+              How did I start programming?
             </h2>
             <p>
               I&apos;m Arthur, I&apos;m{" "}
@@ -146,6 +146,9 @@ export default function AboutPage() {
                   (365.25 * 24 * 60 * 60 * 1000)
               )}{" "}
               and I build cool stuff :)
+            </p>
+            <p className="mt-4">
+              So far that&apos;s meant apps hitting <strong>$12K EUR MRR</strong>, a YouTube channel that crossed <strong>20K subs</strong>, and a community I run for indie app builders.
             </p>
             <p className="mt-4">
               I started programming as a teenager, alone in my room, just
@@ -176,7 +179,7 @@ export default function AboutPage() {
 
           <section>
             <h2 className="mb-4 text-xl font-semibold text-foreground">
-              The startup detour
+              What was my startup experience like?
             </h2>
             <p>
               So we pivoted. At the agency, we&apos;d built a proprietary
@@ -209,7 +212,7 @@ export default function AboutPage() {
 
           <section>
             <h2 className="mb-4 text-xl font-semibold text-foreground">
-              The turn
+              How did I get into mobile apps?
             </h2>
             <p>
               That&apos;s when everything changed. I decided I was done with the
@@ -221,10 +224,10 @@ export default function AboutPage() {
             </p>
             <p className="mt-4">
               I launched my YouTube channel, Arthur Builds Stuff, to document
-              what I was learning. Got 20,000 subscribers in three videos, which
+              what I was learning. Got <strong>20,000 subscribers</strong> in three videos, which
               told me people cared about this stuff. I built a small portfolio of
-              apps that hit $12K MRR at its peak. Launched an ASO tool
-              to help other builders grow their apps ($5K MRR). Started a
+              apps that hit <strong>$12K MRR</strong> at its peak. Launched an ASO tool
+              to help other builders grow their apps (<strong>$5K MRR</strong>). Started a
               private community of mobile app builders that I genuinely love
               running.
             </p>
@@ -244,7 +247,7 @@ export default function AboutPage() {
 
           <section>
             <h2 className="mb-4 text-xl font-semibold text-foreground">
-              Why Tap & Swipe
+              Why did I start Tap & Swipe?
             </h2>
             <p>
               But the thing I kept noticing was this: every time I met another

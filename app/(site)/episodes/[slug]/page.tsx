@@ -120,7 +120,7 @@ function createMdxComponents(slugifyFn: (text: string) => string, guestInfo?: Gu
   FounderCard: () => guestInfo ? <FounderCard guest={guestInfo} /> : null,
   h2: (props: React.ComponentProps<"h2">) => {
     const text = typeof props.children === "string" ? props.children : "";
-    const isAppSection = text.toLowerCase().replace(/^the\s+/, "") === "app";
+    const isAppSection = /^what is\b/i.test(text) || text.toLowerCase().replace(/^the\s+/, "") === "app";
     return (
       <>
         <h2 id={slugifyFn(text)} className="mt-12 mb-4 text-2xl font-semibold tracking-tight scroll-mt-24" {...props} />

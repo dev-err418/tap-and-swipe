@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   images: {
@@ -22,24 +24,29 @@ const nextConfig: NextConfig = {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https://yt3.googleusercontent.com",
-              "font-src 'self'",
-              "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
-              "frame-src https://www.youtube.com",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join("; "),
-          },
+          ...(isProd
+            ? [
+                {
+                  key: "Content-Security-Policy",
+                  value: [
+                    "default-src 'self'",
+                    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
+                    "style-src 'self' 'unsafe-inline'",
+                    "img-src 'self' data: https://yt3.googleusercontent.com",
+                    "media-src 'self' https://assets.whop.com",
+                    "font-src 'self'",
+                    "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
+                    "frame-src https://www.youtube.com",
+                    "object-src 'none'",
+                    "base-uri 'self'",
+                    "form-action 'self'",
+                  ].join("; "),
+                },
+              ]
+            : []),
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+            value: "camera=(), microphone=(), geolocation=()",
           },
         ],
       },
