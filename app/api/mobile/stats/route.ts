@@ -160,6 +160,8 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     "www.instagram.com": "Instagram",
     "www.tiktok.com": "TikTok",
     "www.linkedin.com": "LinkedIn",
+    "tap-and-swipe.com": "t&s.com",
+    "www.tap-and-swipe.com": "t&s.com",
   };
 
   // Merge referrer variants (e.g. www.youtube.com + m.youtube.com → YouTube)
