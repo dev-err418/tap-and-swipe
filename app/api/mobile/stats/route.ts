@@ -189,13 +189,22 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     LIMIT 5
   `)) as { results?: unknown[][] };
 
-  const pageNames: Record<string, string> = {
-    "/app-sprint-community": "/community",
-  };
+  function cleanPageName(path: string): string {
+    if (path === "/app-sprint-community") return "/community";
+    if (path.startsWith("/app-sprint-community/roadmap")) return "/roadmap";
+    return path;
+  }
 
-  const topPages: RankedItem[] = (pagesResult.results ?? []).map(
-    (row) => ({ label: pageNames[String(row[0])] ?? String(row[0]), count: Number(row[1]) })
-  );
+  // Merge pages that map to the same clean name
+  const pageMap = new Map<string, number>();
+  for (const row of pagesResult.results ?? []) {
+    const name = cleanPageName(String(row[0]));
+    pageMap.set(name, (pageMap.get(name) ?? 0) + Number(row[1]));
+  }
+  const topPages: RankedItem[] = [...pageMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([label, count]) => ({ label, count }));
 
   return {
     topCountries,
