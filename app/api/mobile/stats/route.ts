@@ -95,8 +95,17 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     LIMIT 3
   `)) as { results?: unknown[][] };
 
+  const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+  const shortCodes = new Set(["US", "UK", "GB"]);
+
   const topCountries: RankedItem[] = (countriesResult.results ?? []).map(
-    (row) => ({ label: String(row[0]), count: Number(row[1]) })
+    (row) => {
+      const code = String(row[0]).toUpperCase();
+      const label = shortCodes.has(code)
+        ? (code === "GB" ? "UK" : code)
+        : (regionNames.of(code) ?? code);
+      return { label, count: Number(row[1]) };
+    }
   );
 
   // Homepage visits for CR calculation
