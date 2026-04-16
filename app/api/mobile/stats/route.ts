@@ -98,13 +98,19 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
   const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
   const shortCodes = new Set(["US", "UK", "GB"]);
 
+  function countryFlag(code: string): string {
+    return String.fromCodePoint(
+      ...code.toUpperCase().split("").map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)
+    );
+  }
+
   const topCountries: RankedItem[] = (countriesResult.results ?? []).map(
     (row) => {
       const code = String(row[0]).toUpperCase();
-      const label = shortCodes.has(code)
+      const name = shortCodes.has(code)
         ? (code === "GB" ? "UK" : code)
         : (regionNames.of(code) ?? code);
-      return { label, count: Number(row[1]) };
+      return { label: `${countryFlag(code)} ${name}`, count: Number(row[1]) };
     }
   );
 
