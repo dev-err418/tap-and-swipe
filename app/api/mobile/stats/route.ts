@@ -19,12 +19,17 @@ interface Metric {
   change: number | null;
 }
 
+interface RankedItem {
+  label: string;
+  count: number;
+}
+
 interface NewsletterStats {
-  topCountries: string[];
+  topCountries: RankedItem[];
   conversions: Metric;
   cr: number;
-  topReferrers: string[];
-  topPages: string[];
+  topReferrers: RankedItem[];
+  topPages: RankedItem[];
 }
 
 // ── PostHog helpers ─────────────────────────────────────────────────────
@@ -75,11 +80,11 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
   const currentStart = dateStr(days);
   const prevStart = dateStr(days * 2);
 
-  // Top countries from newsletter_subscribe events
+  // Top countries from pageview events
   const countriesResult = (await posthogQuery(`
     SELECT properties.$geoip_country_code AS country, count() AS cnt
     FROM events
-    WHERE event = 'newsletter_subscribe'
+    WHERE event = '$pageview'
       AND timestamp >= toDate('${currentStart}')
       AND timestamp <= now()
       AND country IS NOT NULL AND country != ''
@@ -88,8 +93,8 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     LIMIT 5
   `)) as { results?: unknown[][] };
 
-  const topCountries = (countriesResult.results ?? []).map(
-    (row) => String(row[0])
+  const topCountries: RankedItem[] = (countriesResult.results ?? []).map(
+    (row) => ({ label: String(row[0]), count: Number(row[1]) })
   );
 
   // Homepage visits for CR calculation
@@ -140,8 +145,8 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     LIMIT 5
   `)) as { results?: unknown[][] };
 
-  const topReferrers = (referrersResult.results ?? []).map(
-    (row) => String(row[0])
+  const topReferrers: RankedItem[] = (referrersResult.results ?? []).map(
+    (row) => ({ label: String(row[0]), count: Number(row[1]) })
   );
 
   // Top pages
@@ -157,8 +162,8 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     LIMIT 5
   `)) as { results?: unknown[][] };
 
-  const topPages = (pagesResult.results ?? []).map(
-    (row) => String(row[0])
+  const topPages: RankedItem[] = (pagesResult.results ?? []).map(
+    (row) => ({ label: String(row[0]), count: Number(row[1]) })
   );
 
   return {
