@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
                     "default-src 'self'",
                     "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://*.googletagmanager.com",
                     "style-src 'self' 'unsafe-inline'",
-                    "img-src 'self' data: blob: https://yt3.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com",
+                    "img-src 'self' data: blob: https://yt3.googleusercontent.com https://*.mzstatic.com https://*.google-analytics.com https://*.googletagmanager.com",
                     "media-src 'self' https://assets.whop.com",
                     "font-src 'self'",
                     "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
