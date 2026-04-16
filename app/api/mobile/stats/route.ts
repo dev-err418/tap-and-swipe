@@ -156,27 +156,27 @@ async function fetchNewsletterStats(): Promise<NewsletterStats> {
 
   const client = getGA4Client();
 
-  // Fetch top countries for newsletter pages
+  // Fetch top countries from newsletter_subscribe events
   const [countriesRes] = await client.runReport({
     property: `properties/${propertyId}`,
     dateRanges: [{ startDate: dateStr(7), endDate: dateStr(1) }],
     dimensions: [{ name: "country" }],
-    metrics: [{ name: "screenPageViews" }],
+    metrics: [{ name: "eventCount" }],
     dimensionFilter: {
       filter: {
-        fieldName: "pagePath",
-        stringFilter: { matchType: "CONTAINS", value: "/newsletter" },
+        fieldName: "eventName",
+        stringFilter: { value: "newsletter_subscribe" },
       },
     },
-    orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+    orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
     limit: 3,
   });
 
-  const topCountries = (countriesRes.rows ?? []).map(
-    (row) => row.dimensionValues?.[0]?.value ?? "Unknown"
-  );
+  const topCountries = (countriesRes.rows ?? [])
+    .map((row) => row.dimensionValues?.[0]?.value ?? "")
+    .filter((c) => c.length > 0);
 
-  // Fetch newsletter page visits (current vs previous week)
+  // Fetch homepage visits (current vs previous week)
   const [visitsRes] = await client.runReport({
     property: `properties/${propertyId}`,
     dateRanges: [
@@ -187,7 +187,7 @@ async function fetchNewsletterStats(): Promise<NewsletterStats> {
     dimensionFilter: {
       filter: {
         fieldName: "pagePath",
-        stringFilter: { matchType: "CONTAINS", value: "/newsletter" },
+        stringFilter: { matchType: "EXACT", value: "/" },
       },
     },
   });
