@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
   try {
     await sendPush(
       "\u{1F4B0} MRR Update",
-      `ASO: ${fmtDollars(Math.round(asoMrr))} · Community: ${fmtDollars(Math.round(commuMrr))} · Total: ${fmtDollars(totalMrr)}`
+      `ASO ${fmtDollars(Math.round(asoMrr))} + Community ${fmtDollars(Math.round(commuMrr))}\nTotal: ${fmtDollars(totalMrr)}`
     );
 
     await sendPush(
