@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { trackGA4Event } from "@/lib/ga4";
+import { getPostHogServer } from "@/lib/posthog";
 
 const NEWSLETTER_WEBHOOK =
   "https://discord.com/api/webhooks/1493954020082192536/DyIegwcMj7JXvqnRrWXLM1m1jKGYgkGplb6-jYqUAwF8OLKbgM6mBzuB79FDf2yRA4Tv";
@@ -71,11 +71,15 @@ export async function POST(req: Request) {
     }).catch((err) => console.error("Welcome email error:", err));
   }
 
-  // GA4 + Discord notification (best-effort, don't block response)
+  // PostHog + Discord notification (best-effort, don't block response)
   const h = await headers();
   const country = h.get("cf-ipcountry") || undefined;
 
-  trackGA4Event(email, "newsletter_subscribe", { country });
+  getPostHogServer().capture({
+    distinctId: email,
+    event: "newsletter_subscribe",
+    properties: { country: country ?? null },
+  });
 
   fetch(NEWSLETTER_WEBHOOK, {
     method: "POST",

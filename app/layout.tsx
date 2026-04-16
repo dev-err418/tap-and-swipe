@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import Script from "next/script";
+import { PostHogProvider } from "./providers";
 import "./globals.css";
 
 const uncutSans = localFont({
@@ -112,19 +112,8 @@ export default function RootLayout({
       <body
         className={`${uncutSans.variable} antialiased`}
       >
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
-      {process.env.NEXT_PUBLIC_GA_ID && (
-        <>
-          <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-            strategy="lazyOnload"
-          />
-          <Script id="ga-init" strategy="lazyOnload">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${process.env.NEXT_PUBLIC_GA_ID}');`}
-          </Script>
-        </>
-      )}
     </html>
   );
 }

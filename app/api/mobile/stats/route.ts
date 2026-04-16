@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { BetaAnalyticsDataClient } from "@google-analytics/data";
 
 // ── Auth ────────────────────────────────────────────────────────────────
 function isAuthorized(req: Request): boolean {
@@ -27,7 +26,6 @@ function dateStr(daysAgo: number): string {
 
 // ── Whop MRR ────────────────────────────────────────────────────────────
 async function fetchWhopMrr(apiKey: string): Promise<number> {
-  // 1. Fetch all plans → build plan_id → monthly price map
   const planPrices = new Map<string, number>();
 
   let planPage = 1;
@@ -45,7 +43,6 @@ async function fetchWhopMrr(apiKey: string): Promise<number> {
       const id = plan.id as string;
       const renewalAmount = Number(plan.renewal_price ?? plan.initial_price ?? 0);
       const billingPeriod = Number(plan.billing_period ?? 30);
-      // Normalize to monthly (prices in USD)
       const monthly = billingPeriod > 0 ? (renewalAmount / billingPeriod) * 30 : 0;
       planPrices.set(id, monthly);
     }
@@ -56,7 +53,6 @@ async function fetchWhopMrr(apiKey: string): Promise<number> {
     planPage++;
   }
 
-  // 2. Fetch all active memberships → sum MRR
   let mrr = 0;
   let memberPage = 1;
   let hasMore = true;
@@ -109,35 +105,48 @@ async function fetchSubscriberCount(): Promise<number> {
   return list?.subscriber_count ?? 0;
 }
 
-// ── GA4 helpers ─────────────────────────────────────────────────────────
-function getGA4Client() {
-  const base64 = process.env.GOOGLE_SERVICE_ACCOUNT_JSON!;
-  const json = Buffer.from(base64, "base64").toString("utf-8");
-  const credentials = JSON.parse(json);
-  return new BetaAnalyticsDataClient({ credentials });
+// ── PostHog helpers ─────────────────────────────────────────────────────
+const PH_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
+const PH_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY!;
+
+async function posthogQuery(query: string): Promise<Record<string, unknown>> {
+  const res = await fetch(`${PH_HOST}/api/projects/@current/query`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.POSTHOG_PERSONAL_API_KEY}`,
+    },
+    body: JSON.stringify({ query: { kind: "HogQLQuery", query } }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`PostHog query API: ${res.status} ${text}`);
+  }
+  return res.json();
 }
 
 async function fetchWebTraffic(): Promise<Metric> {
-  const propertyId = process.env.GA4_PROPERTY_ID_WEBSITE;
-  if (!propertyId) throw new Error("Missing GA4_PROPERTY_ID_WEBSITE");
+  const current7 = dateStr(7);
+  const current1 = dateStr(1);
+  const prev14 = dateStr(14);
+  const prev8 = dateStr(8);
 
-  const client = getGA4Client();
-  const [response] = await client.runReport({
-    property: `properties/${propertyId}`,
-    dateRanges: [
-      { startDate: dateStr(7), endDate: dateStr(1) },
-      { startDate: dateStr(14), endDate: dateStr(8) },
-    ],
-    metrics: [{ name: "sessions" }],
-  });
+  const result = (await posthogQuery(`
+    SELECT
+      if(timestamp >= toDate('${current7}') AND timestamp <= toDate('${current1}'), 'current', 'previous') AS period,
+      count(DISTINCT "$session_id") AS sessions
+    FROM events
+    WHERE event = '$pageview'
+      AND timestamp >= toDate('${prev14}')
+      AND timestamp <= toDate('${current1}')
+    GROUP BY period
+  `)) as { results?: unknown[][] };
 
   let current = 0;
   let previous = 0;
-  for (const row of response.rows ?? []) {
-    const dateRange = row.dimensionValues?.[0]?.value ?? "date_range_0";
-    const val = parseInt(row.metricValues?.[0]?.value ?? "0", 10);
-    if (dateRange === "date_range_0") current = val;
-    else if (dateRange === "date_range_1") previous = val;
+  for (const row of result.results ?? []) {
+    if (row[0] === "current") current = Number(row[1]);
+    else if (row[0] === "previous") previous = Number(row[1]);
   }
 
   return { value: current, change: pctChange(current, previous) };
@@ -151,79 +160,65 @@ interface NewsletterStats {
 }
 
 async function fetchNewsletterStats(): Promise<NewsletterStats> {
-  const propertyId = process.env.GA4_PROPERTY_ID_WEBSITE;
-  if (!propertyId) throw new Error("Missing GA4_PROPERTY_ID_WEBSITE");
+  const current7 = dateStr(7);
+  const current1 = dateStr(1);
+  const prev14 = dateStr(14);
+  const prev8 = dateStr(8);
 
-  const client = getGA4Client();
+  // Top countries from newsletter_subscribe events
+  const countriesResult = (await posthogQuery(`
+    SELECT properties.$geoip_country_code AS country, count() AS cnt
+    FROM events
+    WHERE event = 'newsletter_subscribe'
+      AND timestamp >= toDate('${current7}')
+      AND timestamp <= toDate('${current1}')
+      AND country IS NOT NULL AND country != ''
+    GROUP BY country
+    ORDER BY cnt DESC
+    LIMIT 3
+  `)) as { results?: unknown[][] };
 
-  // Fetch top countries from newsletter_subscribe events
-  const [countriesRes] = await client.runReport({
-    property: `properties/${propertyId}`,
-    dateRanges: [{ startDate: dateStr(7), endDate: dateStr(1) }],
-    dimensions: [{ name: "country" }],
-    metrics: [{ name: "eventCount" }],
-    dimensionFilter: {
-      filter: {
-        fieldName: "eventName",
-        stringFilter: { value: "newsletter_subscribe" },
-      },
-    },
-    orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
-    limit: 3,
-  });
+  const topCountries = (countriesResult.results ?? []).map(
+    (row) => String(row[0])
+  );
 
-  const topCountries = (countriesRes.rows ?? [])
-    .map((row) => row.dimensionValues?.[0]?.value ?? "")
-    .filter((c) => c.length > 0);
-
-  // Fetch homepage visits (current vs previous week)
-  const [visitsRes] = await client.runReport({
-    property: `properties/${propertyId}`,
-    dateRanges: [
-      { startDate: dateStr(7), endDate: dateStr(1) },
-      { startDate: dateStr(14), endDate: dateStr(8) },
-    ],
-    metrics: [{ name: "screenPageViews" }],
-    dimensionFilter: {
-      filter: {
-        fieldName: "pagePath",
-        stringFilter: { matchType: "EXACT", value: "/" },
-      },
-    },
-  });
+  // Homepage visits (current vs previous week)
+  const visitsResult = (await posthogQuery(`
+    SELECT
+      if(timestamp >= toDate('${current7}') AND timestamp <= toDate('${current1}'), 'current', 'previous') AS period,
+      count() AS views
+    FROM events
+    WHERE event = '$pageview'
+      AND properties.$pathname = '/'
+      AND timestamp >= toDate('${prev14}')
+      AND timestamp <= toDate('${current1}')
+    GROUP BY period
+  `)) as { results?: unknown[][] };
 
   let visitsCurrent = 0;
   let visitsPrevious = 0;
-  for (const row of visitsRes.rows ?? []) {
-    const dr = row.dimensionValues?.[0]?.value ?? "date_range_0";
-    const val = parseInt(row.metricValues?.[0]?.value ?? "0", 10);
-    if (dr === "date_range_0") visitsCurrent = val;
-    else if (dr === "date_range_1") visitsPrevious = val;
+  for (const row of visitsResult.results ?? []) {
+    if (row[0] === "current") visitsCurrent = Number(row[1]);
+    else if (row[0] === "previous") visitsPrevious = Number(row[1]);
   }
 
-  // Fetch newsletter_subscribe event count (current vs previous week)
-  const [conversionsRes] = await client.runReport({
-    property: `properties/${propertyId}`,
-    dateRanges: [
-      { startDate: dateStr(7), endDate: dateStr(1) },
-      { startDate: dateStr(14), endDate: dateStr(8) },
-    ],
-    metrics: [{ name: "eventCount" }],
-    dimensionFilter: {
-      filter: {
-        fieldName: "eventName",
-        stringFilter: { value: "newsletter_subscribe" },
-      },
-    },
-  });
+  // Newsletter subscribe events (current vs previous week)
+  const convResult = (await posthogQuery(`
+    SELECT
+      if(timestamp >= toDate('${current7}') AND timestamp <= toDate('${current1}'), 'current', 'previous') AS period,
+      count() AS cnt
+    FROM events
+    WHERE event = 'newsletter_subscribe'
+      AND timestamp >= toDate('${prev14}')
+      AND timestamp <= toDate('${current1}')
+    GROUP BY period
+  `)) as { results?: unknown[][] };
 
   let convCurrent = 0;
   let convPrevious = 0;
-  for (const row of conversionsRes.rows ?? []) {
-    const dr = row.dimensionValues?.[0]?.value ?? "date_range_0";
-    const val = parseInt(row.metricValues?.[0]?.value ?? "0", 10);
-    if (dr === "date_range_0") convCurrent = val;
-    else if (dr === "date_range_1") convPrevious = val;
+  for (const row of convResult.results ?? []) {
+    if (row[0] === "current") convCurrent = Number(row[1]);
+    else if (row[0] === "previous") convPrevious = Number(row[1]);
   }
 
   const crCurrent =

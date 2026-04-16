@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         Privacy Policy
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Last updated: April 15, 2026
+        Last updated: April 16, 2026
       </p>
 
       <div className="prose-site mt-10 space-y-8 leading-relaxed text-muted-foreground">
@@ -63,19 +63,11 @@ export default function PrivacyPage() {
             Website Analytics
           </h3>
           <p className="mt-2">
-            Our website uses Google Analytics 4 (provided by Google Ireland
-            Limited) to collect anonymized usage data such as pages visited,
-            approximate geographic region, device type, and referral source.
-            Google Analytics may use cookies to distinguish unique visitors. You
-            can opt out of Google Analytics tracking by installing the{" "}
-            <a
-              href="https://tools.google.com/dlpage/gaoptout"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Google Analytics Opt-out Browser Add-on
-            </a>
-            .
+            Our website uses PostHog (hosted in the EU) to collect anonymized
+            usage data such as pages visited, approximate geographic region,
+            device type, and referral source. PostHog does not use cookies for
+            tracking. No personal data is shared with third parties through this
+            service.
           </p>
         </section>
 
@@ -139,11 +131,10 @@ export default function PrivacyPage() {
                   <td className="py-2">Hosted on our own infrastructure</td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4">Google Analytics 4</td>
+                  <td className="py-2 pr-4">PostHog</td>
                   <td className="py-2 pr-4">Website analytics</td>
                   <td className="py-2">
-                    Google Ireland Limited (Ireland), data may be transferred to
-                    the US under EU-US Data Privacy Framework
+                    PostHog Inc., EU data region (Frankfurt, Germany)
                   </td>
                 </tr>
               </tbody>
@@ -161,10 +152,11 @@ export default function PrivacyPage() {
             Data Transfers Outside the EU
           </h2>
           <p className="mt-2">
-            Amazon Web Services and Google may process data outside the European
-            Economic Area. These transfers are safeguarded by Standard
-            Contractual Clauses (SCCs) and, where applicable, the EU-US Data
-            Privacy Framework. You can learn more at{" "}
+            Amazon Web Services may process data outside the European Economic
+            Area. These transfers are safeguarded by Standard Contractual
+            Clauses (SCCs) and, where applicable, the EU-US Data Privacy
+            Framework. PostHog data is stored in the EU (Frankfurt). You can
+            learn more at{" "}
             <a
               href="https://aws.amazon.com/compliance/gdpr-center/"
               target="_blank"
@@ -174,11 +166,11 @@ export default function PrivacyPage() {
             </a>{" "}
             and{" "}
             <a
-              href="https://policies.google.com/privacy"
+              href="https://posthog.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Google&apos;s Privacy Policy
+              PostHog&apos;s Privacy Policy
             </a>
             .
           </p>
@@ -193,8 +185,7 @@ export default function PrivacyPage() {
             We retain your email address for as long as you remain subscribed to
             our newsletter. If you unsubscribe, your email is removed from our
             active mailing list and added to a suppression list to prevent future
-            sends. Website analytics data is retained according to Google
-            Analytics&apos; default retention settings (currently 14 months).
+            sends. Website analytics data is retained for 12 months.
           </p>
         </section>
 
