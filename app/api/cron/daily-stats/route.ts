@@ -129,6 +129,9 @@ export async function GET(request: NextRequest) {
 
   const totalMrr = Math.round(asoMrr + commuMrr);
 
+  // Debug: log APNS config
+  console.log(`[daily-stats] APNS host=${process.env.APNS_SANDBOX === "true" ? "sandbox" : "production"} token=${process.env.APNS_DEVICE_TOKEN?.slice(0, 8)}... bundle=${process.env.APP_BUNDLE_ID}`);
+
   // Send push notifications (these can still fail the route)
   try {
     await sendPush(
