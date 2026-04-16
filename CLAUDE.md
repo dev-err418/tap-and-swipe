@@ -24,7 +24,7 @@ Next.js 16 (App Router), React 19, TypeScript, TailwindCSS 4, shadcn/ui (New Yor
 
 This codebase is the landing + course platform for several products:
 
-- **App Sprint Community** (`/app-sprint-community`) — the main product: a paid community + course roadmap teaching users to build and monetize iOS apps. Checkout via Stripe (`/api/checkout`) or Paddle (`/api/checkout/paddle`).
+- **App Sprint Community** (`/app-sprint-community`) — the main product: a paid community + course roadmap teaching users to build and monetize iOS apps. Checkout via Stripe (`/api/checkout`).
 - **ASO product** (`/aso`) — App Store Optimization Mac app with its own Stripe checkout (`/api/aso/checkout`), license key system, and separate database (`ASO_DATABASE_URL`).
 - **Bundles** — combined Community + ASO packages (`/api/checkout/bundle`, `/api/aso/checkout-bundle`).
 - **Quiz funnel** (`/app-sprint` landing) — lead generation quiz that captures QuizLead records and routes leads to booking/WhatsApp.
@@ -57,11 +57,10 @@ Session helpers in `lib/session.ts`.
 Multiple payment providers, each with webhook handlers in `/api/webhooks/`:
 
 - **Stripe** — Community subscription (`/api/checkout`), ASO subscription (`/api/aso/checkout`), bundles. Community subscribers also get an ASO Pro license emailed automatically.
-- **Paddle** — alternative Community checkout (`/api/checkout/paddle`).
 - **Whop** — marketplace integration.
 - **RevenueCat** — mobile in-app subscription events for the Glow and Bible apps. Stores RevenueCatEvent records (used for daily stats) and posts notifications to Discord. Does NOT update User records.
 
-Stripe/Paddle/Whop webhooks update User records (subscriptionStatus, paymentProvider, roleGranted). The `roleGranted` flag is set when a Discord role is successfully granted.
+Stripe/Whop webhooks update User records (subscriptionStatus, paymentProvider, roleGranted). The `roleGranted` flag is set when a Discord role is successfully granted.
 
 ### Discord Integration
 

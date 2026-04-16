@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { addToGuild, addRole, removeRole } from "@/lib/discord";
-import { sendFraudAlert, sendDiscordNotification } from "@/lib/discord-webhook";
+import { sendFraudAlert } from "@/lib/discord-webhook";
 import { isDisposableEmail } from "@/lib/fraud";
 import { generateAsoLicense, deactivateAsoLicenses, reactivateAsoLicenses } from "@/lib/aso-db";
 import { sendLicenseKeyEmail } from "@/lib/aso-email";
@@ -49,17 +49,6 @@ export async function POST(request: NextRequest) {
         if (!isCommunitySubscription(subscription)) break;
 
         const discordId = subscription.metadata.discordId;
-
-        // Discord notification
-        await sendDiscordNotification(
-          "New Community Subscription",
-          undefined,
-          [
-            { name: "Email", value: session.customer_details?.email || "—", inline: true },
-            { name: "Discord", value: `<@${discordId}>`, inline: true },
-            { name: "Customer", value: session.customer as string, inline: true },
-          ],
-        ).catch(() => {});
 
         // Look up the stored access token to add user to guild
         const dbUser = await prisma.user.findUnique({ where: { discordId } });

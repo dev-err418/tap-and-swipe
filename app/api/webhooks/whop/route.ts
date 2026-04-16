@@ -8,7 +8,6 @@ import {
   reactivateAsoLicensesByWhop,
 } from "@/lib/aso-db";
 import { sendLicenseKeyEmail } from "@/lib/aso-email";
-import { sendDiscordNotification } from "@/lib/discord-webhook";
 
 function extractDiscord(data: Record<string, unknown>): {
   id: string;
@@ -190,19 +189,6 @@ export async function POST(request: NextRequest) {
               );
             }
           }
-
-          // Discord notification
-          await sendDiscordNotification(
-            isTrial ? "New Community Trial (Whop)" : "New Community Subscription (Whop)",
-            undefined,
-            [
-              { name: "Discord", value: discord.username, inline: true },
-              { name: "Status", value: isTrial ? "Trialing" : "Active", inline: true },
-              ...(email ? [{ name: "Email", value: email, inline: true }] : []),
-              { name: "Membership", value: membershipId, inline: true },
-            ],
-            isTrial ? 0xf4cf8f : 0x57f287
-          ).catch(() => {});
 
           console.log(
             `[whop] membership.activated — discordId=${discord.id} roleGranted=${roleGranted}`
