@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { FadeIn } from "./fade-in";
 import { FloatingAppIcons } from "./FloatingAppIcons";
 
 function Spinner() {
@@ -65,7 +64,7 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
         </div>
 
         {showSubscribe && (
-          <FadeIn delay={0.35} y={20}>
+          <div className="animate-fade-in-up" style={{ animationDelay: "0.35s" }}>
             {status === "ok" ? (
               <p className="mt-10 text-sm font-medium text-emerald-600">Check your inbox! Welcome in.</p>
             ) : (
@@ -98,7 +97,7 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
                 <p className="pl-5 text-xs text-black/50">One email per episode. No spam, ever. <a href="/privacy" className="underline hover:text-black/60">Privacy</a></p>
               </form>
             )}
-          </FadeIn>
+          </div>
         )}
       </div>
 
