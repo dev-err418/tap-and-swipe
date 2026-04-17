@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import AppLandingPage from "@/components/app-landing";
 
 export const metadata: Metadata = {
-  title: "Lua — Pregnancy Tracker",
+  title: "Bump Chat — Pregnancy Tracker & Kick Counter",
   description:
-    "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more. Download Lua on the App Store.",
+    "Track your pregnancy week by week. Kick counter, contraction timer, bump photo journal, and hospital bag checklist. Download Bump Chat on the App Store.",
   keywords: [
     "pregnancy tracker app",
     "kick counter app",
@@ -17,11 +18,12 @@ export const metadata: Metadata = {
     "prenatal app",
     "expecting mom app",
     "pregnancy countdown",
+    "bump chat",
   ],
   openGraph: {
-    title: "Lua — Pregnancy Tracker",
+    title: "Bump Chat — Pregnancy Tracker & Kick Counter",
     description:
-      "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more. Download Lua on the App Store.",
+      "Track your pregnancy week by week. Kick counter, contraction timer, bump photo journal, and hospital bag checklist. Download Bump Chat on the App Store.",
     type: "website",
     locale: "en_US",
     siteName: "Tap & Swipe",
@@ -30,9 +32,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     creator: "@arthursbuilds",
-    title: "Lua — Pregnancy Tracker",
+    title: "Bump Chat — Pregnancy Tracker & Kick Counter",
     description:
-      "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more. Download Lua on the App Store.",
+      "Track your pregnancy week by week. Kick counter, contraction timer, bump photo journal, and hospital bag checklist. Download Bump Chat on the App Store.",
     images: ["/opengraph-image.png"],
   },
   alternates: {
@@ -40,14 +42,24 @@ export const metadata: Metadata = {
   },
 };
 
-const luaJsonLd = {
+const bumpChatJsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "Lua — Pregnancy Tracker",
+  name: "Bump Chat - Pregnancy Tracker",
   description:
-    "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more.",
+    "Track your pregnancy week by week. Kick counter, contraction timer, bump photo journal, and hospital bag checklist.",
   applicationCategory: "HealthApplication",
   operatingSystem: "iOS",
+  author: {
+    "@type": "Organization",
+    name: "Tap & Swipe",
+  },
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "5.0",
+    ratingCount: "1",
+    bestRating: "5",
+  },
   offers: {
     "@type": "Offer",
     price: "0",
@@ -56,71 +68,59 @@ const luaJsonLd = {
   downloadUrl: "https://apps.apple.com/app/id6759303663",
 };
 
+const features = [
+  {
+    title: "📅 Pregnancy Week by Week Tracker",
+    description:
+      "See your baby's size and development milestones every week, from week 4 all the way to 40.",
+  },
+  {
+    title: "👣 Baby Kick Counter",
+    description:
+      "Count movements with a single tap. Save sessions and share kick reports with your doctor.",
+  },
+  {
+    title: "⏱️ Contraction Timer for Labor",
+    description:
+      "Track how long contractions last, how often they come, and the rest time in between.",
+  },
+  {
+    title: "📸 Pregnancy Bump Photo Journal",
+    description:
+      "Take bump photos month by month and watch your pregnancy timeline come together.",
+  },
+];
+
 export default function LuaPage() {
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(luaJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(bumpChatJsonLd) }}
       />
-      <main className="relative z-10 flex min-h-screen flex-col items-center justify-between px-4 py-8 selection:bg-[#D6779A]/20"
-      style={{ backgroundColor: "#FFF8F2", color: "#2D2D3A" }}
-    >
-      <div />
-
-      <section className="flex flex-col items-center justify-center text-center">
-        <h1
-          className="font-serif text-6xl font-semibold tracking-tight sm:text-7xl md:text-8xl lg:text-9xl"
-          style={{ color: "#D6779A" }}
-        >
-          Lua
-        </h1>
-
-        <p
-          className="mt-4 text-lg font-medium sm:text-xl"
-          style={{ color: "#2D2D3A" }}
-        >
-          Pregnancy Tracker
-        </p>
-
-        <p
-          className="mt-3 max-w-md text-base"
-          style={{ color: "#6B6B7B" }}
-        >
-          Week by week tracking, kick counter, contraction timer, and everything you need for your pregnancy journey.
-        </p>
-
-        <div className="mt-10">
-          <a
-            href="https://apps.apple.com/app/id6759303663"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-14 items-center justify-center rounded-full px-10 text-base font-semibold text-white transition-all hover:opacity-90 hover:ring-4"
-            style={{
-              backgroundColor: "#D6779A",
-              // @ts-expect-error custom hover ring
-              "--tw-ring-color": "rgba(214, 119, 154, 0.2)",
-            }}
-          >
-            <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-            </svg>
-            Download on the App Store
-          </a>
-        </div>
-      </section>
-
-      <footer className="w-full text-center text-sm" style={{ color: "#9B9BAB" }}>
-        <p className="font-semibold" style={{ color: "#2D2D3A" }}>TAP &amp; SWIPE</p>
-        <p className="mt-1">
-          <a href="/lua/privacy" className="underline hover:opacity-70">Privacy</a>
-          {" · "}
-          <a href="/lua/terms" className="underline hover:opacity-70">Terms</a>
-          {" · "}
-          <a href="/lua/support" className="underline hover:opacity-70">Support</a>
-        </p>
-      </footer>
-    </main>
+      <AppLandingPage
+        name="Bump Chat"
+        tagline="Baby Kick & Contraction Timer"
+        description="Bump Chat takes you through your pregnancy week by week. Each week shows how big your baby is (with fun size comparisons), what's developing, and what to expect. Count kicks with a single tap and save the session to share with your doctor. When contractions start, the built-in timer tracks duration and frequency so you can tell when it's time to go. There's also a bump photo journal to capture your growth month by month and a hospital bag checklist to make sure you're ready."
+        iconUrl="/community-icons/bump-chat.jpg"
+        appStoreUrl="https://apps.apple.com/app/id6759303663"
+        rating={5.0}
+        ratingCount={1}
+        features={features}
+        tint={{
+          bg: "#FFF8F2",
+          accent: "#D6779A",
+          text: "#3d2525",
+          muted: "#7a5757",
+          buttonBg: "#C4547A",
+          buttonRing: "rgba(196, 84, 122, 0.25)",
+        }}
+        legal={{
+          privacyUrl: "/lua/privacy",
+          termsUrl: "/lua/terms",
+          supportUrl: "/lua/support",
+        }}
+      />
     </>
   );
 }
