@@ -175,6 +175,10 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
     "www.instagram.com": "Instagram",
     "www.tiktok.com": "TikTok",
     "www.linkedin.com": "LinkedIn",
+    "linkedin.com": "LinkedIn",
+    "discord.com": "Discord",
+    "www.discord.com": "Discord",
+    "discord.gg": "Discord",
     "tap-and-swipe.com": "t&s.com",
     "www.tap-and-swipe.com": "t&s.com",
   };
