@@ -192,9 +192,7 @@ export default async function EpisodePage({
       headline: episode.title,
       description: episode.description,
       datePublished: new Date(episode.date).toISOString(),
-      ...(episode.updatedDate && {
-        dateModified: new Date(episode.updatedDate).toISOString(),
-      }),
+      dateModified: new Date(episode.updatedDate || episode.date).toISOString(),
       author: {
         "@type": "Person",
         name: "Arthur",

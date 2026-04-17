@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import LandingPage from "@/components/LandingPage";
 import AppSprintJsonLd from "@/components/AppSprintJsonLd";
 import FaqJsonLd from "@/components/FaqJsonLd";
-import ReviewsJsonLd from "@/components/ReviewsJsonLd";
+
 
 export const metadata: Metadata = {
   title: "AppSprint — Build a Mobile App in Weeks, Not Months",
@@ -44,7 +44,6 @@ export default function AppSprintPage({
     <>
       <AppSprintJsonLd />
       <FaqJsonLd />
-      <ReviewsJsonLd />
       <LandingPage searchParams={searchParams} />
     </>
   );

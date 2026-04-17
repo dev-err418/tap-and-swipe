@@ -89,6 +89,8 @@ const organizationJsonLd = {
     email: "arthurs.dev@gmail.com",
     contactType: "customer support",
   },
+  legalName: "TAP & SWIPE SAS",
+  taxID: "100454206",
   address: {
     "@type": "PostalAddress",
     addressCountry: "FR",

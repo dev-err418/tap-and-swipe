@@ -24,6 +24,17 @@ export const metadata: Metadata = {
 export default function EpisodesPage() {
   const episodes = getAllEpisodes();
 
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "All Episodes — Tap & Swipe",
+    itemListElement: episodes.map((ep, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `https://tap-and-swipe.com/episodes/${ep.slug}`,
+    })),
+  };
+
   const enriched: EpisodeWithGenres[] = episodes.map((ep) => {
     const appData = getAppData(ep.slug);
     // Deduplicate genres across iOS and Android
@@ -35,6 +46,11 @@ export default function EpisodesPage() {
   });
 
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
     <div className="mx-auto w-full max-w-5xl px-6 py-20">
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         All Episodes
@@ -45,5 +61,6 @@ export default function EpisodesPage() {
 
       <EpisodesPageClient episodes={enriched} />
     </div>
+    </>
   );
 }
