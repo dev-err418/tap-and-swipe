@@ -81,6 +81,44 @@ async function fetchTodayRevenue(): Promise<number> {
   return Math.round(total) / 100;
 }
 
+// ── Today's new ASO trials (Stripe) ──────────────────────────────────
+async function fetchTodayNewTrials(): Promise<number> {
+  const now = new Date();
+  const cestOffset = 2 * 60 * 60 * 1000;
+  const cestNow = new Date(now.getTime() + cestOffset);
+  const startOfDayCEST = new Date(
+    Date.UTC(cestNow.getUTCFullYear(), cestNow.getUTCMonth(), cestNow.getUTCDate())
+  );
+  const startUtc = Math.floor(
+    (startOfDayCEST.getTime() - cestOffset) / 1000
+  );
+
+  let count = 0;
+  let hasMore = true;
+  let startingAfter: string | undefined;
+
+  while (hasMore) {
+    const params: Record<string, unknown> = {
+      status: "trialing",
+      created: { gte: startUtc },
+      limit: 100,
+    };
+    if (startingAfter) params.starting_after = startingAfter;
+
+    const subs = await stripe.subscriptions.list(
+      params as Parameters<typeof stripe.subscriptions.list>[0]
+    );
+
+    count += subs.data.length;
+    hasMore = subs.has_more;
+    if (subs.data.length > 0) {
+      startingAfter = subs.data[subs.data.length - 1].id;
+    }
+  }
+
+  return count;
+}
+
 // ── Format helpers ──────────────────────────────────────────────────────
 function fmtDollars(amount: number): string {
   return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -102,24 +140,27 @@ export async function GET(request: NextRequest) {
   const errors: string[] = [];
 
   // Fetch all data in parallel, tolerating individual failures
-  const [asoResult, commuResult, subsResult, revenueResult] =
+  const [asoResult, commuResult, subsResult, revenueResult, trialsResult] =
     await Promise.allSettled([
       fetchWhopMrr(process.env.WHOP_ASO_API_KEY!),
       fetchWhopMrr(process.env.WHOP_COMMUNITY_API_KEY!),
       fetchTodayNewSubs(),
       fetchTodayRevenue(),
+      fetchTodayNewTrials(),
     ]);
 
   const asoMrr = asoResult.status === "fulfilled" ? asoResult.value : 0;
   const commuMrr = commuResult.status === "fulfilled" ? commuResult.value : 0;
   const todaySubs = subsResult.status === "fulfilled" ? subsResult.value : 0;
   const todayRevenue = revenueResult.status === "fulfilled" ? revenueResult.value : 0;
+  const todayTrials = trialsResult.status === "fulfilled" ? trialsResult.value : 0;
 
   for (const [name, result] of [
     ["asoMrr", asoResult],
     ["commuMrr", commuResult],
     ["todaySubs", subsResult],
     ["todayRevenue", revenueResult],
+    ["todayTrials", trialsResult],
   ] as const) {
     if (result.status === "rejected") {
       const msg = result.reason instanceof Error ? result.reason.message : String(result.reason);
@@ -142,7 +183,7 @@ export async function GET(request: NextRequest) {
 
     await sendPush(
       "\u{1F4C8} Today's Stats",
-      `+${todaySubs} subs · ${fmtRevenue(todayRevenue)} revenue`
+      `+${todaySubs} subs · ${todayTrials} trials · ${fmtRevenue(todayRevenue)} revenue`
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -151,7 +192,7 @@ export async function GET(request: NextRequest) {
   }
 
   console.log(
-    `[daily-stats] MRR: ASO=${asoMrr} Community=${commuMrr} | Subs=${todaySubs} Revenue=${todayRevenue}`
+    `[daily-stats] MRR: ASO=${asoMrr} Community=${commuMrr} | Subs=${todaySubs} Trials=${todayTrials} Revenue=${todayRevenue}`
   );
 
   return NextResponse.json({
@@ -159,6 +200,7 @@ export async function GET(request: NextRequest) {
     commuMrr,
     totalMrr,
     todaySubs,
+    todayTrials,
     todayRevenue,
     ...(errors.length > 0 ? { errors } : {}),
     _debug: {
