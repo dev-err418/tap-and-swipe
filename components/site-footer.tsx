@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border px-6 py-10 text-sm text-foreground/40">
+    <footer className="border-t border-border px-6 py-10 text-sm text-foreground/60">
       <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-[2fr_1fr_1fr_1fr]">
         <div>
           <p className="font-semibold text-foreground/80">Tap &amp; Swipe</p>

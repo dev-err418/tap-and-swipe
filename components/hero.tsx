@@ -59,7 +59,7 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
         </FadeIn>
 
         <FadeIn delay={0.2} y={20}>
-          <p className="mt-6 mx-auto max-w-xl text-base text-black/50 sm:text-lg">
+          <p className="mt-6 mx-auto max-w-xl text-base text-black/60 sm:text-lg">
             Every week I sit down with an app builder and ask them everything: the idea, the grind, the failures, and what finally worked.
           </p>
         </FadeIn>
@@ -95,7 +95,7 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
                 {status === "error" && (
                   <p className="pl-5 text-xs text-red-500">Something went wrong. Try again.</p>
                 )}
-                <p className="pl-5 text-xs text-black/30">One email per episode. No spam, ever. <a href="/privacy" className="underline hover:text-black/50">Privacy</a></p>
+                <p className="pl-5 text-xs text-black/50">One email per episode. No spam, ever. <a href="/privacy" className="underline hover:text-black/60">Privacy</a></p>
               </form>
             )}
           </FadeIn>

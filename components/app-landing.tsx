@@ -179,7 +179,7 @@ export default function AppLandingPage({
                 <p className="mt-3 text-sm leading-relaxed">
                   &ldquo;{review.text}&rdquo;
                 </p>
-                <p className="mt-3 text-xs text-black/40">
+                <p className="mt-3 text-xs text-black/60">
                   {review.author} · {review.date}
                 </p>
               </div>
@@ -234,7 +234,7 @@ export default function AppLandingPage({
       )}
 
       {/* Footer */}
-      <footer className="mt-20 w-full text-center text-sm text-black/40 sm:mt-24">
+      <footer className="mt-20 w-full text-center text-sm text-black/60 sm:mt-24">
         <p className="font-semibold text-black">
           TAP &amp; SWIPE
         </p>
