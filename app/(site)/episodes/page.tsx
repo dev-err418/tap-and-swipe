@@ -15,6 +15,7 @@ export const metadata: Metadata = {
     description:
       "Browse every Tap & Swipe episode. Real stories from indie app makers — the ideas, the grind, and what finally worked.",
     url: "https://tap-and-swipe.com/episodes",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
   },
   alternates: {
     canonical: "/episodes",

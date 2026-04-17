@@ -51,9 +51,9 @@ export async function generateMetadata({
         modifiedTime: new Date(episode.updatedDate).toISOString(),
       }),
       tags: episode.tags,
-      ...(episode.image && {
-        images: [{ url: episode.image, alt: episode.imageAlt || episode.title }],
-      }),
+      images: episode.image
+        ? [{ url: episode.image, alt: episode.imageAlt || episode.title }]
+        : [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
     },
     twitter: {
       title: episode.title,

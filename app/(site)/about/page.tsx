@@ -14,6 +14,7 @@ export const metadata: Metadata = {
     description:
       "I'm Arthur. I'm 22, French, and I build mobile apps. Learn about my journey from freelancing to building a portfolio of apps hitting 12K EUR MRR.",
     url: `${BASE_URL}/about`,
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
   },
   twitter: {
     title: "About Arthur Spalanzani — Tap & Swipe",

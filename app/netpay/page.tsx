@@ -22,6 +22,7 @@ export const metadata: Metadata = {
     title: "NetPay — Paycheck Calculator",
     description:
       "Calculate your take-home pay, see tax breakdowns by state, and compare job offers side by side. Download NetPay on the App Store.",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
   },
   twitter: {
     title: "NetPay — Paycheck Calculator",

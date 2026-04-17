@@ -22,6 +22,7 @@ export const metadata: Metadata = {
     title: "Versy — Bible Verse Widget & Prayer",
     description:
       "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your home screen. Download Versy on the App Store.",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
   },
   twitter: {
     title: "Versy — Bible Verse Widget & Prayer",

@@ -22,6 +22,7 @@ export const metadata: Metadata = {
     title: "Lua — Pregnancy Tracker",
     description:
       "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more. Download Lua on the App Store.",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
   },
   twitter: {
     title: "Lua — Pregnancy Tracker",

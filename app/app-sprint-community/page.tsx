@@ -24,6 +24,7 @@ export const metadata: Metadata = {
     title: "AppSprint — Build a Mobile App in Weeks, Not Months",
     description:
       "Join the 6-week AppSprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating.",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
   },
   twitter: {
     title: "AppSprint — Build a Mobile App in Weeks, Not Months",

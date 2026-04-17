@@ -20,6 +20,7 @@ export const metadata: Metadata = {
     title: "Divvy — Bill Splitter",
     description:
       "Split bills, calculate tips, and track who owes what. Download Divvy on the App Store.",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
   },
   twitter: {
     title: "Divvy — Bill Splitter",

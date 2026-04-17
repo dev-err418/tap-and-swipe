@@ -33,6 +33,7 @@ export const metadata: Metadata = {
     title: "Tap & Swipe: Real Stories From People Building Mobile Apps",
     description:
       "Every week I sit down with an app builder and ask them everything: the idea, the grind, the failures, and what finally worked.",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
   },
   twitter: {
     title: "Tap & Swipe: Real Stories From People Building Mobile Apps",
