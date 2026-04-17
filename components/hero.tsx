@@ -51,11 +51,9 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
 
       {/* Center content */}
       <div className="relative z-10">
-        <div className="fade-in-up" style={{ animationDelay: "0.05s" }}>
-          <h1 className="max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
-            Real stories from people building mobile apps
-          </h1>
-        </div>
+        <h1 className="max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
+          Real stories from people building mobile apps
+        </h1>
 
         <div className="fade-in-up" style={{ animationDelay: "0.2s" }}>
           <p className="mt-6 mx-auto max-w-xl text-base text-black/60 sm:text-lg">
