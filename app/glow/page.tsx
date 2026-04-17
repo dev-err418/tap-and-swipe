@@ -53,6 +53,12 @@ const glowJsonLd = {
     "@type": "Organization",
     name: "Tap & Swipe",
   },
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "4.3",
+    ratingCount: "114",
+    bestRating: "5",
+  },
   offers: [
     {
       "@type": "Offer",
@@ -100,7 +106,31 @@ export default function GlowPage() {
         iconUrl="/community-icons/glow.jpg"
         appStoreUrl="https://apps.apple.com/app/id6753347459"
         playStoreUrl="https://play.google.com/store/apps/details?id=com.tapandswipe.glow"
+        rating={4.3}
+        ratingCount={114}
         features={features}
+        reviews={[
+          {
+            author: "Andremn07",
+            date: "Mar 5, 2026",
+            text: "That's a good app and is help me a lot",
+          },
+          {
+            author: "Oren Alalouf",
+            date: "Nov 1, 2025",
+            text: "Beautiful job, well done. Thank you. Just what I need",
+          },
+          {
+            author: "justmyhonestopinions",
+            date: "Nov 5, 2025",
+            text: "Every day I enjoy reading these pleasant reminders to stay happy and sane",
+          },
+          {
+            author: "L_farley13_l",
+            date: "Oct 31, 2025",
+            text: "It's not a complex app, but it's a bit like a friend texting you a tiny nice thing each day.",
+          },
+        ]}
         screenshots={[
           "/screenshots/glow/1.webp",
           "/screenshots/glow/2.webp",
