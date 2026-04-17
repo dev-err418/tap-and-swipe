@@ -105,6 +105,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://eu.i.posthog.com" />
+        <link rel="dns-prefetch" href="https://eu.i.posthog.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
