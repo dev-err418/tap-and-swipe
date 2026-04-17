@@ -75,12 +75,18 @@ const Pricing = () => {
                         </div>
 
                         <div className="flex -space-x-2 mt-6 justify-center">
-                            {["/jx_op.webp", "/luka.webp", "/jesse.webp", "/hnythng.webp", "/raphael.webp"].map((src, i) => (
+                            {[
+                                { src: "/jx_op.webp", name: "JX_Op" },
+                                { src: "/luka.webp", name: "Luka" },
+                                { src: "/jesse.webp", name: "Jesse" },
+                                { src: "/hnythng.webp", name: "Hnythng" },
+                                { src: "/raphael.webp", name: "Raphael" },
+                            ].map((member, i) => (
                                 <img
                                     key={i}
                                     className="h-9 w-9 rounded-full border-2 border-white object-cover"
-                                    src={src}
-                                    alt="Community member"
+                                    src={member.src}
+                                    alt={member.name}
                                     width={36}
                                     height={36}
                                     loading="lazy"

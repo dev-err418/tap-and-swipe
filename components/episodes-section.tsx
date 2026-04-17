@@ -33,6 +33,8 @@ function EpisodeThumbnail({
           <img
             src={image}
             alt={alt}
+            width={800}
+            height={450}
             className="h-full w-full rounded-xl object-cover transition-opacity group-hover:opacity-90"
           />
         ) : (

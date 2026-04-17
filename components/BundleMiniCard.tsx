@@ -5,7 +5,7 @@ interface BundleMiniCardProps {
     tagline: string;
     value?: string;
     features: string[];
-    avatars?: string[];
+    avatars?: { src: string; name: string }[];
     icon?: string;
     href?: string;
 }
@@ -29,12 +29,12 @@ export default function BundleMiniCard({ name, tagline, value, features, avatars
             <p className="text-sm text-black/50 mb-4">{tagline}</p>
             {avatars && (
                 <div className="flex -space-x-2 mb-4">
-                    {avatars.map((src, i) => (
+                    {avatars.map((avatar, i) => (
                         <img
                             key={i}
                             className="h-9 w-9 rounded-full border-2 border-white object-cover"
-                            src={src}
-                            alt="Community member"
+                            src={avatar.src}
+                            alt={avatar.name}
                             width={36}
                             height={36}
                             loading="lazy"

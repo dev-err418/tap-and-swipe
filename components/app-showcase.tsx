@@ -234,6 +234,8 @@ export function AppShowcase({ data }: { data: AppData }) {
               key={`${activePlatform}-${i}`}
               src={src}
               alt={`${activePlatform === "ios" ? "iOS" : "Android"} screenshot ${i + 1}`}
+              width={280}
+              height={560}
               className="h-[280px] w-auto shrink-0 rounded-lg"
             />
           ))}

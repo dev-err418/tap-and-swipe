@@ -289,6 +289,8 @@ export default async function EpisodePage({
                 <img
                   src={episode.image}
                   alt={episode.imageAlt || episode.title}
+                  width={1200}
+                  height={675}
                   fetchPriority="high"
                   className="h-full w-full object-cover"
                 />
@@ -324,6 +326,8 @@ export default async function EpisodePage({
                         <img
                           src={ep.image}
                           alt={ep.title}
+                          width={320}
+                          height={180}
                           className="h-full w-full object-cover"
                         />
                       ) : (

@@ -152,6 +152,8 @@ export function EpisodesPageClient({
                   <img
                     src={ep.image}
                     alt={ep.imageAlt || ep.title}
+                    width={800}
+                    height={450}
                     className="h-full w-full rounded-xl object-cover transition-opacity group-hover:opacity-90"
                   />
                 ) : (

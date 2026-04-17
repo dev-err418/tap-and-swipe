@@ -164,9 +164,9 @@ export default function PrivacyPage() {
                 </Link>
               </li>
               <li>
-                <Link href="/aso" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
+                <a href="https://appsprint.app/aso" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
                   AppSprint ASO
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

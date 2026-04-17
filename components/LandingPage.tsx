@@ -114,17 +114,17 @@ const LandingPage = ({
                     <div className="mt-8 flex flex-col items-center gap-3">
                         <div className="flex -space-x-3">
                             {[
-                                "/jx_op.webp",
-                                "/luka.webp",
-                                "/jesse.webp",
-                                "/hnythng.webp",
-                                "/raphael.webp"
-                            ].map((src, i) => (
+                                { src: "/jx_op.webp", name: "JX_Op" },
+                                { src: "/luka.webp", name: "Luka" },
+                                { src: "/jesse.webp", name: "Jesse" },
+                                { src: "/hnythng.webp", name: "Hnythng" },
+                                { src: "/raphael.webp", name: "Raphael" },
+                            ].map((member, i) => (
                                 <img
                                     key={i}
                                     className="h-10 w-10 rounded-full border-2 border-white object-cover"
-                                    src={src}
-                                    alt="Community member"
+                                    src={member.src}
+                                    alt={member.name}
                                     width={40}
                                     height={40}
                                     loading="eager"
