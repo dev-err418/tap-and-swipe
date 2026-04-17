@@ -52,17 +52,17 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
 
       {/* Center content */}
       <div className="relative z-10">
-        <FadeIn delay={0.05} y={20}>
+        <div className="animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
           <h1 className="max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
             Real stories from people building mobile apps
           </h1>
-        </FadeIn>
+        </div>
 
-        <FadeIn delay={0.2} y={20}>
+        <div className="animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
           <p className="mt-6 mx-auto max-w-xl text-base text-black/60 sm:text-lg">
             Every week I sit down with an app builder and ask them everything: the idea, the grind, the failures, and what finally worked.
           </p>
-        </FadeIn>
+        </div>
 
         {showSubscribe && (
           <FadeIn delay={0.35} y={20}>
