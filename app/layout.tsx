@@ -107,8 +107,6 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://eu.i.posthog.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://eu.i.posthog.com" />
-        <link rel="preconnect" href="https://is1-ssl.mzstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://is1-ssl.mzstatic.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

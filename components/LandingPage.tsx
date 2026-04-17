@@ -4,7 +4,6 @@ import {
     Star
 } from "lucide-react";
 import Roadmap from "./Roadmap";
-import { FadeIn } from "./fade-in";
 import { FloatingAppIcons } from "./FloatingAppIcons";
 
 const COMMUNITY_ICONS = [
@@ -73,7 +72,7 @@ const LandingPage = ({
 
                 {/* Centered content: badge + title + subtitle */}
                 <div className="mx-auto max-w-7xl">
-                    <FadeIn delay={0.15} y={20}>
+                    <div className="fade-in-up" style={{ animationDelay: "0.15s" }}>
                     <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[1] sm:text-7xl">
                         Build a mobile app in{" "}
                         weeks{" "}
@@ -88,18 +87,18 @@ const LandingPage = ({
                             not months
                         </span>
                     </h1>
-                    </FadeIn>
+                    </div>
 
-                    <FadeIn delay={0.3} y={20}>
+                    <div className="fade-in-up" style={{ animationDelay: "0.3s" }}>
                     <p className="mx-auto mt-8 max-w-2xl text-lg text-black/50 sm:text-xl">
                         Stop dreaming and start shipping. The complete roadmap to validating, designing, building, and scaling your own mobile app business.
                     </p>
-                    </FadeIn>
+                    </div>
                 </div>
 
                 {/* Bottom section: CTA + social proof (not affecting vertical center) */}
                 <div className="flex-1 flex flex-col items-center justify-start pt-10">
-                    <FadeIn delay={0.45} y={20}>
+                    <div className="fade-in-up" style={{ animationDelay: "0.45s" }}>
                     <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                         <a
                             href="#pricing"
@@ -142,7 +141,7 @@ const LandingPage = ({
                             </p>
                         </div>
                     </div>
-                    </FadeIn>
+                    </div>
                 </div>
             </header>
 
