@@ -201,8 +201,7 @@ export default function AppLandingPage({
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="rounded-2xl p-6"
-                style={{ backgroundColor: `color-mix(in srgb, ${tint.accent} 8%, white)` }}
+                className="rounded-3xl border border-black/10 bg-black/[0.02] p-6 transition-all hover:bg-black/[0.04]"
               >
                 <h3 className="text-lg font-semibold" style={{ color: tint.text }}>
                   {feature.title}

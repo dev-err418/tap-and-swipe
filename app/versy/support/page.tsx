@@ -14,10 +14,6 @@ export default function VersySupportPage() {
     <AppLegalPage
       appName="Versy"
       appSlug="versy"
-      primaryColor="#d4a860"
-      backgroundColor="#f0ebe3"
-      textColor="#292a2b"
-      mutedColor="#8a8784"
       contentPath="content/versy/support.md"
     />
   );

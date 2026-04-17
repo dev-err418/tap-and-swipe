@@ -14,10 +14,6 @@ export default function NetPayTermsPage() {
     <AppLegalPage
       appName="NetPay"
       appSlug="netpay"
-      primaryColor="#818CF8"
-      backgroundColor="#0F0F1A"
-      textColor="#E8E8F5"
-      mutedColor="#8F8FA3"
       contentPath="content/netpay/terms.md"
     />
   );

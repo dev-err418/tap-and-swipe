@@ -15,10 +15,6 @@ export default function ASOPrivacyPage() {
     <AppLegalPage
       appName="AppSprint ASO"
       appSlug="aso"
-      primaryColor="#f4cf8f"
-      backgroundColor="#2a2725"
-      textColor="#f1ebe2"
-      mutedColor="#c9c4bc"
       contentPath="content/aso/privacy.md"
       showSupportLink={false}
     />

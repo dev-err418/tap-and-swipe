@@ -14,10 +14,6 @@ export default function LuaSupportPage() {
     <AppLegalPage
       appName="Lua"
       appSlug="lua"
-      primaryColor="#D6779A"
-      backgroundColor="#FFF8F2"
-      textColor="#2D2D3A"
-      mutedColor="#9B9BAB"
       contentPath="content/lua/support.md"
     />
   );

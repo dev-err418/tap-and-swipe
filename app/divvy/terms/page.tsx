@@ -14,10 +14,6 @@ export default function DivvyTermsPage() {
     <AppLegalPage
       appName="Divvy"
       appSlug="divvy"
-      primaryColor="#34D399"
-      backgroundColor="#0F1A17"
-      textColor="#E8F5F0"
-      mutedColor="#8FAFA3"
       contentPath="content/divvy/terms.md"
     />
   );
