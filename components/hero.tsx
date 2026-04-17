@@ -1,55 +1,57 @@
-"use client";
+import { SubscribeForm } from "./SubscribeForm";
 
-import { useState, type FormEvent } from "react";
-import { FloatingAppIcons } from "./FloatingAppIcons";
+type HeroIcon = {
+  top: string;
+  size: number;
+  rotate: number;
+  icon: string;
+  left?: string;
+  right?: string;
+};
 
-function Spinner() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" className="animate-[spin_0.8s_steps(8)_infinite]">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <line
-          key={i}
-          x1="9" y1="2" x2="9" y2="5.5"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          opacity={1 - i * 0.12}
-          transform={`rotate(${i * 45} 9 9)`}
-        />
-      ))}
-    </svg>
-  );
-}
+const HERO_ICON_POSITIONS: HeroIcon[] = [
+  { left: "5%", top: "8%", size: 64, rotate: -12, icon: "/app-icons/01.webp" },
+  { left: "4%", top: "40%", size: 56, rotate: 8, icon: "/app-icons/02.webp" },
+  { left: "2%", top: "62%", size: 48, rotate: -18, icon: "/app-icons/03.webp" },
+  { left: "4%", top: "82%", size: 56, rotate: 6, icon: "/app-icons/04.webp" },
+  { left: "13%", top: "5%", size: 48, rotate: 15, icon: "/app-icons/05.webp" },
+  { left: "14%", top: "35%", size: 40, rotate: -10, icon: "/app-icons/06.webp" },
+  { left: "13%", top: "70%", size: 48, rotate: 20, icon: "/app-icons/07.webp" },
+  { right: "13%", top: "4%", size: 56, rotate: 12, icon: "/app-icons/08.webp" },
+  { right: "12%", top: "42%", size: 40, rotate: -14, icon: "/app-icons/09.webp" },
+  { right: "13%", top: "68%", size: 48, rotate: 18, icon: "/app-icons/10.webp" },
+  { right: "4%", top: "10%", size: 48, rotate: -8, icon: "/app-icons/11.webp" },
+  { right: "3%", top: "38%", size: 64, rotate: 10, icon: "/app-icons/12.webp" },
+  { right: "2%", top: "65%", size: 56, rotate: -16, icon: "/app-icons/13.webp" },
+  { right: "5%", top: "85%", size: 40, rotate: 22, icon: "/app-icons/14.webp" },
+];
 
-export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
-  const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
-
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setStatus("loading");
-    const fd = new FormData(e.currentTarget);
-    const email = fd.get("email") as string;
-    const website = fd.get("website") as string;
-    try {
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, website }),
-      });
-      setStatus(res.ok ? "ok" : "error");
-    } catch {
-      setStatus("error");
-    }
-  }
-
+export function Hero() {
   return (
     <section
       className="relative flex min-h-[600px] flex-1 flex-col items-center justify-center px-6 text-center"
       style={{ minHeight: "max(600px, calc(100dvh - 72px))" }}
     >
-      <FloatingAppIcons />
+      <div className="pointer-events-none absolute inset-0 hidden overflow-hidden xl:block" aria-hidden="true">
+        {HERO_ICON_POSITIONS.map((icon) => (
+          <img
+            key={icon.icon}
+            src={icon.icon}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="absolute rounded-[22%] shadow-lg opacity-95"
+            style={{
+              ...(icon.left ? { left: icon.left } : { right: icon.right }),
+              top: icon.top,
+              width: icon.size,
+              height: icon.size,
+              transform: `rotate(${icon.rotate}deg)`,
+            }}
+          />
+        ))}
+      </div>
 
-      {/* Center content */}
       <div className="relative z-10">
         <h1 className="max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
           Real stories from people building mobile apps
@@ -61,44 +63,10 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
           </p>
         </div>
 
-        {showSubscribe && (
-          <div className="fade-in-up" style={{ animationDelay: "0.35s" }}>
-            {status === "ok" ? (
-              <p className="mt-10 text-sm font-medium text-emerald-600">Check your inbox! Welcome in.</p>
-            ) : (
-              <form onSubmit={handleSubmit} className="mt-10 mx-auto flex w-full max-w-sm flex-col gap-2">
-                <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute opacity-0 h-0 w-0 pointer-events-none" />
-                <div className="flex h-12 rounded-full border border-black/15 bg-black/5 transition-colors focus-within:border-black/40 focus-within:ring-1 focus-within:ring-black/40">
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="you@email.com"
-                    required
-                    className="h-full flex-1 rounded-full bg-transparent px-5 text-sm text-black placeholder:text-black/30 outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={status === "loading"}
-                    className="relative -my-px -mr-px h-[calc(100%+2px)] shrink-0 cursor-pointer rounded-full bg-black px-5 text-sm font-bold text-white transition-all hover:bg-black/85 disabled:opacity-50"
-                  >
-                    <span className={status === "loading" ? "invisible" : ""}>Subscribe</span>
-                    {status === "loading" && (
-                      <span className="absolute inset-0 flex items-center justify-center">
-                        <Spinner />
-                      </span>
-                    )}
-                  </button>
-                </div>
-                {status === "error" && (
-                  <p className="pl-5 text-xs text-red-500">Something went wrong. Try again.</p>
-                )}
-                <p className="pl-5 text-xs text-black/50">One email per episode. No spam, ever. <a href="/privacy" className="underline hover:text-black/60">Privacy</a></p>
-              </form>
-            )}
-          </div>
-        )}
+        <div className="fade-in-up" style={{ animationDelay: "0.35s" }}>
+          <SubscribeForm />
+        </div>
       </div>
-
     </section>
   );
 }

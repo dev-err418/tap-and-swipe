@@ -1,6 +1,5 @@
 import { getAllEpisodes } from "@/lib/episodes";
 import Link from "next/link";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 const PLACEHOLDER_IMAGE = "/episodes/placeholder.webp";
 
@@ -27,7 +26,7 @@ function EpisodeThumbnail({
 }) {
   return (
     <div className={className}>
-      <AspectRatio ratio={16 / 9}>
+      <div className="relative w-full overflow-hidden rounded-xl pt-[56.25%]">
         {isRealImage(image) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -35,14 +34,14 @@ function EpisodeThumbnail({
             alt={alt}
             width={800}
             height={450}
-            className="h-full w-full rounded-xl object-cover transition-opacity group-hover:opacity-90"
+            className="absolute inset-0 h-full w-full object-cover transition-opacity group-hover:opacity-90"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center rounded-xl bg-accent">
+          <div className="absolute inset-0 flex items-center justify-center bg-accent">
             <span className="text-sm text-muted-foreground">No image</span>
           </div>
         )}
-      </AspectRatio>
+      </div>
     </div>
   );
 }
