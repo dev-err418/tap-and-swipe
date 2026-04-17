@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { sendPush } from "@/lib/apns";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -106,6 +107,27 @@ export async function POST(request: NextRequest) {
         console.error("[calcom] Supabase update error:", error.message);
       } else {
         console.log("[calcom] Updated episode", episodeId, ":", dateField, "=", startTime, pipelineKey, "= done");
+
+        // Send push notification
+        const { data: ep } = await supabase
+          .from("episodes")
+          .select("name")
+          .eq("id", episodeId)
+          .single();
+        const guestName = (ep as { name: string } | null)?.name ?? "Unknown";
+        const date = new Date(startTime);
+        const formatted = date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+          + " at " + date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+        const label = type === "intro" ? "Intro call" : "Record call";
+
+        try {
+          await sendPush(
+            "\u{1F4C5} " + label + " booked",
+            guestName + " — " + formatted
+          );
+        } catch (pushErr) {
+          console.error("[calcom] Push notification failed:", pushErr);
+        }
       }
     } else {
       console.log("[calcom] Could not match booking to any episode");
