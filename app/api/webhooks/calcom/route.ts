@@ -23,12 +23,14 @@ export async function POST(request: NextRequest) {
 
   if (event.triggerEvent === "BOOKING_CREATED") {
     const episodeId = event.payload?.metadata?.episode_id;
+    const type = event.payload?.metadata?.type;
     const startTime = event.payload?.startTime;
 
     if (episodeId && startTime) {
+      const field = type === "intro" ? "intro_date" : "recording_date";
       await supabase
         .from("episodes")
-        .update({ recording_date: startTime })
+        .update({ [field]: startTime })
         .eq("id", episodeId);
     }
   }
