@@ -14,7 +14,8 @@ function getAuth() {
 }
 
 export async function copyTemplateForGuest(
-  guestName: string
+  guestName: string,
+  episodeNumber: number,
 ): Promise<string | null> {
   const templateId = process.env.GOOGLE_DOCS_GUEST_TEMPLATE_ID;
   if (!templateId) {
@@ -26,13 +27,24 @@ export async function copyTemplateForGuest(
   const drive = new drive_v3.Drive({ auth });
   const docs = new docs_v1.Docs({ auth });
 
-  // 1. Copy the template
-  const folderId = process.env.GOOGLE_DOCS_FOLDER_ID;
+  // 1. Create episode folder inside parent folder
+  const parentFolderId = process.env.GOOGLE_DOCS_FOLDER_ID;
+  const folderName = `Ep. ${episodeNumber} - ${guestName}`;
+  const folder = await drive.files.create({
+    requestBody: {
+      name: folderName,
+      mimeType: "application/vnd.google-apps.folder",
+      ...(parentFolderId ? { parents: [parentFolderId] } : {}),
+    },
+  });
+  const folderId = folder.data.id!;
+
+  // 2. Copy the template into the episode folder
   const copy = await drive.files.copy({
     fileId: templateId,
     requestBody: {
       name: `Tap & Swipe — Guest Prep: ${guestName}`,
-      ...(folderId ? { parents: [folderId] } : {}),
+      parents: [folderId],
     },
   });
 

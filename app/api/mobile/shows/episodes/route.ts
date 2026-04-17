@@ -63,9 +63,11 @@ export async function POST(req: Request) {
     data.intro_cal_url = introCalUrl;
   }
 
-  // Auto-generate Google Doc (non-blocking)
+  // Auto-generate Google Doc in episode folder
   try {
-    const docUrl = await copyTemplateForGuest(data.name);
+    const { count } = await supabase.from("episodes").select("*", { count: "exact", head: true });
+    const episodeNumber = count ?? 1;
+    const docUrl = await copyTemplateForGuest(data.name, episodeNumber);
     if (docUrl) {
       await supabase.from("episodes").update({ doc_url: docUrl }).eq("id", data.id);
       data.doc_url = docUrl;
