@@ -15,30 +15,37 @@ const BLOCKED_COUNTRIES = new Set([
 ]);
 
 export const metadata: Metadata = {
-  title: "Tap & Swipe: Real Stories From People Building Mobile Apps",
+  title: "Real Stories From People Building Mobile Apps",
   description:
-    "Every week I sit down with an app builder and ask them everything: the idea, the grind, the failures, and what finally worked.",
+    "Every week, Arthur interviews a mobile app builder about their product, growth, revenue, and mistakes. Case studies with real numbers from indie devs and app founders.",
   keywords: [
-    "Tap & Swipe",
-    "app maker",
-    "ArthurBuildsStuff",
-    "mobile app studio",
+    "mobile app builder stories",
+    "indie app developer",
+    "app revenue case study",
+    "mobile app growth",
     "react native",
     "expo",
-    "app developer",
-    "mobile apps",
-    "app development",
+    "app development podcast",
+    "ArthurBuildsStuff",
+    "Tap & Swipe",
   ],
   openGraph: {
     title: "Tap & Swipe: Real Stories From People Building Mobile Apps",
     description:
-      "Every week I sit down with an app builder and ask them everything: the idea, the grind, the failures, and what finally worked.",
-    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
+      "Every week, Arthur interviews a mobile app builder about their product, growth, revenue, and mistakes. Case studies with real numbers from indie devs and app founders.",
+    url: "https://tap-and-swipe.com",
+    type: "website",
+    locale: "en_US",
+    siteName: "Tap & Swipe",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630 }],
   },
   twitter: {
+    card: "summary_large_image",
+    creator: "@arthursbuilds",
     title: "Tap & Swipe: Real Stories From People Building Mobile Apps",
     description:
-      "Every week I sit down with an app builder and ask them everything: the idea, the grind, the failures, and what finally worked.",
+      "Every week, Arthur interviews a mobile app builder about their product, growth, revenue, and mistakes.",
+    images: ["/opengraph-image.png"],
   },
   alternates: {
     canonical: "/",

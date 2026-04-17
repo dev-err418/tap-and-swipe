@@ -22,12 +22,18 @@ export const metadata: Metadata = {
     title: "Glow — Daily Affirmations",
     description:
       "Start your day with positive affirmations, journaling, and mood tracking. Download Glow on the App Store.",
-    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
+    type: "website",
+    locale: "en_US",
+    siteName: "Tap & Swipe",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630 }],
   },
   twitter: {
+    card: "summary_large_image",
+    creator: "@arthursbuilds",
     title: "Glow — Daily Affirmations",
     description:
       "Start your day with positive affirmations, journaling, and mood tracking. Download Glow on the App Store.",
+    images: ["/opengraph-image.png"],
   },
   alternates: {
     canonical: "/glow",

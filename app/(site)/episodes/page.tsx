@@ -9,13 +9,24 @@ import {
 export const metadata: Metadata = {
   title: "All Episodes",
   description:
-    "Browse every Tap & Swipe episode. Real stories from indie app makers — the ideas, the grind, and what finally worked.",
+    "Browse every Tap & Swipe episode. Mobile app builders share how they built, grew, and monetized their apps, with real revenue numbers and honest lessons.",
   openGraph: {
     title: "All Episodes — Tap & Swipe",
     description:
-      "Browse every Tap & Swipe episode. Real stories from indie app makers — the ideas, the grind, and what finally worked.",
+      "Browse every Tap & Swipe episode. Mobile app builders share how they built, grew, and monetized their apps, with real revenue numbers and honest lessons.",
     url: "https://tap-and-swipe.com/episodes",
-    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
+    type: "website",
+    locale: "en_US",
+    siteName: "Tap & Swipe",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    creator: "@arthursbuilds",
+    title: "All Episodes — Tap & Swipe",
+    description:
+      "Browse every Tap & Swipe episode. Mobile app builders share how they built, grew, and monetized their apps.",
+    images: ["/opengraph-image.png"],
   },
   alternates: {
     canonical: "/episodes",

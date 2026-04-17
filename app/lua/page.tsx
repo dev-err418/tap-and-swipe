@@ -22,12 +22,18 @@ export const metadata: Metadata = {
     title: "Lua — Pregnancy Tracker",
     description:
       "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more. Download Lua on the App Store.",
-    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
+    type: "website",
+    locale: "en_US",
+    siteName: "Tap & Swipe",
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630 }],
   },
   twitter: {
+    card: "summary_large_image",
+    creator: "@arthursbuilds",
     title: "Lua — Pregnancy Tracker",
     description:
       "Track your pregnancy week by week. Kick counter, contraction timer, baby size guide, and more. Download Lua on the App Store.",
+    images: ["/opengraph-image.png"],
   },
   alternates: {
     canonical: "/lua",

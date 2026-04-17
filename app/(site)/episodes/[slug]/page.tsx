@@ -37,12 +37,18 @@ export async function generateMetadata({
   const episode = getEpisodeBySlug(slug);
   if (!episode) return {};
 
+  const ogImage = episode.image
+    ? { url: episode.image, alt: episode.imageAlt || episode.title }
+    : { url: "/opengraph-image.png", width: 1200, height: 630 };
+
   return {
     title: episode.title,
     description: episode.description,
     keywords: episode.tags,
     openGraph: {
       type: "article",
+      locale: "en_US",
+      siteName: "Tap & Swipe",
       title: episode.title,
       description: episode.description,
       url: `${BASE_URL}/episodes/${slug}`,
@@ -51,14 +57,14 @@ export async function generateMetadata({
         modifiedTime: new Date(episode.updatedDate).toISOString(),
       }),
       tags: episode.tags,
-      images: episode.image
-        ? [{ url: episode.image, alt: episode.imageAlt || episode.title }]
-        : [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: "Tap & Swipe — Build & Launch Mobile Apps" }],
+      images: [ogImage],
     },
     twitter: {
+      card: "summary_large_image",
+      creator: "@arthursbuilds",
       title: episode.title,
       description: episode.description,
-      ...(episode.image && { images: [episode.image] }),
+      images: [episode.image || "/opengraph-image.png"],
     },
     alternates: {
       canonical: `/episodes/${slug}`,
