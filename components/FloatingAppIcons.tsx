@@ -33,20 +33,20 @@ const DEFAULT_POSITIONS: Omit<IconPosition, "icon">[] = [
 ];
 
 const DEFAULT_ICONS = [
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/18/73/96/187396d0-9ea0-cd65-83f6-42550506b3f3/Prod-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/c4/8c/93/c48c9331-24df-f7ba-2837-1719d1eb0a23/AppIcon-0-0-1x_U007epad-0-1-0-0-sRGB-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/bb/a5/cc/bba5ccb8-d4df-94d4-4a82-69efab6e4494/logo_youtube_2024_q4_color-0-0-1x_U007emarketing-0-0-0-7-0-0-0-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/3e/51/9d/3e519dbc-b0b0-b292-837b-97027c235050/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/10/a5/0e/10a50e08-cf0c-13e8-8f09-6e34f9fe0071/AppIcon-0-0-1x_U007emarketing-0-11-0-sRGB-0-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/26/bd/a8/26bda865-2595-a1c4-0c22-3090585566b3/AppIcon-0-0-1x_U007emarketing-0-8-0-0-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/22/f8/8d/22f88d97-0776-74fe-6769-1851540ae0c8/AppIcon-0-0-1x_U007epad-0-1-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/f8/bf/77/f8bf774c-079c-a4ef-ac20-0b9cbb3cbb05/TikTok_AppIcon26-0-0-1x_U007epad-0-1-0-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/7f/77/5e/7f775e63-96bf-b789-b2f2-6ce264a7b6a7/AppIconProd-0-0-1x_U007epad-0-0-0-1-0-0-P3-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/95/32/df/9532df9f-b41b-6d94-088d-1b927ab32d23/AppIcon-0-0-1x_U007epad-0-1-0-0-0-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/4e/69/82/4e698215-47f1-536b-3b0f-b8bc421983ea/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-sRGB-0-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/4e/8f/58/4e8f581c-d875-5002-ff4f-085b9961f895/slack_icon_prod-0-0-1x_U007epad-0-1-sRGB-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/e0/eb/dc/e0ebdc61-273c-45da-8aea-28e2d5a9e9fb/ProductionAppIcon-0-0-1x_U007emarketing-0-8-0-0-0-85-220.png/120x120bb.jpg",
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/cf/5e/96/cf5e96b5-cbdf-79f6-8f30-10a95c7ea19f/AppIcon-0-0-1x_U007epad-0-1-0-0-0-85-220.png/120x120bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/18/73/96/187396d0-9ea0-cd65-83f6-42550506b3f3/Prod-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/c4/8c/93/c48c9331-24df-f7ba-2837-1719d1eb0a23/AppIcon-0-0-1x_U007epad-0-1-0-0-sRGB-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/bb/a5/cc/bba5ccb8-d4df-94d4-4a82-69efab6e4494/logo_youtube_2024_q4_color-0-0-1x_U007emarketing-0-0-0-7-0-0-0-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/3e/51/9d/3e519dbc-b0b0-b292-837b-97027c235050/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/10/a5/0e/10a50e08-cf0c-13e8-8f09-6e34f9fe0071/AppIcon-0-0-1x_U007emarketing-0-11-0-sRGB-0-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/26/bd/a8/26bda865-2595-a1c4-0c22-3090585566b3/AppIcon-0-0-1x_U007emarketing-0-8-0-0-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/22/f8/8d/22f88d97-0776-74fe-6769-1851540ae0c8/AppIcon-0-0-1x_U007epad-0-1-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/f8/bf/77/f8bf774c-079c-a4ef-ac20-0b9cbb3cbb05/TikTok_AppIcon26-0-0-1x_U007epad-0-1-0-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/7f/77/5e/7f775e63-96bf-b789-b2f2-6ce264a7b6a7/AppIconProd-0-0-1x_U007epad-0-0-0-1-0-0-P3-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/95/32/df/9532df9f-b41b-6d94-088d-1b927ab32d23/AppIcon-0-0-1x_U007epad-0-1-0-0-0-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/4e/69/82/4e698215-47f1-536b-3b0f-b8bc421983ea/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-sRGB-0-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/4e/8f/58/4e8f581c-d875-5002-ff4f-085b9961f895/slack_icon_prod-0-0-1x_U007epad-0-1-sRGB-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/e0/eb/dc/e0ebdc61-273c-45da-8aea-28e2d5a9e9fb/ProductionAppIcon-0-0-1x_U007emarketing-0-8-0-0-0-85-220.png/64x64bb.jpg",
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/cf/5e/96/cf5e96b5-cbdf-79f6-8f30-10a95c7ea19f/AppIcon-0-0-1x_U007epad-0-1-0-0-0-85-220.png/64x64bb.jpg",
 ];
 
 const EASE: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
