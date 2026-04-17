@@ -26,15 +26,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Tap & Swipe",
-    images: [{ url: "/opengraph-image.png", width: 1200, height: 630 }],
+    images: [{ url: "/community-icons/netpay.jpg", width: 512, height: 512 }],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     creator: "@arthursbuilds",
     title: "Paycheck Calculator & Tax Breakdown — NetPay",
     description:
       "Calculate your take-home pay, see tax breakdowns by state, and compare job offers side by side. All 50 states, 401(k), HSA, and more. Download NetPay on the App Store.",
-    images: ["/opengraph-image.png"],
+    images: ["/community-icons/netpay.jpg"],
   },
   alternates: {
     canonical: "/netpay",
@@ -98,11 +98,17 @@ export default function NetPayPage() {
         iconUrl="/community-icons/netpay.jpg"
         appStoreUrl="https://apps.apple.com/app/id6760554617"
         features={features}
+        screenshots={[
+          "/screenshots/netpay/1.webp",
+          "/screenshots/netpay/2.webp",
+          "/screenshots/netpay/3.webp",
+          "/screenshots/netpay/4.webp",
+          "/screenshots/netpay/5.webp",
+          "/screenshots/netpay/6.webp",
+          "/screenshots/netpay/7.webp",
+        ]}
         tint={{
-          bg: "#0F0F1A",
-          accent: "#818CF8",
-          text: "#E8ECF5",
-          muted: "#8F93AF",
+          accent: "#4F46E5",
           buttonBg: "#4F46E5",
           buttonRing: "rgba(79, 70, 229, 0.25)",
         }}

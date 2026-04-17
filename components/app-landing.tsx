@@ -13,10 +13,7 @@ type AppLandingProps = {
   reviews?: { author: string; date: string; text: string }[];
   screenshots?: string[];
   tint: {
-    bg: string;
     accent: string;
-    text: string;
-    muted: string;
     buttonBg: string;
     buttonRing: string;
   };
@@ -82,10 +79,7 @@ export default function AppLandingPage({
   legal,
 }: AppLandingProps) {
   return (
-    <main
-      className="relative z-10 flex min-h-screen flex-col items-center px-4 py-12 sm:py-16"
-      style={{ backgroundColor: "#ffffff", color: tint.text }}
-    >
+    <main className="relative z-10 flex min-h-screen flex-col items-center bg-white px-4 py-12 text-black sm:py-16">
       {/* Hero */}
       <section className="flex w-full max-w-2xl flex-col items-center pt-8 text-center sm:pt-16">
         <Image
@@ -103,7 +97,7 @@ export default function AppLandingPage({
           {name}
         </h1>
 
-        <p className="mt-3 text-lg font-medium sm:text-xl" style={{ color: tint.text }}>
+        <p className="mt-3 text-lg font-medium sm:text-xl">
           {tagline}
         </p>
 
@@ -111,7 +105,7 @@ export default function AppLandingPage({
         {rating != null && ratingCount != null && (
           <div className="mt-4 flex items-center gap-2" style={{ color: tint.accent }}>
             <StarRating rating={rating} />
-            <span className="text-sm font-medium" style={{ color: tint.muted }}>
+            <span className="text-sm font-medium text-black/60">
               {rating.toFixed(1)}/5 ({ratingCount} {ratingCount === 1 ? "rating" : "ratings"})
             </span>
           </div>
@@ -155,13 +149,10 @@ export default function AppLandingPage({
 
       {/* Description */}
       <section className="mt-16 w-full max-w-3xl sm:mt-20">
-        <h2
-          className="text-2xl font-bold tracking-tight sm:text-3xl"
-          style={{ color: tint.text }}
-        >
+        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
           Description
         </h2>
-        <p className="mt-4 text-base leading-relaxed" style={{ color: tint.muted }}>
+        <p className="mt-4 text-base leading-relaxed text-black/60">
           {description}
         </p>
       </section>
@@ -169,10 +160,7 @@ export default function AppLandingPage({
       {/* Reviews */}
       {reviews && reviews.length > 0 && (
         <section className="mt-20 w-full max-w-3xl sm:mt-24">
-          <h2
-            className="text-2xl font-bold tracking-tight sm:text-3xl"
-            style={{ color: tint.text }}
-          >
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
             What people are saying
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -188,10 +176,10 @@ export default function AppLandingPage({
                     </svg>
                   ))}
                 </div>
-                <p className="mt-3 text-sm leading-relaxed" style={{ color: tint.text }}>
+                <p className="mt-3 text-sm leading-relaxed">
                   &ldquo;{review.text}&rdquo;
                 </p>
-                <p className="mt-3 text-xs" style={{ color: tint.muted }}>
+                <p className="mt-3 text-xs text-black/40">
                   {review.author} · {review.date}
                 </p>
               </div>
@@ -203,10 +191,7 @@ export default function AppLandingPage({
       {/* Screenshots */}
       {screenshots && screenshots.length > 0 && (
         <section className="mt-20 w-full max-w-3xl sm:mt-24">
-          <h2
-            className="text-2xl font-bold tracking-tight sm:text-3xl"
-            style={{ color: tint.text }}
-          >
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
             Screenshots
           </h2>
           <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
@@ -227,10 +212,7 @@ export default function AppLandingPage({
       {/* Features */}
       {features.length > 0 && (
         <section className="mt-20 w-full max-w-3xl sm:mt-24">
-          <h2
-            className="text-2xl font-bold tracking-tight sm:text-3xl"
-            style={{ color: tint.text }}
-          >
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
             What you can do with {name}
           </h2>
           <div className="mt-6 grid gap-6 sm:grid-cols-2">
@@ -239,10 +221,10 @@ export default function AppLandingPage({
                 key={feature.title}
                 className="rounded-3xl border border-black/10 bg-black/[0.02] p-6 transition-all hover:bg-black/[0.04]"
               >
-                <h3 className="text-lg font-semibold" style={{ color: tint.text }}>
+                <h3 className="text-lg font-semibold">
                   {feature.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed" style={{ color: tint.muted }}>
+                <p className="mt-2 text-sm leading-relaxed text-black/60">
                   {feature.description}
                 </p>
               </div>
@@ -252,8 +234,8 @@ export default function AppLandingPage({
       )}
 
       {/* Footer */}
-      <footer className="mt-20 w-full text-center text-sm sm:mt-24" style={{ color: tint.muted }}>
-        <p className="font-semibold" style={{ color: tint.text }}>
+      <footer className="mt-20 w-full text-center text-sm text-black/40 sm:mt-24">
+        <p className="font-semibold text-black">
           TAP &amp; SWIPE
         </p>
         <p className="mt-1">

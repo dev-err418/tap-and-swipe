@@ -26,15 +26,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Tap & Swipe",
-    images: [{ url: "/opengraph-image.png", width: 1200, height: 630 }],
+    images: [{ url: "/community-icons/glow.jpg", width: 512, height: 512 }],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     creator: "@arthursbuilds",
     title: "Glow — Daily Affirmations & Mood Tracker",
     description:
       "Start your day with positive affirmations, mood tracking, and journaling. Lock screen widgets, beautiful themes, and categories for every mood. Download Glow on the App Store or Google Play.",
-    images: ["/opengraph-image.png"],
+    images: ["/community-icons/glow.jpg"],
   },
   alternates: {
     canonical: "/glow",
@@ -142,10 +142,7 @@ export default function GlowPage() {
           "/screenshots/glow/8.webp",
         ]}
         tint={{
-          bg: "#FFF8F3",
           accent: "#f54e08",
-          text: "#3d2b1e",
-          muted: "#7a6252",
           buttonBg: "#e04400",
           buttonRing: "rgba(224, 68, 0, 0.25)",
         }}

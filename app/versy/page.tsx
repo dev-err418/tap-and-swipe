@@ -26,15 +26,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Tap & Swipe",
-    images: [{ url: "/opengraph-image.png", width: 1200, height: 630 }],
+    images: [{ url: "/community-icons/versy.jpg", width: 512, height: 512 }],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     creator: "@arthursbuilds",
     title: "Versy — Bible Verse Widget & Prayer",
     description:
       "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your lock screen and home screen. Download Versy on the App Store or Google Play.",
-    images: ["/opengraph-image.png"],
+    images: ["/community-icons/versy.jpg"],
   },
   alternates: {
     canonical: "/versy",
@@ -55,8 +55,8 @@ const versyJsonLd = {
   },
   aggregateRating: {
     "@type": "AggregateRating",
-    ratingValue: "4.55",
-    ratingCount: "11",
+    ratingValue: "4.7",
+    ratingCount: "411",
     bestRating: "5",
   },
   offers: [
@@ -106,14 +106,43 @@ export default function VersyPage() {
         iconUrl="/community-icons/versy.jpg"
         appStoreUrl="https://apps.apple.com/app/id6756516842"
         playStoreUrl="https://play.google.com/store/apps/details?id=com.tapandswipe.versy"
-        rating={4.55}
-        ratingCount={11}
+        rating={4.7}
+        ratingCount={411}
         features={features}
+        screenshots={[
+          "/screenshots/versy/1.webp",
+          "/screenshots/versy/2.webp",
+          "/screenshots/versy/3.webp",
+          "/screenshots/versy/4.webp",
+          "/screenshots/versy/5.webp",
+          "/screenshots/versy/6.webp",
+          "/screenshots/versy/7.webp",
+          "/screenshots/versy/8.webp",
+        ]}
+        reviews={[
+          {
+            author: "21 ketty",
+            date: "Apr 16, 2026",
+            text: "Wonderful, 10/10. Loved it!",
+          },
+          {
+            author: "Eliude",
+            date: "Apr 7, 2026",
+            text: "Being in communion with Jesus. Great app.",
+          },
+          {
+            author: "Terra norte",
+            date: "Apr 8, 2026",
+            text: "Jesus. 10 out of 10.",
+          },
+          {
+            author: "Sabedoria1000",
+            date: "Apr 5, 2026",
+            text: "David. 10 out of 10.",
+          },
+        ]}
         tint={{
-          bg: "#f0ebe3",
           accent: "#d4a860",
-          text: "#3d3225",
-          muted: "#7a6b57",
           buttonBg: "#c4943d",
           buttonRing: "rgba(196, 148, 61, 0.25)",
         }}

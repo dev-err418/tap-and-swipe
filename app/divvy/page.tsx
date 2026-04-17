@@ -24,15 +24,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Tap & Swipe",
-    images: [{ url: "/opengraph-image.png", width: 1200, height: 630 }],
+    images: [{ url: "/community-icons/divvy.jpg", width: 512, height: 512 }],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     creator: "@arthursbuilds",
     title: "Bill Splitter & Tip Calculator — Divvy",
     description:
       "Split bills, calculate tips, and track who owes what. Itemized splits, shared dishes, and split history. Download Divvy on the App Store.",
-    images: ["/opengraph-image.png"],
+    images: ["/community-icons/divvy.jpg"],
   },
   alternates: {
     canonical: "/divvy",
@@ -96,11 +96,17 @@ export default function DivvyPage() {
         iconUrl="/community-icons/divvy.jpg"
         appStoreUrl="https://apps.apple.com/app/id6760489459"
         features={features}
+        screenshots={[
+          "/screenshots/divvy/1.webp",
+          "/screenshots/divvy/2.webp",
+          "/screenshots/divvy/3.webp",
+          "/screenshots/divvy/4.webp",
+          "/screenshots/divvy/5.webp",
+          "/screenshots/divvy/6.webp",
+          "/screenshots/divvy/7.webp",
+        ]}
         tint={{
-          bg: "#0F1A17",
-          accent: "#34D399",
-          text: "#E8F5F0",
-          muted: "#8FAFA3",
+          accent: "#059669",
           buttonBg: "#059669",
           buttonRing: "rgba(5, 150, 105, 0.25)",
         }}
