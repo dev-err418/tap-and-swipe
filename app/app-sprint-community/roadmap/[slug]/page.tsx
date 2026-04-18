@@ -10,13 +10,10 @@ import Link from "next/link";
 
 export default async function CategoryPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
-  const query = await searchParams;
   const category = CATEGORIES.find((c) => c.slug === slug);
   if (!category) notFound();
 
@@ -40,7 +37,7 @@ export default async function CategoryPage({
   const user = session
     ? await prisma.user.findUnique({
         where: { discordId: session.discordId },
-        select: { id: true, githubUsername: true },
+        select: { id: true },
       })
     : null;
 
@@ -62,23 +59,6 @@ export default async function CategoryPage({
 
   const completedLessonIds = progress.map((p) => p.lessonId);
 
-  // Auto-complete the GitHub connect lesson if user has connected
-  if (slug === "build-with-boilerplate" && user?.githubUsername && !isLocked) {
-    const githubLesson = lessons.find(
-      (l) => l.sectionType === "github-connect"
-    );
-    if (githubLesson && !completedLessonIds.includes(githubLesson.id)) {
-      await prisma.lessonProgress.upsert({
-        where: {
-          userId_lessonId: { userId: user.id, lessonId: githubLesson.id },
-        },
-        update: { uncheckedAt: null },
-        create: { userId: user.id, lessonId: githubLesson.id },
-      });
-      completedLessonIds.push(githubLesson.id);
-    }
-  }
-
   const hideProgress = slug === "weekly-calls";
   const currentIndex = CATEGORIES.findIndex((c) => c.slug === slug);
   const nextCategory = CATEGORIES[currentIndex + 1] ?? null;
@@ -93,15 +73,6 @@ export default async function CategoryPage({
     sectionType: l.sectionType,
     order: l.order,
   }));
-
-  const githubUsername =
-    slug === "build-with-boilerplate" ? (user?.githubUsername ?? null) : null;
-  const githubStatus =
-    slug === "build-with-boilerplate"
-      ? typeof query.github_status === "string"
-        ? query.github_status
-        : null
-      : null;
 
   return (
     <div className="pt-8">
@@ -133,8 +104,6 @@ export default async function CategoryPage({
             ? { slug: nextCategory.slug, title: nextCategory.title }
             : null
         }
-        githubUsername={githubUsername}
-        githubStatus={githubStatus}
       />
     </div>
   );

@@ -25,8 +25,6 @@ export default function LessonListClient({
   isLocked,
   slug,
   nextCategory,
-  githubUsername,
-  githubStatus,
 }: {
   lessons: Lesson[];
   initialCompletedIds: string[];
@@ -34,8 +32,6 @@ export default function LessonListClient({
   isLocked?: boolean;
   slug: string;
   nextCategory: { slug: string; title: string } | null;
-  githubUsername?: string | null;
-  githubStatus?: string | null;
 }) {
   const [completedIds, setCompletedIds] = useState(
     () => new Set(initialCompletedIds)
@@ -76,8 +72,6 @@ export default function LessonListClient({
                 key={lesson.id}
                 order={lesson.order}
                 index={i}
-                githubUsername={githubUsername ?? null}
-                githubStatus={githubStatus ?? null}
                 isLocked={isLocked}
               />
             );
