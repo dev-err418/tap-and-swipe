@@ -77,7 +77,6 @@ export function ShareForm() {
           name="appLink"
           type="url"
           required
-          pattern="https://(apps\.apple\.com|play\.google\.com)/.*"
           placeholder="https://apps.apple.com/app/..."
           className="mt-1.5 h-11 w-full rounded-lg border border-black/15 bg-black/5 px-4 text-sm text-foreground placeholder:text-foreground/30 outline-none transition-colors focus:border-black/40 focus:ring-1 focus:ring-black/40"
         />

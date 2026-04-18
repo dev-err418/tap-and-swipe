@@ -11,18 +11,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (!appLink || !story || !contact) {
+  if (
+    !appLink || typeof appLink !== "string" ||
+    !story || typeof story !== "string" ||
+    !contact || typeof contact !== "string"
+  ) {
     return NextResponse.json(
       { error: "All fields are required" },
       { status: 400 }
     );
   }
 
-  // Only allow actual App Store / Play Store links
-  const isAppStoreLink =
-    appLink.startsWith("https://apps.apple.com/") ||
-    appLink.startsWith("https://play.google.com/");
-  if (!isAppStoreLink) {
+  // Reject if story or contact are too short to be meaningful
+  if (story.trim().length < 10 || contact.trim().length < 3) {
     return NextResponse.json({ ok: true }); // silent reject
   }
 
