@@ -1,13 +1,14 @@
 /**
- * Fetch app store data for all episodes with store IDs.
+ * Fetch app store data for all stories and case studies with store IDs.
  *
  * Usage:
  *   npx tsx scripts/update-app-data.ts
  *
- * - Reads episode MDX frontmatter for appStoreId / playStoreId
+ * - Reads MDX frontmatter from content/stories/ and content/case-studies/
+ * - Deduplicates by appSlug — fetches once per unique app
  * - Fetches metadata from iTunes Search API + google-play-scraper
- * - Downloads icons + screenshots as webp to public/apps/{slug}/
- * - Writes JSON to content/app-data/{slug}.json
+ * - Downloads icons + screenshots as webp to public/apps/{appSlug}/
+ * - Writes JSON to content/app-data/{appSlug}.json
  */
 
 import fs from "fs";
@@ -19,7 +20,8 @@ import sharp from "sharp";
 // ── Paths ──────────────────────────────────────────────────────────
 
 const ROOT = path.resolve(__dirname, "..");
-const EPISODES_DIR = path.join(ROOT, "content", "episodes");
+const STORIES_DIR = path.join(ROOT, "content", "stories");
+const CASE_STUDIES_DIR = path.join(ROOT, "content", "case-studies");
 const APP_DATA_DIR = path.join(ROOT, "content", "app-data");
 const PUBLIC_APPS_DIR = path.join(ROOT, "public", "apps");
 
@@ -46,8 +48,8 @@ interface AppData {
   android?: PlatformData;
 }
 
-interface EpisodeFrontmatter {
-  slug: string;
+interface AppEntry {
+  appSlug: string;
   appStoreId?: string;
   playStoreId?: string;
 }
@@ -81,6 +83,26 @@ async function downloadImage(
     console.warn(`  ⚠ Failed to download ${url}:`, (err as Error).message);
     return false;
   }
+}
+
+function scanDir(dir: string): AppEntry[] {
+  if (!fs.existsSync(dir)) return [];
+
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".mdx"))
+    .map((file) => {
+      const raw = fs.readFileSync(path.join(dir, file), "utf-8");
+      const { data } = matter(raw);
+      const appSlug = data.appSlug as string | undefined;
+      if (!appSlug) return null;
+      return {
+        appSlug,
+        appStoreId: data.appStoreId as string | undefined,
+        playStoreId: data.playStoreId as string | undefined,
+      };
+    })
+    .filter((e): e is NonNullable<typeof e> => e !== null && !!(e.appStoreId || e.playStoreId));
 }
 
 // ── iTunes API ─────────────────────────────────────────────────────
@@ -340,46 +362,54 @@ async function fetchSensorTowerBatch(
 // ── Main ───────────────────────────────────────────────────────────
 
 async function main() {
-  console.log("Reading episode frontmatter...\n");
+  console.log("Scanning content directories for appSlug + store IDs...\n");
 
-  const files = fs.readdirSync(EPISODES_DIR).filter((f) => f.endsWith(".mdx"));
-  const episodes: EpisodeFrontmatter[] = files
-    .map((file) => {
-      const raw = fs.readFileSync(path.join(EPISODES_DIR, file), "utf-8");
-      const { data } = matter(raw);
-      return {
-        slug: file.replace(/\.mdx$/, ""),
-        appStoreId: data.appStoreId as string | undefined,
-        playStoreId: data.playStoreId as string | undefined,
-      };
-    })
-    .filter((ep) => ep.appStoreId || ep.playStoreId);
+  // Scan both content dirs
+  const storyEntries = scanDir(STORIES_DIR);
+  const caseStudyEntries = scanDir(CASE_STUDIES_DIR);
 
-  if (episodes.length === 0) {
-    console.log("No episodes with store IDs found.");
+  // Deduplicate by appSlug — merge store IDs from both content types
+  const appMap = new Map<string, AppEntry>();
+  for (const entry of [...storyEntries, ...caseStudyEntries]) {
+    const existing = appMap.get(entry.appSlug);
+    if (existing) {
+      if (!existing.appStoreId && entry.appStoreId)
+        existing.appStoreId = entry.appStoreId;
+      if (!existing.playStoreId && entry.playStoreId)
+        existing.playStoreId = entry.playStoreId;
+    } else {
+      appMap.set(entry.appSlug, { ...entry });
+    }
+  }
+
+  const apps = Array.from(appMap.values());
+
+  if (apps.length === 0) {
+    console.log("No content with appSlug + store IDs found.");
     return;
   }
 
+  console.log(`Found ${apps.length} unique app(s): ${apps.map((a) => a.appSlug).join(", ")}\n`);
   ensureDir(APP_DATA_DIR);
 
   // Batch SensorTower requests (one per platform, all IDs at once)
-  const iosIds = episodes.map((ep) => ep.appStoreId).filter(Boolean) as string[];
-  const androidIds = episodes.map((ep) => ep.playStoreId).filter(Boolean) as string[];
+  const iosIds = apps.map((a) => a.appStoreId).filter(Boolean) as string[];
+  const androidIds = apps.map((a) => a.playStoreId).filter(Boolean) as string[];
   const [stIos, stAndroid] = await Promise.all([
     fetchSensorTowerBatch("ios", iosIds),
     fetchSensorTowerBatch("android", androidIds),
   ]);
 
-  for (const ep of episodes) {
-    console.log(`\n── ${ep.slug} ──`);
+  for (const app of apps) {
+    console.log(`\n── ${app.appSlug} ──`);
 
     const appData: AppData = {
       lastUpdated: new Date().toISOString(),
     };
 
-    if (ep.appStoreId) {
-      appData.ios = await fetchIosData(ep.appStoreId, ep.slug);
-      const stData = stIos.get(ep.appStoreId);
+    if (app.appStoreId) {
+      appData.ios = await fetchIosData(app.appStoreId, app.appSlug);
+      const stData = stIos.get(app.appStoreId);
       if (appData.ios && stData) {
         appData.ios.downloadsEstimate = stData.downloadsEstimate;
         appData.ios.revenueEstimate = stData.revenueEstimate;
@@ -388,9 +418,9 @@ async function main() {
       }
     }
 
-    if (ep.playStoreId) {
-      appData.android = await fetchAndroidData(ep.playStoreId, ep.slug);
-      const stData = stAndroid.get(ep.playStoreId);
+    if (app.playStoreId) {
+      appData.android = await fetchAndroidData(app.playStoreId, app.appSlug);
+      const stData = stAndroid.get(app.playStoreId);
       if (appData.android && stData) {
         appData.android.downloadsEstimate = stData.downloadsEstimate;
         appData.android.revenueEstimate = stData.revenueEstimate;
@@ -400,7 +430,7 @@ async function main() {
     }
 
     // Write JSON
-    const outPath = path.join(APP_DATA_DIR, `${ep.slug}.json`);
+    const outPath = path.join(APP_DATA_DIR, `${app.appSlug}.json`);
     fs.writeFileSync(outPath, JSON.stringify(appData, null, 2) + "\n");
     console.log(`  ✓ Wrote ${outPath}`);
   }

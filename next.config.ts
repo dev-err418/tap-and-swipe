@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
                     "default-src 'self'",
                     "script-src 'self' 'unsafe-inline' https://eu.i.posthog.com https://eu-assets.i.posthog.com https://challenges.cloudflare.com",
                     "style-src 'self' 'unsafe-inline'",
-                    "img-src 'self' data: blob: https://yt3.googleusercontent.com",
+                    "img-src 'self' data: blob: https://yt3.googleusercontent.com https://img.youtube.com",
                     "media-src 'self' https://assets.whop.com",
                     "font-src 'self'",
                     "connect-src 'self' https://eu.i.posthog.com https://eu-assets.i.posthog.com https://challenges.cloudflare.com",
@@ -91,6 +91,16 @@ const nextConfig: NextConfig = {
       {
         source: "/aso",
         destination: "https://appsprint.app/aso",
+        permanent: true,
+      },
+      {
+        source: "/episodes",
+        destination: "/case-studies",
+        permanent: true,
+      },
+      {
+        source: "/episodes/:slug",
+        destination: "/case-studies/:slug",
         permanent: true,
       },
     ];

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/hero";
-import { EpisodesSection } from "@/components/episodes-section";
-import { getAllEpisodes } from "@/lib/episodes";
+import { StoriesSection } from "@/components/stories-section";
+import { CaseStudiesSection } from "@/components/case-studies-section";
+import { getAllStories } from "@/lib/stories";
+import { getAllCaseStudies } from "@/lib/case-studies";
 
 export const metadata: Metadata = {
   title: "Real Stories From People Building Mobile Apps",
@@ -44,11 +46,12 @@ export const metadata: Metadata = {
 const BASE_URL = "https://tap-and-swipe.com";
 
 function buildJsonLd() {
-  const episodes = getAllEpisodes();
+  const stories = getAllStories();
+  const caseStudies = getAllCaseStudies();
 
-  const podcastSeries = {
+  const videoSeries = {
     "@context": "https://schema.org",
-    "@type": "PodcastSeries",
+    "@type": "VideoGallery" as string,
     name: "Tap & Swipe",
     description:
       "Every week I sit down with an app builder and ask them everything: the idea, the grind, the failures, and what finally worked.",
@@ -57,13 +60,23 @@ function buildJsonLd() {
     author: { "@type": "Person", name: "Arthur", url: `${BASE_URL}` },
     image: `${BASE_URL}/icon.png`,
     inLanguage: "en",
-    ...(episodes.length > 0 && {
-      episode: episodes.map((ep) => ({
-        "@type": "PodcastEpisode",
-        name: ep.title,
-        description: ep.description,
-        datePublished: new Date(ep.date).toISOString(),
-        url: `${BASE_URL}/episodes/${ep.slug}`,
+    ...(stories.length > 0 && {
+      video: stories.map((s) => ({
+        "@type": "VideoObject",
+        name: s.title,
+        description: s.description,
+        datePublished: new Date(s.date).toISOString(),
+        url: `${BASE_URL}/stories/${s.slug}`,
+        embedUrl: `https://www.youtube-nocookie.com/embed/${s.youtubeId}`,
+      })),
+    }),
+    ...(caseStudies.length > 0 && {
+      hasPart: caseStudies.map((cs) => ({
+        "@type": "BlogPosting",
+        name: cs.title,
+        description: cs.description,
+        datePublished: new Date(cs.date).toISOString(),
+        url: `${BASE_URL}/case-studies/${cs.slug}`,
       })),
     }),
   };
@@ -99,7 +112,7 @@ function buildJsonLd() {
     },
   };
 
-  return [podcastSeries, person, webSite];
+  return [videoSeries, person, webSite];
 }
 
 export default function Home() {
@@ -112,7 +125,8 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Hero />
-      <EpisodesSection />
+      <StoriesSection />
+      <CaseStudiesSection />
     </>
   );
 }

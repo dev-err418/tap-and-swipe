@@ -1,4 +1,4 @@
-import { getAllEpisodes } from "@/lib/episodes";
+import { getAllCaseStudies } from "@/lib/case-studies";
 import Link from "next/link";
 
 const PLACEHOLDER_IMAGE = "/episodes/placeholder.webp";
@@ -15,7 +15,7 @@ function formatDate(dateStr: string) {
   });
 }
 
-function EpisodeThumbnail({
+function CaseStudyThumbnail({
   image,
   alt,
   className,
@@ -46,23 +46,25 @@ function EpisodeThumbnail({
   );
 }
 
-export function EpisodesSection() {
-  const episodes = getAllEpisodes();
-  if (episodes.length === 0) return null;
+export function CaseStudiesSection() {
+  const caseStudies = getAllCaseStudies();
+  if (caseStudies.length === 0) return null;
 
-  const [latest, ...older] = episodes;
+  const [latest, ...older] = caseStudies;
   const shown = older.slice(0, 3);
 
   return (
     <section className="mx-auto w-full max-w-5xl px-6 py-20">
-      <h2 className="text-2xl font-semibold tracking-tight">Latest Episodes</h2>
+      <h2 className="text-2xl font-semibold tracking-tight">
+        Latest Case Studies
+      </h2>
 
-      {/* Featured episode — image left 50%, text right 50% */}
+      {/* Featured case study */}
       <Link
-        href={`/episodes/${latest.slug}`}
+        href={`/case-studies/${latest.slug}`}
         className="group mt-8 flex flex-col gap-6 sm:flex-row sm:items-start"
       >
-        <EpisodeThumbnail
+        <CaseStudyThumbnail
           image={latest.image}
           alt={latest.imageAlt || latest.title}
           className="shrink-0 sm:w-1/2"
@@ -82,30 +84,30 @@ export function EpisodesSection() {
         </div>
       </Link>
 
-      {/* Older episodes — 3-column grid, image on top */}
+      {/* Older case studies */}
       {shown.length > 0 && (
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {shown.map((ep) => (
+          {shown.map((cs) => (
             <Link
-              key={ep.slug}
-              href={`/episodes/${ep.slug}`}
+              key={cs.slug}
+              href={`/case-studies/${cs.slug}`}
               className="group"
             >
-              <EpisodeThumbnail
-                image={ep.image}
-                alt={ep.imageAlt || ep.title}
+              <CaseStudyThumbnail
+                image={cs.image}
+                alt={cs.imageAlt || cs.title}
               />
               <div className="mt-3">
                 <div className="text-sm text-muted-foreground">
-                  <time dateTime={ep.date}>{formatDate(ep.date)}</time>
+                  <time dateTime={cs.date}>{formatDate(cs.date)}</time>
                   <span className="mx-2">&middot;</span>
-                  <span>{ep.readingTime} min read</span>
+                  <span>{cs.readingTime} min read</span>
                 </div>
                 <h3 className="mt-1 font-semibold tracking-tight transition-colors group-hover:text-foreground/70">
-                  {ep.title}
+                  {cs.title}
                 </h3>
                 <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                  {ep.description}
+                  {cs.description}
                 </p>
               </div>
             </Link>
@@ -115,10 +117,10 @@ export function EpisodesSection() {
 
       <div className="mt-16 text-center">
         <Link
-          href="/episodes"
+          href="/case-studies"
           className="inline-block text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          See All Episodes &rarr;
+          See All Case Studies &rarr;
         </Link>
       </div>
     </section>

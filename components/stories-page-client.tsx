@@ -5,16 +5,10 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { SiApple, SiAndroid } from "@icons-pack/react-simple-icons";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import type { EpisodeMeta } from "@/lib/episodes";
+import type { StoryMeta } from "@/lib/stories";
 
-const PLACEHOLDER_IMAGE = "/episodes/placeholder.webp";
-
-export interface EpisodeWithGenres extends EpisodeMeta {
+export interface StoryWithGenres extends StoryMeta {
   genres?: string[];
-}
-
-function isRealImage(image?: string): image is string {
-  return !!image && image !== PLACEHOLDER_IMAGE;
 }
 
 function formatDate(dateStr: string) {
@@ -25,10 +19,10 @@ function formatDate(dateStr: string) {
   });
 }
 
-export function EpisodesPageClient({
-  episodes,
+export function StoriesPageClient({
+  stories,
 }: {
-  episodes: EpisodeWithGenres[];
+  stories: StoryWithGenres[];
 }) {
   const [search, setSearch] = useState("");
   const [platform, setPlatform] = useState<"all" | "ios" | "android">("all");
@@ -36,29 +30,29 @@ export function EpisodesPageClient({
 
   const allGenres = useMemo(() => {
     const set = new Set<string>();
-    for (const ep of episodes) {
-      for (const g of ep.genres ?? []) set.add(g);
+    for (const s of stories) {
+      for (const g of s.genres ?? []) set.add(g);
     }
     return Array.from(set).sort();
-  }, [episodes]);
+  }, [stories]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return episodes.filter((ep) => {
+    return stories.filter((s) => {
       if (q) {
         const haystack =
-          `${ep.title} ${ep.description} ${ep.guest ?? ""}`.toLowerCase();
+          `${s.title} ${s.description} ${s.guest ?? ""}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       if (platform !== "all") {
-        if (!ep.tags?.includes(platform)) return false;
+        if (!s.tags?.includes(platform)) return false;
       }
       if (activeGenre) {
-        if (!ep.genres?.includes(activeGenre)) return false;
+        if (!s.genres?.includes(activeGenre)) return false;
       }
       return true;
     });
-  }, [episodes, search, platform, activeGenre]);
+  }, [stories, search, platform, activeGenre]);
 
   return (
     <>
@@ -67,7 +61,7 @@ export function EpisodesPageClient({
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Search episodes..."
+          placeholder="Search stories..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/30"
@@ -76,7 +70,6 @@ export function EpisodesPageClient({
 
       {/* Filters */}
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        {/* Platform switch — matches AppShowcase style */}
         <div className="flex rounded-lg border border-border p-0.5">
           <button
             onClick={() => setPlatform("all")}
@@ -110,7 +103,6 @@ export function EpisodesPageClient({
           </button>
         </div>
 
-        {/* Genre tags */}
         {allGenres.length > 0 && (
           <>
             <span className="h-4 w-px bg-border" aria-hidden="true" />
@@ -136,50 +128,46 @@ export function EpisodesPageClient({
       {/* Grid */}
       {filtered.length === 0 ? (
         <p className="mt-16 text-center text-foreground/40">
-          No episodes match your filters.
+          No stories match your filters.
         </p>
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((ep) => (
+          {filtered.map((s) => (
             <Link
-              key={ep.slug}
-              href={`/episodes/${ep.slug}`}
+              key={s.slug}
+              href={`/stories/${s.slug}`}
               className="group"
             >
               <AspectRatio ratio={16 / 9}>
-                {isRealImage(ep.image) ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={ep.image}
-                    alt={ep.imageAlt || ep.title}
-                    width={800}
-                    height={450}
-                    className="h-full w-full rounded-xl object-cover transition-opacity group-hover:opacity-90"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center rounded-xl bg-accent">
-                    <span className="text-sm text-muted-foreground">
-                      No image
-                    </span>
-                  </div>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://img.youtube.com/vi/${s.youtubeId}/maxresdefault.jpg`}
+                  alt={s.title}
+                  width={800}
+                  height={450}
+                  className="h-full w-full rounded-xl object-cover transition-opacity group-hover:opacity-90"
+                />
               </AspectRatio>
 
               <div className="mt-3">
                 <div className="text-sm text-muted-foreground">
-                  <time dateTime={ep.date}>{formatDate(ep.date)}</time>
-                  <span className="mx-2">&middot;</span>
-                  <span>{ep.readingTime} min read</span>
+                  <time dateTime={s.date}>{formatDate(s.date)}</time>
+                  {s.guest && (
+                    <>
+                      <span className="mx-2">&middot;</span>
+                      <span>with {s.guest}</span>
+                    </>
+                  )}
                 </div>
                 <h2 className="mt-1 font-semibold tracking-tight transition-colors group-hover:text-foreground/70">
-                  {ep.title}
+                  {s.title}
                 </h2>
                 <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                  {ep.description}
+                  {s.description}
                 </p>
-                {ep.genres && ep.genres.length > 0 && (
+                {s.genres && s.genres.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {ep.genres.map((g) => (
+                    {s.genres.map((g) => (
                       <span
                         key={g}
                         className="rounded-full bg-accent px-2.5 py-0.5 text-xs text-muted-foreground"

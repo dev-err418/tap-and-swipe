@@ -1,0 +1,50 @@
+{
+  "lastUpdated": "2026-04-14T20:48:32.068Z",
+  "ios": {
+    "title": "Video Teleprompter - Evelize",
+    "icon": "/apps/evelize/icon-ios.webp",
+    "screenshots": [
+      "/apps/evelize/ios-1.webp",
+      "/apps/evelize/ios-2.webp",
+      "/apps/evelize/ios-3.webp",
+      "/apps/evelize/ios-4.webp",
+      "/apps/evelize/ios-5.webp"
+    ],
+    "rating": 4.79675,
+    "ratingCount": 123,
+    "price": "Free",
+    "genres": ["Photo & Video", "Productivity"],
+    "storeUrl": "https://apps.apple.com/us/app/video-teleprompter-evelize/id6446815796?uo=4",
+    "downloadsEstimate": "<5K",
+    "revenueEstimate": "$9K",
+    "topCountries": [
+      "GB",
+      "US",
+      "TW"
+    ]
+  },
+  "android": {
+    "title": "Video Teleprompter - Evelize",
+    "subtitle": "Teleprompter & video editing app. Text prompter for seamless video creation.",
+    "icon": "/apps/evelize/icon-android.webp",
+    "screenshots": [
+      "/apps/evelize/android-1.webp",
+      "/apps/evelize/android-2.webp",
+      "/apps/evelize/android-3.webp",
+      "/apps/evelize/android-4.webp",
+      "/apps/evelize/android-5.webp"
+    ],
+    "rating": 4.7821784,
+    "ratingCount": 723,
+    "price": "Free",
+    "genres": ["Video Players & Editors"],
+    "storeUrl": "https://play.google.com/store/apps/details?id=com.evelize.teleprompter&hl=en&gl=us",
+    "downloadsEstimate": "<5K",
+    "revenueEstimate": "<$5K",
+    "topCountries": [
+      "PH",
+      "US",
+      "GB"
+    ]
+  }
+}
