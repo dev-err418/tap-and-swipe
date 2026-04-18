@@ -114,11 +114,13 @@ export function ShareForm() {
         />
       </div>
 
-      <Turnstile
-        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-        onSuccess={setTurnstileToken}
-        options={{ theme: "light", size: "normal" }}
-      />
+      <div className="flex justify-center">
+        <Turnstile
+          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+          onSuccess={setTurnstileToken}
+          options={{ theme: "light", size: "normal" }}
+        />
+      </div>
 
       <button
         type="submit"
