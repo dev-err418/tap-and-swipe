@@ -115,15 +115,12 @@ export async function POST(request: NextRequest) {
           .eq("id", episodeId)
           .single();
         const guestName = (ep as { name: string } | null)?.name ?? "Unknown";
-        const date = new Date(startTime);
-        const formatted = date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
-          + " at " + date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
         const label = type === "intro" ? "Intro call" : "Record call";
 
         try {
           await sendPush(
             "\u{1F4C5} " + label + " booked",
-            guestName + " — " + formatted
+            guestName
           );
         } catch (pushErr) {
           console.error("[calcom] Push notification failed:", pushErr);
