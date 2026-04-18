@@ -9,9 +9,8 @@ function isAuthorized(req: Request): boolean {
 }
 
 function buildCalUrl(episodeId: string, slug: string | undefined, type: string): string | null {
-  const username = process.env.CALCOM_USERNAME;
-  if (!username || !slug) return null;
-  return `https://cal.com/${username}/${slug}?metadata[episode_id]=${episodeId}&metadata[type]=${type}`;
+  if (!slug) return null;
+  return `https://tap-and-swipe.com/book/${episodeId}?type=${type}`;
 }
 
 // GET /api/mobile/shows/episodes
