@@ -23,6 +23,7 @@ export async function PATCH(
   if (body.status !== undefined) updates.status = body.status;
   if (body.url !== undefined) updates.url = body.url;
   if (body.platform !== undefined) updates.platform = body.platform;
+  if (body.episode_id !== undefined) updates.episode_id = body.episode_id;
   updates.updated_at = new Date().toISOString();
 
   const { data, error } = await supabase
