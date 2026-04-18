@@ -23,7 +23,7 @@ function Spinner() {
   );
 }
 
-export function ShareForm() {
+export function ShareForm({ token }: { token: string }) {
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -40,6 +40,7 @@ export function ShareForm() {
           story: fd.get("story"),
           contact: fd.get("contact"),
           name: fd.get("name"),
+          token,
         }),
       });
       setStatus(res.ok ? "ok" : "error");

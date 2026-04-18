@@ -1,14 +1,20 @@
 import { NextResponse } from "next/server";
+import { verifyShareToken } from "@/lib/share-token";
 
 const SHARE_WEBHOOK =
   "https://discord.com/api/webhooks/1494992214059778129/OEqO724JzXA_4qV3Fet-nFiGY1iwHasGUsmsldGxqzxHhGtXNsvPZv0T_FBN1SVMfNWQ";
 
 export async function POST(req: Request) {
-  const { appLink, story, contact, name } = await req.json();
+  const { appLink, story, contact, name, token } = await req.json();
 
   // Honeypot: bots fill the hidden "name" field, real users don't
   if (name) {
     return NextResponse.json({ ok: true });
+  }
+
+  // Signed token: bots that POST without rendering the page won't have it
+  if (!token || typeof token !== "string" || !verifyShareToken(token)) {
+    return NextResponse.json({ ok: true }); // silent reject
   }
 
   if (

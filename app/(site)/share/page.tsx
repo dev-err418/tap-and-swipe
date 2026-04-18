@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ShareForm } from "@/components/ShareForm";
+import { generateShareToken } from "@/lib/share-token";
 
 const BASE_URL = "https://tap-and-swipe.com";
 
@@ -30,7 +31,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function SharePage() {
+export default async function SharePage() {
+  const token = generateShareToken();
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-20">
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -91,7 +93,7 @@ export default function SharePage() {
           <h2 className="mb-4 text-xl font-semibold text-foreground">
             Submit your info
           </h2>
-          <ShareForm />
+          <ShareForm token={token} />
         </section>
       </div>
     </div>
