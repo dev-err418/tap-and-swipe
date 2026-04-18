@@ -92,6 +92,13 @@ export default function TermsPage() {
                 or reach out on our Discord server.
               </p>
               <p className="mt-2">
+                If you have claimed access to the boilerplate (GitHub repository
+                access), refunds are no longer available regardless of how much
+                content has been accessed. By claiming the boilerplate, you
+                acknowledge that you have received a significant portion of the
+                digital product and agree to waive your right to a refund.
+              </p>
+              <p className="mt-2">
                 Once more than 20% of the roadmap content has been accessed, the
                 digital content is considered substantially consumed. In accordance
                 with EU Directive 2011/83/EU (Article 16(m)), by accessing the
