@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 function Spinner() {
   return (
@@ -23,11 +24,13 @@ function Spinner() {
   );
 }
 
-export function ShareForm({ token }: { token: string }) {
+export function ShareForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!turnstileToken) return;
     setStatus("loading");
     const fd = new FormData(e.currentTarget);
 
@@ -40,7 +43,7 @@ export function ShareForm({ token }: { token: string }) {
           story: fd.get("story"),
           contact: fd.get("contact"),
           name: fd.get("name"),
-          token,
+          "cf-turnstile-response": turnstileToken,
         }),
       });
       setStatus(res.ok ? "ok" : "error");
@@ -111,9 +114,15 @@ export function ShareForm({ token }: { token: string }) {
         />
       </div>
 
+      <Turnstile
+        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+        onSuccess={setTurnstileToken}
+        options={{ theme: "light", size: "normal" }}
+      />
+
       <button
         type="submit"
-        disabled={status === "loading"}
+        disabled={status === "loading" || !turnstileToken}
         className="relative h-11 w-full cursor-pointer rounded-full bg-black px-6 text-sm font-bold text-white transition-all hover:bg-black/85 disabled:opacity-50"
       >
         <span className={status === "loading" ? "invisible" : ""}>Submit</span>

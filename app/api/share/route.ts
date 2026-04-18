@@ -1,19 +1,38 @@
 import { NextResponse } from "next/server";
-import { verifyShareToken } from "@/lib/share-token";
 
 const SHARE_WEBHOOK =
   "https://discord.com/api/webhooks/1494992214059778129/OEqO724JzXA_4qV3Fet-nFiGY1iwHasGUsmsldGxqzxHhGtXNsvPZv0T_FBN1SVMfNWQ";
 
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY!;
+
+async function verifyTurnstile(token: string): Promise<boolean> {
+  const res = await fetch(
+    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret: TURNSTILE_SECRET,
+        response: token,
+      }),
+    }
+  );
+  const data = await res.json();
+  return data.success === true;
+}
+
 export async function POST(req: Request) {
-  const { appLink, story, contact, name, token } = await req.json();
+  const body = await req.json();
+  const { appLink, story, contact, name } = body;
+  const cfToken = body["cf-turnstile-response"];
 
   // Honeypot: bots fill the hidden "name" field, real users don't
   if (name) {
     return NextResponse.json({ ok: true });
   }
 
-  // Signed token: bots that POST without rendering the page won't have it
-  if (!token || typeof token !== "string" || !verifyShareToken(token)) {
+  // Cloudflare Turnstile verification
+  if (!cfToken || typeof cfToken !== "string" || !(await verifyTurnstile(cfToken))) {
     return NextResponse.json({ ok: true }); // silent reject
   }
 
