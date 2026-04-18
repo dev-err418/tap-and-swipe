@@ -18,6 +18,14 @@ export async function POST(req: Request) {
     );
   }
 
+  // Only allow actual App Store / Play Store links
+  const isAppStoreLink =
+    appLink.startsWith("https://apps.apple.com/") ||
+    appLink.startsWith("https://play.google.com/");
+  if (!isAppStoreLink) {
+    return NextResponse.json({ ok: true }); // silent reject
+  }
+
   try {
     await fetch(SHARE_WEBHOOK, {
       method: "POST",
