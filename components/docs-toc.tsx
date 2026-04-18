@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { TocItem } from "@/lib/toc";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,11 @@ const SCROLL_OFFSET = 100;
 export function DocsToc({ items }: DocsTocProps) {
   const [activeId, setActiveId] = useState<string>("");
   const isClickScrolling = useRef(false);
+  const itemRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
+  const [indicator, setIndicator] = useState<{ top: number; height: number }>({
+    top: 0,
+    height: 0,
+  });
 
   const getActiveId = useCallback(() => {
     const ids = items.map((item) => item.id);
@@ -35,6 +40,21 @@ export function DocsToc({ items }: DocsTocProps) {
 
     return current;
   }, [items]);
+
+  // Update indicator position based on the active item's actual DOM rect
+  useEffect(() => {
+    if (!activeId) return;
+    const el = itemRefs.current.get(activeId);
+    if (!el) return;
+    const container = el.parentElement;
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    setIndicator({
+      top: elRect.top - containerRect.top,
+      height: elRect.height,
+    });
+  }, [activeId]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -82,11 +102,6 @@ export function DocsToc({ items }: DocsTocProps) {
     [],
   );
 
-  const activeIndex = useMemo(
-    () => items.findIndex((item) => item.id === activeId),
-    [items, activeId],
-  );
-
   if (items.length === 0) return null;
 
   return (
@@ -99,12 +114,12 @@ export function DocsToc({ items }: DocsTocProps) {
         <div className="absolute left-0 top-0 bottom-0 w-px bg-border" />
 
         {/* Active indicator */}
-        {activeIndex >= 0 && (
+        {activeId && (
           <div
             className="absolute left-0 w-px bg-foreground transition-all duration-200 ease-out"
             style={{
-              top: `${activeIndex * 28}px`,
-              height: "28px",
+              top: `${indicator.top}px`,
+              height: `${indicator.height}px`,
             }}
           />
         )}
@@ -114,10 +129,13 @@ export function DocsToc({ items }: DocsTocProps) {
           {items.map((item) => (
             <a
               key={item.id}
+              ref={(el) => {
+                if (el) itemRefs.current.set(item.id, el);
+              }}
               href={`#${item.id}`}
               onClick={(e) => handleClick(e, item.id)}
               className={cn(
-                "flex h-7 items-center text-xs transition-colors hover:text-foreground",
+                "py-1 text-xs leading-snug transition-colors hover:text-foreground",
                 item.level === 3 ? "pl-6" : "pl-3",
                 activeId === item.id
                   ? "font-medium text-foreground"

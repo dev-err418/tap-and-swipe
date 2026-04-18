@@ -173,6 +173,19 @@ function createMdxComponents(
   return {
     FounderCard: () =>
       guestInfo ? <FounderCard guest={guestInfo} /> : null,
+    YouTube: ({ id }: { id: string }) => (
+      <div className="my-6 overflow-hidden rounded-xl">
+        <AspectRatio ratio={16 / 9}>
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${id}`}
+            title="YouTube video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="h-full w-full"
+          />
+        </AspectRatio>
+      </div>
+    ),
     h2: (props: React.ComponentProps<"h2">) => {
       const text =
         typeof props.children === "string" ? props.children : "";
@@ -393,7 +406,7 @@ export default async function CaseStudyPage({
                     href={`/case-studies/${other.slug}`}
                     className="group flex gap-4 rounded-lg"
                   >
-                    <div className="h-20 w-32 shrink-0 overflow-hidden rounded-lg bg-accent">
+                    <div className="w-32 shrink-0 overflow-hidden rounded-lg bg-accent aspect-video">
                       {other.image && other.image !== PLACEHOLDER_IMAGE ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
