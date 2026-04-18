@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { Youtube, Linkedin } from "lucide-react";
 import { SiX } from "@icons-pack/react-simple-icons";
 
@@ -292,6 +293,24 @@ export default function AboutPage() {
             </p>
             <p className="mt-4">
               If you build apps, or want to, you&apos;re in the right place.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-xl font-semibold text-foreground">
+              Want to be on the show?
+            </h2>
+            <p>
+              If you&apos;ve built an app and have a story worth sharing,
+              I&apos;d love to feature you on Tap &amp; Swipe.
+            </p>
+            <p className="mt-4">
+              <Link
+                href="/share"
+                className="inline-flex h-11 items-center rounded-full bg-black px-6 text-sm font-bold text-white transition-all hover:bg-black/85"
+              >
+                Share your story
+              </Link>
             </p>
           </section>
         </div>

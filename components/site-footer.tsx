@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Youtube, Linkedin } from "lucide-react";
+import { SiX } from "@icons-pack/react-simple-icons";
 
 export function SiteFooter() {
   return (
@@ -7,6 +9,35 @@ export function SiteFooter() {
         <div>
           <p className="font-semibold text-foreground/80">Tap &amp; Swipe</p>
           <p className="mt-1 text-foreground/80">Made with ❤️ in 🇫🇷</p>
+          <div className="mt-3 flex items-center gap-3">
+            <a
+              href="https://www.youtube.com/@ArthurBuildsStuff"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground/50 transition-colors hover:text-foreground/80"
+              aria-label="YouTube"
+            >
+              <Youtube size={16} />
+            </a>
+            <a
+              href="https://www.linkedin.com/in/arthur-spalanzani/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground/50 transition-colors hover:text-foreground/80"
+              aria-label="LinkedIn"
+            >
+              <Linkedin size={16} />
+            </a>
+            <a
+              href="https://x.com/arthursbuilds"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground/50 transition-colors hover:text-foreground/80"
+              aria-label="X"
+            >
+              <SiX size={14} />
+            </a>
+          </div>
           <p className="mt-3">
             &copy; {new Date().getFullYear()} &middot; TAP &amp; SWIPE SAS
           </p>
@@ -36,37 +67,23 @@ export function SiteFooter() {
           </ul>
         </div>
         <div>
-          <p className="font-medium text-foreground/80">Social</p>
+          <p className="font-medium text-foreground/80">More</p>
           <ul className="-mx-2 mt-2">
             <li>
-              <a
-                href="https://www.youtube.com/@ArthurBuildsStuff"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/about"
                 className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
               >
-                YouTube
-              </a>
+                About
+              </Link>
             </li>
             <li>
-              <a
-                href="https://www.linkedin.com/in/arthur-spalanzani/"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/share"
                 className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
               >
-                LinkedIn
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://x.com/arthursbuilds"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
-              >
-                X (Twitter)
-              </a>
+                Share Your Story
+              </Link>
             </li>
           </ul>
         </div>

@@ -41,6 +41,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     },
     {
+      url: "https://tap-and-swipe.com/share",
+      lastModified: new Date("2026-04-18"),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
       url: "https://tap-and-swipe.com/divvy",
       lastModified: new Date("2026-04-15"),
       changeFrequency: "monthly",
