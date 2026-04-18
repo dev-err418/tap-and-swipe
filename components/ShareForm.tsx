@@ -114,14 +114,6 @@ export function ShareForm() {
         />
       </div>
 
-      <div className="flex justify-center">
-        <Turnstile
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-          onSuccess={setTurnstileToken}
-          options={{ theme: "light", size: "normal" }}
-        />
-      </div>
-
       <button
         type="submit"
         disabled={status === "loading" || !turnstileToken}
@@ -134,6 +126,14 @@ export function ShareForm() {
           </span>
         )}
       </button>
+
+      <div className="flex justify-center">
+        <Turnstile
+          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+          onSuccess={setTurnstileToken}
+          options={{ theme: "light", size: "normal" }}
+        />
+      </div>
 
       {status === "error" && (
         <p className="text-xs text-red-500">Something went wrong. Try again.</p>
