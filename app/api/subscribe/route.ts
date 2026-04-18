@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getPostHogServer } from "@/lib/posthog";
 
-const NEWSLETTER_WEBHOOK =
-  "https://discord.com/api/webhooks/1493954020082192536/DyIegwcMj7JXvqnRrWXLM1m1jKGYgkGplb6-jYqUAwF8OLKbgM6mBzuB79FDf2yRA4Tv";
+const NEWSLETTER_WEBHOOK = process.env.SUBSCRIBE_DISCORD_WEBHOOK!;
 
 function formatCountry(countryCode?: string): string {
   if (!countryCode) return "\u{1F310} Unknown";

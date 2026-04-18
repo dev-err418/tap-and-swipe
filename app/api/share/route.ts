@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-const SHARE_WEBHOOK =
-  "https://discord.com/api/webhooks/1494992214059778129/OEqO724JzXA_4qV3Fet-nFiGY1iwHasGUsmsldGxqzxHhGtXNsvPZv0T_FBN1SVMfNWQ";
+const SHARE_WEBHOOK = process.env.SHARE_DISCORD_WEBHOOK!;
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY!;
 
