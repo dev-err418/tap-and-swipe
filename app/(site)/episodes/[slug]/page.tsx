@@ -296,9 +296,17 @@ export default async function EpisodePage({
         {/* More episodes */}
         {otherEpisodes.length > 0 && (
           <section className="mt-20 border-t border-border pt-12 pb-20">
-            <h3 className="mb-6 text-lg font-semibold tracking-tight">
-              More episodes
-            </h3>
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-lg font-semibold tracking-tight">
+                More episodes
+              </h3>
+              <Link
+                href="/episodes"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                See all episodes &rarr;
+              </Link>
+            </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {otherEpisodes.map((s) => (
                 <Link
