@@ -217,12 +217,17 @@ function createMdxComponents(
     p: (props: React.ComponentProps<"p">) => (
       <p className="mb-5 leading-relaxed text-foreground/70" {...props} />
     ),
-    a: (props: React.ComponentProps<"a">) => (
-      <a
-        className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60"
-        {...props}
-      />
-    ),
+    a: ({ href, ...props }: React.ComponentProps<"a">) => {
+      const isExternal = href?.startsWith("http");
+      return (
+        <a
+          href={href}
+          className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60"
+          {...(isExternal && { target: "_blank", rel: "noopener noreferrer" })}
+          {...props}
+        />
+      );
+    },
     ul: (props: React.ComponentProps<"ul">) => (
       <ul
         className="mb-5 ml-5 list-disc space-y-1.5 text-foreground/70"
