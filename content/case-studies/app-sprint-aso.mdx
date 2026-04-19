@@ -1,8 +1,76 @@
 ---
-title: "How I Built AppSprint ASO, a Mac App for App Store Optimization"
-description: "The story behind AppSprint ASO, why I built my own ASO tool, how it works, and what I learned shipping a native Mac app."
+title: "How I Built an ASO Tool That Hit $5K MRR in Its First Month"
+description: "I built AppSprint ASO, a Mac ASO tool for indie app developers, after getting frustrated with existing tools. From 0 to $5K MRR in month one."
 date: "2026-04-18"
-tags: ["ASO", "mac app", "indie dev", "app store optimization", "ios"]
+tags: ["ASO", "app store optimization", "mac app", "SaaS", "indie dev", "app sprint", "ios"]
 ---
 
-*Coming soon.*
+**I'm Arthur. I got so obsessed with ASO that I ended up building my own tool. It did $5K MRR in month one.**
+
+I was using Astro for ASO but it missed features I needed. I built [AppSprint ASO](/aso), a Mac app that does keyword research, competitor tracking, and price localization. Launched it in a YouTube video, 0 to $5K MRR in the first month. First real SaaS where people actually email me to say they love it.
+
+---
+
+## What is ASO and why does it matter?
+
+ASO (App Store Optimization) is how you get your app to show up when people search on the App Store. It's basically SEO for apps. You pick the right keywords, optimize your title and subtitle, get reviews, and your app ranks higher.
+
+For my apps, ASO was the thing that made everything work. I was spending hours doing keyword research, checking what competitors were ranking for, figuring out which countries to localize in. You need a tool for this. Doing it manually doesn't scale.
+
+---
+
+## Why I stopped using Astro and built my own tool
+
+I was using Astro. Good tool, I learned a lot with it. But there were a few simple features missing that I kept needing, and people in my community were asking for the same things. Competitor keyword tracking, revenue estimates, proper price localization.
+
+I also noticed a gap in the market. Astro is $100 per year. The other tools (AppTweak, Sensor Tower, etc.) charge a few hundred per month. There's a lot of room in between for something that does more than Astro at a price that's not enterprise.
+
+So I started with the Astro base and added my own stuff on top.
+
+---
+
+## How to build a Mac app as a solo developer
+
+This was my first Mac app. Completely new territory for me. I'd only shipped mobile apps before.
+
+I implemented Sentry to catch crashes, which saved me early because Mac apps break in ways you don't expect. I built remote updates so I could ship fixes without going through the Mac App Store review cycle. I set up email flows and license handling tied to individual machines. That last one was a good call because some people tried to force the system a few times.
+
+The whole thing was a different kind of engineering compared to my mobile apps. Those are marketing-based products where distribution is the game. AppSprint ASO is a real tool that people use daily to do their job. The feedback loop is completely different.
+
+---
+
+## How to launch a SaaS tool on YouTube
+
+I shipped it in a YouTube video on my channel. No Product Hunt launch, no landing page campaign, no ads. Just a video showing what it does and why I built it.
+
+0 to $5K MRR in the first month.
+
+The thing is, I already had an audience of mobile app builders from my YouTube channel (ArthurBuildsStuff). These are exactly the people who need an ASO tool. I wasn't selling to strangers. I was solving my own problem and the problem of people who were already watching me.
+
+If you have an audience, you don't need a fancy launch. You just need a product they actually want.
+
+---
+
+## How to get feedback and iterate fast on a SaaS
+
+I got so many feature requests after launch. Competitor rankings, competitor revenue, competitor keywords, price localization across markets. I started shipping updates every week.
+
+This is my first real SaaS that had really positive feedback. I got emails from customers telling me they love the product. After building 5 mobile apps where your users are anonymous and you never hear from them, getting a personal email from someone who uses your tool every day feels completely different.
+
+The feedback also shapes the roadmap. I'm not guessing what to build. People tell me what they need, I build it, they're happy.
+
+---
+
+## How much does an ASO tool cost
+
+The pricing sits right in the gap I saw in the market. Astro is $100/year but missing features. AppTweak and Sensor Tower are hundreds per month and built for enterprise teams. AppSprint ASO is for indie developers and small studios who need real ASO data without paying enterprise prices.
+
+I'm not going to give exact pricing here because it changes, but check [AppSprint ASO](/aso) for the latest.
+
+---
+
+## What would I do differently
+
+Not much honestly. This is the project where things clicked. I had the audience, I had the problem, I had the skills to build it. If anything, I should have built it earlier. I spent months doing ASO manually when I could have been building the tool from day one.
+
+The one thing I'd change: I'd set up the license system more aggressively from the start. Machine-tied licenses were the right call, but I could have been stricter about enforcement earlier.
