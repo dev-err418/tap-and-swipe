@@ -67,7 +67,7 @@ export default function CaseStudiesPage() {
           Case Studies
         </h1>
         <p className="mt-3 text-lg text-muted-foreground">
-          Deep dives into how app builders grow and monetize their products.
+          Deep dives into how app builders grow and monetize their business.
         </p>
 
         <CaseStudiesPageClient caseStudies={enriched} />

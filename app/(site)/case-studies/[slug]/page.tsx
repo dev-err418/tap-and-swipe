@@ -366,7 +366,7 @@ export default async function CaseStudyPage({
               className="mt-6 flex items-center gap-2 rounded-lg border border-border px-4 py-3 text-sm transition-colors hover:bg-accent"
             >
               <Play size={16} className="shrink-0 text-muted-foreground" />
-              <span>Watch the interview &rarr;</span>
+              <span>Watch the episode &rarr;</span>
             </Link>
           )}
 
@@ -401,9 +401,17 @@ export default async function CaseStudyPage({
           {/* You might also like */}
           {otherCaseStudies.length > 0 && (
             <section className="mt-32 border-t border-border pt-12 pb-20">
-              <h3 className="mb-6 text-lg font-semibold tracking-tight">
-                You might also like
-              </h3>
+              <div className="mb-6 flex items-center justify-between">
+                <h3 className="text-lg font-semibold tracking-tight">
+                  You might also like
+                </h3>
+                <Link
+                  href="/case-studies"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  See all case studies &rarr;
+                </Link>
+              </div>
               <div className="grid gap-5">
                 {otherCaseStudies.map((other) => (
                   <Link

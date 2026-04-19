@@ -141,7 +141,7 @@ export function EpisodesPageClient({
               <AspectRatio ratio={16 / 9}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`https://img.youtube.com/vi/${s.youtubeId}/maxresdefault.jpg`}
+                  src={s.image || `https://img.youtube.com/vi/${s.youtubeId}/maxresdefault.jpg`}
                   alt={s.title}
                   width={800}
                   height={450}

@@ -29,7 +29,7 @@ export function EpisodesSection() {
           <div className="relative w-full overflow-hidden rounded-xl pt-[56.25%]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`https://img.youtube.com/vi/${latest.youtubeId}/maxresdefault.jpg`}
+              src={latest.image || `https://img.youtube.com/vi/${latest.youtubeId}/maxresdefault.jpg`}
               alt={latest.title}
               width={800}
               height={450}
@@ -63,7 +63,7 @@ export function EpisodesSection() {
               <div className="relative w-full overflow-hidden rounded-xl pt-[56.25%]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`https://img.youtube.com/vi/${s.youtubeId}/maxresdefault.jpg`}
+                  src={s.image || `https://img.youtube.com/vi/${s.youtubeId}/maxresdefault.jpg`}
                   alt={s.title}
                   width={800}
                   height={450}

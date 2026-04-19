@@ -230,16 +230,24 @@ export default async function EpisodePage({
       />
 
       <div className="mx-auto w-full max-w-4xl px-6 py-10">
-        {/* YouTube embed */}
+        {/* YouTube embed or coming soon */}
         <div className="overflow-hidden rounded-xl">
           <AspectRatio ratio={16 / 9}>
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${episode.youtubeId}`}
-              title={episode.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="h-full w-full"
-            />
+            {episode.youtubeId ? (
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${episode.youtubeId}`}
+                title={episode.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="h-full w-full"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-accent">
+                <span className="text-sm text-muted-foreground">
+                  Coming soon
+                </span>
+              </div>
+            )}
           </AspectRatio>
         </div>
 
@@ -301,7 +309,7 @@ export default async function EpisodePage({
                   <AspectRatio ratio={16 / 9}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`https://img.youtube.com/vi/${s.youtubeId}/maxresdefault.jpg`}
+                      src={s.image || `https://img.youtube.com/vi/${s.youtubeId}/maxresdefault.jpg`}
                       alt={s.title}
                       width={480}
                       height={270}

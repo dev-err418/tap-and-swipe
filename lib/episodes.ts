@@ -13,7 +13,7 @@ export interface EpisodeMeta {
   date: string;
   guest?: string;
   guestInfo?: GuestInfo;
-  youtubeId: string;
+  youtubeId?: string;
   appSlug?: string;
   appStoreId?: string;
   playStoreId?: string;
