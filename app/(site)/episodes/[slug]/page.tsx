@@ -207,8 +207,7 @@ export default async function EpisodePage({
   ];
 
   const mdxComponents = {
-    FounderCard: () =>
-      episode.guestInfo ? <GuestCard guest={episode.guestInfo} /> : null,
+    FounderCard: () => null,
     p: (props: React.ComponentProps<"p">) => (
       <p className="mb-5 leading-relaxed text-foreground/70" {...props} />
     ),
