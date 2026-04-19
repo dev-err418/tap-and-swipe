@@ -32,7 +32,7 @@ This codebase is the landing + course platform for several products:
 
 ### Roadmap (Course Platform)
 
-The roadmap at `/app-sprint/roadmap` is the core feature. Key pieces:
+The roadmap at `/app-sprint-community/roadmap` is the core feature. Key pieces:
 
 - **Categories** defined in `lib/roadmap.ts` — ordered list: getting-started, find-your-idea, design, build, build-with-boilerplate, monetize, launch-and-grow, scaling, weekly-calls.
 - **Lessons** seeded via `prisma/seed.ts` with stable IDs `seed-{category}-{order}`. Each lesson is video or markdown type.
@@ -50,7 +50,7 @@ Discord OAuth is the primary auth. GitHub OAuth is secondary (linkable after Dis
 
 Session helpers in `lib/session.ts`.
 
-`middleware.ts` protects `/app-sprint/roadmap/*` — redirects to Discord OAuth if no valid session. **Auth is skipped entirely in development mode.**
+Auth is enforced in the roadmap layout (`app/app-sprint-community/roadmap/layout.tsx`) via `getSession()`. Unauthenticated users are redirected to Discord OAuth. There is no middleware.ts. **Auth is skipped entirely in development mode.**
 
 ### Payments
 
@@ -68,7 +68,11 @@ Discord bot handles slash commands (`/stats`, `/invite`) via `/api/discord/inter
 
 ### Cron Jobs
 
-- `/api/cron/discord-trials` — revokes Discord roles when 30-day trial periods expire. Protected by `CRON_SECRET` header.
+All protected by `CRON_SECRET` header.
+
+- `/api/cron/discord-trials` — revokes Discord roles when 30-day trial periods expire.
+- `/api/cron/daily-stats` — pulls mobile app download counts + RevenueCat events, posts summary to Discord.
+- `/api/cron/lead-reminders` — sends follow-up reminders for quiz leads.
 
 ### Analytics
 
@@ -93,3 +97,37 @@ Two separate PostgreSQL databases:
 2. **ASO database** (`ASO_DATABASE_URL`, raw `pg` Pool) — `aso_licenses` table for license key management. Accessed via `lib/aso-db.ts` with raw SQL queries (no Prisma).
 
 Key table name mappings (Prisma model → actual table): Lesson → `Video`, LessonProgress → `VideoProgress`. These are legacy names kept for backward compatibility.
+
+## SEO
+
+This site takes an SEO-first approach. Every public page must have proper metadata, structured data, and canonical URLs.
+
+### Metadata
+
+Every public page exports either a static `metadata` object or a `generateMetadata` function. The root layout (`app/layout.tsx`) sets site-wide defaults: title template (`%s — Tap & Swipe`), Open Graph, Twitter cards, robots directives, and canonical URL. Page-level metadata overrides these defaults. All 35+ public pages define canonical URLs via `alternates.canonical`.
+
+### Structured Data (JSON-LD)
+
+JSON-LD is injected via `<script type="application/ld+json">` tags, rendered inline as React components:
+
+- **Organization** — root layout (`app/layout.tsx`): company info, founder, social profiles, legal entity.
+- **Course + AggregateRating + Reviews** — `components/AppSprintJsonLd.tsx`: AppSprint course schema with real reviews and ratings.
+- **FAQPage** — `components/FaqJsonLd.tsx`: FAQ section on the community page.
+- **VideoObject + BreadcrumbList** — episode detail pages (`app/(site)/episodes/[slug]/page.tsx`): YouTube embed metadata and breadcrumb navigation.
+- **BlogPosting + BreadcrumbList** — case study pages (`app/(site)/case-studies/[slug]/page.tsx`): article metadata with publish/modified dates and breadcrumbs.
+
+When adding new public pages, always include the appropriate schema type and breadcrumb trail.
+
+### Sitemap & Robots
+
+- `app/sitemap.ts` — dynamic sitemap including all episodes, case studies, product pages, and legal pages. Episodes and case studies are generated from their content directories.
+- `app/robots.ts` — allows all crawlers on `/`, disallows `/api/` and `/app-sprint-community/roadmap` (gated content).
+- RSS feed at `app/rss.xml/route.ts`.
+
+### LLMs.txt & AI Discoverability
+
+`public/llms.txt` provides a structured summary of the site for AI crawlers (GPTBot, ClaudeBot, PerplexityBot). It includes page descriptions, social links, and citation instructions. Served at both `/llms.txt` and `/.well-known/llms.txt` (via a rewrite in `next.config.ts`).
+
+### IndexNow
+
+`scripts/indexnow.ts` submits URLs to search engines for instant indexing. A GitHub Actions workflow (`.github/workflows/indexnow.yml`) can trigger this on deploy.
