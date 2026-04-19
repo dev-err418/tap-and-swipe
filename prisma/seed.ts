@@ -811,6 +811,86 @@ Don't cross-post TikTok content to Instagram with a watermark. Instagram deprior
     order: 6,
   },
 
+  {
+    category: "launch-and-grow",
+    title: "A/B test your paywall with RevenueCat Experiments",
+    description: "Set up experiments to test pricing, trials, and paywall design without shipping a new build",
+    type: "markdown",
+    markdownContent: `![The first experiment I ran on Glow. The initial conversion rate wasn't crazy, but variant B converted nearly 2x more.](/screenshots/revenuecat-experiment-glow.png)
+
+Most developers pick a price, set a trial length, and never touch it again. You should be testing this stuff constantly. RevenueCat Experiments lets you A/B test your paywall without shipping a new build.
+
+---
+
+## How it works
+
+RevenueCat splits new users into groups and shows each group a different Offering. An Offering is a set of products (monthly, yearly, trial, etc.) tied to a paywall. You already have one if you're using RevenueCat.
+
+The split is server-side. Your app fetches the current Offering for each user, RevenueCat handles the assignment. No app update required. The only condition: your paywall needs to be dynamic, meaning it displays whatever Offering RevenueCat returns instead of hardcoded product IDs.
+
+---
+
+## What you can test
+
+- **Trial length**: 3-day vs 7-day vs no trial
+- **Price points**: $4.99/mo vs $9.99/mo
+- **Subscription duration**: monthly vs yearly vs both
+- **Product ordering**: which plan shows first on the paywall
+- **Paywall design**: completely different layouts (requires RevenueCat Paywalls)
+
+Test one variable at a time. If you change the price and the trial length in the same test, you won't know what caused the difference.
+
+---
+
+## Setup
+
+**1. Create your Offerings.** In the RevenueCat dashboard, go to Offerings and create one for each variant you want to test. Testing $4.99/mo vs $9.99/mo means two Offerings, each pointing to the right product.
+
+**2. Check that your paywall is dynamic.** Your app should display whatever Offering RevenueCat returns for the current user. If you hardcoded product IDs in your paywall, go fix that first.
+
+**3. Create the experiment.** Go to Experiments in the dashboard. Pick your control (current Offering) and your variant. Set the traffic split. 50/50 is standard. Use 80/20 if you want to limit risk.
+
+**4. Start it.** RevenueCat begins enrolling new users immediately. Existing users are not enrolled. Only new users who haven't seen a paywall yet.
+
+---
+
+## Reading results
+
+RevenueCat tracks per variant:
+
+- **Conversion rate**: % of users who started a subscription
+- **Trial conversion rate**: % of trial users who converted to paid
+- **Revenue per user**: total revenue divided by users in that group
+- **MRR impact**: projected monthly recurring revenue difference
+
+Revenue per user is the one that matters. A lower price might convert more users but generate less total revenue. A higher price converts fewer but brings in more money. Focus on revenue, not conversion rate alone.
+
+Wait for statistical significance before deciding. RevenueCat shows confidence levels. Below 95%, the difference could be noise.
+
+---
+
+## Where to start
+
+If you've never tested your paywall:
+
+1. **Trial vs no trial.** Highest-impact test you can run. Some apps see 2-3x more conversions with a trial. Others get tons of trial starts but terrible paid conversion. You need to know which camp you're in.
+
+2. **Price anchoring.** Show a yearly plan next to a monthly plan. The yearly looks cheap by comparison. Test whether showing both increases yearly subscriptions.
+
+3. **7-day vs 3-day trial.** Shorter trials create urgency. Longer trials build habit. The right answer depends entirely on your app.
+
+---
+
+## Tips
+
+- Run tests for at least 2 weeks, or until you hit 95% confidence. Whichever comes last.
+- Bigger price gaps validate faster. $3 vs $10 gives you a clear answer much sooner than $4.99 vs $5.99.
+- One experiment at a time per audience. Running multiple tests on the same users pollutes results.
+- When you find a winner, test it against a new variant. Keep going.
+- Experiments requires a RevenueCat Pro or Enterprise plan.`,
+    order: 7,
+  },
+
   // Scaling (empty — placeholder)
   // No lessons for this category
 
