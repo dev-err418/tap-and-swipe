@@ -26,7 +26,7 @@ const HERO_ICON_POSITIONS: HeroIcon[] = [
   { right: "5%", top: "85%", size: 40, rotate: 22, icon: "/app-icons/14.webp" },
 ];
 
-export function Hero() {
+export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
   return (
     <section
       className="relative flex min-h-[600px] flex-1 flex-col items-center justify-center px-6 text-center"
@@ -63,9 +63,11 @@ export function Hero() {
           </p>
         </div>
 
-        <div className="fade-in-up" style={{ animationDelay: "0.35s" }}>
-          <SubscribeForm />
-        </div>
+        {showSubscribe && (
+          <div className="fade-in-up" style={{ animationDelay: "0.35s" }}>
+            <SubscribeForm />
+          </div>
+        )}
       </div>
     </section>
   );

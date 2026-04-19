@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Hero } from "@/components/hero";
 import { StoriesSection } from "@/components/stories-section";
 import { CaseStudiesSection } from "@/components/case-studies-section";
 import { getAllStories } from "@/lib/stories";
 import { getAllCaseStudies } from "@/lib/case-studies";
+
+const BLOCKED_COUNTRIES = new Set([
+  // Africa
+  "DZ","AO","BJ","BW","BF","BI","CV","CM","CF","TD","KM","CG","CD","CI","DJ",
+  "EG","GQ","ER","SZ","ET","GA","GM","GH","GN","GW","KE","LS","LR","LY","MG",
+  "MW","ML","MR","MU","MA","MZ","NA","NE","NG","RW","ST","SN","SC","SL","SO",
+  "ZA","SS","SD","TZ","TG","TN","UG","ZM","ZW",
+  // India
+  "IN",
+]);
 
 export const metadata: Metadata = {
   title: "Real Stories From People Building Mobile Apps",
@@ -115,7 +126,15 @@ function buildJsonLd() {
   return [videoSeries, person, webSite];
 }
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ country?: string }>;
+}) {
+  const h = await headers();
+  const sp = await searchParams;
+  const country = sp.country || h.get("cf-ipcountry") || "";
+  const showSubscribe = !BLOCKED_COUNTRIES.has(country);
   const jsonLd = buildJsonLd();
 
   return (
@@ -124,7 +143,7 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Hero />
+      <Hero showSubscribe={showSubscribe} />
       <StoriesSection />
       <CaseStudiesSection />
     </>
