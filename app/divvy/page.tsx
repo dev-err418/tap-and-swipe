@@ -90,6 +90,7 @@ export default function DivvyPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(divvyJsonLd) }}
       />
       <AppLandingPage
+        slug="divvy"
         name="Divvy"
         tagline="Split Check & Settle Up Fast"
         description="Divvy does the math when it's time to split the bill. Out with friends, dinner with coworkers, group trip, whatever. Enter the total, add a tip, and split it equally or go item by item. You can assign dishes to each person, divide shared plates across the table, and see what everyone owes. Past splits are saved so you can look them up later, and you can send the breakdown over text or social media in one tap."

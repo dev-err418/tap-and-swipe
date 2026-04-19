@@ -92,6 +92,7 @@ export default function NetPayPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(netpayJsonLd) }}
       />
       <AppLandingPage
+        slug="netpay"
         name="NetPay"
         tagline="Salary & Tax Breakdown"
         description="NetPay tells you what actually hits your bank account. Plug in your salary or hourly rate, pick your state, and get a full breakdown: federal taxes, state taxes, Social Security, Medicare. Add your 401(k), health insurance, HSA, and other pre-tax deductions to see your real take-home number. You can also put two job offers next to each other and compare the actual pay after taxes. Save different scenarios for raises, relocations, or new offers and pull them up whenever you need them."

@@ -99,6 +99,7 @@ export default function LuaPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(bumpChatJsonLd) }}
       />
       <AppLandingPage
+        slug="lua"
         name="Bump Chat"
         tagline="Baby Kick & Contraction Timer"
         description="Bump Chat takes you through your pregnancy week by week. Each week shows how big your baby is (with fun size comparisons), what's developing, and what to expect. Got a question about symptoms, nutrition, or what's normal? Ask the built-in AI chat and get answers right away. Count kicks with a single tap and save the session to share with your doctor. When contractions start, the built-in timer tracks duration and frequency so you can tell when it's time to go. There's also a bump photo journal to capture your growth month by month and a hospital bag checklist to make sure you're ready."

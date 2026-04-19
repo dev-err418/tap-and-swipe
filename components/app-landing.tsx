@@ -1,6 +1,16 @@
 import Image from "next/image";
+import Link from "next/link";
+
+const ALL_APPS = [
+  { slug: "divvy", name: "Divvy", tagline: "Bill Splitter & Tip Calculator", icon: "/community-icons/divvy.jpg" },
+  { slug: "netpay", name: "NetPay", tagline: "Salary & Tax Calculator", icon: "/community-icons/netpay.jpg" },
+  { slug: "versy", name: "Versy", tagline: "Verse of the Day", icon: "/community-icons/versy.jpg" },
+  { slug: "lua", name: "Bump Chat", tagline: "Pregnancy Tracker & Kick Counter", icon: "/community-icons/bump-chat.jpg" },
+  { slug: "glow", name: "Glow", tagline: "Daily Affirmations", icon: "/community-icons/glow.jpg" },
+];
 
 type AppLandingProps = {
+  slug: string;
   name: string;
   tagline: string;
   description: string;
@@ -64,6 +74,7 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function AppLandingPage({
+  slug,
   name,
   tagline,
   description,
@@ -78,6 +89,7 @@ export default function AppLandingPage({
   tint,
   legal,
 }: AppLandingProps) {
+  const otherApps = ALL_APPS.filter((app) => app.slug !== slug);
   return (
     <main className="relative z-10 flex min-h-screen flex-col items-center bg-white px-4 py-12 text-black sm:py-16">
       {/* Hero */}
@@ -232,6 +244,40 @@ export default function AppLandingPage({
           </div>
         </section>
       )}
+
+      {/* More apps */}
+      <section className="mt-20 w-full max-w-3xl sm:mt-24">
+        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          More apps by Tap &amp; Swipe
+        </h2>
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {otherApps.map((app) => (
+            <Link
+              key={app.slug}
+              href={`/${app.slug}`}
+              className="flex flex-col items-center rounded-2xl border border-black/10 bg-black/[0.02] p-4 text-center transition-all hover:bg-black/[0.04]"
+            >
+              <Image
+                src={app.icon}
+                alt={`${app.name} app icon`}
+                width={56}
+                height={56}
+                className="rounded-[13px] shadow-md"
+              />
+              <p className="mt-3 text-sm font-semibold">{app.name}</p>
+              <p className="mt-0.5 text-xs text-black/60">{app.tagline}</p>
+            </Link>
+          ))}
+        </div>
+        <p className="mt-6 text-center text-sm">
+          <Link
+            href="/case-studies/arthur-spalanzani-app-portfolio"
+            className="underline hover:opacity-70"
+          >
+            See the full portfolio
+          </Link>
+        </p>
+      </section>
 
       {/* Footer */}
       <footer className="mt-20 w-full text-center text-sm text-black/60 sm:mt-24">

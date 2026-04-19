@@ -100,6 +100,7 @@ export default function VersyPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(versyJsonLd) }}
       />
       <AppLandingPage
+        slug="versy"
         name="Versy"
         tagline="Daily Quote Lock Screen Widget"
         description="Versy puts scripture right on your phone. Add a widget to your lock screen or home screen and you'll see a new Bible verse every time you pick up your device. There are animated, light, dark, and seasonal themes so it looks the way you want. Set morning reminders to build a daily devotional streak, keep a prayer journal, and share scripture images with friends and family on social media."

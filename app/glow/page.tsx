@@ -100,6 +100,7 @@ export default function GlowPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(glowJsonLd) }}
       />
       <AppLandingPage
+        slug="glow"
         name="Glow"
         tagline="Mood Tracker & Journal"
         description="Glow gives you a fresh affirmation every morning. Set it as a widget on your lock screen or home screen so it's the first thing you see. Keep a streak going to build the habit. There are categories for anxiety, motivation, mindfulness, sleep, self-love, and more, so you can pick what fits your day. Switch between animated, light, dark, and seasonal themes. And when you find one you love, share it as a card on Instagram, TikTok, or wherever."
