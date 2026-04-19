@@ -230,14 +230,14 @@ export default function AboutPage() {
           </p>
           <p className="mb-5 leading-relaxed text-foreground/70">
             I launched my YouTube channel, Arthur Builds Stuff, to document
-            what I was learning. Got <strong className="font-semibold text-foreground">20,000 subscribers</strong> in three videos, which
+            what I was learning. Got 20,000 subscribers in three videos, which
             told me people cared about this stuff. I built a{" "}
             <Link href="/case-studies/arthur-spalanzani-app-portfolio" className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60">small portfolio of
-            apps</Link> that hit <strong className="font-semibold text-foreground">$12K MRR</strong> at its peak. Launched an{" "}
+            apps</Link> that hit $12K MRR at its peak. Launched an{" "}
             <Link href="/case-studies/app-sprint-aso" className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60">ASO tool</Link>
-            {" "}to help other builders grow their apps (<strong className="font-semibold text-foreground">$5K MRR</strong>). Started a{" "}
+            {" "}($5K MRR) to help other builders grow their apps. Started a{" "}
             <Link href="/case-studies/arthur-spalanzani-community" className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60">private community</Link>
-            {" "}of mobile app builders that I genuinely love
+            {" "}($6.5K MRR) of mobile app builders that I genuinely love
             running.
           </p>
           <figure className="my-6">
