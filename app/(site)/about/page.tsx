@@ -9,11 +9,11 @@ const BASE_URL = "https://tap-and-swipe.com";
 export const metadata: Metadata = {
   title: "About Arthur Spalanzani",
   description:
-    "I'm Arthur. I'm 22, French, and I build mobile apps. Learn about my journey from freelancing to building a portfolio of apps hitting 12K EUR MRR.",
+    "I'm Arthur. I'm 22, French, and I build mobile apps. Learn about my journey from freelancing to building a portfolio of apps hitting $10K MRR.",
   openGraph: {
     title: "About Arthur Spalanzani — Tap & Swipe",
     description:
-      "I'm Arthur. I'm 22, French, and I build mobile apps. Learn about my journey from freelancing to building a portfolio of apps hitting 12K EUR MRR.",
+      "I'm Arthur. I'm 22, French, and I build mobile apps. Learn about my journey from freelancing to building a portfolio of apps hitting $10K MRR.",
     url: `${BASE_URL}/about`,
     type: "website",
     locale: "en_US",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     creator: "@arthursbuilds",
     title: "About Arthur Spalanzani — Tap & Swipe",
     description:
-      "I'm Arthur. I'm 22, French, and I build mobile apps. Learn about my journey from freelancing to building a portfolio of apps hitting 12K EUR MRR.",
+      "I'm Arthur. I'm 22, French, and I build mobile apps. Learn about my journey from freelancing to building a portfolio of apps hitting $10K MRR.",
     images: ["/opengraph-image.png"],
   },
   alternates: {
@@ -233,11 +233,11 @@ export default function AboutPage() {
             what I was learning. Got 20,000 subscribers in three videos, which
             told me people cared about this stuff. I built a{" "}
             <Link href="/case-studies/arthur-spalanzani-app-portfolio" className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60">small portfolio of
-            apps</Link> that hit $12K MRR at its peak. Launched an{" "}
+            apps</Link> that hit $10K MRR at its peak. Launched an{" "}
             <Link href="/case-studies/app-sprint-aso" className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60">ASO tool</Link>
             {" "}($5K MRR) to help other builders grow their apps. Started a{" "}
             <Link href="/case-studies/arthur-spalanzani-community" className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60">private community</Link>
-            {" "}($6.5K MRR) of mobile app builders that I genuinely love
+            {" "}($7K MRR) of mobile app builders that I genuinely love
             running.
           </p>
           <figure className="my-6">
