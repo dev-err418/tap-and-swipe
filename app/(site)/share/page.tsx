@@ -37,62 +37,62 @@ export default function SharePage() {
         Share your story on Tap &amp; Swipe
       </h1>
 
-      <div className="mt-10 space-y-10 text-[15px] leading-relaxed text-foreground/70">
-        <p>
+      <div className="mt-10">
+        <p className="mb-5 leading-relaxed text-foreground/70">
           Tap &amp; Swipe is a show where mobile app builders share the real
           story behind their apps. Every episode is a video interview + a
           written case study with real numbers, real lessons, and the stuff you
           don&apos;t usually hear about.
         </p>
-        <p>
+        <p className="mb-5 leading-relaxed text-foreground/70">
           If you&apos;ve built an app and have a story worth telling, I&apos;d
           love to hear from you.
         </p>
 
-        <section>
-          <h2 className="mb-4 text-xl font-semibold text-foreground">
-            Why come on the show?
-          </h2>
-          <p>
-            Your episode gets published as a video on YouTube (20K+ subscribers)
-            and as a detailed case study on tap-and-swipe.com. It&apos;s free
-            exposure for you and your app, a backlink to your website, and a
-            piece of content you can share everywhere.
-          </p>
-          <p className="mt-4">
-            You also get in front of a growing community of mobile app builders
-            who actually care about how things are built, not just the revenue
-            number.
-          </p>
-          <p className="mt-4">
-            There&apos;s no cost. You just show up and talk about what you built.
-          </p>
-        </section>
+        <hr className="my-10 border-border" />
 
-        <section>
-          <h2 className="mb-4 text-xl font-semibold text-foreground">
-            How it works
-          </h2>
-          <ol className="list-decimal space-y-2 pl-5">
-            <li>Submit your info below</li>
-            <li>I&apos;ll review it and reach out if it&apos;s a fit</li>
-            <li>
-              We hop on a quick 15-20 min intro call to find the best angle
-            </li>
-            <li>
-              I send you a doc with the questions so you can review everything
-            </li>
-            <li>We record</li>
-            <li>Nothing goes live without your approval</li>
-          </ol>
-        </section>
+        <h2 className="mt-12 mb-4 text-2xl font-semibold tracking-tight">
+          Why come on the show?
+        </h2>
+        <p className="mb-5 leading-relaxed text-foreground/70">
+          Your episode gets published as a video on YouTube (20K+ subscribers)
+          and as a detailed case study on tap-and-swipe.com. It&apos;s free
+          exposure for you and your app, a backlink to your website, and a
+          piece of content you can share everywhere.
+        </p>
+        <p className="mb-5 leading-relaxed text-foreground/70">
+          You also get in front of a growing community of mobile app builders
+          who actually care about how things are built, not just the revenue
+          number.
+        </p>
+        <p className="mb-5 leading-relaxed text-foreground/70">
+          There&apos;s no cost. You just show up and talk about what you built.
+        </p>
 
-        <section>
-          <h2 className="mb-4 text-xl font-semibold text-foreground">
-            Submit your info
-          </h2>
-          <ShareForm />
-        </section>
+        <hr className="my-10 border-border" />
+
+        <h2 className="mt-12 mb-4 text-2xl font-semibold tracking-tight">
+          How it works
+        </h2>
+        <ol className="mb-5 ml-5 list-decimal space-y-1.5 text-foreground/70">
+          <li className="leading-relaxed">Submit your info below</li>
+          <li className="leading-relaxed">I&apos;ll review it and reach out if it&apos;s a fit</li>
+          <li className="leading-relaxed">
+            We hop on a quick 15-20 min intro call to find the best angle
+          </li>
+          <li className="leading-relaxed">
+            I send you a doc with the questions so you can review everything
+          </li>
+          <li className="leading-relaxed">We record</li>
+          <li className="leading-relaxed">Nothing goes live without your approval</li>
+        </ol>
+
+        <hr className="my-10 border-border" />
+
+        <h2 className="mt-12 mb-4 text-2xl font-semibold tracking-tight">
+          Submit your info
+        </h2>
+        <ShareForm />
       </div>
     </div>
   );
