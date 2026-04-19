@@ -81,9 +81,9 @@ export function SubscribeForm() {
         </button>
       </div>
       {status === "error" && <p className="pl-5 text-xs text-red-500">Something went wrong. Try again.</p>}
-      <p className="pl-5 text-xs text-black/50">
+      <p className="pl-5 text-xs text-black/60">
         One email per episode. No spam, ever.{" "}
-        <a href="/privacy" className="underline hover:text-black/60">
+        <a href="/privacy" className="underline hover:text-black/70">
           Privacy
         </a>
       </p>

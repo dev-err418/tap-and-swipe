@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { PostHogProvider } from "./providers";
 import "./globals.css";
 
 const uncutSans = localFont({
@@ -104,6 +105,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://eu.i.posthog.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://eu.i.posthog.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -114,7 +117,7 @@ export default function RootLayout({
       <body
         className={`${uncutSans.variable} antialiased`}
       >
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
   );
