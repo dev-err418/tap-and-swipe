@@ -4,6 +4,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "yt3.googleusercontent.com" },
