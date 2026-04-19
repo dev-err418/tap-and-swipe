@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
 import {
   getAllCaseStudies,
   getAllCaseStudySlugs,
@@ -252,6 +253,26 @@ function createMdxComponents(
     strong: (props: React.ComponentProps<"strong">) => (
       <strong className="font-semibold text-foreground" {...props} />
     ),
+    table: (props: React.ComponentProps<"table">) => (
+      <div className="my-6 overflow-x-auto">
+        <table className="w-full text-sm" {...props} />
+      </div>
+    ),
+    thead: (props: React.ComponentProps<"thead">) => (
+      <thead className="border-b border-border" {...props} />
+    ),
+    th: (props: React.ComponentProps<"th">) => (
+      <th
+        className="px-3 py-2 text-left font-semibold text-foreground"
+        {...props}
+      />
+    ),
+    td: (props: React.ComponentProps<"td">) => (
+      <td
+        className="border-t border-border px-3 py-2 text-foreground/70"
+        {...props}
+      />
+    ),
     hr: () => <hr className="my-10 border-border" />,
     em: (props: React.ComponentProps<"em">) => (
       <em className="text-muted-foreground" {...props} />
@@ -395,7 +416,7 @@ export default async function CaseStudyPage({
 
           {/* MDX content */}
           <div className="mt-12">
-            <MDXRemote source={cs.content} components={mdxComponents} />
+            <MDXRemote source={cs.content} components={mdxComponents} options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }} />
           </div>
 
           {/* You might also like */}

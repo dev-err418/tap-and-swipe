@@ -1,8 +1,170 @@
 ---
-title: "How to Handle Payments for a SaaS"
-description: "Stripe, Whop, VAT, managed payments, and everything I learned about handling money for a SaaS as a solo developer."
+title: "How to Handle Payments for a SaaS (Stripe vs Whop vs Paddle vs Lemon Squeezy)"
+description: "A full comparison of Stripe, Whop, Paddle, and Lemon Squeezy for SaaS payments. Fees, VAT handling, payouts, affiliates, and which one I actually use to process $12K+/month."
 date: "2026-04-13"
-tags: ["SaaS", "payments", "stripe", "whop", "indie dev"]
+tags: ["SaaS", "payments", "stripe", "whop", "paddle", "lemon squeezy", "merchant of record", "VAT"]
 image: "/case-studies/saas-payments.webp"
-imageAlt: "Choosing a payment provider for your SaaS"
+imageAlt: "SaaS payment providers comparison"
 ---
+
+**I compared Stripe, Whop, Paddle, and Lemon Squeezy. I switched from Stripe to Whop for the lowest all-in fees with full VAT handling, native affiliates, and cascade payments. Full comparison with real numbers below.**
+
+---
+
+## How I process over $12K/month with the lowest fees
+
+I run the [App Sprint ASO tool](/case-studies/app-sprint-aso) and the [App Sprint Community](/case-studies/arthur-spalanzani-community). Together they do over $12K/month. Once you start scaling, optimizing your payment fees becomes one of the easiest ways to keep more of what you earn. The difference between 2.7% and 5% on $12K is almost $300/month. That's $3,600/year going to your payment provider instead of your pocket.
+
+I started with Stripe managed payments. They handle VAT for you, which is amazing when you sell to 30+ countries. But the all-in cost is brutal: **2.9% + $0.30 processing + 3.5% managed payments**. That's roughly **6.4% + $0.30 per transaction**. On $12K/month that's over $700 in fees.
+
+Then Whop reached out. Their public pricing is already good: **2.7% processing + 0.5% for managed VAT + 0.8% for orchestration** (cascade payments, you can disable it if you don't need it). That's **4% all-in** with VAT handled and cascade payments included. Way less than Stripe's MoR pricing.
+
+The migration from Stripe to Whop took basically no time. All my existing subscriptions moved over to Whop payments automatically. That was a big deal for me because I didn't want to lose active subscribers during the switch.
+
+I also got access to non-public rates that are even lower than the public pricing. If you're doing over $2K/month and want those private fees, send me an email at **arthur@tap-and-swipe.com** and I'll connect you with the Whop team directly.
+
+Now let me break down all four providers so you can decide for yourself.
+
+---
+
+## How much do payment providers actually charge
+
+Here's what each provider takes per transaction:
+
+| Provider | Base fee | International cards | Currency conversion |
+|---|---|---|---|
+| **Whop** | 2.7% + 0.5% VAT + 0.8% orchestration | +1.5% | +1% |
+| **Stripe** | 2.9% + $0.30 (+ 3.5% if using Managed Payments MoR) | +1.5% | +1% (US) / +2% (non-US) |
+| **Paddle** | 5% + $0.50 | Included | ~1.5% officially (2-3% in practice) |
+| **Lemon Squeezy** | 5% + $0.50 | +1.5% | 0% markup + 1% intl payout fee |
+
+A few things to note. Paddle and Lemon Squeezy look simpler with the flat 5% + $0.50, but that's because tax handling, fraud, and compliance are bundled in. Whop and Stripe have lower base rates but the add-ons stack up depending on what you enable.
+
+Lemon Squeezy's international cards are not free. They charge +1.5% on non-US transactions. A lot of comparison articles get this wrong.
+
+On $12K/month with mostly domestic cards, I save roughly **$300/month** using Whop over Paddle or Lemon Squeezy. Over a year that's real money.
+
+---
+
+## Which payment providers handle VAT for you
+
+If you sell internationally, handling VAT yourself is a nightmare. You need to register in multiple countries, file returns, track rates. A Merchant of Record (MoR) does all of this for you. They're legally the seller, they handle the tax.
+
+| Provider | Merchant of Record | What they handle |
+|---|---|---|
+| **Whop** | Yes | Collects and remits VAT, GST, US sales tax automatically |
+| **Stripe** | Only with Managed Payments (+3.5%) | Stripe Tax Basic (+$0.50/tx) calculates and collects but you still file. Tax Complete ($90/mo) adds registrations and filing. Managed Payments is the only true MoR |
+| **Paddle** | Yes | Full MoR, registered in 100+ jurisdictions. All tax risk is theirs |
+| **Lemon Squeezy** | Yes | Full MoR across 130+ countries |
+
+Stripe without Managed Payments means you're on the hook for filing. That's fine if you only sell in one country. If you sell worldwide, you want an MoR. But Stripe's MoR at 3.5% on top of processing makes it the most expensive option at roughly **6.4% + $0.30** all-in for US SaaS.
+
+---
+
+## How fast do you get your money
+
+| Provider | Schedule | Typical wait |
+|---|---|---|
+| **Whop** | On-demand withdrawal | Next-day ACH ($2.50), instant RTP (4% + $1), wire ($23, 1-2 days US) |
+| **Stripe** | Rolling T+2 daily (US), T+3 (international) | 2-5 business days. First payouts take 7-14 days |
+| **Paddle** | Monthly (1st of month, paid by 15th) | 2-18 days from month-end. $100 minimum |
+| **Lemon Squeezy** | Twice monthly (1st & 15th), 13-day hold | 2-3 weeks from sale to bank. $50 minimum |
+
+Stripe is fastest for day-to-day payouts. Paddle and Lemon Squeezy are the slowest. Whop gives you flexibility with on-demand withdrawals but each method has its own fee.
+
+---
+
+## What are cascade payments and why they matter
+
+Cascade payments means your provider retries failed payments through different processors. A card gets declined by one processor, the system automatically tries another. This recovers revenue you'd otherwise lose.
+
+| Provider | Cascade payments | Details |
+|---|---|---|
+| **Whop** | Yes | Smart routing across multiple PSPs in real-time. 6-11% revenue recovery |
+| **Stripe** | Yes | Adaptive Acceptance (AI-powered), Smart Retries for subscriptions |
+| **Paddle** | Yes | Paddle Pilot routes across gateways for real-time cascade. Separate dunning system retries up to 7 times over 30 days (now included free) |
+| **Lemon Squeezy** | No | Standard retry only (4 retries over 2 weeks, same processor). No cascade routing |
+
+Important distinction for Paddle: their dunning (retrying failed subscription payments over time) is different from Paddle Pilot (routing a single payment attempt across multiple acquirers in real-time). Both are included now, but they solve different problems.
+
+Lemon Squeezy is the weakest here. If you have a lot of subscriptions, cascade payments can mean thousands of dollars in recovered revenue per year.
+
+---
+
+## How much does an affiliate program actually cost
+
+This is where the differences get interesting. Some providers have native affiliates, others require a third-party tool with a monthly fee.
+
+| Provider | Type | Cost per affiliate sale | Monthly fee |
+|---|---|---|---|
+| **Whop** | Native | 1.25% | $0 |
+| **Lemon Squeezy** | Native | 3% (on top of standard 5% + $0.50) | $0 |
+| **Stripe** | Third-party required | 0% | $29-69/mo (PromoteKit, Rewardful, FirstPromoter, Tolt) |
+| **Paddle** | Third-party required | 0% | $49-69/mo (Partnero, FirstPromoter, Tolt) |
+
+Whop's native affiliate program is the cheapest option at just **1.25% per affiliate sale**. No monthly fee, no third-party integration. Their network has 30,000+ active affiliates with a 30% default recurring commission and 30-day cookie.
+
+Lemon Squeezy's "free" affiliate program is actually the most expensive. That 3% fee stacks on top of the 5% + $0.50 base, so you're paying **8% + $0.50 per affiliate-referred transaction** before the commission you pay the affiliate. That's rough.
+
+Stripe and Paddle require third-party tools. The cheapest option is PromoteKit at $29/mo (Stripe only). Rewardful and FirstPromoter start at $49/mo. They don't take a percentage, just the flat monthly fee, so they become cheaper than Whop's 1.25% once you're doing more than ~$3,900/mo in affiliate revenue. But you're dealing with a separate tool, separate integration, separate dashboard.
+
+---
+
+## How to avoid currency conversion fees
+
+If you sell in USD but your bank account is in EUR, you're paying conversion fees on every payout. Those add up.
+
+| Provider | Conversion fee | Multi-currency balances |
+|---|---|---|
+| **Whop** | 1% if you convert | Yes, hold and withdraw in multiple currencies |
+| **Stripe** | 1% (US) / 2% (non-US) | Yes, with matching bank accounts per currency |
+| **Paddle** | ~1.5% officially (higher in practice) | No |
+| **Lemon Squeezy** | 0% markup + 1% intl payout fee | No |
+
+Whop and Stripe let you hold balances in the sale currency and withdraw to a matching bank account. That means you can avoid conversion fees entirely if you have bank accounts in the right currencies. Paddle and Lemon Squeezy don't offer this, so you're always paying conversion on international sales.
+
+---
+
+## What's happening with Lemon Squeezy after the Stripe acquisition
+
+This needs its own section because it changes the picture a lot.
+
+Stripe acquired Lemon Squeezy in July 2024. The product still works and still accepts signups, but the legal entity has been renamed to "Sold through Link, LLC (f/k/a Lemon Squeezy LLC)." In January 2026, CEO JR Farr acknowledged slower support response times and reduced product development while the team builds Stripe Managed Payments.
+
+The stated long-term goal is to "provide Lemon Squeezy users an easy way to migrate to Stripe Managed Payments." No sunset date has been announced, but the direction is clear. Trustpilot reviews in late 2025 and early 2026 show increased complaints about support delays and frozen funds.
+
+If you're already on Lemon Squeezy, you don't need to panic. It works today. But if you're picking a provider for a new project, I'd think twice. The roadmap has stalled and you might end up migrating to Stripe Managed Payments anyway, at a much higher fee.
+
+---
+
+## What else is worth knowing about each provider
+
+**Whop** has no monthly fees. They eliminated their 30% marketplace commission in May 2025. They raised $200M at a $1.6B valuation in February 2026. Enterprise rates as low as 2.5% + $0.30 at $50K+/month.
+
+**Stripe** has the best developer experience and documentation by far. Radar fraud detection is included. Usage-based billing, customer portal, Treasury, Connect, Issuing. Most flexible and extensible. New stuff in 2026: stablecoin payments at 1.5%, Smart Disputes (AI-powered, 30% of disputed amount if won, $0 if lost), Authorization Boost included free. If you need custom payment flows, Stripe is still the best.
+
+**Paddle** is the "set it and forget it" option for SaaS billing. Full invoicing compliance with local regulations. Dunning (7 retries over 30 days) is now included free for all Paddle Billing users, it used to be a paid Retain feature. Approval process required that can take days. Negotiated rates of 3.5-4.5% are possible at high volume.
+
+**Lemon Squeezy** has a built-in license key system, great for desktop apps and plugins. Instant setup, no approval. Built-in email marketing up to 500 subscribers. They offer 0% fees for the first 30 days (up to $10K) for merchants migrating from another platform. But see the acquisition section above.
+
+---
+
+## Which payment provider should you use
+
+### Want the lowest all-in fees with full MoR, native affiliates, and cascade payments?
+
+Whop. That's what I use. And if you're on Stripe right now, the migration takes basically no time. All your existing subscriptions move over automatically.
+
+### Want the most flexibility and best developer tools?
+
+Stripe. But you're either handling tax yourself or paying 3.5% on top for Managed Payments.
+
+### Want the most hands-off SaaS billing with strong payment recovery?
+
+Paddle.
+
+### Want instant setup with license keys?
+
+Lemon Squeezy. But keep an eye on where it's heading after the Stripe acquisition.
+
+If you're doing over $2K/month or running a high ticket business and want access to Whop's private rates (lower than the public pricing above), email me at **arthur@tap-and-swipe.com** and I'll connect you with the right people.
