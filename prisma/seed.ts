@@ -816,7 +816,9 @@ Don't cross-post TikTok content to Instagram with a watermark. Instagram deprior
     title: "A/B test your paywall with RevenueCat Experiments",
     description: "Set up experiments to test pricing, trials, and paywall design without shipping a new build",
     type: "markdown",
-    markdownContent: `![The first experiment I ran on Glow. The initial conversion rate wasn't crazy, but variant B converted nearly 2x more.](/screenshots/revenuecat-experiment-glow.png)
+    markdownContent: `![RevenueCat experiment results for Glow](/screenshots/revenuecat-experiment-glow.png)
+
+*The first experiment I ran on Glow. The initial conversion rate wasn't crazy, but variant B converted nearly 2x more.*
 
 Most developers pick a price, set a trial length, and never touch it again. You should be testing this stuff constantly. RevenueCat Experiments lets you A/B test your paywall without shipping a new build.
 
