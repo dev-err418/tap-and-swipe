@@ -17,9 +17,7 @@ I was using Astro for ASO but it missed features I needed. I built [AppSprint AS
 
 ASO (App Store Optimization) is how you get your app to show up when people search on the App Store. It's basically SEO for apps. You pick the right keywords, optimize your title and subtitle, get reviews, and your app ranks higher.
 
-<YouTube id="f14ZhFcrfnA" />
-
-For my apps, ASO was the thing that made everything work. I was spending hours doing keyword research, checking what competitors were ranking for, figuring out which countries to localize in. You need a tool for this. Doing it manually doesn't scale.
+For my apps, ASO was what drove most of my growth. I was spending hours doing keyword research, checking what competitors were ranking for, figuring out which countries to localize in. The tricky part is that ASO is not a perfect science. Only Apple has the real data. You're basically guessing, then iterating, then combining with Apple Ads to see what actually works. A tool helps you guess smarter and move faster.
 
 ---
 
@@ -39,17 +37,21 @@ This was my first Mac app. Completely new territory for me. I'd only shipped mob
 
 I implemented Sentry to catch crashes, which saved me early because Mac apps break in ways you don't expect. I built remote updates so I could ship fixes without going through the Mac App Store review cycle. I set up email flows and license handling tied to individual machines. That last one was a good call because some people tried to force the system a few times.
 
-The whole thing was a different kind of engineering compared to my mobile apps. Those are marketing-based products where distribution is the game. AppSprint ASO is a real tool that people use daily to do their job. The feedback loop is completely different.
+The app also needs a backend. The API handles around 50K requests per day, so it has to be solid. Instead of going with AWS, I went with a self-hosted Coolify setup to keep costs low (actually 100% free). Cloudflare handles DNS, and the actual server is a free VPS on Oracle Cloud with 18GB of RAM and 200GB of disk space. On it, Coolify runs both the website (landing page) and the backend (API + database). The database stores data for about 150K top chart apps, updated daily by a cron job running on the same VPS.
+
+The whole thing was a different kind of engineering compared to my mobile apps. Those are marketing-based products where distribution is the game. [AppSprint ASO](https://appsprint.app/aso) is a real tool that people use daily to do their job. The feedback loop is completely different.
 
 ---
 
 ## How to launch a SaaS tool on YouTube
 
-I shipped it in a YouTube video on my channel. No Product Hunt launch, no landing page campaign, no ads. Just a video showing what it does and why I built it.
+I shipped it in a YouTube video on my channel. It was a case study where I explained how ASO works, how I used it for my own apps, and how [AppSprint ASO](https://appsprint.app/aso) could help you do the same. No Product Hunt launch, no landing page campaign, no ads.
+
+<YouTube id="f14ZhFcrfnA" />
 
 0 to $5K MRR in the first month.
 
-The thing is, I already had an audience of mobile app builders from my YouTube channel (ArthurBuildsStuff). These are exactly the people who need an ASO tool. I wasn't selling to strangers. I was solving my own problem and the problem of people who were already watching me.
+The thing is, I already had an audience of mobile app builders from my YouTube channel ([ArthurBuildsStuff](https://www.youtube.com/@ArthurBuildsStuff)). These are exactly the people who need an ASO tool. I wasn't selling to strangers. I was solving my own problem and the problem of people who were already watching me.
 
 If you have an audience, you don't need a fancy launch. You just need a product they actually want.
 
@@ -59,17 +61,32 @@ If you have an audience, you don't need a fancy launch. You just need a product 
 
 I got so many feature requests after launch. Competitor rankings, competitor revenue, competitor keywords, price localization across markets. I started shipping updates every week.
 
-This is my first real SaaS that had really positive feedback. I got emails from customers telling me they love the product. After building 5 mobile apps where your users are anonymous and you never hear from them, getting a personal email from someone who uses your tool every day feels completely different.
+The thing that surprised me most was support. I've never emailed anyone when using a tool. But I get a lot of emails. About half are people saying they enjoy the product, sometimes with a small feature request attached. Then there's the "I FORGOT WHICH EMAIL I USED" crowd. Horrible support to deal with, but 100% necessary. And then the nerds asking super precise technical questions about how the data works, which are actually fun to answer.
 
-The feedback also shapes the roadmap. I'm not guessing what to build. People tell me what they need, I build it, they're happy.
+After building 5 mobile apps where your users are anonymous and you never hear from them, getting a personal email from someone who uses your tool every day feels completely different. The feedback shapes the roadmap too. I'm not guessing what to build. People tell me what they need, I build it, they're happy.
+
+---
+
+## What went wrong
+
+On day one, all my emails were bouncing. Probably a DNS issue. So I was generating license keys by hand and sending them manually to every new customer. Not fun.
+
+I also got DDoS'd at some point. Rate limiting was on but everything was still slow. That's where having DNS on Cloudflare is great, you can switch to "Under Attack" mode. I have no idea what it really does, but it probably gets more strict on incoming requests. After a few minutes it stopped. Still stressful though. When you have real users depending on the tool every day, any risk of the backend going down or the Mac app crashing keeps you on edge.
+
+Apple also changed their APIs overnight at some point. My backend was completely broken for a few hours. I handled it as fast as I could, sent an email to all users saying I was working on it, and got it back up. That's probably the smartest architectural decision I made: offload as much logic as possible to the backend so people don't need to update the Mac app when something breaks. If those API calls had been made inside the app, it would have been 10x worse. A lot of users just opened the app the next day and didn't even notice anything was broken because the backend was already fixed.
+
+And then there are the people who create a new account every 3 days to restart their trial. The trial used to be 7 days, but when I doubled the prices I shortened it to 3 days too. Doesn't stop everyone, but it helps.
 
 ---
 
 ## How much does an ASO tool cost
 
-The pricing sits right in the gap I saw in the market. Astro is $100/year but missing features. AppTweak and Sensor Tower are hundreds per month and built for enterprise teams. AppSprint ASO is for solo developers and small studios who need real ASO data without paying enterprise prices.
+The pricing sits right in the gap I saw in the market. Astro is $100/year but missing features. AppTweak and Sensor Tower are hundreds per month and built for enterprise teams. [AppSprint ASO](https://appsprint.app/aso) is for solo developers and small studios who need real ASO data without paying enterprise prices.
 
-I'm not going to give exact pricing here because it changes, but check [AppSprint ASO](https://appsprint.app/aso) for the latest.
+I'll be honest, I'm always scared to charge for B2C products. B2B is easy, nobody blinks at the price. But when you're selling to individuals you keep thinking "is this really worth it?" The thing is, software pricing has nothing to do with the cost of running it. I had to learn that.
+
+I started with $9/month for Solo and $19/month for Pro. After adding a bunch of features and reading a lot about pricing, I just doubled everything. Solo went to $19, Pro to $39. Trials kept coming in at the same rate, conversions dipped a bit, but LTV went up (at least so far). Increasing the price was probably the smartest thing I did. It's scary, but try it at least once.
+
 
 ---
 
