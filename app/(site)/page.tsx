@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Hero } from "@/components/hero";
-import { StoriesSection } from "@/components/stories-section";
+import { EpisodesSection } from "@/components/episodes-section";
 import { CaseStudiesSection } from "@/components/case-studies-section";
-import { getAllStories } from "@/lib/stories";
+import { getAllEpisodes } from "@/lib/episodes";
 import { getAllCaseStudies } from "@/lib/case-studies";
 
 const BLOCKED_COUNTRIES = new Set([
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
 const BASE_URL = "https://tap-and-swipe.com";
 
 function buildJsonLd() {
-  const stories = getAllStories();
+  const episodes = getAllEpisodes();
   const caseStudies = getAllCaseStudies();
 
   const videoSeries = {
@@ -71,13 +71,13 @@ function buildJsonLd() {
     author: { "@type": "Person", name: "Arthur", url: `${BASE_URL}` },
     image: `${BASE_URL}/icon.png`,
     inLanguage: "en",
-    ...(stories.length > 0 && {
-      video: stories.map((s) => ({
+    ...(episodes.length > 0 && {
+      video: episodes.map((s) => ({
         "@type": "VideoObject",
         name: s.title,
         description: s.description,
         datePublished: new Date(s.date).toISOString(),
-        url: `${BASE_URL}/stories/${s.slug}`,
+        url: `${BASE_URL}/episodes/${s.slug}`,
         embedUrl: `https://www.youtube-nocookie.com/embed/${s.youtubeId}`,
       })),
     }),
@@ -144,7 +144,7 @@ export default async function Home({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Hero showSubscribe={showSubscribe} />
-      <StoriesSection />
+      <EpisodesSection />
       <CaseStudiesSection />
     </>
   );

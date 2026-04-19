@@ -1,14 +1,14 @@
 import type { MetadataRoute } from "next";
 import { getAllCaseStudies } from "@/lib/case-studies";
-import { getAllStories } from "@/lib/stories";
+import { getAllEpisodes } from "@/lib/episodes";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const caseStudies = getAllCaseStudies();
-  const stories = getAllStories();
+  const episodes = getAllEpisodes();
 
   const allDates = [
     ...caseStudies.map((cs) => new Date(cs.date)),
-    ...stories.map((s) => new Date(s.date)),
+    ...episodes.map((s) => new Date(s.date)),
   ];
   const latestDate =
     allDates.length > 0
@@ -22,8 +22,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  const storyEntries: MetadataRoute.Sitemap = stories.map((s) => ({
-    url: `https://tap-and-swipe.com/stories/${s.slug}`,
+  const episodeEntries: MetadataRoute.Sitemap = episodes.map((s) => ({
+    url: `https://tap-and-swipe.com/episodes/${s.slug}`,
     lastModified: new Date(s.date),
     changeFrequency: "monthly",
     priority: 0.8,
@@ -43,7 +43,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
-      url: "https://tap-and-swipe.com/stories",
+      url: "https://tap-and-swipe.com/episodes",
       lastModified: latestDate,
       changeFrequency: "weekly",
       priority: 0.9,
@@ -114,7 +114,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.1,
     },
-    ...storyEntries,
+    ...episodeEntries,
     ...caseStudyEntries,
   ];
 }

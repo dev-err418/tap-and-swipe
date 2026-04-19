@@ -13,10 +13,10 @@ export function SiteNavbar() {
       </Link>
       <div className="flex items-center gap-6">
         <Link
-          href="/stories"
+          href="/episodes"
           className="text-sm text-muted-foreground transition-colors hover:text-foreground/70"
         >
-          Stories
+          Episodes
         </Link>
         <Link
           href="/case-studies"

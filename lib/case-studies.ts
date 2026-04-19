@@ -20,7 +20,7 @@ export interface CaseStudyMeta {
   appSlug?: string;
   appStoreId?: string;
   playStoreId?: string;
-  storySlug?: string;
+  episodeSlug?: string;
   readingTime: number;
   slug: string;
 }
@@ -55,7 +55,7 @@ export function getAllCaseStudies(): CaseStudyMeta[] {
         appSlug: data.appSlug,
         appStoreId: data.appStoreId,
         playStoreId: data.playStoreId,
-        storySlug: data.storySlug,
+        episodeSlug: data.episodeSlug,
         readingTime: calculateReadingTime(content),
         slug,
       } satisfies CaseStudyMeta;
@@ -83,7 +83,7 @@ export function getCaseStudyBySlug(slug: string): CaseStudy | null {
     appSlug: data.appSlug,
     appStoreId: data.appStoreId,
     playStoreId: data.playStoreId,
-    storySlug: data.storySlug,
+    episodeSlug: data.episodeSlug,
     readingTime: calculateReadingTime(content),
     slug,
     content,

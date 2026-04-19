@@ -1,5 +1,5 @@
 import { getAllCaseStudies } from "@/lib/case-studies";
-import { getAllStories } from "@/lib/stories";
+import { getAllEpisodes } from "@/lib/episodes";
 
 const BASE_URL = "https://tap-and-swipe.com";
 
@@ -23,7 +23,7 @@ interface FeedItem {
 
 export function GET() {
   const caseStudies = getAllCaseStudies();
-  const stories = getAllStories();
+  const episodes = getAllEpisodes();
 
   const feedItems: FeedItem[] = [
     ...caseStudies.map((cs) => ({
@@ -34,10 +34,10 @@ export function GET() {
       date: cs.date,
       tags: cs.tags,
     })),
-    ...stories.map((s) => ({
+    ...episodes.map((s) => ({
       title: s.title,
       slug: s.slug,
-      route: "stories",
+      route: "episodes",
       description: s.description,
       date: s.date,
       tags: s.tags,

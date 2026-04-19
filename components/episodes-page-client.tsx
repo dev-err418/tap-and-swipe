@@ -5,9 +5,9 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { SiApple, SiAndroid } from "@icons-pack/react-simple-icons";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import type { StoryMeta } from "@/lib/stories";
+import type { EpisodeMeta } from "@/lib/episodes";
 
-export interface StoryWithGenres extends StoryMeta {
+export interface EpisodeWithGenres extends EpisodeMeta {
   genres?: string[];
 }
 
@@ -19,10 +19,10 @@ function formatDate(dateStr: string) {
   });
 }
 
-export function StoriesPageClient({
-  stories,
+export function EpisodesPageClient({
+  episodes,
 }: {
-  stories: StoryWithGenres[];
+  episodes: EpisodeWithGenres[];
 }) {
   const [search, setSearch] = useState("");
   const [platform, setPlatform] = useState<"all" | "ios" | "android">("all");
@@ -30,15 +30,15 @@ export function StoriesPageClient({
 
   const allGenres = useMemo(() => {
     const set = new Set<string>();
-    for (const s of stories) {
+    for (const s of episodes) {
       for (const g of s.genres ?? []) set.add(g);
     }
     return Array.from(set).sort();
-  }, [stories]);
+  }, [episodes]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return stories.filter((s) => {
+    return episodes.filter((s) => {
       if (q) {
         const haystack =
           `${s.title} ${s.description} ${s.guest ?? ""}`.toLowerCase();
@@ -52,7 +52,7 @@ export function StoriesPageClient({
       }
       return true;
     });
-  }, [stories, search, platform, activeGenre]);
+  }, [episodes, search, platform, activeGenre]);
 
   return (
     <>
@@ -61,7 +61,7 @@ export function StoriesPageClient({
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Search stories..."
+          placeholder="Search episodes..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/30"
@@ -128,14 +128,14 @@ export function StoriesPageClient({
       {/* Grid */}
       {filtered.length === 0 ? (
         <p className="mt-16 text-center text-foreground/40">
-          No stories match your filters.
+          No episodes match your filters.
         </p>
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((s) => (
             <Link
               key={s.slug}
-              href={`/stories/${s.slug}`}
+              href={`/episodes/${s.slug}`}
               className="group"
             >
               <AspectRatio ratio={16 / 9}>

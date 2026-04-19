@@ -1,4 +1,4 @@
-import { getAllStories } from "@/lib/stories";
+import { getAllEpisodes } from "@/lib/episodes";
 import Link from "next/link";
 
 function formatDate(dateStr: string) {
@@ -9,20 +9,20 @@ function formatDate(dateStr: string) {
   });
 }
 
-export function StoriesSection() {
-  const stories = getAllStories();
-  if (stories.length === 0) return null;
+export function EpisodesSection() {
+  const episodes = getAllEpisodes();
+  if (episodes.length === 0) return null;
 
-  const [latest, ...older] = stories;
+  const [latest, ...older] = episodes;
   const shown = older.slice(0, 3);
 
   return (
     <section className="mx-auto w-full max-w-5xl px-6 py-20">
-      <h2 className="text-2xl font-semibold tracking-tight">Latest Stories</h2>
+      <h2 className="text-2xl font-semibold tracking-tight">Latest Episodes</h2>
 
-      {/* Featured story */}
+      {/* Featured episode */}
       <Link
-        href={`/stories/${latest.slug}`}
+        href={`/episodes/${latest.slug}`}
         className="group mt-8 flex flex-col gap-6 sm:flex-row sm:items-start"
       >
         <div className="shrink-0 sm:w-1/2">
@@ -51,13 +51,13 @@ export function StoriesSection() {
         </div>
       </Link>
 
-      {/* Older stories */}
+      {/* Older episodes */}
       {shown.length > 0 && (
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((s) => (
             <Link
               key={s.slug}
-              href={`/stories/${s.slug}`}
+              href={`/episodes/${s.slug}`}
               className="group"
             >
               <div className="relative w-full overflow-hidden rounded-xl pt-[56.25%]">
@@ -94,10 +94,10 @@ export function StoriesSection() {
 
       <div className="mt-16 text-center">
         <Link
-          href="/stories"
+          href="/episodes"
           className="inline-block text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          See All Stories &rarr;
+          See All Episodes &rarr;
         </Link>
       </div>
     </section>

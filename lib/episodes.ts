@@ -3,11 +3,11 @@ import path from "path";
 import matter from "gray-matter";
 import type { GuestInfo } from "./content";
 
-const STORIES_DIR = path.join(process.cwd(), "content", "stories");
+const EPISODES_DIR = path.join(process.cwd(), "content", "episodes");
 
 export type { GuestInfo };
 
-export interface StoryMeta {
+export interface EpisodeMeta {
   title: string;
   description: string;
   date: string;
@@ -23,21 +23,21 @@ export interface StoryMeta {
   slug: string;
 }
 
-export interface Story extends StoryMeta {
+export interface Episode extends EpisodeMeta {
   content: string;
 }
 
-export function getAllStories(): StoryMeta[] {
-  if (!fs.existsSync(STORIES_DIR)) return [];
+export function getAllEpisodes(): EpisodeMeta[] {
+  if (!fs.existsSync(EPISODES_DIR)) return [];
 
   const files = fs
-    .readdirSync(STORIES_DIR)
+    .readdirSync(EPISODES_DIR)
     .filter((f) => f.endsWith(".mdx"));
 
   return files
     .map((file) => {
       const slug = file.replace(/\.mdx$/, "");
-      const raw = fs.readFileSync(path.join(STORIES_DIR, file), "utf-8");
+      const raw = fs.readFileSync(path.join(EPISODES_DIR, file), "utf-8");
       const { data } = matter(raw);
 
       return {
@@ -54,13 +54,13 @@ export function getAllStories(): StoryMeta[] {
         image: data.image,
         caseStudySlug: data.caseStudySlug,
         slug,
-      } satisfies StoryMeta;
+      } satisfies EpisodeMeta;
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-export function getStoryBySlug(slug: string): Story | null {
-  const filePath = path.join(STORIES_DIR, `${slug}.mdx`);
+export function getEpisodeBySlug(slug: string): Episode | null {
+  const filePath = path.join(EPISODES_DIR, `${slug}.mdx`);
   if (!fs.existsSync(filePath)) return null;
 
   const raw = fs.readFileSync(filePath, "utf-8");
@@ -84,11 +84,11 @@ export function getStoryBySlug(slug: string): Story | null {
   };
 }
 
-export function getAllStorySlugs(): string[] {
-  if (!fs.existsSync(STORIES_DIR)) return [];
+export function getAllEpisodeSlugs(): string[] {
+  if (!fs.existsSync(EPISODES_DIR)) return [];
 
   return fs
-    .readdirSync(STORIES_DIR)
+    .readdirSync(EPISODES_DIR)
     .filter((f) => f.endsWith(".mdx"))
     .map((f) => f.replace(/\.mdx$/, ""));
 }

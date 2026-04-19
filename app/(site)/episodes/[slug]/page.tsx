@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import {
-  getAllStorySlugs,
-  getAllStories,
-  getStoryBySlug,
+  getAllEpisodeSlugs,
+  getAllEpisodes,
+  getEpisodeBySlug,
   type GuestInfo,
-} from "@/lib/stories";
+} from "@/lib/episodes";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { getAppData } from "@/lib/app-data";
 import { AppShowcase } from "@/components/app-showcase";
@@ -17,7 +17,7 @@ import { Globe, Linkedin, FileText } from "lucide-react";
 const BASE_URL = "https://tap-and-swipe.com";
 
 export async function generateStaticParams() {
-  return getAllStorySlugs().map((slug) => ({ slug }));
+  return getAllEpisodeSlugs().map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -26,33 +26,33 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const story = getStoryBySlug(slug);
-  if (!story) return {};
+  const episode = getEpisodeBySlug(slug);
+  if (!episode) return {};
 
-  const thumbnail = `https://img.youtube.com/vi/${story.youtubeId}/maxresdefault.jpg`;
+  const thumbnail = `https://img.youtube.com/vi/${episode.youtubeId}/maxresdefault.jpg`;
 
   return {
-    title: story.title,
-    description: story.description,
-    keywords: story.tags,
+    title: episode.title,
+    description: episode.description,
+    keywords: episode.tags,
     openGraph: {
       type: "video.other",
       locale: "en_US",
       siteName: "Tap & Swipe",
-      title: story.title,
-      description: story.description,
-      url: `${BASE_URL}/stories/${slug}`,
+      title: episode.title,
+      description: episode.description,
+      url: `${BASE_URL}/episodes/${slug}`,
       images: [{ url: thumbnail, width: 1280, height: 720 }],
     },
     twitter: {
       card: "summary_large_image",
       creator: "@arthursbuilds",
-      title: story.title,
-      description: story.description,
+      title: episode.title,
+      description: episode.description,
       images: [thumbnail],
     },
     alternates: {
-      canonical: `/stories/${slug}`,
+      canonical: `/episodes/${slug}`,
     },
   };
 }
@@ -153,17 +153,17 @@ function formatDate(dateStr: string) {
   });
 }
 
-export default async function StoryPage({
+export default async function EpisodePage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const story = getStoryBySlug(slug);
-  if (!story) notFound();
+  const episode = getEpisodeBySlug(slug);
+  if (!episode) notFound();
 
-  const appData = story.appSlug ? getAppData(story.appSlug) : null;
-  const otherStories = getAllStories()
+  const appData = episode.appSlug ? getAppData(episode.appSlug) : null;
+  const otherEpisodes = getAllEpisodes()
     .filter((s) => s.slug !== slug)
     .slice(0, 3);
 
@@ -171,13 +171,13 @@ export default async function StoryPage({
     {
       "@context": "https://schema.org",
       "@type": "VideoObject",
-      name: story.title,
-      description: story.description,
-      thumbnailUrl: `https://img.youtube.com/vi/${story.youtubeId}/maxresdefault.jpg`,
-      uploadDate: new Date(story.date).toISOString(),
-      embedUrl: `https://www.youtube-nocookie.com/embed/${story.youtubeId}`,
-      ...(story.guest && {
-        contributor: { "@type": "Person", name: story.guest },
+      name: episode.title,
+      description: episode.description,
+      thumbnailUrl: `https://img.youtube.com/vi/${episode.youtubeId}/maxresdefault.jpg`,
+      uploadDate: new Date(episode.date).toISOString(),
+      embedUrl: `https://www.youtube-nocookie.com/embed/${episode.youtubeId}`,
+      ...(episode.guest && {
+        contributor: { "@type": "Person", name: episode.guest },
       }),
     },
     {
@@ -193,20 +193,22 @@ export default async function StoryPage({
         {
           "@type": "ListItem",
           position: 2,
-          name: "Stories",
-          item: `${BASE_URL}/stories`,
+          name: "Episodes",
+          item: `${BASE_URL}/episodes`,
         },
         {
           "@type": "ListItem",
           position: 3,
-          name: story.title,
-          item: `${BASE_URL}/stories/${slug}`,
+          name: episode.title,
+          item: `${BASE_URL}/episodes/${slug}`,
         },
       ],
     },
   ];
 
   const mdxComponents = {
+    FounderCard: () =>
+      episode.guestInfo ? <GuestCard guest={episode.guestInfo} /> : null,
     p: (props: React.ComponentProps<"p">) => (
       <p className="mb-5 leading-relaxed text-foreground/70" {...props} />
     ),
@@ -233,8 +235,8 @@ export default async function StoryPage({
         <div className="overflow-hidden rounded-xl">
           <AspectRatio ratio={16 / 9}>
             <iframe
-              src={`https://www.youtube-nocookie.com/embed/${story.youtubeId}`}
-              title={story.title}
+              src={`https://www.youtube-nocookie.com/embed/${episode.youtubeId}`}
+              title={episode.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               className="h-full w-full"
@@ -244,25 +246,25 @@ export default async function StoryPage({
 
         {/* Title + date */}
         <h1 className="mt-8 text-3xl font-semibold tracking-tight sm:text-4xl">
-          {story.title}
+          {episode.title}
         </h1>
 
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-foreground/40">
-          <time dateTime={story.date}>{formatDate(story.date)}</time>
-          {story.guest && <span>with {story.guest}</span>}
+          <time dateTime={episode.date}>{formatDate(episode.date)}</time>
+          {episode.guest && <span>with {episode.guest}</span>}
         </div>
 
         {/* Guest card */}
-        {story.guestInfo && (
+        {episode.guestInfo && (
           <div className="mt-6">
-            <GuestCard guest={story.guestInfo} />
+            <GuestCard guest={episode.guestInfo} />
           </div>
         )}
 
         {/* Body */}
-        {story.content && (
+        {episode.content && (
           <div className="mt-8">
-            <MDXRemote source={story.content} components={mdxComponents} />
+            <MDXRemote source={episode.content} components={mdxComponents} />
           </div>
         )}
 
@@ -274,9 +276,9 @@ export default async function StoryPage({
         )}
 
         {/* Cross-link to case study */}
-        {story.caseStudySlug && (
+        {episode.caseStudySlug && (
           <Link
-            href={`/case-studies/${story.caseStudySlug}`}
+            href={`/case-studies/${episode.caseStudySlug}`}
             className="mt-8 flex items-center gap-2 rounded-lg border border-border px-4 py-3 text-sm transition-colors hover:bg-accent"
           >
             <FileText size={16} className="shrink-0 text-muted-foreground" />
@@ -284,17 +286,17 @@ export default async function StoryPage({
           </Link>
         )}
 
-        {/* More stories */}
-        {otherStories.length > 0 && (
+        {/* More episodes */}
+        {otherEpisodes.length > 0 && (
           <section className="mt-20 border-t border-border pt-12 pb-20">
             <h3 className="mb-6 text-lg font-semibold tracking-tight">
-              More stories
+              More episodes
             </h3>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {otherStories.map((s) => (
+              {otherEpisodes.map((s) => (
                 <Link
                   key={s.slug}
-                  href={`/stories/${s.slug}`}
+                  href={`/episodes/${s.slug}`}
                   className="group"
                 >
                   <AspectRatio ratio={16 / 9}>

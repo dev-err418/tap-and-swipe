@@ -4,7 +4,7 @@
  * Usage:
  *   npx tsx scripts/update-app-data.ts
  *
- * - Reads MDX frontmatter from content/stories/ and content/case-studies/
+ * - Reads MDX frontmatter from content/episodes/ and content/case-studies/
  * - Deduplicates by appSlug — fetches once per unique app
  * - Fetches metadata from iTunes Search API + google-play-scraper
  * - Downloads icons + screenshots as webp to public/apps/{appSlug}/
@@ -20,7 +20,7 @@ import sharp from "sharp";
 // ── Paths ──────────────────────────────────────────────────────────
 
 const ROOT = path.resolve(__dirname, "..");
-const STORIES_DIR = path.join(ROOT, "content", "stories");
+const EPISODES_DIR = path.join(ROOT, "content", "episodes");
 const CASE_STUDIES_DIR = path.join(ROOT, "content", "case-studies");
 const APP_DATA_DIR = path.join(ROOT, "content", "app-data");
 const PUBLIC_APPS_DIR = path.join(ROOT, "public", "apps");
@@ -365,12 +365,12 @@ async function main() {
   console.log("Scanning content directories for appSlug + store IDs...\n");
 
   // Scan both content dirs
-  const storyEntries = scanDir(STORIES_DIR);
+  const episodeEntries = scanDir(EPISODES_DIR);
   const caseStudyEntries = scanDir(CASE_STUDIES_DIR);
 
   // Deduplicate by appSlug — merge store IDs from both content types
   const appMap = new Map<string, AppEntry>();
-  for (const entry of [...storyEntries, ...caseStudyEntries]) {
+  for (const entry of [...episodeEntries, ...caseStudyEntries]) {
     const existing = appMap.get(entry.appSlug);
     if (existing) {
       if (!existing.appStoreId && entry.appStoreId)

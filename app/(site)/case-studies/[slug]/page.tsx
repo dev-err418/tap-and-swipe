@@ -359,10 +359,10 @@ export default async function CaseStudyPage({
             <span>{cs.readingTime} min read</span>
           </div>
 
-          {/* Cross-link to story */}
-          {cs.storySlug && (
+          {/* Cross-link to episode */}
+          {cs.episodeSlug && (
             <Link
-              href={`/stories/${cs.storySlug}`}
+              href={`/episodes/${cs.episodeSlug}`}
               className="mt-6 flex items-center gap-2 rounded-lg border border-border px-4 py-3 text-sm transition-colors hover:bg-accent"
             >
               <Play size={16} className="shrink-0 text-muted-foreground" />
