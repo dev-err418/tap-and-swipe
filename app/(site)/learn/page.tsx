@@ -52,10 +52,10 @@ export default async function LearnPage() {
   return (
     <div className="pt-8">
       <div className="mb-12">
-        <h1 className="text-4xl font-bold tracking-tight text-black dark:text-white sm:text-5xl">
+        <h1 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">
           Course roadmap
         </h1>
-        <p className="mt-3 text-lg text-black/50 dark:text-white/50">
+        <p className="mt-3 text-lg text-black/50">
           Follow the steps below to build and launch your app. Track your
           progress as you go.
         </p>
