@@ -19,7 +19,15 @@ export default function ProgressBar({
         animate={{ width: `${percent}%` }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       />
-      <span className="absolute inset-0 flex items-center px-2.5 text-xs font-medium text-white mix-blend-difference">
+      {/* Dark text on unfilled area */}
+      <span className="absolute inset-0 flex items-center px-2.5 text-xs font-medium text-black/50">
+        {percent}%
+      </span>
+      {/* White text on filled area */}
+      <span
+        className="absolute inset-0 flex items-center px-2.5 text-xs font-medium text-white overflow-hidden"
+        style={{ clipPath: `inset(0 ${100 - percent}% 0 0)` }}
+      >
         {percent}%
       </span>
     </div>

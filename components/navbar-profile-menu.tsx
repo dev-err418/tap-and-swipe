@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import { LogOut, Mail, MessageCircle } from "lucide-react";
+import Link from "next/link";
+import { LogOut, MessageCircle, GraduationCap } from "lucide-react";
 
 export default function NavbarProfileMenu({
   name,
@@ -53,9 +54,13 @@ export default function NavbarProfileMenu({
 
       {menuOpen && (
         <div className="absolute right-0 mt-2 w-44 overflow-hidden rounded-xl border border-black/10 bg-white shadow-xl z-50">
-          <div className="px-4 py-2 text-xs font-medium uppercase tracking-wider text-black/30">
-            Support
-          </div>
+          <Link
+            href="/learn"
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-black/60 transition-colors hover:bg-black/[0.04]"
+          >
+            <GraduationCap className="h-4 w-4" />
+            Learn
+          </Link>
           <a
             href="https://discord.com/users/1261628273465626725"
             target="_blank"
@@ -63,14 +68,7 @@ export default function NavbarProfileMenu({
             className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-black/60 transition-colors hover:bg-black/[0.04]"
           >
             <MessageCircle className="h-4 w-4" />
-            Discord DM
-          </a>
-          <a
-            href="mailto:arthurs.dev@gmail.com?subject=Tap%20%26%20Swipe%20Support"
-            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-black/60 transition-colors hover:bg-black/[0.04]"
-          >
-            <Mail className="h-4 w-4" />
-            Email
+            Support
           </a>
           <div className="border-t border-black/10" />
           <button

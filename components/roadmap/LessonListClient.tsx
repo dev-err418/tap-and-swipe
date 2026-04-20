@@ -149,9 +149,21 @@ export default function LessonListClient({
                       {lesson.order}
                     </span>
                   ) : isDone ? (
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-black" />
+                    <span
+                      role="button"
+                      onClick={(e) => { e.stopPropagation(); onToggle(lesson.id, false); }}
+                      className="shrink-0 cursor-pointer"
+                    >
+                      <CheckCircle2 className="h-4 w-4 text-black" />
+                    </span>
                   ) : (
-                    <Circle className="h-4 w-4 shrink-0 text-black/20" />
+                    <span
+                      role="button"
+                      onClick={(e) => { e.stopPropagation(); if (!comingSoon) onToggle(lesson.id, true); }}
+                      className="shrink-0 cursor-pointer"
+                    >
+                      <Circle className="h-4 w-4 text-black/20 hover:text-black/40" />
+                    </span>
                   )}
                   <span className={`truncate ${isDone && !isActive ? "line-through text-black/30" : ""}`}>
                     {lesson.title}
