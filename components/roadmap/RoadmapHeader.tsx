@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { LogOut, Mail, MessageCircle, Sun, Moon } from "lucide-react";
 import ProgressBar from "./ProgressBar";
 
@@ -50,7 +51,7 @@ export default function RoadmapHeader({
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/app-sprint-community");
+    await signOut({ redirectTo: "/" });
   }
 
   return (

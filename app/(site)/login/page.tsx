@@ -22,7 +22,7 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white px-4">
+    <div className="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-24">
       <div className="w-full max-w-sm space-y-8 text-center">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-black">

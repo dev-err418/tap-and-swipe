@@ -9,7 +9,7 @@ export default function SiteLayout({
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground selection:bg-black/10">
       <SiteNavbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex flex-1 flex-col">{children}</main>
       <SiteFooter />
     </div>
   );

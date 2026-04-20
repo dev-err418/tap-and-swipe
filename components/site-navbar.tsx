@@ -1,6 +1,27 @@
 import Link from "next/link";
+import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
+import { Button } from "@/components/ui/button";
+import NavbarProfileMenu from "@/components/navbar-profile-menu";
 
-export function SiteNavbar() {
+export async function SiteNavbar() {
+  const authSession = await auth();
+  const discordSession = await getSession();
+
+  const user = authSession?.user;
+  const isLoggedIn = !!user || !!discordSession;
+
+  const name =
+    user?.name ?? discordSession?.discordUsername ?? null;
+  const image =
+    user?.image ?? discordSession?.discordAvatar ?? null;
+  const avatarUrl =
+    image && image.startsWith("http")
+      ? image
+      : discordSession?.discordAvatar
+        ? `https://cdn.discordapp.com/avatars/${discordSession.discordId}/${discordSession.discordAvatar}.png?size=64`
+        : null;
+
   return (
     <nav className="relative z-20 mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
       <Link href="/" className="flex items-center gap-2.5">
@@ -24,12 +45,13 @@ export function SiteNavbar() {
         >
           Case Studies
         </Link>
-        <Link
-          href="/about"
-          className="text-sm text-muted-foreground transition-colors hover:text-foreground/70"
-        >
-          About
-        </Link>
+        {isLoggedIn ? (
+          <NavbarProfileMenu name={name} avatarUrl={avatarUrl} />
+        ) : (
+          <Button size="sm" className="rounded-full" asChild>
+            <Link href="/login">Login</Link>
+          </Button>
+        )}
       </div>
     </nav>
   );
