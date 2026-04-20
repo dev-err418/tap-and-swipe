@@ -67,7 +67,7 @@ export default function LoginForm({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm text-black placeholder-black/30 outline-none focus:border-[#FF9500]/40 transition-colors"
+          className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm text-black placeholder-black/30 outline-none focus:border-black/40 transition-colors"
         />
         <button
           type="submit"

@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "yt3.googleusercontent.com" },
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],
   },
   async headers() {
@@ -42,7 +43,7 @@ const nextConfig: NextConfig = {
                     "default-src 'self'",
                     "script-src 'self' 'unsafe-inline' https://eu.i.posthog.com https://eu-assets.i.posthog.com https://challenges.cloudflare.com",
                     "style-src 'self' 'unsafe-inline'",
-                    "img-src 'self' data: blob: https://yt3.googleusercontent.com https://img.youtube.com",
+                    "img-src 'self' data: blob: https://yt3.googleusercontent.com https://lh3.googleusercontent.com https://img.youtube.com",
                     "media-src 'self' https://assets.whop.com https://*.r2.dev https://videos.tap-and-swipe.com",
                     "font-src 'self'",
                     "connect-src 'self' https://eu.i.posthog.com https://eu-assets.i.posthog.com https://challenges.cloudflare.com",

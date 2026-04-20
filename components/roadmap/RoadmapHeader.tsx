@@ -25,7 +25,9 @@ export default function RoadmapHeader({
   const router = useRouter();
 
   const avatarUrl = discordAvatar
-    ? `https://cdn.discordapp.com/avatars/${discordId}/${discordAvatar}.png?size=64`
+    ? discordAvatar.startsWith("http")
+      ? discordAvatar
+      : `https://cdn.discordapp.com/avatars/${discordId}/${discordAvatar}.png?size=64`
     : null;
 
   const percent =

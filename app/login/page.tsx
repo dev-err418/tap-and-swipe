@@ -29,7 +29,7 @@ export default async function LoginPage({
             Sign in to Tap & Swipe
           </h1>
           <p className="mt-2 text-sm text-black/50">
-            Access your course and track your progress.
+            Access your roadmap and track your progress.
           </p>
         </div>
 
