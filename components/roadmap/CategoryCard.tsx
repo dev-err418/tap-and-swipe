@@ -11,6 +11,7 @@ export default function CategoryCard({
   subtitle,
   completedLessons,
   totalLessons,
+  image,
   index,
 }: {
   slug: string;
@@ -18,6 +19,7 @@ export default function CategoryCard({
   subtitle: string;
   completedLessons: number;
   totalLessons: number;
+  image?: string;
   index: number;
 }) {
   return (
@@ -30,7 +32,11 @@ export default function CategoryCard({
         href={`/learn/${slug}`}
         className="group block overflow-hidden rounded-2xl border border-black/10 bg-black/[0.02] transition-all hover:bg-black/[0.04] hover:border-black/15"
       >
-        <div className="aspect-video w-full bg-black/[0.04]" />
+        {image ? (
+          <img src={image} alt={title} className="aspect-video w-full object-cover" />
+        ) : (
+          <div className="aspect-video w-full bg-black/[0.04]" />
+        )}
         <div className="p-4">
           <h3 className="flex items-center gap-1.5 font-semibold text-black">
             {title}

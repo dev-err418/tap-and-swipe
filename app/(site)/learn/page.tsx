@@ -72,6 +72,7 @@ export default async function LearnPage() {
               subtitle={cat.subtitle}
               completedLessons={cat.completedLessons}
               totalLessons={cat.totalLessons}
+              image={"image" in cat ? (cat.image as string) : undefined}
               index={i}
             />
           ))}
