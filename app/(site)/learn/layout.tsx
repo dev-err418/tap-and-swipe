@@ -1,10 +1,7 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { CATEGORIES } from "@/lib/roadmap";
-import RoadmapHeader from "@/components/roadmap/RoadmapHeader";
 
 const WHITELISTED_DISCORD_IDS = new Set([
   process.env.ADMIN_DISCORD_ID,
@@ -64,49 +61,9 @@ export default async function LearnLayout({
     redirect("/app-sprint-community?error=not_subscribed");
   }
 
-  const cookieStore = await cookies();
-  const theme = cookieStore.get("roadmap-theme")?.value === "dark" ? "dark" : "light";
-  const isDark = theme === "dark";
-
-  // Exclude weekly-calls from global progress
-  const excludedCategories = CATEGORIES
-    .filter((c) => c.slug === "weekly-calls")
-    .map((c) => c.slug);
-
-  const [totalLessons, completedLessons] = await Promise.all([
-    prisma.lesson.count({
-      where: { category: { notIn: excludedCategories } },
-    }),
-    user
-      ? prisma.lessonProgress.count({
-          where: {
-            userId: user.id,
-            uncheckedAt: null,
-            lesson: { category: { notIn: excludedCategories } },
-          },
-        })
-      : Promise.resolve(0),
-  ]);
-
-  // Display name: prefer Auth.js user, then Discord session
-  const displayName = authSession?.user?.name ?? discordSession?.discordUsername ?? "Dev User";
-  const displayAvatar = authSession?.user?.image ?? discordSession?.discordAvatar ?? null;
-  const displayId = discordSession?.discordId ?? user?.id ?? "dev";
-
   return (
-    <>
-    <style>{`html, body { background-color: ${isDark ? "#1a1a1a" : "#fff"} !important; }`}</style>
-    <div className={`min-h-screen ${isDark ? "dark bg-[#1a1a1a]" : "bg-white"}`}>
-      <RoadmapHeader
-        discordUsername={displayName}
-        discordAvatar={displayAvatar}
-        discordId={displayId}
-        totalLessons={totalLessons}
-        completedLessons={completedLessons}
-        theme={theme}
-      />
-      <main className="mx-auto max-w-7xl px-6 pb-24">{children}</main>
+    <div className="px-6 pb-24">
+      <div className="mx-auto w-full max-w-5xl">{children}</div>
     </div>
-    </>
   );
 }

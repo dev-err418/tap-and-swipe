@@ -69,34 +69,13 @@ export default async function LearnPage() {
               key={cat.slug}
               slug={cat.slug}
               title={cat.title}
-              emoji={cat.emoji}
-              totalLessons={cat.totalLessons}
+              subtitle={cat.subtitle}
               completedLessons={cat.completedLessons}
+              totalLessons={cat.totalLessons}
               index={i}
             />
           ))}
       </div>
-
-      {categoryData
-        .filter((cat) => cat.slug === "weekly-calls")
-        .map((cat) => (
-          <div key={cat.slug} className="mt-16">
-            <h2 className="text-2xl font-bold tracking-tight text-black dark:text-white mb-6">
-              Bonus
-            </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <CategoryCard
-                slug={cat.slug}
-                title={cat.title}
-                emoji={cat.emoji}
-                totalLessons={cat.totalLessons}
-                completedLessons={cat.completedLessons}
-                index={0}
-                hideProgress
-              />
-            </div>
-          </div>
-        ))}
 
       {isAdmin && (
         <div className="mt-16 flex justify-center">
