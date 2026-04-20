@@ -51,8 +51,6 @@ export default async function CategoryPage({
   const completedLessonIds = progress.map((p) => p.lessonId);
 
   const hideProgress = slug === "weekly-calls";
-  const currentIndex = CATEGORIES.findIndex((c) => c.slug === slug);
-  const nextCategory = CATEGORIES[currentIndex + 1] ?? null;
 
   const serializedLessons = lessons.map((l) => ({
     id: l.id,
@@ -76,25 +74,12 @@ export default async function CategoryPage({
         Back to roadmap
       </Link>
 
-      <div className="mb-10">
-        <div className="flex items-center gap-4 mb-4">
-          <span className="text-4xl">{category.emoji}</span>
-          <h1 className="text-3xl font-bold tracking-tight text-black">
-            {category.title}
-          </h1>
-        </div>
-      </div>
-
       <LessonListClient
         lessons={serializedLessons}
         initialCompletedIds={completedLessonIds}
         hideProgress={hideProgress}
-        slug={slug}
-        nextCategory={
-          nextCategory
-            ? { slug: nextCategory.slug, title: nextCategory.title }
-            : null
-        }
+        categoryTitle={category.title}
+        categorySubtitle={category.subtitle}
       />
     </div>
   );
