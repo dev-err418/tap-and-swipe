@@ -46,6 +46,14 @@ export async function SiteNavbar() {
           >
             Case Studies
           </Link>
+          {isLoggedIn && (
+            <Link
+              href="/learn"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground/70"
+            >
+              Learn
+            </Link>
+          )}
           {isLoggedIn ? (
             <NavbarProfileMenu name={name} avatarUrl={avatarUrl} />
           ) : (
