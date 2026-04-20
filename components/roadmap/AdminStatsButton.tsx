@@ -36,7 +36,7 @@ export default function AdminStatsButton() {
     setOpen(true);
     setLoading(true);
     try {
-      const res = await fetch("/api/roadmap/admin/stats");
+      const res = await fetch("/api/learn/admin/stats");
       if (res.ok) {
         const data = await res.json();
         setStats(data.users);

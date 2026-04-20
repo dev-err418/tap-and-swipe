@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
 
     let revoked = 0;
     for (const user of expiredUsers) {
+      if (!user.discordId) continue;
       await removeRole(user.discordId);
       await prisma.user.update({
         where: { id: user.id },

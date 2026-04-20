@@ -1,30 +1,28 @@
-import { cookies } from "next/headers";
+import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES } from "@/lib/roadmap";
-import { getUserTier, getCategoryAccess, type UserTier } from "@/lib/premium";
 import CategoryCard from "@/components/roadmap/CategoryCard";
 import AdminStatsButton from "@/components/roadmap/AdminStatsButton";
 
-export default async function RoadmapPage() {
-  const session = await getSession();
+export default async function LearnPage() {
+  const authSession = await auth();
+  const discordSession = await getSession();
 
-  const user = session
-    ? await prisma.user.findUnique({
-        where: { discordId: session.discordId },
-        select: { id: true },
-      })
-    : null;
+  let user = null;
+  if (authSession?.user?.id) {
+    user = await prisma.user.findUnique({
+      where: { id: authSession.user.id },
+      select: { id: true },
+    });
+  } else if (discordSession) {
+    user = await prisma.user.findUnique({
+      where: { discordId: discordSession.discordId },
+      select: { id: true },
+    });
+  }
 
-  const isAdmin = session?.discordId === process.env.ADMIN_DISCORD_ID;
-  const realTier = session ? await getUserTier(session.discordId) : "standard";
-
-  const cookieStore = await cookies();
-  const debugTierCookie = cookieStore.get("debug-tier")?.value;
-  const tier =
-    isAdmin && debugTierCookie && ["standard", "boilerplate", "full"].includes(debugTierCookie)
-      ? (debugTierCookie as UserTier)
-      : realTier;
+  const isAdmin = discordSession?.discordId === process.env.ADMIN_DISCORD_ID;
 
   const [lessons, progress] = await Promise.all([
     prisma.lesson.findMany({
@@ -40,7 +38,6 @@ export default async function RoadmapPage() {
   const completedLessonIds = new Set(progress.map((p) => p.lessonId));
 
   const categoryData = CATEGORIES.map((cat) => {
-    const access = getCategoryAccess(tier, cat.slug);
     const catLessons = lessons.filter((l) => l.category === cat.slug);
     const completed = catLessons.filter((l) =>
       completedLessonIds.has(l.id)
@@ -49,9 +46,8 @@ export default async function RoadmapPage() {
       ...cat,
       totalLessons: catLessons.length,
       completedLessons: completed,
-      access,
     };
-  }).filter((cat) => cat.access !== "hidden");
+  });
 
   return (
     <div className="pt-8">
@@ -77,7 +73,6 @@ export default async function RoadmapPage() {
               totalLessons={cat.totalLessons}
               completedLessons={cat.completedLessons}
               index={i}
-              locked={cat.access === "locked"}
             />
           ))}
       </div>

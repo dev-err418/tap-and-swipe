@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   // Generate CSRF state as a signed JWT, encoding the redirect target
   const claims: Record<string, unknown> = {};
-  if (redirect?.startsWith("roadmap")) {
+  if (redirect?.startsWith("learn")) {
     claims.redirect = redirect;
   }
   if (flow === "bundle-community" || flow === "bundle-aso" || flow === "aso-yearly-bonus") {

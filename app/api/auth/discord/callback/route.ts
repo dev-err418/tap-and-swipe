@@ -42,9 +42,9 @@ export async function GET(request: NextRequest) {
   }
 
   const rawRedirect = typeof statePayload.redirect === "string" ? statePayload.redirect as string : null;
-  const isRoadmapRedirect = !!rawRedirect?.startsWith("roadmap");
+  const isLearnRedirect = !!rawRedirect?.startsWith("learn");
   // Sanitize: only allow alphanumeric, hyphens, and slashes to prevent path traversal
-  const redirectTarget = isRoadmapRedirect
+  const redirectTarget = isLearnRedirect
     ? rawRedirect!.replace(/[^a-zA-Z0-9\-/]/g, "")
     : null;
 
@@ -116,7 +116,7 @@ https://youtu.be/AOH2aOJwp_Y`;
 
         const stepsMsg = `Here are the next steps:
 1️⃣ Watch the video above
-2️⃣ Access your course on the platform: https://tap-and-swipe.com/app-sprint-community/roadmap
+2️⃣ Access your course on the platform: https://tap-and-swipe.com/learn
 3️⃣ Have a read through this report on the state of subscription apps, great insights on the mobile app market: https://www.revenuecat.com/pdf/state-of-subscription-apps-2025.pdf
 
 We're super excited to kick this off with you!
@@ -131,13 +131,6 @@ Feel free to reach out here if you have any questions 😉`;
       } catch (err) {
         console.error("[invite] Failed to create support channel:", err);
       }
-
-      // Upsert PremiumUser with the invite's tier
-      await prisma.premiumUser.upsert({
-        where: { discordId: discordUser.id },
-        update: { tier: invite.tier },
-        create: { discordId: discordUser.id, tier: invite.tier },
-      });
 
       // Set subscription status active so existing guards work
       await prisma.user.update({
@@ -188,7 +181,7 @@ Feel free to reach out here if you have any questions 😉`;
           },
           "7d"
         );
-        return NextResponse.redirect(`${APP_URL}/app-sprint-community/roadmap`);
+        return NextResponse.redirect(`${APP_URL}/learn`);
       }
 
       await createSession({
@@ -211,13 +204,9 @@ Feel free to reach out here if you have any questions 😉`;
     ]);
     const isWhitelisted = WHITELISTED_DISCORD_IDS.has(discordUser.id);
 
-    if (isRoadmapRedirect) {
-      // Check subscription, PremiumUser, or whitelist
-      const premiumUser = await prisma.premiumUser.findUnique({
-        where: { discordId: discordUser.id },
-      });
-
-      if (user.subscriptionStatus !== "active" && !premiumUser && !isWhitelisted) {
+    if (isLearnRedirect) {
+      // Check subscription or whitelist
+      if (user.subscriptionStatus !== "active" && !isWhitelisted) {
         return NextResponse.redirect(
           `${APP_URL}/app-sprint-community?error=not_subscribed`
         );
@@ -232,7 +221,7 @@ Feel free to reach out here if you have any questions 😉`;
         "7d"
       );
 
-      return NextResponse.redirect(`${APP_URL}/app-sprint-community/${redirectTarget}`);
+      return NextResponse.redirect(`${APP_URL}/${redirectTarget}`);
     }
 
     // Already-subscribed user: create session and send to roadmap
@@ -245,7 +234,7 @@ Feel free to reach out here if you have any questions 😉`;
         },
         "7d"
       );
-      return NextResponse.redirect(`${APP_URL}/app-sprint-community/roadmap`);
+      return NextResponse.redirect(`${APP_URL}/learn`);
     }
 
     // Set session cookie with Discord identity for checkout

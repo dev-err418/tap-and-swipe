@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { getUserTier, getCategoryAccess } from "@/lib/premium";
 
 const WHITELISTED_DISCORD_IDS = new Set([
   process.env.ADMIN_DISCORD_ID,
@@ -10,19 +10,30 @@ const WHITELISTED_DISCORD_IDS = new Set([
 ]);
 
 export async function POST(request: NextRequest) {
-  const session = await getSession();
-  if (!session) {
+  // Try Auth.js session first, then legacy Discord session
+  const authSession = await auth();
+  const discordSession = await getSession();
+
+  let user = null;
+  if (authSession?.user?.id) {
+    user = await prisma.user.findUnique({
+      where: { id: authSession.user.id },
+      select: { id: true, subscriptionStatus: true, discordId: true },
+    });
+  } else if (discordSession) {
+    user = await prisma.user.findUnique({
+      where: { discordId: discordSession.discordId },
+      select: { id: true, subscriptionStatus: true, discordId: true },
+    });
+  }
+
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const isWhitelisted = WHITELISTED_DISCORD_IDS.has(session.discordId);
+  const isWhitelisted = WHITELISTED_DISCORD_IDS.has(user.discordId ?? "");
 
-  const user = await prisma.user.findUnique({
-    where: { discordId: session.discordId },
-    select: { id: true, subscriptionStatus: true },
-  });
-
-  if (!user || (user.subscriptionStatus !== "active" && !isWhitelisted)) {
+  if (user.subscriptionStatus !== "active" && !isWhitelisted) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -39,13 +50,6 @@ export async function POST(request: NextRequest) {
   const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
   if (!lesson) {
     return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
-  }
-
-  // Guard: only allow progress on unlocked categories
-  const tier = await getUserTier(session.discordId);
-  const access = getCategoryAccess(tier, lesson.category);
-  if (access !== "unlocked") {
-    return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 
   if (completed) {

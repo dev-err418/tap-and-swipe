@@ -178,11 +178,7 @@ export default async function AnalyticsPage({
       a_views: number; a_cta: number; a_stripe: number; a_trials: number; a_revenue: number;
     }]>`
       SELECT
-        (SELECT COUNT(*)::int FROM "QuizEvent" WHERE type='page_view' AND "createdAt">=${since}) as q_views,
-        (SELECT COUNT(*)::int FROM "QuizEvent" WHERE type='quiz_start' AND "createdAt">=${since}) as q_starts,
-        (SELECT COUNT(*)::int FROM "QuizEvent" WHERE type='quiz_complete' AND "createdAt">=${since}) as q_completes,
-        (SELECT COUNT(*)::int FROM "QuizEvent" WHERE type='booking_click' AND "createdAt">=${since}) as q_bookings,
-        (SELECT COUNT(*)::int FROM "QuizLead" WHERE "createdAt">=${since}) as q_leads,
+        0 as q_views, 0 as q_starts, 0 as q_completes, 0 as q_bookings, 0 as q_leads,
         (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='community' AND type='page_view' AND "createdAt">=${since}) as c_views,
         (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='community' AND type='cta_clicked' AND "createdAt">=${since}) as c_cta,
         (SELECT COUNT(*)::int FROM "PageEvent" WHERE product='community' AND type='stripe_shown' AND "createdAt">=${since}) as c_stripe,
@@ -196,14 +192,6 @@ export default async function AnalyticsPage({
     `,
     // All source groupBys in a single query
     prisma.$queryRaw<{ kind: string; ref: string | null; count: bigint }[]>`
-      SELECT 'q_traffic' as kind, source as ref, COUNT(*)::bigint as count
-      FROM "QuizEvent" WHERE type='page_view' AND "createdAt">=${since}
-      GROUP BY source
-      UNION ALL
-      SELECT 'q_leads' as kind, source as ref, COUNT(*)::bigint as count
-      FROM "QuizLead" WHERE "createdAt">=${since}
-      GROUP BY source
-      UNION ALL
       SELECT 'c_traffic' as kind, referrer as ref, COUNT(*)::bigint as count
       FROM "PageEvent" WHERE product='community' AND type='page_view' AND "createdAt">=${since}
       GROUP BY referrer
@@ -226,11 +214,7 @@ export default async function AnalyticsPage({
       WHERE pv.product='aso' AND pv.type='page_view'
       GROUP BY pv.referrer
     `,
-    prisma.quizLead.findMany({
-      where: gte ? { createdAt: { gte } } : {},
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
+    Promise.resolve([]) as Promise<never[]>,
     prisma.inviteLink.findMany({
       orderBy: { createdAt: "desc" },
     }),
@@ -341,11 +325,7 @@ export default async function AnalyticsPage({
     createdAt: inv.createdAt.toISOString(),
   }));
 
-  const serializedLeads = leads.map((l) => ({
-    ...l,
-    answers: l.answers as Record<string, number> | null,
-    createdAt: l.createdAt.toISOString(),
-  }));
+  const serializedLeads: { id: string; firstName: string; email: string; phone: string; countryCode: string; profileType: string; answers: Record<string, number> | null; status: string; showAt: string | null; followUpSentAt: string | null; source: string | null; country: string | null; city: string | null; createdAt: string }[] = [];
 
   return (
     <div className="min-h-screen bg-[#2a2725] text-[#f1ebe2] p-8">

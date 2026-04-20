@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
+import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES } from "@/lib/roadmap";
-import { getUserTier, getCategoryAccess, type UserTier } from "@/lib/premium";
 import LessonListClient from "@/components/roadmap/LessonListClient";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -17,29 +16,21 @@ export default async function CategoryPage({
   const category = CATEGORIES.find((c) => c.slug === slug);
   if (!category) notFound();
 
-  const session = await getSession();
+  const authSession = await auth();
+  const discordSession = await getSession();
 
-  const isAdmin = session?.discordId === process.env.ADMIN_DISCORD_ID;
-  const realTier = session ? await getUserTier(session.discordId) : "standard";
-
-  const cookieStore = await cookies();
-  const debugTierCookie = cookieStore.get("debug-tier")?.value;
-  const tier =
-    isAdmin && debugTierCookie && ["standard", "boilerplate", "full"].includes(debugTierCookie)
-      ? (debugTierCookie as UserTier)
-      : realTier;
-  const access = getCategoryAccess(tier, slug);
-
-  if (access === "hidden") notFound();
-
-  const isLocked = access === "locked";
-
-  const user = session
-    ? await prisma.user.findUnique({
-        where: { discordId: session.discordId },
-        select: { id: true },
-      })
-    : null;
+  let user = null;
+  if (authSession?.user?.id) {
+    user = await prisma.user.findUnique({
+      where: { id: authSession.user.id },
+      select: { id: true },
+    });
+  } else if (discordSession) {
+    user = await prisma.user.findUnique({
+      where: { discordId: discordSession.discordId },
+      select: { id: true },
+    });
+  }
 
   const [lessons, progress] = await Promise.all([
     prisma.lesson.findMany({
@@ -68,6 +59,7 @@ export default async function CategoryPage({
     title: l.title,
     description: l.description,
     type: l.type,
+    videoUrl: l.videoUrl,
     youtubeUrl: l.youtubeUrl,
     markdownContent: l.markdownContent,
     sectionType: l.sectionType,
@@ -77,7 +69,7 @@ export default async function CategoryPage({
   return (
     <div className="pt-8">
       <Link
-        href="/app-sprint-community/roadmap"
+        href="/learn"
         className="inline-flex items-center gap-2 text-sm text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors mb-8"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -97,7 +89,6 @@ export default async function CategoryPage({
         lessons={serializedLessons}
         initialCompletedIds={completedLessonIds}
         hideProgress={hideProgress}
-        isLocked={isLocked}
         slug={slug}
         nextCategory={
           nextCategory

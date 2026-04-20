@@ -12,6 +12,7 @@ type Lesson = {
   title: string;
   description: string | null;
   type: string;
+  videoUrl: string | null;
   youtubeUrl: string | null;
   markdownContent: string | null;
   sectionType: string | null;
@@ -22,14 +23,12 @@ export default function LessonListClient({
   lessons,
   initialCompletedIds,
   hideProgress,
-  isLocked,
   slug,
   nextCategory,
 }: {
   lessons: Lesson[];
   initialCompletedIds: string[];
   hideProgress: boolean;
-  isLocked?: boolean;
   slug: string;
   nextCategory: { slug: string; title: string } | null;
 }) {
@@ -53,7 +52,7 @@ export default function LessonListClient({
 
   return (
     <>
-      {!hideProgress && !isLocked && (
+      {!hideProgress && (
         <div className="flex items-center gap-4">
           <div className="flex-1 max-w-xs">
             <ProgressBar completed={completedCount} total={lessons.length} />
@@ -72,7 +71,6 @@ export default function LessonListClient({
                 key={lesson.id}
                 order={lesson.order}
                 index={i}
-                isLocked={isLocked}
               />
             );
           }
@@ -84,13 +82,13 @@ export default function LessonListClient({
               title={lesson.title}
               description={lesson.description}
               type={lesson.type}
+              videoUrl={lesson.videoUrl}
               youtubeUrl={lesson.youtubeUrl}
               markdownContent={lesson.markdownContent}
               order={lesson.order}
               completed={completedIds.has(lesson.id)}
               index={i}
               hideProgress={hideProgress}
-              isLocked={isLocked}
               onToggle={onToggle}
             />
           );
@@ -100,7 +98,7 @@ export default function LessonListClient({
       {nextCategory && (
         <div className="flex justify-end mt-8">
           <Link
-            href={`/app-sprint-community/roadmap/${nextCategory.slug}`}
+            href={`/learn/${nextCategory.slug}`}
             className="inline-flex items-center gap-2 text-sm text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors"
           >
             Next: {nextCategory.title}

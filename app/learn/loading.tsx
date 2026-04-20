@@ -1,4 +1,4 @@
-export default function RoadmapLoading() {
+export default function LearnLoading() {
   return (
     <div className="pt-8">
       <div className="mb-12">

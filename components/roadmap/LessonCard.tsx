@@ -8,7 +8,6 @@ import {
   Play,
   BookOpen,
   ChevronDown,
-  Lock,
 } from "lucide-react";
 import MarkdownContent from "./MarkdownContent";
 
@@ -17,6 +16,7 @@ export default function LessonCard({
   title,
   description,
   type,
+  videoUrl,
   youtubeUrl,
   markdownContent,
   order,
@@ -24,13 +24,13 @@ export default function LessonCard({
   index,
   isLast,
   hideProgress,
-  isLocked,
   onToggle,
 }: {
   id: string;
   title: string;
   description: string | null;
   type: string;
+  videoUrl: string | null;
   youtubeUrl: string | null;
   markdownContent: string | null;
   order: number;
@@ -38,7 +38,6 @@ export default function LessonCard({
   index: number;
   isLast?: boolean;
   hideProgress?: boolean;
-  isLocked?: boolean;
   onToggle?: (lessonId: string, completed: boolean) => void;
 }) {
   const [completed, setCompleted] = useState(initialCompleted);
@@ -57,7 +56,8 @@ export default function LessonCard({
   }, [expand]);
 
   const isVideo = type === "video";
-  const comingSoon = isVideo && !youtubeUrl;
+  const hasVideo = !!videoUrl || !!youtubeUrl;
+  const comingSoon = isVideo && !hasVideo;
 
   // Extract YouTube video ID for embed
   const ytMatch = youtubeUrl?.match(
@@ -72,7 +72,7 @@ export default function LessonCard({
     setIsPending(true);
 
     try {
-      const res = await fetch("/api/roadmap/progress", {
+      const res = await fetch("/api/learn/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lessonId: id, completed: newCompleted }),
@@ -100,42 +100,6 @@ export default function LessonCard({
     } finally {
       setIsPending(false);
     }
-  }
-
-  // Locked lessons: similar to comingSoon but with a lock badge
-  if (isLocked) {
-    return (
-      <motion.div
-        ref={cardRef}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05, duration: 0.3 }}
-        className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] overflow-hidden"
-      >
-        <div className="flex items-center gap-4 p-5 opacity-50">
-          <div className="shrink-0">
-            <Circle className="h-6 w-6 text-black/15 dark:text-white/15" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-black/30 dark:text-white/30 font-medium">{order}.</span>
-              <h3 className="font-medium truncate text-black/30 dark:text-white/30">
-                {title}
-              </h3>
-            </div>
-            {description && (
-              <p className="text-sm text-black/20 dark:text-white/20 mt-0.5 truncate">
-                {description}
-              </p>
-            )}
-          </div>
-          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-3 py-1.5 text-xs text-black/30 dark:text-white/30">
-            <Lock className="h-3 w-3" />
-            Premium
-          </span>
-        </div>
-      </motion.div>
-    );
   }
 
   return (
@@ -234,7 +198,21 @@ export default function LessonCard({
         )}
       </div>
 
-      {expanded && isVideo && ytId && (
+      {expanded && isVideo && videoUrl && (
+        <div className="px-5 pb-5">
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/5 dark:bg-white/5">
+            <video
+              src={videoUrl}
+              controls
+              playsInline
+              preload="metadata"
+              className="absolute inset-0 w-full h-full"
+            />
+          </div>
+        </div>
+      )}
+
+      {expanded && isVideo && !videoUrl && ytId && (
         <div className="px-5 pb-5">
           <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/5 dark:bg-white/5">
             <iframe

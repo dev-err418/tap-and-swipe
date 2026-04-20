@@ -42,17 +42,6 @@ export async function POST(req: Request) {
     const { searchParams } = new URL(req.url);
     const appName = searchParams.get("app_name") || event.app_id;
 
-    // Idempotency: skip if we already processed this event
-    const eventId = event.id;
-    if (eventId) {
-      const existing = await prisma.revenueCatEvent.findUnique({
-        where: { eventId },
-      });
-      if (existing) {
-        return new NextResponse("Already processed", { status: 200 });
-      }
-    }
-
     // Classify event
     const isTrial =
       event.type === "TRIAL_STARTED" ||
@@ -64,32 +53,9 @@ export async function POST(req: Request) {
     const isTrialCancellation =
       event.type === "CANCELLATION" && event.period_type === "TRIAL";
 
-    // Store event for daily stats (all event types)
-    if (eventId) {
-      try {
-        await prisma.revenueCatEvent.create({
-          data: {
-            eventId,
-            appName,
-            eventType: event.type,
-            periodType: event.period_type || null,
-            productId: event.product_id || null,
-            appUserId: event.app_user_id || null,
-            price: event.price_in_purchased_currency || 0,
-            currency: event.currency || "USD",
-            store: event.store || null,
-            environment: event.environment || "PRODUCTION",
-            rawPayload: body,
-          },
-        });
-      } catch {
-        // Unique constraint violation — already processed
-      }
-    }
-
     // Only send Discord notifications for trial/conversion/renewal/cancellation
     if (!isTrial && !isTrialConversion && !isRenewal && !isTrialCancellation) {
-      return new NextResponse("Event stored", { status: 200 });
+      return new NextResponse("OK", { status: 200 });
     }
 
     const countryDisplay = formatCountry(event.country_code);

@@ -10,6 +10,7 @@ interface Lesson {
   title: string;
   description: string;
   type: "video" | "markdown";
+  videoUrl?: string | null;
   youtubeUrl?: string | null;
   markdownContent?: string | null;
   sectionType?: string | null;
@@ -846,13 +847,40 @@ Test one variable at a time. If you change the price and the trial length in the
 
 ## Setup
 
-**1. Create your Offerings.** In the RevenueCat dashboard, go to Offerings and create one for each variant you want to test. Testing $4.99/mo vs $9.99/mo means two Offerings, each pointing to the right product.
+You probably already have an Offering (let's call it **A**) with a paywall and products attached. To run an experiment, you need to create a variant Offering (**B**) that users will see instead. You can repeat this process to test A vs B vs C, etc.
 
-**2. Check that your paywall is dynamic.** Your app should display whatever Offering RevenueCat returns for the current user. If you hardcoded product IDs in your paywall, go fix that first.
+Every new product starts in App Store Connect. RevenueCat can only work with products that Apple already knows about.
 
-**3. Create the experiment.** Go to Experiments in the dashboard. Pick your control (current Offering) and your variant. Set the traffic split. 50/50 is standard. Use 80/20 if you want to limit risk.
+### Step 1: Create the new product in App Store Connect
 
-**4. Start it.** RevenueCat begins enrolling new users immediately. Existing users are not enrolled. Only new users who haven't seen a paywall yet.
+Go to your app in [App Store Connect](https://appstoreconnect.apple.com), then Monetization > Subscriptions. Open your subscription group and click **+** to add a new subscription. Give it a Reference Name (internal, users won't see it) and a Product ID (e.g. \`com.yourapp.monthly_999\`). Set the price and duration. If you're testing a trial, configure the introductory offer here too.
+
+Skip this step if you're testing with products that already exist in App Store Connect.
+
+### Step 2: Import the product into RevenueCat
+
+In the [RevenueCat dashboard](https://app.revenuecat.com), go to Product Catalog > Products in the sidebar. Click **Import** and select the product you just created. RevenueCat pulls the metadata from Apple automatically.
+
+### Step 3: Add the product to your entitlement
+
+Go to Product Catalog > Entitlements. Open your entitlement (e.g. "Pro" or "Premium") and attach the new product. This is how RevenueCat knows that purchasing this product unlocks the same access as your existing subscriptions. If you skip this, users who subscribe through the new product won't get access to your premium features.
+
+### Step 4: Create the variant Offering (B)
+
+Go to Product Catalog > Offerings. You have two options:
+
+- **Duplicate your existing Offering.** Click the **...** menu on your current Offering (A) and select Duplicate. This copies everything, including the paywall, so you don't have to rebuild it from scratch. Then swap out the product for the new one.
+- **Create from scratch.** Click **+ New** if you want a completely different Offering with a different paywall design.
+
+Each Offering has its own paywall. If you want variant B to look different from A, edit B's paywall after creating it. If you only want to change the price or trial, duplicate A and just swap the product.
+
+### Step 5: Create the experiment
+
+Go to Experiments in the sidebar. Pick your control (Offering A) and your variant (Offering B). Set the traffic split: 50/50 is standard, 80/20 if you want to limit risk.
+
+### Step 6: Start it
+
+RevenueCat begins enrolling new users immediately. Existing users are not enrolled. Only new users who haven't seen a paywall yet.
 
 ---
 
@@ -915,12 +943,6 @@ If you've never tested your paywall:
   },
 ];
 
-const PREMIUM_DISCORD_IDS = [
-  process.env.ADMIN_DISCORD_ID!,
-  "372167828964376577",
-  "1295748700429357148",
-];
-
 async function main() {
   console.log("Seeding lessons...");
 
@@ -933,6 +955,7 @@ async function main() {
         title: lesson.title,
         description: lesson.description,
         type: lesson.type,
+        videoUrl: lesson.videoUrl ?? null,
         youtubeUrl: lesson.youtubeUrl ?? null,
         markdownContent: lesson.markdownContent ?? null,
         sectionType: lesson.sectionType ?? null,
@@ -943,6 +966,7 @@ async function main() {
         title: lesson.title,
         description: lesson.description,
         type: lesson.type,
+        videoUrl: lesson.videoUrl ?? null,
         youtubeUrl: lesson.youtubeUrl ?? null,
         markdownContent: lesson.markdownContent ?? null,
         sectionType: lesson.sectionType ?? null,
@@ -961,18 +985,7 @@ async function main() {
       .catch(() => {});
   }
 
-  // Seed premium users
-  console.log("Seeding premium users...");
-  for (const discordId of PREMIUM_DISCORD_IDS) {
-    if (!discordId) continue;
-    await prisma.premiumUser.upsert({
-      where: { discordId },
-      update: { tier: "full" },
-      create: { discordId, tier: "full" },
-    });
-  }
-
-  console.log(`Seeded ${lessons.length} lessons + ${PREMIUM_DISCORD_IDS.length} premium users.`);
+  console.log(`Seeded ${lessons.length} lessons.`);
 }
 
 main()

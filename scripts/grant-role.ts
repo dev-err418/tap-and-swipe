@@ -114,7 +114,7 @@ async function main() {
 
   // 3. Try adding to guild first (if we have their access token), then add role
   if (user.discordAccessToken) {
-    const addedToGuild = await addToGuild(user.discordId, user.discordAccessToken);
+    const addedToGuild = await addToGuild(user.discordId!, user.discordAccessToken);
     if (addedToGuild) {
       console.log("User added to guild (or was already in it)");
     } else {
@@ -124,7 +124,7 @@ async function main() {
     console.warn("No Discord access token stored — cannot auto-add to guild.");
   }
 
-  const roleAdded = await addRole(user.discordId);
+  const roleAdded = await addRole(user.discordId!);
 
   if (roleAdded) {
     console.log("Discord role granted successfully");
@@ -135,7 +135,7 @@ async function main() {
 
   // 4. Update DB to match actual result
   await prisma.user.update({
-    where: { discordId: user.discordId },
+    where: { discordId: user.discordId! },
     data: { roleGranted: roleAdded },
   });
   console.log(`DB updated: roleGranted=${roleAdded}`);

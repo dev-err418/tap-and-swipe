@@ -393,7 +393,7 @@ export async function POST(request: NextRequest) {
                 },
               });
 
-              await removeRole(user.discordId);
+              if (user.discordId) await removeRole(user.discordId);
             }
             await deactivateAsoLicenses(customerId);
           }
@@ -459,7 +459,7 @@ export async function POST(request: NextRequest) {
               },
             });
 
-            await removeRole(user.discordId);
+            if (user.discordId) await removeRole(user.discordId);
           }
           await deactivateAsoLicenses(customerId);
         }

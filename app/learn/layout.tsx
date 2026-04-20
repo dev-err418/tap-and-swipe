@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { getUserTier, getCategoryAccess, type UserTier } from "@/lib/premium";
 import { CATEGORIES } from "@/lib/roadmap";
 import RoadmapHeader from "@/components/roadmap/RoadmapHeader";
 
@@ -14,69 +14,63 @@ const WHITELISTED_DISCORD_IDS = new Set([
 
 const isDev = process.env.NODE_ENV === "development";
 
-export default async function RoadmapLayout({
+export default async function LearnLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
+  // Try Auth.js session first, then fall back to legacy Discord session
+  const authSession = await auth();
+  const discordSession = await getSession();
 
-  // In dev, skip auth to debug course content
-  if (!session && !isDev) {
-    redirect("/api/auth/discord?redirect=roadmap");
+  const isAuthenticated = !!authSession?.user || !!discordSession;
+
+  if (!isAuthenticated && !isDev) {
+    redirect("/login?callbackUrl=/learn");
   }
 
-  let user = session
-    ? await prisma.user.findUnique({
-        where: { discordId: session.discordId },
-      })
-    : null;
+  // Resolve the user record
+  let user = null;
+  if (authSession?.user?.id) {
+    user = await prisma.user.findUnique({
+      where: { id: authSession.user.id },
+    });
+  } else if (discordSession) {
+    user = await prisma.user.findUnique({
+      where: { discordId: discordSession.discordId },
+    });
+  }
 
-  if (session && !user) {
-    const isWhitelisted = WHITELISTED_DISCORD_IDS.has(session.discordId);
+  // Whitelist: auto-create user for whitelisted Discord IDs
+  if (discordSession && !user) {
+    const isWhitelisted = WHITELISTED_DISCORD_IDS.has(discordSession.discordId);
     if (isWhitelisted) {
       user = await prisma.user.create({
         data: {
-          discordId: session.discordId,
-          discordUsername: session.discordUsername,
-          discordAvatar: session.discordAvatar,
+          discordId: discordSession.discordId,
+          discordUsername: discordSession.discordUsername,
+          discordAvatar: discordSession.discordAvatar,
           subscriptionStatus: "active",
         },
       });
     }
   }
 
-  const premiumUser = session
-    ? await prisma.premiumUser.findUnique({ where: { discordId: session.discordId } })
-    : null;
-
   const hasAccess =
     user?.subscriptionStatus === "active" ||
-    WHITELISTED_DISCORD_IDS.has(session?.discordId ?? "") ||
-    !!premiumUser;
+    WHITELISTED_DISCORD_IDS.has(discordSession?.discordId ?? "");
 
   if (!isDev && (!user || !hasAccess)) {
     redirect("/app-sprint-community?error=not_subscribed");
   }
 
-  const isAdmin = session?.discordId === process.env.ADMIN_DISCORD_ID;
-  const realTier = session ? await getUserTier(session.discordId) : "standard";
-
   const cookieStore = await cookies();
-  const debugTierCookie = cookieStore.get("debug-tier")?.value;
-  const debugTier =
-    isAdmin && debugTierCookie && ["standard", "boilerplate", "full"].includes(debugTierCookie)
-      ? (debugTierCookie as UserTier)
-      : null;
-
-  const tier = debugTier ?? realTier;
-
   const theme = cookieStore.get("roadmap-theme")?.value === "dark" ? "dark" : "light";
   const isDark = theme === "dark";
 
-  // Exclude weekly-calls and categories that are hidden or locked from global progress
+  // Exclude weekly-calls from global progress
   const excludedCategories = CATEGORIES
-    .filter((c) => c.slug === "weekly-calls" || getCategoryAccess(tier, c.slug) !== "unlocked")
+    .filter((c) => c.slug === "weekly-calls")
     .map((c) => c.slug);
 
   const [totalLessons, completedLessons] = await Promise.all([
@@ -94,18 +88,21 @@ export default async function RoadmapLayout({
       : Promise.resolve(0),
   ]);
 
+  // Display name: prefer Auth.js user, then Discord session
+  const displayName = authSession?.user?.name ?? discordSession?.discordUsername ?? "Dev User";
+  const displayAvatar = authSession?.user?.image ?? discordSession?.discordAvatar ?? null;
+  const displayId = discordSession?.discordId ?? user?.id ?? "dev";
+
   return (
     <>
     <style>{`html, body { background-color: ${isDark ? "#1a1a1a" : "#fff"} !important; }`}</style>
     <div className={`min-h-screen ${isDark ? "dark bg-[#1a1a1a]" : "bg-white"}`}>
       <RoadmapHeader
-        discordUsername={session?.discordUsername ?? "Dev User"}
-        discordAvatar={session?.discordAvatar ?? null}
-        discordId={session?.discordId ?? "dev"}
+        discordUsername={displayName}
+        discordAvatar={displayAvatar}
+        discordId={displayId}
         totalLessons={totalLessons}
         completedLessons={completedLessons}
-        isAdmin={isAdmin}
-        debugTier={debugTier ?? tier}
         theme={theme}
       />
       <main className="mx-auto max-w-7xl px-6 pb-24">{children}</main>
