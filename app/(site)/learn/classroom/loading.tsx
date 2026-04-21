@@ -2,8 +2,13 @@ export default function ClassroomLoading() {
   return (
     <>
       <div className="mb-12">
-        <div className="h-10 w-72 rounded-lg bg-black/[0.04] animate-pulse sm:h-12 sm:w-96" />
-        <div className="mt-3 h-5 w-80 rounded-lg bg-black/[0.04] animate-pulse" />
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          Course roadmap
+        </h1>
+        <p className="mt-3 text-lg text-muted-foreground">
+          Follow the steps below to build and launch your app. Track your
+          progress as you go.
+        </p>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
