@@ -175,7 +175,10 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
       await new Promise((r) => setTimeout(r, 2000));
 
       if (highTicket) {
-        window.location.href = "https://cal.com/arthur-builds-stuff/app-sprint-application";
+        const calUrl = new URL("https://cal.com/arthur-builds-stuff/app-sprint-application");
+        calUrl.searchParams.set("name", firstName.trim());
+        calUrl.searchParams.set("email", email.trim());
+        window.location.href = calUrl.toString();
       } else {
         router.push("/community");
       }
