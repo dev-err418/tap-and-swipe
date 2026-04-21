@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendDiscordNotification } from "@/lib/discord-webhook";
 
 const VALID_HAS_APP = ["revenue", "no-revenue", "idea", "scratch"];
 const VALID_BUDGETS = ["under-500", "500-2000", "2000-3000", "4000-5000", "5000-plus"];
@@ -42,6 +43,23 @@ export async function POST(request: NextRequest) {
         country,
       },
     });
+
+    if (route === "coaching") {
+      const leadsWebhook = process.env.DISCORD_WEBHOOK_LEADS_URL;
+      sendDiscordNotification(
+        "High-Ticket Lead",
+        `**${firstName.trim()}** (${email.trim()}) was redirected to Cal.com`,
+        [
+          { name: "Budget", value: budget, inline: true },
+          { name: "Has App", value: hasApp, inline: true },
+          { name: "Country", value: country || "Unknown", inline: true },
+          ...(challenge?.trim() ? [{ name: "Challenge", value: challenge.trim() }] : []),
+          ...(ref ? [{ name: "Ref", value: ref, inline: true }] : []),
+        ],
+        0xff9500,
+        leadsWebhook,
+      ).catch(() => {});
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

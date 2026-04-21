@@ -2,6 +2,8 @@ import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { sendPush } from "@/lib/apns";
+import { sendDiscordNotification } from "@/lib/discord-webhook";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -128,6 +130,50 @@ export async function POST(request: NextRequest) {
       }
     } else {
       console.log("[calcom] Could not match booking to any episode");
+    }
+
+    // ── High-ticket application call notification ──────────────
+    const eventSlugRaw = event.payload?.type as string | undefined;
+    const appSprintSlug = process.env.CALCOM_COACHING_EVENT_SLUG || "app-sprint-application";
+
+    if (eventSlugRaw === appSprintSlug) {
+      const attendee = event.payload?.attendees?.[0];
+      const name = attendee?.name || "Unknown";
+      const email = attendee?.email || "Unknown";
+      const when = startTime
+        ? new Date(startTime).toLocaleString("en-US", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })
+        : "Unknown";
+
+      // Look up quiz lead for ref + country
+      const lead = email !== "Unknown"
+        ? await prisma.quizLead.findFirst({
+            where: { email: email.toLowerCase() },
+            orderBy: { createdAt: "desc" },
+          }).catch(() => null)
+        : null;
+
+      await sendDiscordNotification(
+        "High-Ticket Call Booked",
+        `**${name}** booked an application call!`,
+        [
+          { name: "Name", value: name, inline: true },
+          { name: "Email", value: email, inline: true },
+          { name: "When", value: when, inline: true },
+          { name: "Country", value: lead?.country || "Unknown", inline: true },
+          ...(lead?.ref ? [{ name: "Ref", value: lead.ref, inline: true }] : []),
+          ...(lead?.budget ? [{ name: "Budget", value: lead.budget, inline: true }] : []),
+          ...(lead?.challenge ? [{ name: "Challenge", value: lead.challenge }] : []),
+        ],
+        0x22c55e,
+        process.env.DISCORD_WEBHOOK_LEADS_URL,
+      ).catch(() => {});
+
+      try {
+        await sendPush("High-Ticket Call Booked", `${name} (${email})`);
+      } catch {}
     }
   }
 

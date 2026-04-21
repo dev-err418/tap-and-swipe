@@ -8,9 +8,10 @@ export async function sendDiscordNotification(
   title: string,
   description: string | undefined,
   fields: EmbedField[],
-  color: number = 0x57f287
+  color: number = 0x57f287,
+  webhookUrl?: string,
 ) {
-  const url = process.env.DISCORD_WEBHOOK_URL;
+  const url = webhookUrl || process.env.DISCORD_WEBHOOK_URL;
   if (!url) {
     console.error("DISCORD_WEBHOOK_URL not set, skipping notification");
     return;
