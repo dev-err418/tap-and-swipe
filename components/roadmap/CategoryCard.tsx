@@ -29,7 +29,7 @@ export default function CategoryCard({
       transition={{ delay: index * 0.1, duration: 0.4 }}
     >
       <Link
-        href={`/learn/${slug}`}
+        href={`/learn/classroom/${slug}`}
         className="group block overflow-hidden rounded-2xl border border-black/10 bg-black/[0.02] transition-all hover:bg-black/[0.04] hover:border-black/15"
       >
         {image ? (

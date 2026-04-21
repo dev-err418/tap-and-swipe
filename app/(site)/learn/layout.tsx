@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import LearnTabs from "@/components/roadmap/LearnTabs";
 
 const WHITELISTED_DISCORD_IDS = new Set([
   process.env.ADMIN_DISCORD_ID,
@@ -63,7 +64,12 @@ export default async function LearnLayout({
 
   return (
     <div className="px-6 pb-24">
-      <div className="mx-auto w-full max-w-5xl">{children}</div>
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="pt-20 mb-10">
+          <LearnTabs />
+        </div>
+        {children}
+      </div>
     </div>
   );
 }

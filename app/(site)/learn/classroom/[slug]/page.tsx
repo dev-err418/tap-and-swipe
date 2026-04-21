@@ -65,9 +65,9 @@ export default async function CategoryPage({
   }));
 
   return (
-    <div className="pt-8">
+    <div>
       <Link
-        href="/learn"
+        href="/learn/classroom"
         className="inline-flex items-center gap-2 text-sm text-black/50 hover:text-black transition-colors mb-8"
       >
         <ArrowLeft className="h-4 w-4" />

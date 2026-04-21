@@ -1,6 +1,6 @@
 export default function CategoryLoading() {
   return (
-    <div className="pt-8">
+    <div>
       {/* Back link */}
       <div className="mb-8 h-4 w-32 rounded-lg bg-black/[0.04] animate-pulse" />
 

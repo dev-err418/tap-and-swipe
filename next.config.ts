@@ -77,22 +77,22 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/app-sprint-community/roadmap/:slug*",
-        destination: "/learn/:slug*",
+        destination: "/learn/classroom/:slug*",
         permanent: true,
       },
       {
         source: "/app-sprint-community/roadmap",
-        destination: "/learn",
+        destination: "/learn/classroom",
         permanent: true,
       },
       {
         source: "/app-sprint/roadmap/:slug*",
-        destination: "/learn/:slug*",
+        destination: "/learn/classroom/:slug*",
         permanent: true,
       },
       {
         source: "/app-sprint/roadmap",
-        destination: "/learn",
+        destination: "/learn/classroom",
         permanent: true,
       },
       {

@@ -1,6 +1,6 @@
-export default function LearnLoading() {
+export default function ClassroomLoading() {
   return (
-    <div className="pt-8">
+    <>
       <div className="mb-12">
         <div className="h-10 w-72 rounded-lg bg-black/[0.04] animate-pulse sm:h-12 sm:w-96" />
         <div className="mt-3 h-5 w-80 rounded-lg bg-black/[0.04] animate-pulse" />
@@ -21,6 +21,6 @@ export default function LearnLoading() {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }
