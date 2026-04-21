@@ -32,7 +32,7 @@ export default function LoginClient({
               className="rounded-lg"
             />
             <h1 className="mt-2 text-xl font-bold">
-              Welcome to Tap &amp; Swipe
+              Welcome to the Community
             </h1>
             <p className="text-sm text-muted-foreground">
               Sign in to access your roadmap and track your progress.
