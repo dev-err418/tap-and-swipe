@@ -11,6 +11,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     Nodemailer({
       server: {
@@ -29,6 +30,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     verifyRequest: "/login?verify=1",
   },
   callbacks: {
+    async signIn({ user }) {
+      if (user.id) {
+        await prisma.user.updateMany({
+          where: { id: user.id, activationToken: { not: null } },
+          data: { activationToken: null },
+        });
+      }
+      return true;
+    },
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;

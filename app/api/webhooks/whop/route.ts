@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { getWhop } from "@/lib/whop";
 import { prisma } from "@/lib/prisma";
 import { addToGuild, addRole, removeRole } from "@/lib/discord";
@@ -8,6 +9,7 @@ import {
   reactivateAsoLicensesByWhop,
 } from "@/lib/aso-db";
 import { sendLicenseKeyEmail } from "@/lib/aso-email";
+import { sendWelcomeEmail, sendWelcomeBackEmail } from "@/lib/welcome-email";
 
 function extractDiscord(data: Record<string, unknown>): {
   id: string;
@@ -53,6 +55,34 @@ function extractEmail(data: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
+function extractDiscordFromData(data: Record<string, unknown>): {
+  id: string;
+  username: string;
+} | null {
+  let discord = extractDiscord(data);
+  if (!discord) discord = extractDiscordFromMetadata(data);
+  if (!discord) {
+    const membership = data.membership as Record<string, unknown> | undefined;
+    if (membership) {
+      discord = extractDiscord(membership) ?? extractDiscordFromMetadata(membership);
+    }
+  }
+  return discord;
+}
+
+/** Find user by email first, then discordId fallback */
+async function findUser(email: string | undefined, discordId: string | undefined) {
+  if (email) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user) return user;
+  }
+  if (discordId) {
+    const user = await prisma.user.findUnique({ where: { discordId } });
+    if (user) return user;
+  }
+  return null;
+}
+
 async function fetchDiscordFromWhop(
   membershipId: string
 ): Promise<{ id: string; username: string } | null> {
@@ -90,24 +120,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // The discord field exists on the actual payload but isn't in the SDK types
     const data = webhookData.data as unknown as Record<string, unknown>;
-    let discord = extractDiscord(data);
+    const email = extractEmail(data);
+    let discord = extractDiscordFromData(data);
 
-    // Fallback 1: check metadata.discordId (set during our checkout flow)
-    if (!discord) {
-      discord = extractDiscordFromMetadata(data);
-    }
-
-    // For payment events, the metadata lives on the nested membership object
-    if (!discord) {
-      const membership = data.membership as Record<string, unknown> | undefined;
-      if (membership) {
-        discord = extractDiscord(membership) ?? extractDiscordFromMetadata(membership);
-      }
-    }
-
-    // Fallback 2: fetch from Whop API when webhook payload lacks discord data
+    // Fallback: fetch from Whop API when webhook payload lacks discord data
     if (!discord) {
       const membershipIdForLookup =
         (data.id as string | undefined) ??
@@ -120,118 +137,113 @@ export async function POST(request: NextRequest) {
     switch (webhookData.type) {
       case "membership.activated": {
         const membershipId = String(data.id);
-        const email = extractEmail(data);
         const manageUrl = data.manage_url as string | undefined;
-        const isTrial = data.status === "trialing";
 
-        // Discord role granting
-        if (discord) {
-          const existingUser = await prisma.user.findUnique({
-            where: { discordId: discord.id },
-          });
-
-          // Add user to guild using stored OAuth access token, then assign role
-          if (existingUser?.discordAccessToken) {
-            await addToGuild(discord.id, existingUser.discordAccessToken).catch(
-              (err) =>
-                console.warn(
-                  `[whop] addToGuild failed for ${discord.id}:`,
-                  err
-                )
-            );
-          } else {
-            console.warn(
-              `[whop] No access token stored for ${discord.id} — cannot add to guild`
-            );
+        if (!email) {
+          console.warn(
+            `[whop] membership.activated — no email found. membership=${membershipId}`
+          );
+          // Still try Discord-only path for edge case
+          if (discord) {
+            await handleDiscordOnly(discord, membershipId, manageUrl);
           }
+          break;
+        }
 
-          const roleGranted = await addRole(discord.id);
-          if (!roleGranted) {
-            console.warn(
-              `[whop] addRole returned false for ${discord.id} — user may not be in the guild`
-            );
-          }
+        // Check if this is a returning customer with an existing Auth.js account
+        const existingUser = await prisma.user.findUnique({ where: { email } });
+        const hasAuthAccount = existingUser
+          ? await prisma.account.findFirst({ where: { userId: existingUser.id } })
+          : null;
 
-          const isNew = !existingUser;
-          const isActiveElsewhere =
-            existingUser &&
-            existingUser.paymentProvider !== "whop" &&
-            existingUser.paymentProvider !== null &&
-            existingUser.subscriptionStatus === "active";
+        // Upsert user by email
+        const user = await prisma.user.upsert({
+          where: { email },
+          update: {
+            subscriptionStatus: "active",
+            ...(!existingUser?.paymentProvider || existingUser.paymentProvider === "whop"
+              ? { paymentProvider: "whop" }
+              : {}),
+          },
+          create: {
+            email,
+            subscriptionStatus: "active",
+            paymentProvider: "whop",
+            ...(discord
+              ? {
+                  discordId: discord.id,
+                  discordUsername: discord.username,
+                }
+              : {}),
+          },
+        });
 
-          await prisma.user.upsert({
-            where: { discordId: discord.id },
-            update: {
-              subscriptionStatus: "active",
-              roleGranted,
-              ...(!isActiveElsewhere && { paymentProvider: "whop" }),
-            },
-            create: {
-              discordId: discord.id,
-              discordUsername: discord.username,
-              subscriptionStatus: "active",
-              paymentProvider: "whop",
-              roleGranted,
-            },
-          });
-
-          // ASO Pro license generation
-          if (email) {
-            const { key: licenseKey, isNew: isNewLicense } =
-              await generateAsoLicenseWhop(email, membershipId, "pro", manageUrl);
-
-            if (isNewLicense || isNew) {
-              await sendLicenseKeyEmail(
-                email,
-                licenseKey,
-                "community",
-                manageUrl
-              );
-            }
-          }
-
-          console.log(
-            `[whop] membership.activated — discordId=${discord.id} roleGranted=${roleGranted}`
+        // If returning customer with Auth.js account, skip activation token
+        if (hasAuthAccount) {
+          await sendWelcomeBackEmail(email).catch((err) =>
+            console.error("[whop] Failed to send welcome back email:", err)
           );
         } else {
-          // No Discord — still generate ASO license if we have email
-          if (email) {
-            const { key: licenseKey, isNew: isNewLicense } =
-              await generateAsoLicenseWhop(email, membershipId, "pro", manageUrl);
+          // Generate activation token for new users
+          const activationToken = randomUUID();
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { activationToken },
+          });
 
-            if (isNewLicense) {
-              await sendLicenseKeyEmail(email, licenseKey, "community", manageUrl);
-            }
-          }
-
-          console.warn(
-            `[whop] membership.activated — no Discord ID found. membership=${membershipId}`
+          await sendWelcomeEmail(email, activationToken).catch((err) =>
+            console.error("[whop] Failed to send welcome email:", err)
           );
         }
+
+        // Discord operations: only if user already has discordId (returning customer)
+        if (user.discordId && user.discordAccessToken) {
+          await addToGuild(user.discordId, user.discordAccessToken).catch((err) =>
+            console.warn(`[whop] addToGuild failed for ${user.discordId}:`, err)
+          );
+          const roleGranted = await addRole(user.discordId);
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { roleGranted },
+          });
+        }
+
+        // ASO Pro license generation
+        const { key: licenseKey, isNew: isNewLicense } =
+          await generateAsoLicenseWhop(email, membershipId, "pro", manageUrl);
+
+        if (isNewLicense || !existingUser) {
+          await sendLicenseKeyEmail(email, licenseKey, "community", manageUrl);
+        }
+
+        console.log(
+          `[whop] membership.activated — email=${email} userId=${user.id} hasAuthAccount=${!!hasAuthAccount}`
+        );
         break;
       }
 
       case "membership.deactivated": {
         const membershipId = String(data.id);
 
-        // Deactivate ASO licenses
         await deactivateAsoLicensesByWhop(membershipId);
 
-        // Remove Discord role
-        if (discord) {
-          await removeRole(discord.id).catch(() => {});
-
+        const user = await findUser(email, discord?.id);
+        if (user) {
           await prisma.user.update({
-            where: { discordId: discord.id },
+            where: { id: user.id },
             data: {
               subscriptionStatus: "canceled",
               roleGranted: false,
             },
-          }).catch(() => {});
+          });
+
+          if (user.discordId) {
+            await removeRole(user.discordId).catch(() => {});
+          }
         }
 
         console.log(
-          `[whop] membership.deactivated — membership=${membershipId} discordId=${discord?.id ?? "unknown"}`
+          `[whop] membership.deactivated — membership=${membershipId} userId=${user?.id ?? "unknown"}`
         );
         break;
       }
@@ -248,17 +260,19 @@ export async function POST(request: NextRequest) {
         if (membershipId) {
           await reactivateAsoLicensesByWhop(membershipId);
 
-          // Re-grant Discord role
-          if (discord) {
-            await addRole(discord.id).catch(() => {});
-
+          const user = await findUser(email, discord?.id);
+          if (user) {
             await prisma.user.update({
-              where: { discordId: discord.id },
+              where: { id: user.id },
               data: {
                 subscriptionStatus: "active",
-                roleGranted: true,
+                roleGranted: user.discordId ? true : user.roleGranted,
               },
-            }).catch(() => {});
+            });
+
+            if (user.discordId) {
+              await addRole(user.discordId).catch(() => {});
+            }
           }
         }
         break;
@@ -269,17 +283,19 @@ export async function POST(request: NextRequest) {
         if (membershipId) {
           await deactivateAsoLicensesByWhop(membershipId);
 
-          // Remove Discord role
-          if (discord) {
-            await removeRole(discord.id).catch(() => {});
-
+          const user = await findUser(email, discord?.id);
+          if (user) {
             await prisma.user.update({
-              where: { discordId: discord.id },
+              where: { id: user.id },
               data: {
                 subscriptionStatus: "past_due",
                 roleGranted: false,
               },
-            }).catch(() => {});
+            });
+
+            if (user.discordId) {
+              await removeRole(user.discordId).catch(() => {});
+            }
           }
         }
         break;
@@ -294,4 +310,55 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/** Legacy fallback: Discord-only activation (no email available) */
+async function handleDiscordOnly(
+  discord: { id: string; username: string },
+  membershipId: string,
+  manageUrl: string | undefined
+) {
+  const existingUser = await prisma.user.findUnique({
+    where: { discordId: discord.id },
+  });
+
+  if (existingUser?.discordAccessToken) {
+    await addToGuild(discord.id, existingUser.discordAccessToken).catch((err) =>
+      console.warn(`[whop] addToGuild failed for ${discord.id}:`, err)
+    );
+  }
+
+  const roleGranted = await addRole(discord.id);
+
+  await prisma.user.upsert({
+    where: { discordId: discord.id },
+    update: {
+      subscriptionStatus: "active",
+      roleGranted,
+    },
+    create: {
+      discordId: discord.id,
+      discordUsername: discord.username,
+      subscriptionStatus: "active",
+      paymentProvider: "whop",
+      roleGranted,
+    },
+  });
+
+  // ASO license if we can find email from existing user
+  if (existingUser?.email) {
+    const { key: licenseKey, isNew } = await generateAsoLicenseWhop(
+      existingUser.email,
+      membershipId,
+      "pro",
+      manageUrl
+    );
+    if (isNew) {
+      await sendLicenseKeyEmail(existingUser.email, licenseKey, "community", manageUrl);
+    }
+  }
+
+  console.log(
+    `[whop] membership.activated (discord-only) — discordId=${discord.id} roleGranted=${roleGranted}`
+  );
 }

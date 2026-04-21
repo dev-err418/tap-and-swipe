@@ -9,13 +9,14 @@ const TABS = [
   { label: "Calendar", href: "/learn/calendar" },
 ];
 
-export default function LearnTabs() {
+export default function LearnTabs({ hasDiscord = true }: { hasDiscord?: boolean }) {
   const pathname = usePathname();
 
   return (
     <div className="flex gap-8 border-b border-black/10">
       {TABS.map((tab) => {
         const active = pathname.startsWith(tab.href);
+        const showBadge = tab.label === "Community" && !hasDiscord;
         return (
           <Link
             key={tab.label}
@@ -25,6 +26,11 @@ export default function LearnTabs() {
             }`}
           >
             {tab.label}
+            {showBadge && (
+              <span className="absolute -top-1 -right-4 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF9500] text-[10px] font-bold text-white">
+                1
+              </span>
+            )}
             {active && (
               <span className="absolute bottom-0 left-0 right-0 h-[3px] rounded-full bg-black" />
             )}

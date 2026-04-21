@@ -70,6 +70,8 @@ model User {
   subscriptionStatus String?
   roleGranted        Boolean            @default(false)
   discordTrialExpiry DateTime?
+  // Activation
+  activationToken    String?            @unique
   // Relations
   accounts           Account[]
   sessions           Session[]
