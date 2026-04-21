@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
-import { LogOut, MessageCircle, GraduationCap } from "lucide-react";
+import { LogOut, MessageCircle } from "lucide-react";
 
 export default function NavbarProfileMenu({
   name,
@@ -52,13 +51,6 @@ export default function NavbarProfileMenu({
 
       {menuOpen && (
         <div className="absolute right-0 mt-2 w-44 overflow-hidden rounded-xl border border-black/10 bg-white shadow-xl z-50">
-          <Link
-            href="/learn"
-            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-black/60 transition-colors hover:bg-black/[0.04]"
-          >
-            <GraduationCap className="h-4 w-4" />
-            Learn
-          </Link>
           <a
             href="https://discord.com/users/1261628273465626725"
             target="_blank"
