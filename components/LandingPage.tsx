@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
     ArrowRight,
     Star
@@ -37,28 +36,12 @@ const LandingPage = ({
 }) => {
     return (
         <>
-        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-black/10">
+        <div>
             <PageTracker product="community" ctaSelector='[data-fast-goal="cta_pricing_clicked"]' />
             <Suspense fallback={null}>
                 <SuccessOverlay />
                 <ErrorOverlay />
             </Suspense>
-
-            {/* Navbar */}
-            <nav className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-center px-6 py-5">
-                <Link href="/community" className="flex items-center gap-2.5">
-                    <img
-                        src="https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj"
-                        alt="ArthurBuildsStuff"
-                        width={32}
-                        height={32}
-                        loading="eager"
-                        className="h-8 w-8 rounded-full"
-                    />
-                    <span className="text-sm font-semibold text-black/90">Tap &amp; Swipe</span>
-                    <span className="text-sm text-black/40">by ArthurBuildsStuff</span>
-                </Link>
-            </nav>
 
             {/* Social proof banner */}
             <div className="mx-auto max-w-7xl px-6 pb-8">
@@ -334,72 +317,6 @@ const LandingPage = ({
             {/* FAQ Section */}
             <FaqSection />
 
-            {/* Footer */}
-            <footer className="border-t border-black/10 px-6 py-10 text-sm text-black/40">
-                <div className="mx-auto grid max-w-6xl gap-8 sm:grid-cols-[2fr_1fr_1fr_1fr]">
-                    <div>
-                        <p className="font-semibold text-black/80">Tap &amp; Swipe</p>
-                        <p className="mt-1 text-black/80">Made with ❤️ in 🇫🇷</p>
-                        <p className="mt-3">&copy; {new Date().getFullYear()} &middot; TAP &amp; SWIPE SAS</p>
-                        <p className="mt-1">SIREN: 100454206 &middot; TVA: FR23100454206</p>
-                    </div>
-                    <div>
-                        <p className="font-medium text-black/80">Products</p>
-                        <ul className="-mx-2 mt-2">
-                            <li>
-                                <Link href="/community" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    AppSprint Community
-                                </Link>
-                            </li>
-                            <li>
-                                <a href="https://appsprint.app/aso" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    AppSprint ASO
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div>
-                        <p className="font-medium text-black/80">Social</p>
-                        <ul className="-mx-2 mt-2">
-                            <li>
-                                <a href="https://www.youtube.com/@ArthurBuildsStuff" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    YouTube
-                                </a>
-                            </li>
-                            <li>
-                                <a href="https://www.linkedin.com/in/arthur-spalanzani/" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    LinkedIn
-                                </a>
-                            </li>
-                            <li>
-                                <a href="https://x.com/arthursbuilds" target="_blank" rel="noopener noreferrer" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    X (Twitter)
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div>
-                        <p className="font-medium text-black/80">Legal</p>
-                        <ul className="-mx-2 mt-2">
-                            <li>
-                                <Link href="/community/tos" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    Terms of Service
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/community/privacy" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    Privacy Policy
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/community/tos#refund" className="inline-block px-2 py-1.5 transition-colors hover:text-black/70">
-                                    Refund Policy
-                                </Link>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </footer>
         </div>
         </>
     );

@@ -55,7 +55,7 @@ function isStepAnswered(
 
 // ── Component ───────────────────────────────────────────────────────
 
-export default function JoinClient() {
+export default function JoinClient({ allowHighTicket = true }: { allowHighTicket?: boolean }) {
   const router = useRouter();
   // Restore saved state from sessionStorage
   const saved = typeof window !== "undefined"
@@ -143,7 +143,7 @@ export default function JoinClient() {
       if (submitting) return;
       setSubmitting(true);
 
-      const highTicket = ["2000-3000", "4000-5000", "5000-plus"].includes(budget);
+      const highTicket = allowHighTicket && ["2000-3000", "4000-5000", "5000-plus"].includes(budget);
       const route = highTicket ? "coaching" : "community";
 
       const visitorId = getVisitorId();
