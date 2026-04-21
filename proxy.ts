@@ -11,7 +11,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  const redirectPath = request.nextUrl.pathname.replace("/app-sprint-community/", "");
+  const redirectPath = request.nextUrl.pathname.replace("/community/", "");
 
   if (!token) {
     return NextResponse.redirect(
@@ -30,5 +30,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/app-sprint-community/roadmap/:path*",
+  matcher: "/community/roadmap/:path*",
 };

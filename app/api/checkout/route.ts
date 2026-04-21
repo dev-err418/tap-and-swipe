@@ -53,6 +53,6 @@ export async function GET() {
     return NextResponse.redirect(checkoutUrl);
   } catch (err) {
     console.error("Checkout error:", err);
-    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=checkout_failed`);
+    return NextResponse.redirect(`${APP_URL}/community?error=checkout_failed`);
   }
 }

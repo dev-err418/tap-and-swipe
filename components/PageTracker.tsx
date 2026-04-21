@@ -29,11 +29,39 @@ function getSessionId(product: string): string {
   return id;
 }
 
-function fire(product: string, type: string, visitorId: string, sessionId: string, referrer?: string) {
+/** Read ?ref= from URL on first load, persist in sessionStorage */
+function getRef(): string | undefined {
+  const KEY = "_ref";
+  const stored = sessionStorage.getItem(KEY);
+  if (stored) return stored;
+  try {
+    const param = new URLSearchParams(window.location.search).get("ref");
+    if (param) {
+      sessionStorage.setItem(KEY, param);
+      return param;
+    }
+  } catch {}
+  return undefined;
+}
+
+function fire(
+  product: string,
+  type: string,
+  visitorId: string,
+  sessionId: string,
+  extra?: { referrer?: string; ref?: string },
+) {
   fetch("/api/event", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ product, type, visitorId, sessionId, referrer: referrer || undefined }),
+    body: JSON.stringify({
+      product,
+      type,
+      visitorId,
+      sessionId,
+      referrer: extra?.referrer || undefined,
+      ref: extra?.ref || undefined,
+    }),
   }).catch(() => {});
 }
 
@@ -41,12 +69,13 @@ export default function PageTracker({
   product,
   ctaSelector,
 }: {
-  product: "aso" | "community";
+  product: "aso" | "community" | "quiz" | "coaching";
   ctaSelector?: string;
 }) {
   useEffect(() => {
     const visitorId = getVisitorId();
     const sessionId = getSessionId(product);
+    const ref = getRef();
 
     // Get referrer
     let referrer: string | undefined;
@@ -57,13 +86,13 @@ export default function PageTracker({
       }
     } catch {}
 
-    fire(product, "page_view", visitorId, sessionId, referrer);
+    fire(product, "page_view", visitorId, sessionId, { referrer, ref });
 
     if (!ctaSelector) return;
 
     function handleClick(e: MouseEvent) {
       const target = (e.target as HTMLElement).closest(ctaSelector!);
-      if (target) fire(product, "cta_clicked", visitorId, sessionId);
+      if (target) fire(product, "cta_clicked", visitorId, sessionId, { ref });
     }
 
     document.addEventListener("click", handleClick);
@@ -73,4 +102,4 @@ export default function PageTracker({
   return null;
 }
 
-export { getVisitorId, getSessionId };
+export { getVisitorId, getSessionId, getRef, fire };

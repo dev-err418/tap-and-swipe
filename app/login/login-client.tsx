@@ -55,14 +55,14 @@ export default function LoginClient({
           <p className="text-center text-xs text-muted-foreground">
             By continuing, you agree to our{" "}
             <a
-              href="/app-sprint-community/tos"
+              href="/community/tos"
               className="underline underline-offset-4 hover:text-foreground"
             >
               Terms of Service
             </a>{" "}
             and{" "}
             <a
-              href="/app-sprint-community/privacy"
+              href="/community/privacy"
               className="underline underline-offset-4 hover:text-foreground"
             >
               Privacy Policy
@@ -87,7 +87,7 @@ export default function LoginClient({
               Done
             </Button>
             <Button asChild>
-              <a href="/app-sprint-community">Check community</a>
+              <a href="/community">Check community</a>
             </Button>
           </DialogFooter>
         </DialogContent>

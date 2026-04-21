@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     images: ["/opengraph-image.png"],
   },
   alternates: {
-    canonical: "/app-sprint-community",
+    canonical: "/community",
   },
 };
 

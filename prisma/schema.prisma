@@ -89,12 +89,13 @@ model InviteLink {
 
 model PageEvent {
   id               String   @id @default(cuid())
-  product          String   // "aso" | "community"
-  type             String   // "page_view" | "cta_clicked" | "stripe_shown" | "paid"
+  product          String   // "aso" | "community" | "quiz" | "coaching"
+  type             String   // "page_view" | "cta_clicked" | "stripe_shown" | "paid" | "quiz_start" | "quiz_complete"
   visitorId        String   // cookie-based, persists across sessions (1yr)
   sessionId        String   // per browser-session, for within-session dedup
   country          String?  // x-vercel-ip-country
   referrer         String?  // document.referrer or UTM source
+  ref              String?  // URL param ?ref=vid1 etc. for traffic source tracking
   stripeCustomerId String?  // set at stripe_shown / paid time
   revenue          Int?     // amount in cents, set on "paid" events
   currency         String?  // e.g. "eur", set on "paid" events
@@ -104,6 +105,25 @@ model PageEvent {
   @@index([product, type, createdAt])
   @@index([visitorId])
   @@index([product, country, createdAt])
+  @@index([ref, createdAt])
+}
+
+// ── Quiz Funnel ───────────────────────────────────────────────────────
+
+model QuizLead {
+  id        String   @id @default(cuid())
+  firstName String
+  email     String
+  hasApp    String   // "revenue" | "no-revenue" | "idea" | "scratch"
+  challenge String?  // open-text: biggest challenge
+  budget    String?  // "under-500" | "500-2000" | "2000-plus"
+  route     String   // "coaching" | "community"
+  ref       String?  // URL param ?ref=vid1
+  country   String?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([route, createdAt])
 }
 
 // ── Discord ─────────────────────────────────────────────────────────────

@@ -48,7 +48,7 @@ export function SiteFooter() {
           <ul className="-mx-2 mt-2">
             <li>
               <Link
-                href="/app-sprint-community"
+                href="/community"
                 className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
               >
                 AppSprint Community

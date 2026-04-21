@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
 
   // User denied the OAuth prompt
   if (error) {
-    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=oauth_denied`);
+    return NextResponse.redirect(`${APP_URL}/community?error=oauth_denied`);
   }
 
   if (!code || !state) {
-    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=missing_params`);
+    return NextResponse.redirect(`${APP_URL}/community?error=missing_params`);
   }
 
   // Verify CSRF state
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   cookieStore.delete(STATE_COOKIE);
 
   if (!savedState || savedState !== state) {
-    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=invalid_state`);
+    return NextResponse.redirect(`${APP_URL}/community?error=invalid_state`);
   }
 
   let statePayload: Record<string, unknown>;
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const { payload } = await jwtVerify(savedState, SECRET);
     statePayload = payload as Record<string, unknown>;
   } catch {
-    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=expired_state`);
+    return NextResponse.redirect(`${APP_URL}/community?error=expired_state`);
   }
 
   const rawRedirect = typeof statePayload.redirect === "string" ? statePayload.redirect as string : null;
@@ -248,6 +248,6 @@ Feel free to reach out here if you have any questions 😉`;
     return NextResponse.redirect(`${APP_URL}/login?error=not_subscribed`);
   } catch (err) {
     console.error("Discord callback error:", err);
-    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=auth_failed`);
+    return NextResponse.redirect(`${APP_URL}/community?error=auth_failed`);
   }
 }

@@ -209,7 +209,7 @@ async function fetchNewsletterStats(days: number): Promise<NewsletterStats> {
   `)) as { results?: unknown[][] };
 
   function cleanPageName(path: string): string {
-    if (path === "/app-sprint-community") return "/community";
+    if (path === "/app-sprint-community" || path === "/community") return "/community";
     if (path.startsWith("/learn")) return "/learn";
     return path;
   }

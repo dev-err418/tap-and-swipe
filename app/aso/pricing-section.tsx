@@ -123,7 +123,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                             </div>
                             <p className="text-sm text-[#c9c4bc]/50">
                                 or free with{" "}
-                                <a href="/app-sprint-community" className="text-[#f4cf8f] hover:underline">
+                                <a href="/community" className="text-[#f4cf8f] hover:underline">
                                     Community membership
                                 </a>
                             </p>

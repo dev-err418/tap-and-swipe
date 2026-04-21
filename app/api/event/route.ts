@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const VALID_PRODUCTS = ["aso", "aso-solo", "aso-pro", "community", "bundle-aso", "bundle-community"];
-const VALID_TYPES = ["page_view", "cta_clicked", "stripe_shown", "paid", "trial_started"];
+const VALID_PRODUCTS = ["aso", "aso-solo", "aso-pro", "community", "bundle-aso", "bundle-community", "quiz", "coaching"];
+const VALID_TYPES = ["page_view", "cta_clicked", "stripe_shown", "paid", "trial_started", "quiz_start", "quiz_complete"];
 
 export async function POST(request: NextRequest) {
   try {
-    const { product, type, visitorId, sessionId, referrer } = (await request.json()) as {
+    const { product, type, visitorId, sessionId, referrer, ref } = (await request.json()) as {
       product: string;
       type: string;
       visitorId: string;
       sessionId: string;
       referrer?: string;
+      ref?: string;
     };
 
     if (!VALID_PRODUCTS.includes(product) || !VALID_TYPES.includes(type) || !visitorId || !sessionId) {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     await prisma.pageEvent.upsert({
       where: { sessionId_type_product: { sessionId, type, product } },
-      create: { product, type, visitorId, sessionId, country, referrer: referrer || null },
+      create: { product, type, visitorId, sessionId, country, referrer: referrer || null, ref: ref || null },
       update: {},
     }).catch(() => {});
 

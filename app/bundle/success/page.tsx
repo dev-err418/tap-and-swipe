@@ -70,7 +70,7 @@ function BundleSuccessContent() {
                     >
                         <p className="text-red-400">{error}</p>
                         <a
-                            href="/app-sprint-community"
+                            href="/community"
                             className="inline-flex items-center gap-2 text-sm text-[#f4cf8f] hover:underline"
                         >
                             Back to AppSprint Community

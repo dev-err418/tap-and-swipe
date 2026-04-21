@@ -10,7 +10,7 @@ export async function GET() {
   const session = await getSession();
 
   if (!session) {
-    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=session_expired`);
+    return NextResponse.redirect(`${APP_URL}/community?error=session_expired`);
   }
 
   try {
@@ -23,7 +23,7 @@ export async function GET() {
     const whop = getWhop();
     const checkout = await whop.checkoutConfigurations.create({
       plan_id: WHOP_COMMUNITY_PLAN_ID,
-      redirect_url: `${APP_URL}/app-sprint-community?status=success`,
+      redirect_url: `${APP_URL}/community?status=success`,
       metadata: {
         discordId: session.discordId,
         visitorId,
@@ -50,6 +50,6 @@ export async function GET() {
     return NextResponse.redirect(checkoutUrl);
   } catch (err) {
     console.error("[Community Bundle Checkout] Error:", err);
-    return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=checkout_failed`);
+    return NextResponse.redirect(`${APP_URL}/community?error=checkout_failed`);
   }
 }

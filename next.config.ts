@@ -47,7 +47,7 @@ const nextConfig: NextConfig = {
                     "media-src 'self' https://assets.whop.com https://*.r2.dev https://videos.tap-and-swipe.com",
                     "font-src 'self'",
                     "connect-src 'self' https://eu.i.posthog.com https://eu-assets.i.posthog.com https://challenges.cloudflare.com",
-                    "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com",
+                    "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com https://cal.com",
                     "object-src 'none'",
                     "base-uri 'self'",
                     "form-action 'self'",
@@ -75,6 +75,33 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Old community URL → new /community
+      {
+        source: "/app-sprint-community",
+        destination: "/community",
+        permanent: true,
+      },
+      {
+        source: "/app-sprint-community/privacy",
+        destination: "/community/privacy",
+        permanent: true,
+      },
+      {
+        source: "/app-sprint-community/tos",
+        destination: "/community/tos",
+        permanent: true,
+      },
+      {
+        source: "/app-sprint",
+        destination: "/community",
+        permanent: true,
+      },
+      {
+        source: "/quiz",
+        destination: "/join",
+        permanent: true,
+      },
+      // Old roadmap URLs → /learn
       {
         source: "/app-sprint-community/roadmap/:slug*",
         destination: "/learn/classroom/:slug*",
@@ -93,11 +120,6 @@ const nextConfig: NextConfig = {
       {
         source: "/app-sprint/roadmap",
         destination: "/learn/classroom",
-        permanent: true,
-      },
-      {
-        source: "/app-sprint",
-        destination: "/app-sprint-community",
         permanent: true,
       },
       {

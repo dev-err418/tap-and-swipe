@@ -37,10 +37,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
-      url: "https://tap-and-swipe.com/app-sprint-community",
-      lastModified: new Date("2026-04-15"),
+      url: "https://tap-and-swipe.com/community",
+      lastModified: new Date("2026-04-21"),
       changeFrequency: "weekly",
       priority: 0.7,
+    },
+    {
+      url: "https://tap-and-swipe.com/join",
+      lastModified: new Date("2026-04-21"),
+      changeFrequency: "monthly",
+      priority: 0.6,
     },
     {
       url: "https://tap-and-swipe.com/episodes",
@@ -103,13 +109,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.2,
     },
     {
-      url: "https://tap-and-swipe.com/app-sprint-community/privacy",
+      url: "https://tap-and-swipe.com/community/privacy",
       lastModified: new Date("2026-04-15"),
       changeFrequency: "yearly",
       priority: 0.1,
     },
     {
-      url: "https://tap-and-swipe.com/app-sprint-community/tos",
+      url: "https://tap-and-swipe.com/community/tos",
       lastModified: new Date("2026-04-15"),
       changeFrequency: "yearly",
       priority: 0.1,
