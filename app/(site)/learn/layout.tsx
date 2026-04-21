@@ -62,13 +62,11 @@ export default async function LearnLayout({
     redirect("/app-sprint-community?error=not_subscribed");
   }
 
-  const hasDiscord = !!user?.discordId;
-
   return (
     <div className="px-6 pb-24">
       <div className="mx-auto w-full max-w-5xl">
         <div className="mb-10">
-          <LearnTabs hasDiscord={hasDiscord} />
+          <LearnTabs />
         </div>
         {children}
       </div>

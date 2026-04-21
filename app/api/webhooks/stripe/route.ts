@@ -9,18 +9,7 @@ import { generateAsoLicense, deactivateAsoLicenses, reactivateAsoLicenses } from
 import { sendLicenseKeyEmail } from "@/lib/aso-email";
 
 function isCommunitySubscription(sub: Stripe.Subscription): boolean {
-  return !!(sub.metadata.discordId || sub.metadata.userId);
-}
-
-/** Find user by userId metadata first, then discordId fallback */
-async function findCommunityUser(sub: Stripe.Subscription) {
-  if (sub.metadata.userId) {
-    return prisma.user.findUnique({ where: { id: sub.metadata.userId } });
-  }
-  if (sub.metadata.discordId) {
-    return prisma.user.findUnique({ where: { discordId: sub.metadata.discordId } });
-  }
-  return null;
+  return !!sub.metadata.discordId;
 }
 
 export async function POST(request: NextRequest) {
@@ -59,35 +48,31 @@ export async function POST(request: NextRequest) {
         // Only handle community subscriptions
         if (!isCommunitySubscription(subscription)) break;
 
-        const dbUser = await findCommunityUser(subscription);
-        if (!dbUser) {
-          console.warn(`[checkout.session.completed] No user found for subscription ${subscription.id}`);
-          break;
+        const discordId = subscription.metadata.discordId;
+
+        // Look up the stored access token to add user to guild
+        const dbUser = await prisma.user.findUnique({ where: { discordId } });
+        let roleAdded = false;
+
+        if (dbUser?.discordAccessToken) {
+          const addedToGuild = await addToGuild(discordId, dbUser.discordAccessToken);
+          if (addedToGuild) {
+            roleAdded = await addRole(discordId);
+          } else {
+            console.warn(`[checkout.session.completed] addToGuild failed for ${discordId} — token may be expired`);
+            roleAdded = await addRole(discordId);
+          }
+        } else {
+          console.warn(`[checkout.session.completed] No access token stored for ${discordId} — cannot add to guild`);
+          roleAdded = await addRole(discordId);
         }
 
-        // Discord role granting (only if user has discordId)
-        let roleAdded = false;
-        if (dbUser.discordId) {
-          if (dbUser.discordAccessToken) {
-            const addedToGuild = await addToGuild(dbUser.discordId, dbUser.discordAccessToken);
-            if (addedToGuild) {
-              roleAdded = await addRole(dbUser.discordId);
-            } else {
-              console.warn(`[checkout.session.completed] addToGuild failed for ${dbUser.discordId} — token may be expired`);
-              roleAdded = await addRole(dbUser.discordId);
-            }
-          } else {
-            console.warn(`[checkout.session.completed] No access token stored for ${dbUser.discordId} — cannot add to guild`);
-            roleAdded = await addRole(dbUser.discordId);
-          }
-
-          if (!roleAdded) {
-            console.warn(`[checkout.session.completed] addRole returned false for ${dbUser.discordId} — user may not be in the guild`);
-          }
+        if (!roleAdded) {
+          console.warn(`[checkout.session.completed] addRole returned false for ${discordId} — user may not be in the guild`);
         }
 
         await prisma.user.update({
-          where: { id: dbUser.id },
+          where: { discordId },
           data: {
             subscriptionId: subscription.id,
             subscriptionStatus: subscription.status,
@@ -104,7 +89,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Track community paid event
-        const communityVisitorId = subscription.metadata.visitorId || dbUser.discordId || dbUser.id;
+        const communityVisitorId = subscription.metadata.visitorId || discordId;
         {
           const communityInvoice =
             typeof subscription.latest_invoice === "string"
@@ -160,7 +145,7 @@ export async function POST(request: NextRequest) {
                 [
                   { name: "Email", value: communityEmail, inline: true },
                   { name: "Invoice", value: invoiceId, inline: true },
-                  { name: "User ID", value: dbUser.id, inline: true },
+                  { name: "Discord ID", value: discordId, inline: true },
                 ]
               );
             }
@@ -171,14 +156,14 @@ export async function POST(request: NextRequest) {
 
           // Update DB and remove role
           await prisma.user.update({
-            where: { id: dbUser.id },
+            where: { discordId },
             data: {
               subscriptionStatus: "canceled",
               subscriptionId: null,
               roleGranted: false,
             },
           });
-          if (dbUser.discordId) await removeRole(dbUser.discordId);
+          await removeRole(discordId);
           await deactivateAsoLicenses(session.customer as string);
 
           await sendFraudAlert(
@@ -187,7 +172,7 @@ export async function POST(request: NextRequest) {
             [
               { name: "Email", value: communityEmail, inline: true },
               { name: "Customer", value: session.customer as string, inline: true },
-              { name: "User ID", value: dbUser.id, inline: true },
+              { name: "Discord ID", value: discordId, inline: true },
             ]
           );
         }
@@ -199,8 +184,7 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         if (!isCommunitySubscription(subscription)) break;
 
-        const user = await findCommunityUser(subscription);
-        if (!user) break;
+        const discordId = subscription.metadata.discordId;
 
         const isActive = ["active", "trialing"].includes(subscription.status);
         const customerId = typeof subscription.customer === "string"
@@ -209,20 +193,18 @@ export async function POST(request: NextRequest) {
 
         let roleGranted = false;
         if (isActive) {
-          if (user.discordId) {
-            roleGranted = await addRole(user.discordId);
-            if (!roleGranted) {
-              console.warn(`[customer.subscription.updated] addRole returned false for ${user.discordId} — user may not be in the guild`);
-            }
+          roleGranted = await addRole(discordId);
+          if (!roleGranted) {
+            console.warn(`[customer.subscription.updated] addRole returned false for ${discordId} — user may not be in the guild`);
           }
           await reactivateAsoLicenses(customerId);
         } else {
-          if (user.discordId) await removeRole(user.discordId);
+          await removeRole(discordId);
           await deactivateAsoLicenses(customerId);
         }
 
         await prisma.user.update({
-          where: { id: user.id },
+          where: { discordId },
           data: {
             subscriptionStatus: subscription.status,
             roleGranted,
@@ -235,15 +217,13 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         if (!isCommunitySubscription(subscription)) break;
 
-        const user = await findCommunityUser(subscription);
-        if (!user) break;
-
+        const discordId = subscription.metadata.discordId;
         const customerId = typeof subscription.customer === "string"
           ? subscription.customer
           : subscription.customer.id;
 
         await prisma.user.update({
-          where: { id: user.id },
+          where: { discordId },
           data: {
             subscriptionStatus: "canceled",
             subscriptionId: null,
@@ -251,7 +231,7 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        if (user.discordId) await removeRole(user.discordId);
+        await removeRole(discordId);
         await deactivateAsoLicenses(customerId);
         break;
       }
@@ -269,22 +249,21 @@ export async function POST(request: NextRequest) {
           await stripe.subscriptions.retrieve(subscriptionId);
         if (!isCommunitySubscription(subscription)) break;
 
-        const user = await findCommunityUser(subscription);
-        if (!user) break;
+        const discordId = subscription.metadata.discordId;
 
         const failedCustomerId = typeof subscription.customer === "string"
           ? subscription.customer
           : subscription.customer.id;
 
         await prisma.user.update({
-          where: { id: user.id },
+          where: { discordId },
           data: {
             subscriptionStatus: "past_due",
             roleGranted: false,
           },
         });
 
-        if (user.discordId) await removeRole(user.discordId);
+        await removeRole(discordId);
         await deactivateAsoLicenses(failedCustomerId);
         break;
       }
@@ -303,15 +282,12 @@ export async function POST(request: NextRequest) {
         if (!isCommunitySubscription(subscription)) break;
         if (!["active", "trialing"].includes(subscription.status)) break;
 
-        const user = await findCommunityUser(subscription);
-        if (!user) break;
+        const discordId = subscription.metadata.discordId;
+        if (!discordId) break;
 
-        let roleAdded = false;
-        if (user.discordId) {
-          roleAdded = await addRole(user.discordId);
-          if (!roleAdded) {
-            console.warn(`[invoice.paid] addRole returned false for ${user.discordId} — user may not be in the guild`);
-          }
+        const roleAdded = await addRole(discordId);
+        if (!roleAdded) {
+          console.warn(`[invoice.paid] addRole returned false for ${discordId} — user may not be in the guild`);
         }
 
         const paidCustomerId = typeof subscription.customer === "string"
@@ -320,7 +296,7 @@ export async function POST(request: NextRequest) {
         await reactivateAsoLicenses(paidCustomerId);
 
         await prisma.user.update({
-          where: { id: user.id },
+          where: { discordId },
           data: {
             subscriptionStatus: subscription.status,
             roleGranted: roleAdded,
@@ -339,25 +315,24 @@ export async function POST(request: NextRequest) {
         );
         if (!isCommunitySubscription(subscription)) break;
 
-        const asyncDbUser = await findCommunityUser(subscription);
-        if (!asyncDbUser) break;
+        const discordId = subscription.metadata.discordId;
 
+        const asyncDbUser = await prisma.user.findUnique({ where: { discordId } });
         let asyncRoleAdded = false;
-        if (asyncDbUser.discordId) {
-          if (asyncDbUser.discordAccessToken) {
-            await addToGuild(asyncDbUser.discordId, asyncDbUser.discordAccessToken);
-            asyncRoleAdded = await addRole(asyncDbUser.discordId);
-          } else {
-            asyncRoleAdded = await addRole(asyncDbUser.discordId);
-          }
 
-          if (!asyncRoleAdded) {
-            console.warn(`[checkout.session.async_payment_succeeded] addRole returned false for ${asyncDbUser.discordId} — user may not be in the guild`);
-          }
+        if (asyncDbUser?.discordAccessToken) {
+          await addToGuild(discordId, asyncDbUser.discordAccessToken);
+          asyncRoleAdded = await addRole(discordId);
+        } else {
+          asyncRoleAdded = await addRole(discordId);
+        }
+
+        if (!asyncRoleAdded) {
+          console.warn(`[checkout.session.async_payment_succeeded] addRole returned false for ${discordId} — user may not be in the guild`);
         }
 
         await prisma.user.update({
-          where: { id: asyncDbUser.id },
+          where: { discordId },
           data: {
             subscriptionId: subscription.id,
             subscriptionStatus: subscription.status,
