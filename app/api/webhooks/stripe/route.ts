@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { addToGuild, addRole, removeRole } from "@/lib/discord";
-import { sendFraudAlert } from "@/lib/discord-webhook";
+import { sendFraudAlert, sendDiscordNotification } from "@/lib/discord-webhook";
 import { isDisposableEmail } from "@/lib/fraud";
 import { generateAsoLicense, deactivateAsoLicenses, reactivateAsoLicenses } from "@/lib/aso-db";
 import { sendLicenseKeyEmail } from "@/lib/aso-email";
@@ -109,6 +109,32 @@ export async function POST(request: NextRequest) {
             },
             update: {},
           }).catch((e) => console.error("[Community] PageEvent upsert error:", e));
+        }
+
+        // Notify leads channel about new community purchase
+        {
+          const buyerEmail = session.customer_details?.email;
+          const lead = buyerEmail
+            ? await prisma.quizLead.findFirst({
+                where: { email: buyerEmail.toLowerCase() },
+                orderBy: { createdAt: "desc" },
+              }).catch(() => null)
+            : null;
+
+          sendDiscordNotification(
+            "Community Purchase",
+            `**${lead?.firstName || discordId}** just subscribed!`,
+            [
+              { name: "Email", value: buyerEmail || "Unknown", inline: true },
+              { name: "Discord ID", value: discordId, inline: true },
+              { name: "Country", value: lead?.country || subscription.metadata.country || "Unknown", inline: true },
+              ...(lead?.ref ? [{ name: "Ref", value: lead.ref, inline: true }] : []),
+              ...(lead?.budget ? [{ name: "Budget", value: lead.budget, inline: true }] : []),
+              ...(lead?.hasApp ? [{ name: "Has App", value: lead.hasApp, inline: true }] : []),
+            ],
+            0x5865f2,
+            process.env.DISCORD_WEBHOOK_LEADS_URL,
+          ).catch(() => {});
         }
 
         // Disposable email check
