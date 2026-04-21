@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES } from "@/lib/roadmap";
@@ -16,21 +15,14 @@ export default async function CategoryPage({
   const category = CATEGORIES.find((c) => c.slug === slug);
   if (!category) notFound();
 
-  const authSession = await auth();
-  const discordSession = await getSession();
+  const session = await getSession();
 
-  let user = null;
-  if (authSession?.user?.id) {
-    user = await prisma.user.findUnique({
-      where: { id: authSession.user.id },
-      select: { id: true },
-    });
-  } else if (discordSession) {
-    user = await prisma.user.findUnique({
-      where: { discordId: discordSession.discordId },
-      select: { id: true },
-    });
-  }
+  const user = session
+    ? await prisma.user.findUnique({
+        where: { discordId: session.discordId },
+        select: { id: true },
+      })
+    : null;
 
   const [lessons, progress] = await Promise.all([
     prisma.lesson.findMany({

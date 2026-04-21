@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  // Try Auth.js session first, then legacy Discord session
-  const authSession = await auth();
-  const discordSession = await getSession();
+  const session = await getSession();
 
-  if (!authSession?.user && !discordSession) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Admin check: require Discord admin ID (admin features remain Discord-based for now)
-  if (discordSession?.discordId !== process.env.ADMIN_DISCORD_ID) {
+  if (session.discordId !== process.env.ADMIN_DISCORD_ID) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

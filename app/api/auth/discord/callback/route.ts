@@ -208,7 +208,7 @@ Feel free to reach out here if you have any questions 😉`;
       // Check subscription or whitelist
       if (user.subscriptionStatus !== "active" && !isWhitelisted) {
         return NextResponse.redirect(
-          `${APP_URL}/app-sprint-community?error=not_subscribed`
+          `${APP_URL}/login?error=not_subscribed`
         );
       }
 
@@ -237,15 +237,14 @@ Feel free to reach out here if you have any questions 😉`;
       return NextResponse.redirect(`${APP_URL}/learn`);
     }
 
-    // Set session cookie with Discord identity for checkout
+    // Non-paying user: create session and show not-subscribed modal
     await createSession({
       discordId: discordUser.id,
       discordUsername: discordUser.global_name || discordUser.username,
       discordAvatar: discordUser.avatar,
     });
 
-    // Redirect to Stripe checkout
-    return NextResponse.redirect(`${APP_URL}/api/checkout`);
+    return NextResponse.redirect(`${APP_URL}/login?error=not_subscribed`);
   } catch (err) {
     console.error("Discord callback error:", err);
     return NextResponse.redirect(`${APP_URL}/app-sprint-community?error=auth_failed`);

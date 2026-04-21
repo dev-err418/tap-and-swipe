@@ -1,26 +1,17 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import NavbarProfileMenu from "@/components/navbar-profile-menu";
 
 export async function SiteNavbar() {
-  const authSession = await auth();
-  const discordSession = await getSession();
+  const session = await getSession();
 
-  const user = authSession?.user;
-  const isLoggedIn = !!user || !!discordSession;
+  const isLoggedIn = !!session;
 
-  const name =
-    user?.name ?? discordSession?.discordUsername ?? null;
-  const image =
-    user?.image ?? discordSession?.discordAvatar ?? null;
-  const avatarUrl =
-    image && image.startsWith("http")
-      ? image
-      : discordSession?.discordAvatar
-        ? `https://cdn.discordapp.com/avatars/${discordSession.discordId}/${discordSession.discordAvatar}.png?size=64`
-        : null;
+  const name = session?.discordUsername ?? null;
+  const avatarUrl = session?.discordAvatar
+    ? `https://cdn.discordapp.com/avatars/${session.discordId}/${session.discordAvatar}.png?size=64`
+    : null;
 
   return (
     <nav className="relative z-20 w-full px-6 py-5">

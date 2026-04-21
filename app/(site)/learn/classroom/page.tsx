@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES } from "@/lib/roadmap";
@@ -6,23 +5,16 @@ import CategoryCard from "@/components/roadmap/CategoryCard";
 import AdminStatsButton from "@/components/roadmap/AdminStatsButton";
 
 export default async function ClassroomPage() {
-  const authSession = await auth();
-  const discordSession = await getSession();
+  const session = await getSession();
 
-  let user = null;
-  if (authSession?.user?.id) {
-    user = await prisma.user.findUnique({
-      where: { id: authSession.user.id },
-      select: { id: true },
-    });
-  } else if (discordSession) {
-    user = await prisma.user.findUnique({
-      where: { discordId: discordSession.discordId },
-      select: { id: true },
-    });
-  }
+  const user = session
+    ? await prisma.user.findUnique({
+        where: { discordId: session.discordId },
+        select: { id: true },
+      })
+    : null;
 
-  const isAdmin = discordSession?.discordId === process.env.ADMIN_DISCORD_ID;
+  const isAdmin = session?.discordId === process.env.ADMIN_DISCORD_ID;
 
   const [lessons, progress] = await Promise.all([
     prisma.lesson.findMany({

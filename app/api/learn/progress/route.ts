@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
@@ -10,22 +9,16 @@ const WHITELISTED_DISCORD_IDS = new Set([
 ]);
 
 export async function POST(request: NextRequest) {
-  // Try Auth.js session first, then legacy Discord session
-  const authSession = await auth();
-  const discordSession = await getSession();
+  const session = await getSession();
 
-  let user = null;
-  if (authSession?.user?.id) {
-    user = await prisma.user.findUnique({
-      where: { id: authSession.user.id },
-      select: { id: true, subscriptionStatus: true, discordId: true },
-    });
-  } else if (discordSession) {
-    user = await prisma.user.findUnique({
-      where: { discordId: discordSession.discordId },
-      select: { id: true, subscriptionStatus: true, discordId: true },
-    });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const user = await prisma.user.findUnique({
+    where: { discordId: session.discordId },
+    select: { id: true, subscriptionStatus: true, discordId: true },
+  });
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

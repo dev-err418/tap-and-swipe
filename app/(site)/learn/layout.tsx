@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import LearnTabs from "@/components/roadmap/LearnTabs";
@@ -17,37 +16,28 @@ export default async function LearnLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Try Auth.js session first, then fall back to legacy Discord session
-  const authSession = await auth();
-  const discordSession = await getSession();
+  const session = await getSession();
 
-  const isAuthenticated = !!authSession?.user || !!discordSession;
-
-  if (!isAuthenticated && !isDev) {
-    redirect("/login?callbackUrl=/learn");
+  if (!session && !isDev) {
+    redirect("/login");
   }
 
   // Resolve the user record
-  let user = null;
-  if (authSession?.user?.id) {
-    user = await prisma.user.findUnique({
-      where: { id: authSession.user.id },
-    });
-  } else if (discordSession) {
-    user = await prisma.user.findUnique({
-      where: { discordId: discordSession.discordId },
-    });
-  }
+  let user = session
+    ? await prisma.user.findUnique({
+        where: { discordId: session.discordId },
+      })
+    : null;
 
   // Whitelist: auto-create user for whitelisted Discord IDs
-  if (discordSession && !user) {
-    const isWhitelisted = WHITELISTED_DISCORD_IDS.has(discordSession.discordId);
+  if (session && !user) {
+    const isWhitelisted = WHITELISTED_DISCORD_IDS.has(session.discordId);
     if (isWhitelisted) {
       user = await prisma.user.create({
         data: {
-          discordId: discordSession.discordId,
-          discordUsername: discordSession.discordUsername,
-          discordAvatar: discordSession.discordAvatar,
+          discordId: session.discordId,
+          discordUsername: session.discordUsername,
+          discordAvatar: session.discordAvatar,
           subscriptionStatus: "active",
         },
       });
@@ -56,10 +46,10 @@ export default async function LearnLayout({
 
   const hasAccess =
     user?.subscriptionStatus === "active" ||
-    WHITELISTED_DISCORD_IDS.has(discordSession?.discordId ?? "");
+    WHITELISTED_DISCORD_IDS.has(session?.discordId ?? "");
 
   if (!isDev && (!user || !hasAccess)) {
-    redirect("/app-sprint-community?error=not_subscribed");
+    redirect("/login?error=not_subscribed");
   }
 
   return (

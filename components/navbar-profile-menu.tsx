@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { LogOut, MessageCircle, GraduationCap } from "lucide-react";
 
@@ -26,9 +25,8 @@ export default function NavbarProfileMenu({
   }, [menuOpen]);
 
   async function handleLogout() {
-    // Clear legacy Discord session too
     await fetch("/api/auth/logout", { method: "POST" });
-    await signOut({ redirectTo: "/" });
+    window.location.href = "/";
   }
 
   return (
