@@ -17,12 +17,22 @@ export default async function LoginPage({
   const session = await getSession();
   const { error } = await searchParams;
 
+  const WHITELISTED_DISCORD_IDS = new Set([
+    process.env.ADMIN_DISCORD_ID,
+    "372167828964376577",
+    "1295748700429357148",
+    "1261628273465626725",
+  ]);
+
   if (session) {
     const user = await prisma.user.findUnique({
       where: { discordId: session.discordId },
       select: { subscriptionStatus: true },
     });
-    if (user?.subscriptionStatus === "active") {
+    if (
+      user?.subscriptionStatus === "active" ||
+      WHITELISTED_DISCORD_IDS.has(session.discordId)
+    ) {
       redirect("/learn");
     }
   }

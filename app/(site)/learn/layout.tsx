@@ -7,6 +7,7 @@ const WHITELISTED_DISCORD_IDS = new Set([
   process.env.ADMIN_DISCORD_ID,
   "372167828964376577",
   "1295748700429357148",
+  "1261628273465626725",
 ]);
 
 const isDev = process.env.NODE_ENV === "development";

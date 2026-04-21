@@ -201,6 +201,7 @@ Feel free to reach out here if you have any questions 😉`;
       process.env.ADMIN_DISCORD_ID,
       "372167828964376577",
       "1295748700429357148",
+      "1261628273465626725",
     ]);
     const isWhitelisted = WHITELISTED_DISCORD_IDS.has(discordUser.id);
 
@@ -224,8 +225,8 @@ Feel free to reach out here if you have any questions 😉`;
       return NextResponse.redirect(`${APP_URL}/${redirectTarget}`);
     }
 
-    // Already-subscribed user: create session and send to roadmap
-    if (user.subscriptionStatus === "active" && !isWhitelisted) {
+    // Subscribed or whitelisted user: create session and send to roadmap
+    if (user.subscriptionStatus === "active" || isWhitelisted) {
       await createSession(
         {
           discordId: discordUser.id,
