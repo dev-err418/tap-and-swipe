@@ -65,7 +65,7 @@ export default async function LearnLayout({
   return (
     <div className="px-6 pb-24">
       <div className="mx-auto w-full max-w-5xl">
-        <div className="pt-20 mb-10">
+        <div className="mb-10">
           <LearnTabs />
         </div>
         {children}
