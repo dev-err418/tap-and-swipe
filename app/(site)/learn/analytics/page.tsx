@@ -247,7 +247,7 @@ async function fetchPaidBreakdowns(product: string, since: Date) {
 }
 
 async function fetchBreakdowns(product: string, since: Date) {
-  const [byReferrer, byCountry, totalRow] = await Promise.all([
+  const [byReferrer, byCountry, totalRow, visitorsRow] = await Promise.all([
     prisma.$queryRaw<{ referrer: string | null; count: bigint }[]>`
       SELECT referrer, COUNT(*)::bigint as count
       FROM "PageEvent"
@@ -267,6 +267,11 @@ async function fetchBreakdowns(product: string, since: Date) {
       FROM "PageEvent"
       WHERE product = ${product} AND "createdAt" >= ${since}
     `,
+    prisma.$queryRaw<[{ visitors: bigint }]>`
+      SELECT COUNT(DISTINCT "visitorId")::bigint as visitors
+      FROM "PageEvent"
+      WHERE product = ${product} AND type = 'page_view' AND "createdAt" >= ${since}
+    `,
   ]);
 
   const referrerRows = byReferrer.map((r) => ({ key: r.referrer, count: Number(r.count) }));
@@ -278,6 +283,7 @@ async function fetchBreakdowns(product: string, since: Date) {
 
   return {
     total: Number(totalRow[0]?.total ?? 0),
+    visitors: Number(visitorsRow[0]?.visitors ?? 0),
     referrers: groupReferrers(referrerRows),
     countries: countryRows,
   };
@@ -300,12 +306,24 @@ export default async function LearnAnalyticsPage({
 
   const since = getDateFilter(period) ?? new Date("2000-01-01");
 
-  const [coachingEvents, communityEvents, communityPaid, quizFunnel] = await Promise.all([
-    fetchBreakdowns("quiz", since),
-    fetchBreakdowns("community", since),
-    fetchPaidBreakdowns("community", since),
-    fetchQuizFunnel(since),
-  ]);
+  const [coachingEvents, communityEvents, communityPaid, quizFunnel, communityPaidUsers] =
+    await Promise.all([
+      fetchBreakdowns("quiz", since),
+      fetchBreakdowns("community", since),
+      fetchPaidBreakdowns("community", since),
+      fetchQuizFunnel(since),
+      prisma.user.count({
+        where: {
+          paymentProvider: { not: null },
+          createdAt: { gte: since },
+        },
+      }),
+    ]);
+
+  const conversionPct =
+    communityEvents.visitors > 0
+      ? ((communityPaidUsers / communityEvents.visitors) * 100).toFixed(2)
+      : "0.00";
 
   function buildUrl(p: Period) {
     if (p === "week") return "/learn/analytics";
@@ -351,7 +369,7 @@ export default async function LearnAnalyticsPage({
         />
         <Block
           title="Community Paid"
-          subtitle={`${communityPaid.total} paid customers`}
+          subtitle={`${communityPaidUsers} paid customers · ${conversionPct}% conversion from ${communityEvents.visitors} unique visitors · ${communityPaid.total} with attribution`}
           referrers={communityPaid.referrers}
           countries={communityPaid.countries}
           total={communityPaid.total}
