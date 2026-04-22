@@ -199,9 +199,6 @@ Feel free to reach out here if you have any questions 😉`;
     // --- Standard flows ---
     const WHITELISTED_DISCORD_IDS = new Set([
       process.env.ADMIN_DISCORD_ID,
-      "372167828964376577",
-      "1295748700429357148",
-      "1261628273465626725",
     ]);
     const isWhitelisted = WHITELISTED_DISCORD_IDS.has(discordUser.id);
 
