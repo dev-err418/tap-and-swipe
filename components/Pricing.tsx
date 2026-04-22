@@ -99,7 +99,7 @@ const Pricing = () => {
 
                         <div className="text-center mt-8">
                             <a
-                                href="/api/auth/discord"
+                                href="/api/auth/discord?flow=community"
                                 data-fast-goal="cta_pricing_clicked"
                                 className="group flex w-full h-12 items-center justify-center gap-2 rounded-full bg-[#FF9500] text-sm font-bold text-white transition-all hover:bg-[#FF9500]/85 hover:ring-4 hover:ring-[#FF9500]/20 cursor-pointer mb-4"
                             >

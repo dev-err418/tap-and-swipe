@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   if (redirect?.startsWith("learn")) {
     claims.redirect = redirect;
   }
-  if (flow === "bundle-community" || flow === "bundle-aso" || flow === "aso-yearly-bonus") {
+  if (flow === "bundle-community" || flow === "bundle-aso" || flow === "aso-yearly-bonus" || flow === "community") {
     claims.flow = flow;
   }
 

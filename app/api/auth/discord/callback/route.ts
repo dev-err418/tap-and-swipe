@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
   const bundleFlow = typeof statePayload.flow === "string" ? statePayload.flow : null;
   const isBundleFlow = bundleFlow === "bundle-community" || bundleFlow === "bundle-aso";
   const isYearlyBonusFlow = bundleFlow === "aso-yearly-bonus";
+  const isCommunityFlow = bundleFlow === "community";
 
   try {
     // Exchange code for access token
@@ -194,6 +195,29 @@ Feel free to reach out here if you have any questions 😉`;
         return NextResponse.redirect(`${APP_URL}/api/aso/checkout-bundle`);
       }
       return NextResponse.redirect(`${APP_URL}/api/checkout/bundle`);
+    }
+
+    // --- Community signup flow: send brand-new members to checkout ---
+    if (isCommunityFlow) {
+      if (user.subscriptionStatus === "active") {
+        await createSession(
+          {
+            discordId: discordUser.id,
+            discordUsername: discordUser.global_name || discordUser.username,
+            discordAvatar: discordUser.avatar,
+          },
+          "7d"
+        );
+        return NextResponse.redirect(`${APP_URL}/learn`);
+      }
+
+      await createSession({
+        discordId: discordUser.id,
+        discordUsername: discordUser.global_name || discordUser.username,
+        discordAvatar: discordUser.avatar,
+      });
+
+      return NextResponse.redirect(`${APP_URL}/api/checkout`);
     }
 
     // --- Standard flows ---
