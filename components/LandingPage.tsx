@@ -43,27 +43,6 @@ const LandingPage = ({
                 <ErrorOverlay />
             </Suspense>
 
-            {/* Social proof banner */}
-            <div className="mx-auto max-w-7xl px-6 pb-8">
-                <div className="relative flex items-center justify-center gap-4 overflow-hidden rounded-2xl bg-black/[0.03] px-8 py-6">
-                    <div className="flex -space-x-2">
-                        {COMMUNITY_ICONS.slice(0, 8).map((icon, i) => (
-                            <img
-                                key={i}
-                                src={icon}
-                                alt=""
-                                width={40}
-                                height={40}
-                                className="h-10 w-10 rounded-full border-2 border-white object-cover"
-                            />
-                        ))}
-                    </div>
-                    <p className="text-lg font-bold text-black">
-                        +80 founders trained
-                    </p>
-                </div>
-            </div>
-
             {/* Hero Section */}
             <header
                 className="relative flex min-h-[600px] flex-col items-center overflow-hidden px-6 text-center"
