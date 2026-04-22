@@ -50,11 +50,13 @@ export default async function LearnLayout({
     redirect("/login?error=not_subscribed");
   }
 
+  const isAdmin = session?.discordId === process.env.ADMIN_DISCORD_ID;
+
   return (
     <div className="px-6 pb-24">
       <div className="mx-auto w-full max-w-5xl">
         <div className="mb-10">
-          <LearnTabs />
+          <LearnTabs isAdmin={isAdmin} />
         </div>
         {children}
       </div>

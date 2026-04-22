@@ -3,18 +3,24 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const TABS = [
+type Tab = { label: string; href: string; disabled: boolean };
+
+const BASE_TABS: Tab[] = [
   { label: "Community", href: "/learn/community", disabled: true },
   { label: "Classroom", href: "/learn/classroom", disabled: false },
   { label: "Calendar", href: "/learn/calendar", disabled: false },
-] as const;
+];
 
-export default function LearnTabs() {
+export default function LearnTabs({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
+
+  const tabs: Tab[] = isAdmin
+    ? [...BASE_TABS, { label: "Analytics", href: "/learn/analytics", disabled: false }]
+    : BASE_TABS;
 
   return (
     <div className="flex gap-8 border-b border-black/10">
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const active = pathname.startsWith(tab.href);
 
         if (tab.disabled) {
