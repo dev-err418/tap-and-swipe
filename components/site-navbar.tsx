@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
-import { Button } from "@/components/ui/button";
 import NavbarProfileMenu from "@/components/navbar-profile-menu";
 
 export async function SiteNavbar() {
@@ -45,12 +44,8 @@ export async function SiteNavbar() {
               Learn
             </Link>
           )}
-          {isLoggedIn ? (
+          {isLoggedIn && (
             <NavbarProfileMenu name={name} avatarUrl={avatarUrl} />
-          ) : (
-            <Button size="sm" className="rounded-full" asChild>
-              <Link href="/login">Login</Link>
-            </Button>
           )}
         </div>
       </div>
