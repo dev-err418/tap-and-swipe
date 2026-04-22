@@ -199,6 +199,53 @@ async function fetchQuizFunnel(since: Date) {
   };
 }
 
+async function fetchPaidBreakdowns(product: string, since: Date) {
+  const [byReferrer, byCountry, totalRow] = await Promise.all([
+    prisma.$queryRaw<{ referrer: string | null; count: bigint }[]>`
+      SELECT pv.referrer as referrer, COUNT(DISTINCT pv."visitorId")::bigint as count
+      FROM "PageEvent" pv
+      INNER JOIN "PageEvent" conv
+        ON conv."visitorId" = pv."visitorId"
+        AND conv.product = ${product}
+        AND conv.type = 'paid'
+        AND conv."createdAt" >= ${since}
+      WHERE pv.product = ${product} AND pv.type = 'page_view'
+      GROUP BY pv.referrer
+      ORDER BY count DESC
+    `,
+    prisma.$queryRaw<{ country: string | null; count: bigint }[]>`
+      SELECT pv.country as country, COUNT(DISTINCT pv."visitorId")::bigint as count
+      FROM "PageEvent" pv
+      INNER JOIN "PageEvent" conv
+        ON conv."visitorId" = pv."visitorId"
+        AND conv.product = ${product}
+        AND conv.type = 'paid'
+        AND conv."createdAt" >= ${since}
+      WHERE pv.product = ${product} AND pv.type = 'page_view'
+      GROUP BY pv.country
+      ORDER BY count DESC
+    `,
+    prisma.$queryRaw<[{ total: bigint }]>`
+      SELECT COUNT(DISTINCT "visitorId")::bigint as total
+      FROM "PageEvent"
+      WHERE product = ${product} AND type = 'paid' AND "createdAt" >= ${since}
+    `,
+  ]);
+
+  const referrerRows = byReferrer.map((r) => ({ key: r.referrer, count: Number(r.count) }));
+  const countryRows = byCountry.map((r) => ({
+    label: countryLabel(r.country),
+    icon: null as ReactNode,
+    count: Number(r.count),
+  }));
+
+  return {
+    total: Number(totalRow[0]?.total ?? 0),
+    referrers: groupReferrers(referrerRows),
+    countries: countryRows,
+  };
+}
+
 async function fetchBreakdowns(product: string, since: Date) {
   const [byReferrer, byCountry, totalRow] = await Promise.all([
     prisma.$queryRaw<{ referrer: string | null; count: bigint }[]>`
@@ -253,9 +300,10 @@ export default async function LearnAnalyticsPage({
 
   const since = getDateFilter(period) ?? new Date("2000-01-01");
 
-  const [coachingEvents, communityEvents, quizFunnel] = await Promise.all([
+  const [coachingEvents, communityEvents, communityPaid, quizFunnel] = await Promise.all([
     fetchBreakdowns("quiz", since),
     fetchBreakdowns("community", since),
+    fetchPaidBreakdowns("community", since),
     fetchQuizFunnel(since),
   ]);
 
@@ -293,20 +341,27 @@ export default async function LearnAnalyticsPage({
         <QuizFlowChart {...quizFunnel} />
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Section
-          title="Coaching (1:1)"
-          subtitle={`${coachingEvents.total} page events`}
-          referrers={coachingEvents.referrers}
-          total={coachingEvents.total}
-          countries={coachingEvents.countries}
-        />
-        <Section
+      <div className="space-y-10">
+        <Block
           title="Community"
           subtitle={`${communityEvents.total} page events`}
           referrers={communityEvents.referrers}
-          total={communityEvents.total}
           countries={communityEvents.countries}
+          total={communityEvents.total}
+        />
+        <Block
+          title="Community Paid"
+          subtitle={`${communityPaid.total} paid customers`}
+          referrers={communityPaid.referrers}
+          countries={communityPaid.countries}
+          total={communityPaid.total}
+        />
+        <Block
+          title="Coaching (1:1)"
+          subtitle={`${coachingEvents.total} page events`}
+          referrers={coachingEvents.referrers}
+          countries={coachingEvents.countries}
+          total={coachingEvents.total}
         />
       </div>
     </>
@@ -411,27 +466,29 @@ function BranchConnector({ topPct, bottomPct }: { topPct: number; bottomPct: num
   );
 }
 
-function Section({
+function Block({
   title,
   subtitle,
   referrers,
-  total,
   countries,
+  total,
 }: {
   title: string;
   subtitle: string;
   referrers: DisplayRow[];
-  total: number;
   countries: DisplayRow[];
+  total: number;
 }) {
   return (
-    <div className="space-y-6">
-      <div>
+    <div>
+      <div className="mb-4">
         <h2 className="text-xl font-semibold">{title}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
       </div>
-      <Table title="Traffic sources" rows={referrers} total={total} />
-      <Table title="Countries (top 10)" rows={countries.slice(0, 10)} total={total} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Table title="Traffic sources" rows={referrers} total={total} />
+        <Table title="Countries (top 10)" rows={countries.slice(0, 10)} total={total} />
+      </div>
     </div>
   );
 }
