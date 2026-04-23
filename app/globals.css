@@ -150,6 +150,22 @@ html {
   .fade-in-up {
     animation: fade-in-up 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) both;
   }
+  .marquee-left {
+    animation: marquee-left 90s linear infinite;
+  }
+  .marquee-right {
+    animation: marquee-right 90s linear infinite;
+  }
+}
+
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
 }
 
 @utility scrollbar-none {

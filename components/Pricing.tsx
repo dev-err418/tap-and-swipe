@@ -14,7 +14,7 @@ const premiumFeatures = [
 ];
 
 const basicDismissed = [
-    "30+ video lessons",
+    "2x weekly group calls",
     "Ready-to-start boilerplate (skip the setup, start building)",
     "Guest masterclasses with founders >10K€ MRR (coming 2026)",
     "AppSprint ASO Pro",
@@ -47,8 +47,8 @@ const Pricing = () => {
 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-extrabold text-black">74&euro;</span>
-                                <span className="text-lg text-black/50">/mo</span>
+                                <span className="text-5xl font-extrabold text-black">67&euro;</span>
+                                <span className="text-lg text-black/50">/mo, billed quarterly</span>
                             </div>
                         </div>
 
@@ -59,11 +59,7 @@ const Pricing = () => {
                             </li>
                             <li className="flex items-start gap-3">
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
-                                <span className="text-sm font-medium text-black">2x weekly group calls</span>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
-                                <span className="text-sm font-medium text-black">Direct feedback on your app</span>
+                                <span className="text-sm font-medium text-black">30+ video lessons</span>
                             </li>
                             {basicDismissed.map((feature, i) => (
                                 <li key={i} className="flex items-start gap-3">
@@ -98,7 +94,7 @@ const Pricing = () => {
                         <div className="mb-6">
                             <div className="flex items-baseline gap-2">
                                 <span className="text-5xl font-extrabold text-black">127&euro;</span>
-                                <span className="text-lg text-black/50">/mo</span>
+                                <span className="text-lg text-black/50">/mo, billed quarterly</span>
                             </div>
                         </div>
 
