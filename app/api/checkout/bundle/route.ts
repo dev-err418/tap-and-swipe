@@ -42,6 +42,7 @@ export async function GET() {
         visitorId,
         country,
         product: "bundle-community",
+        tier: "full",
       },
     });
 

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES } from "@/lib/roadmap";
@@ -8,10 +8,13 @@ import Link from "next/link";
 
 export default async function CategoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ preview?: string }>;
 }) {
   const { slug } = await params;
+  const sp = await searchParams;
   const category = CATEGORIES.find((c) => c.slug === slug);
   if (!category) notFound();
 
@@ -20,9 +23,18 @@ export default async function CategoryPage({
   const user = session
     ? await prisma.user.findUnique({
         where: { discordId: session.discordId },
-        select: { id: true },
+        select: { id: true, tier: true },
       })
     : null;
+
+  const isAdmin = session?.discordId === process.env.ADMIN_DISCORD_ID;
+  const isEffectivelyStarter =
+    user?.tier === "starter" || (isAdmin && sp.preview === "starter");
+
+  // Starter tier cannot access the boilerplate category.
+  if (isEffectivelyStarter && slug === "build-with-boilerplate") {
+    redirect("/learn/classroom" + (sp.preview === "starter" ? "?preview=starter" : ""));
+  }
 
   const [lessons, progress] = await Promise.all([
     prisma.lesson.findMany({

@@ -92,9 +92,20 @@ export async function addToGuild(
   return false;
 }
 
-export async function addRole(discordUserId: string): Promise<boolean> {
+export function roleIdForTier(tier: "full" | "starter" | null | undefined): string {
+  if (tier === "starter") {
+    return process.env.DISCORD_STARTER_ROLE_ID ?? process.env.DISCORD_ROLE_ID!;
+  }
+  return process.env.DISCORD_ROLE_ID!;
+}
+
+export async function addRole(
+  discordUserId: string,
+  tier: "full" | "starter" | null | undefined = "full"
+): Promise<boolean> {
+  const roleId = roleIdForTier(tier);
   const res = await fetch(
-    `${DISCORD_API}/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${process.env.DISCORD_ROLE_ID}`,
+    `${DISCORD_API}/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${roleId}`,
     {
       method: "PUT",
       headers: {
@@ -262,9 +273,13 @@ export async function sendChannelMessage(
   }
 }
 
-export async function removeRole(discordUserId: string): Promise<boolean> {
+export async function removeRole(
+  discordUserId: string,
+  tier: "full" | "starter" | null | undefined = "full"
+): Promise<boolean> {
+  const roleId = roleIdForTier(tier);
   const res = await fetch(
-    `${DISCORD_API}/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${process.env.DISCORD_ROLE_ID}`,
+    `${DISCORD_API}/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${roleId}`,
     {
       method: "DELETE",
       headers: {

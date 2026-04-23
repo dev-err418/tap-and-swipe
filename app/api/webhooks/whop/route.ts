@@ -100,10 +100,23 @@ export async function POST(request: NextRequest) {
       const v = metadata?.visitorId;
       return typeof v === "string" && v.length > 0 ? v : null;
     }
+    function extractTier(d: Record<string, unknown>): "full" | "starter" {
+      const metadata = d.metadata as Record<string, unknown> | undefined;
+      const t = metadata?.tier;
+      return t === "starter" ? "starter" : "full";
+    }
     const membershipForMeta = data.membership as Record<string, unknown> | undefined;
     const visitorId =
       extractVisitorId(data) ??
       (membershipForMeta ? extractVisitorId(membershipForMeta) : null);
+    const tier: "full" | "starter" =
+      extractTier(data) === "starter"
+        ? "starter"
+        : membershipForMeta
+          ? extractTier(membershipForMeta)
+          : "full";
+    const asoPlan = tier === "starter" ? "solo" : "pro";
+    const emailSource = tier === "starter" ? "community-starter" : "community";
 
     // Fallback 1: check metadata.discordId (set during our checkout flow)
     if (!discord) {
@@ -156,7 +169,7 @@ export async function POST(request: NextRequest) {
             );
           }
 
-          const roleGranted = await addRole(discord.id);
+          const roleGranted = await addRole(discord.id, tier);
           if (!roleGranted) {
             console.warn(
               `[whop] addRole returned false for ${discord.id} — user may not be in the guild`
@@ -175,6 +188,7 @@ export async function POST(request: NextRequest) {
             update: {
               subscriptionStatus: "active",
               roleGranted,
+              tier,
               ...(!isActiveElsewhere && { paymentProvider: "whop" }),
               ...(visitorId && !existingUser?.visitorId && { visitorId }),
             },
@@ -184,20 +198,21 @@ export async function POST(request: NextRequest) {
               subscriptionStatus: "active",
               paymentProvider: "whop",
               roleGranted,
+              tier,
               ...(visitorId && { visitorId }),
             },
           });
 
-          // ASO Pro license generation
+          // ASO license generation (Pro for full, Solo for starter)
           if (email) {
             const { key: licenseKey, isNew: isNewLicense } =
-              await generateAsoLicenseWhop(email, membershipId, "pro", manageUrl);
+              await generateAsoLicenseWhop(email, membershipId, asoPlan, manageUrl);
 
             if (isNewLicense || isNew) {
               await sendLicenseKeyEmail(
                 email,
                 licenseKey,
-                "community",
+                emailSource,
                 manageUrl
               );
             }
@@ -210,10 +225,10 @@ export async function POST(request: NextRequest) {
           // No Discord — still generate ASO license if we have email
           if (email) {
             const { key: licenseKey, isNew: isNewLicense } =
-              await generateAsoLicenseWhop(email, membershipId, "pro", manageUrl);
+              await generateAsoLicenseWhop(email, membershipId, asoPlan, manageUrl);
 
             if (isNewLicense) {
-              await sendLicenseKeyEmail(email, licenseKey, "community", manageUrl);
+              await sendLicenseKeyEmail(email, licenseKey, emailSource, manageUrl);
             }
           }
 
@@ -230,9 +245,14 @@ export async function POST(request: NextRequest) {
         // Deactivate ASO licenses
         await deactivateAsoLicensesByWhop(membershipId);
 
-        // Remove Discord role
+        // Remove Discord role (look up user's tier so we remove the correct role)
         if (discord) {
-          await removeRole(discord.id).catch(() => {});
+          const existingUser = await prisma.user.findUnique({
+            where: { discordId: discord.id },
+            select: { tier: true },
+          });
+          const userTier = existingUser?.tier === "starter" ? "starter" : "full";
+          await removeRole(discord.id, userTier).catch(() => {});
 
           await prisma.user.update({
             where: { discordId: discord.id },
@@ -261,9 +281,14 @@ export async function POST(request: NextRequest) {
         if (membershipId) {
           await reactivateAsoLicensesByWhop(membershipId);
 
-          // Re-grant Discord role
+          // Re-grant Discord role (look up stored tier)
           if (discord) {
-            await addRole(discord.id).catch(() => {});
+            const existingUser = await prisma.user.findUnique({
+              where: { discordId: discord.id },
+              select: { tier: true },
+            });
+            const userTier = existingUser?.tier === "starter" ? "starter" : "full";
+            await addRole(discord.id, userTier).catch(() => {});
 
             await prisma.user.update({
               where: { discordId: discord.id },
@@ -284,7 +309,12 @@ export async function POST(request: NextRequest) {
 
           // Remove Discord role
           if (discord) {
-            await removeRole(discord.id).catch(() => {});
+            const existingUser = await prisma.user.findUnique({
+              where: { discordId: discord.id },
+              select: { tier: true },
+            });
+            const userTier = existingUser?.tier === "starter" ? "starter" : "full";
+            await removeRole(discord.id, userTier).catch(() => {});
 
             await prisma.user.update({
               where: { discordId: discord.id },

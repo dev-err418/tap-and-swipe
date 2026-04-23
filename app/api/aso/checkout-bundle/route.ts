@@ -29,6 +29,7 @@ export async function GET() {
         visitorId,
         country,
         product: "bundle-aso",
+        tier: "full",
       },
     });
 

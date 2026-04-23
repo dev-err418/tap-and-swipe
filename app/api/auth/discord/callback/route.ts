@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
   const isBundleFlow = bundleFlow === "bundle-community" || bundleFlow === "bundle-aso";
   const isYearlyBonusFlow = bundleFlow === "aso-yearly-bonus";
   const isCommunityFlow = bundleFlow === "community";
+  const isStarterFlow = bundleFlow === "community-starter";
 
   try {
     // Exchange code for access token
@@ -198,7 +199,7 @@ Feel free to reach out here if you have any questions 😉`;
     }
 
     // --- Community signup flow: send brand-new members to checkout ---
-    if (isCommunityFlow) {
+    if (isCommunityFlow || isStarterFlow) {
       if (user.subscriptionStatus === "active") {
         await createSession(
           {
@@ -217,7 +218,8 @@ Feel free to reach out here if you have any questions 😉`;
         discordAvatar: discordUser.avatar,
       });
 
-      return NextResponse.redirect(`${APP_URL}/api/checkout`);
+      const checkoutPath = isStarterFlow ? "/api/checkout?tier=starter" : "/api/checkout";
+      return NextResponse.redirect(`${APP_URL}${checkoutPath}`);
     }
 
     // --- Standard flows ---

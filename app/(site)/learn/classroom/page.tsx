@@ -4,17 +4,24 @@ import { CATEGORIES } from "@/lib/roadmap";
 import CategoryCard from "@/components/roadmap/CategoryCard";
 import AdminStatsButton from "@/components/roadmap/AdminStatsButton";
 
-export default async function ClassroomPage() {
+export default async function ClassroomPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}) {
   const session = await getSession();
+  const sp = await searchParams;
 
   const user = session
     ? await prisma.user.findUnique({
         where: { discordId: session.discordId },
-        select: { id: true },
+        select: { id: true, tier: true },
       })
     : null;
 
   const isAdmin = session?.discordId === process.env.ADMIN_DISCORD_ID;
+  const isStarter =
+    user?.tier === "starter" || (isAdmin && sp.preview === "starter");
 
   const [lessons, progress] = await Promise.all([
     prisma.lesson.findMany({
@@ -66,6 +73,7 @@ export default async function ClassroomPage() {
               totalLessons={cat.totalLessons}
               image={"image" in cat ? (cat.image as string) : undefined}
               index={i}
+              locked={isStarter && cat.slug === "build-with-boilerplate"}
             />
           ))}
       </div>

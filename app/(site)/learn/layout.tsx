@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import LearnTabs from "@/components/roadmap/LearnTabs";
+import AdminStarterPreviewToggle from "@/components/roadmap/AdminStarterPreviewToggle";
 
 const WHITELISTED_DISCORD_IDS = new Set([
   process.env.ADMIN_DISCORD_ID,
@@ -60,6 +61,7 @@ export default async function LearnLayout({
         </div>
         {children}
       </div>
+      {isAdmin && <AdminStarterPreviewToggle />}
     </div>
   );
 }

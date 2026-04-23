@@ -1,23 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, X, ArrowRight, Star } from "lucide-react";
-const features = [
-    "Private builder community (63+ makers)",
-    "30+ video lessons",
-];
+import { Check, ArrowRight, Star } from "lucide-react";
 
 const premiumFeatures = [
     "2x weekly group calls",
-    "Ready-to-start boilerplate (skip the setup, start building)",
+    "Ready-to-start Expo boilerplate (skip the setup, start building)",
     "Guest masterclasses with founders >10K€ MRR (coming 2026)",
-];
-
-const basicDismissed = [
-    "2x weekly group calls",
-    "Ready-to-start boilerplate (skip the setup, start building)",
-    "Guest masterclasses with founders >10K€ MRR (coming 2026)",
-    "AppSprint ASO Pro",
 ];
 
 const Pricing = () => {
@@ -42,7 +31,7 @@ const Pricing = () => {
                         className="relative rounded-3xl border border-black/10 bg-black/[0.02] p-8 md:p-10 flex flex-col"
                     >
                         <p className="text-lg font-bold text-black mb-4">
-                            Community access
+                            Starter Community
                         </p>
 
                         <div className="mb-6">
@@ -50,6 +39,7 @@ const Pricing = () => {
                                 <span className="text-5xl font-extrabold text-black">67&euro;</span>
                                 <span className="text-lg text-black/50">/mo, billed quarterly</span>
                             </div>
+                            <p className="mt-1 text-sm text-black/50">Billed quarterly</p>
                         </div>
 
                         <ul className="space-y-2.5">
@@ -61,18 +51,58 @@ const Pricing = () => {
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
                                 <span className="text-sm font-medium text-black">30+ video lessons</span>
                             </li>
-                            {basicDismissed.map((feature, i) => (
-                                <li key={i} className="flex items-start gap-3">
-                                    <X className="h-4 w-4 mt-0.5 shrink-0 text-black/30" />
-                                    <span className="text-sm font-medium text-black/40 line-through">{feature}</span>
-                                </li>
-                            ))}
+                            <li className="flex items-start gap-3">
+                                <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
+                                <span className="group relative inline-block">
+                                    <a
+                                        href="https://appsprint.app/aso"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm font-bold text-black"
+                                    >
+                                        <span className="underline decoration-black decoration-wavy decoration-[1.5px]">AppSprint ASO Solo</span> included (worth 19€/mo)
+                                    </a>
+                                    <div
+                                        role="tooltip"
+                                        className="pointer-events-none absolute left-1/2 top-full z-20 mt-3 w-72 -translate-x-1/2 rounded-2xl border border-black/10 bg-white p-5 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100"
+                                    >
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="h-10 w-10 shrink-0 rounded-[10px] bg-black/85 border border-black/15">
+                                                <img
+                                                    src="/aso/app-icon.png"
+                                                    alt="AppSprint ASO"
+                                                    width={40}
+                                                    height={40}
+                                                    className="h-full w-full rounded-[10px] p-1"
+                                                />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-bold text-black">AppSprint ASO Solo</p>
+                                                <p className="text-xs text-black/50">Core ASO features for your apps</p>
+                                            </div>
+                                        </div>
+                                        <ul className="space-y-2">
+                                            {[
+                                                "1 app",
+                                                "Keyword research & tracking",
+                                                "Competitor MRR estimates",
+                                                "Price localization",
+                                            ].map((f) => (
+                                                <li key={f} className="flex items-start gap-2">
+                                                    <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-black" />
+                                                    <span className="text-xs text-black/70">{f}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </span>
+                            </li>
                         </ul>
 
                         <div className="text-center mt-auto pt-8">
                             <a
-                                href="/api/auth/discord?flow=community-basic"
-                                data-fast-goal="cta_pricing_basic_clicked"
+                                href="/api/auth/discord?flow=community-starter"
+                                data-fast-goal="cta_pricing_starter_clicked"
                                 className="group flex w-full h-12 items-center justify-center gap-2 rounded-full border border-black/15 bg-white text-sm font-bold text-black transition-all hover:bg-black/5 cursor-pointer"
                             >
                                 <span>Join the community</span>
@@ -96,19 +126,18 @@ const Pricing = () => {
                                 <span className="text-5xl font-extrabold text-black">127&euro;</span>
                                 <span className="text-lg text-black/50">/mo, billed quarterly</span>
                             </div>
+                            <p className="mt-1 text-sm text-black/50">Billed quarterly</p>
                         </div>
 
                         <ul className="space-y-2.5">
-                            {features.map((feature, i) => (
-                                <li key={i} className="flex items-start gap-3">
-                                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
-                                    <span className="text-sm font-medium text-black">{feature}</span>
-                                </li>
-                            ))}
+                            <li className="flex items-start gap-3">
+                                <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
+                                <span className="text-sm font-medium text-black">Everything in Starter Community</span>
+                            </li>
                             {premiumFeatures.map((feature, i) => (
                                 <li key={i} className="flex items-start gap-3">
                                     <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
-                                    <span className="text-sm font-bold text-black">{feature}</span>
+                                    <span className="text-sm font-medium text-black">{feature}</span>
                                 </li>
                             ))}
                             <li className="flex items-start gap-3">
@@ -118,9 +147,9 @@ const Pricing = () => {
                                         href="https://appsprint.app/aso"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm font-bold text-black underline decoration-[#FF9500] decoration-wavy decoration-[1.5px]"
+                                        className="text-sm font-bold text-black"
                                     >
-                                        AppSprint ASO Pro included (worth 39€/mo)
+                                        <span className="underline decoration-[#FF9500] decoration-wavy decoration-[1.5px]">AppSprint ASO Pro</span> included (worth 39€/mo)
                                     </a>
                                     <div
                                         role="tooltip"
@@ -137,16 +166,16 @@ const Pricing = () => {
                                                 />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-sm font-bold text-black">AppSprint ASO</p>
+                                                <p className="text-sm font-bold text-black">AppSprint ASO Pro</p>
                                                 <p className="text-xs text-black/50">The all-in-one macOS app for ASO</p>
                                             </div>
                                         </div>
                                         <ul className="space-y-2">
                                             {[
+                                                "Unlimited apps",
                                                 "Keyword research & tracking",
-                                                "Competitor MRR estimates",
-                                                "Apple Search Ads management",
-                                                "Unlimited keywords & apps",
+                                                "Deep competitor analysis",
+                                                "Price localization",
                                             ].map((f) => (
                                                 <li key={f} className="flex items-start gap-2">
                                                     <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-black" />
