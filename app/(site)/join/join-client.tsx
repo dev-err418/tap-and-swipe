@@ -13,13 +13,17 @@ import PageTracker, {
 
 // ── Step definitions ────────────────────────────────────────────────
 
-type StepId = "firstName" | "email" | "hasApp" | "challenge" | "budget";
+type StepId = "firstName" | "email" | "hasApp" | "challenge" | "businessType" | "budget";
 
 const APP_OPTIONS = [
   { value: "revenue", label: "Yes, and I'm making revenue" },
   { value: "no-revenue", label: "Yes, but no revenue yet" },
-  { value: "idea", label: "No, but I have an idea" },
-  { value: "scratch", label: "No, I'm starting from scratch" },
+  { value: "no", label: "No" },
+] as const;
+
+const BUSINESS_TYPE_OPTIONS = [
+  { value: "individual", label: "Individual, just me" },
+  { value: "business", label: "A registered business or company" },
 ] as const;
 
 const BUDGET_OPTIONS = [
@@ -30,14 +34,15 @@ const BUDGET_OPTIONS = [
   { value: "5000-plus", label: "$5,000+" },
 ] as const;
 
-const STEPS: StepId[] = ["firstName", "email", "hasApp", "challenge", "budget"];
+const STEPS: StepId[] = ["firstName", "email", "hasApp", "challenge", "businessType", "budget"];
+const PROGRESS_DENOMINATOR = 6;
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
 /** Check whether a step has been answered */
 function isStepAnswered(
   stepId: StepId,
-  state: { firstName: string; email: string; hasApp: string; challenge: string },
+  state: { firstName: string; email: string; hasApp: string; challenge: string; businessType: string },
 ) {
   switch (stepId) {
     case "firstName":
@@ -48,6 +53,8 @@ function isStepAnswered(
       return state.hasApp.length > 0;
     case "challenge":
       return state.challenge.trim().length > 0;
+    case "businessType":
+      return state.businessType.length > 0;
     case "budget":
       return false; // terminal step
   }
@@ -73,18 +80,19 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
   const [email, setEmail] = useState(saved.email || "");
   const [hasApp, setHasApp] = useState(saved.hasApp || "");
   const [challenge, setChallenge] = useState(saved.challenge || "");
+  const [businessType, setBusinessType] = useState(saved.businessType || "");
   const [error, setError] = useState("");
 
   const stepIndex = STEPS.indexOf(step);
-  const formState = { firstName, email, hasApp, challenge };
+  const formState = { firstName, email, hasApp, challenge, businessType };
 
   // Persist answers to sessionStorage
   useEffect(() => {
     sessionStorage.setItem(
       "join_quiz",
-      JSON.stringify({ step, firstName, email, hasApp, challenge }),
+      JSON.stringify({ step, firstName, email, hasApp, challenge, businessType }),
     );
-  }, [step, firstName, email, hasApp, challenge]);
+  }, [step, firstName, email, hasApp, challenge, businessType]);
 
   // ── Navigation ──────────────────────────────────────────────────
 
@@ -138,12 +146,12 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
     [],
   );
 
-  const handleBudgetSelect = useCallback(
-    async (budget: string) => {
-      if (submitting) return;
-      setSubmitting(true);
-
-      const highTicket = allowHighTicket && ["2000-3000", "4000-5000", "5000-plus"].includes(budget);
+  const submitQuiz = useCallback(
+    async (selectedBusinessType: string, budget: string | undefined) => {
+      const highTicket =
+        allowHighTicket &&
+        !!budget &&
+        ["2000-3000", "4000-5000", "5000-plus"].includes(budget);
       const route = highTicket ? "coaching" : "community";
 
       const visitorId = getVisitorId();
@@ -163,6 +171,7 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
             email: email.trim(),
             hasApp,
             challenge: challenge.trim() || undefined,
+            businessType: selectedBusinessType,
             budget,
             route,
             ref: ref || undefined,
@@ -183,7 +192,31 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
         router.push("/community");
       }
     },
-    [firstName, email, hasApp, challenge, submitting, router],
+    [firstName, email, hasApp, challenge, allowHighTicket, router],
+  );
+
+  const handleBusinessTypeSelect = useCallback(
+    async (value: string) => {
+      if (submitting) return;
+      setBusinessType(value);
+      if (value === "individual") {
+        setSubmitting(true);
+        await submitQuiz(value, undefined);
+        return;
+      }
+      setDirection(1);
+      setStep("budget");
+    },
+    [submitting, submitQuiz],
+  );
+
+  const handleBudgetSelect = useCallback(
+    async (budget: string) => {
+      if (submitting) return;
+      setSubmitting(true);
+      await submitQuiz(businessType, budget);
+    },
+    [businessType, submitting, submitQuiz],
   );
 
   // Keyboard arrows + number keys for multi-choice
@@ -203,6 +236,10 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
           e.preventDefault();
           handleAppSelect(APP_OPTIONS[idx].value);
         }
+        if (step === "businessType" && idx < BUSINESS_TYPE_OPTIONS.length && !submitting) {
+          e.preventDefault();
+          handleBusinessTypeSelect(BUSINESS_TYPE_OPTIONS[idx].value);
+        }
         if (step === "budget" && idx < BUDGET_OPTIONS.length && !submitting) {
           e.preventDefault();
           handleBudgetSelect(BUDGET_OPTIONS[idx].value);
@@ -211,7 +248,7 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [goNext, goPrev, step, submitting, handleAppSelect, handleBudgetSelect]);
+  }, [goNext, goPrev, step, submitting, handleAppSelect, handleBusinessTypeSelect, handleBudgetSelect]);
 
   // ── Current step value (for showing/hiding Ok button) ───────────
 
@@ -221,7 +258,7 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
     (step === "challenge"); // always show continue for optional field
 
   const canGoBack = stepIndex > 0;
-  const isMultiChoice = step === "hasApp" || step === "budget";
+  const isMultiChoice = step === "hasApp" || step === "businessType" || step === "budget";
   const canGoForward =
     !isMultiChoice &&
     stepIndex < STEPS.length - 1 &&
@@ -245,6 +282,12 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
     >
       <PageTracker product="quiz" />
 
+      <div className="mb-4 w-full max-w-xl rounded-3xl border border-black/10 bg-white px-8 py-6 text-center shadow-sm sm:px-12">
+        <p className="text-2xl font-bold leading-tight tracking-tight text-black sm:text-3xl">
+          <span className="text-[#FF9500]">Step 1 of 2:</span> Find the right fit in our app founder ecosystem
+        </p>
+      </div>
+
       <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
         {/* Progress bar */}
         <div className="h-1 w-full bg-black/5">
@@ -252,14 +295,14 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
             className="h-full bg-[#FF9500]"
             initial={false}
             animate={{
-              width: `${((stepIndex + 1) / STEPS.length) * 100}%`,
+              width: `${Math.min(((step === "budget" ? 5.5 : stepIndex + 1) / PROGRESS_DENOMINATOR) * 100, 100)}%`,
             }}
             transition={{ duration: 0.3 }}
           />
         </div>
 
         {/* Logo + Steps */}
-        <div className="flex h-[500px] flex-col overflow-y-auto px-8 pb-20 pt-8 sm:px-12 sm:pt-10">
+        <div className="flex h-[440px] flex-col overflow-y-auto px-8 pb-20 pt-8 sm:px-12 sm:pt-10">
           <div className="mb-8 flex justify-center">
             <img
               src="/icon.png"
@@ -280,7 +323,7 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
                 transition={{ duration: 0.2 }}
                 onSubmit={handleTextSubmit}
               >
-                <div className="mb-2 flex items-start justify-center gap-2">
+                <div className="mb-6 flex items-start justify-center gap-2">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#FF9500] text-xs font-bold text-white">
                     1
                   </span>
@@ -338,7 +381,7 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
                     What&apos;s your email?<span className="text-[#FF9500]">*</span>
                   </label>
                 </div>
-                <p className="mb-4 text-center text-xs text-black/40">
+                <p className="mb-6 text-center text-xs text-black/40">
                   No spam, no mailing lists.
                 </p>
                 <input
@@ -376,7 +419,7 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
                 exit={{ opacity: 0, y: direction * -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <div className="mb-2 flex items-start justify-center gap-2">
+                <div className="mb-6 flex items-start justify-center gap-2">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#FF9500] text-xs font-bold text-white">
                     3
                   </span>
@@ -419,7 +462,7 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
                     What&apos;s your biggest challenge right now?<span className="text-[#FF9500]">*</span>
                   </label>
                 </div>
-                <p className="mb-4 text-center text-xs text-black/40">
+                <p className="mb-6 text-center text-xs text-black/40">
                   We ask this to make sure we can actually help with your
                   specific situation.
                 </p>
@@ -444,6 +487,38 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
               </motion.form>
             )}
 
+            {step === "businessType" && (
+              <motion.div
+                key="businessType"
+                initial={{ opacity: 0, y: direction * 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: direction * -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="mb-6 flex items-start justify-center gap-2">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#FF9500] text-xs font-bold text-white">
+                    5
+                  </span>
+                  <p className="text-xl font-semibold text-black">
+                    Are you applying as an individual or a business?<span className="text-[#FF9500]">*</span>
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  {BUSINESS_TYPE_OPTIONS.map((opt, i) => (
+                    <button
+                      key={opt.value}
+                      disabled={submitting}
+                      onClick={() => handleBusinessTypeSelect(opt.value)}
+                      className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-black/10 bg-black/[0.02] px-5 py-3.5 text-left text-sm font-medium text-black transition-all hover:border-[#FF9500]/40 hover:bg-[#FF9500]/5 active:scale-[0.98] disabled:cursor-default disabled:opacity-50"
+                    >
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-black/10 text-[11px] font-bold uppercase text-black/40">{String.fromCharCode(97 + i)}</span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
             {step === "budget" && (
               <motion.div
                 key="budget"
@@ -454,14 +529,14 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
               >
                 <div className="mb-2 flex items-start justify-center gap-2">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#FF9500] text-xs font-bold text-white">
-                    5
+                    6
                   </span>
                   <p className="text-xl font-semibold text-black">
                     What&apos;s your budget to invest in growing your app
                     business?<span className="text-[#FF9500]">*</span>
                   </p>
                 </div>
-                <p className="mb-4 text-center text-xs text-black/40">
+                <p className="mb-6 text-center text-xs text-black/40">
                   We ask this to make sure we can actually help with your
                   specific situation.
                 </p>

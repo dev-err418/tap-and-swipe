@@ -118,10 +118,11 @@ model QuizLead {
   id        String   @id @default(cuid())
   firstName String
   email     String
-  hasApp    String   // "revenue" | "no-revenue" | "idea" | "scratch"
-  challenge String?  // open-text: biggest challenge
-  budget    String?  // "under-500" | "500-2000" | "2000-plus"
-  route     String   // "coaching" | "community"
+  hasApp       String   // "revenue" | "no-revenue" | "no"
+  challenge    String?  // open-text: biggest challenge
+  businessType String?  // "individual" | "business"
+  budget       String?  // "under-500" | "500-2000" | "2000-plus"
+  route        String   // "coaching" | "community"
   ref       String?  // URL param ?ref=vid1
   country   String?
   createdAt DateTime @default(now())

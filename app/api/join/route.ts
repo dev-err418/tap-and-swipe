@@ -2,19 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendDiscordNotification } from "@/lib/discord-webhook";
 
-const VALID_HAS_APP = ["revenue", "no-revenue", "idea", "scratch"];
+const VALID_HAS_APP = ["revenue", "no-revenue", "no"];
+const VALID_BUSINESS_TYPES = ["individual", "business"];
 const VALID_BUDGETS = ["under-500", "500-2000", "2000-3000", "4000-5000", "5000-plus"];
 const VALID_ROUTES = ["coaching", "community"];
 
 export async function POST(request: NextRequest) {
   try {
-    const { firstName, email, hasApp, challenge, budget, route, ref } =
+    const { firstName, email, hasApp, challenge, businessType, budget, route, ref } =
       (await request.json()) as {
         firstName: string;
         email: string;
         hasApp: string;
         challenge?: string;
-        budget: string;
+        businessType?: string;
+        budget?: string;
         route: string;
         ref?: string;
       };
@@ -23,7 +25,8 @@ export async function POST(request: NextRequest) {
       !firstName?.trim() ||
       !email?.trim() ||
       !VALID_HAS_APP.includes(hasApp) ||
-      !VALID_BUDGETS.includes(budget) ||
+      !VALID_BUSINESS_TYPES.includes(businessType ?? "") ||
+      (budget !== undefined && !VALID_BUDGETS.includes(budget)) ||
       !VALID_ROUTES.includes(route)
     ) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -37,7 +40,8 @@ export async function POST(request: NextRequest) {
         email: email.trim().toLowerCase(),
         hasApp,
         challenge: challenge?.trim() || null,
-        budget,
+        businessType: businessType ?? null,
+        budget: budget ?? null,
         route,
         ref: ref || null,
         country,
@@ -50,7 +54,8 @@ export async function POST(request: NextRequest) {
         "High-Ticket Lead",
         `**${firstName.trim()}** (${email.trim()}) was redirected to Cal.com`,
         [
-          { name: "Budget", value: budget, inline: true },
+          ...(budget ? [{ name: "Budget", value: budget, inline: true }] : []),
+          { name: "Business Type", value: businessType ?? "unknown", inline: true },
           { name: "Has App", value: hasApp, inline: true },
           { name: "Country", value: country || "Unknown", inline: true },
           ...(challenge?.trim() ? [{ name: "Challenge", value: challenge.trim() }] : []),
