@@ -26,23 +26,18 @@ export default function AdminStarterPreviewToggle() {
     <button
       type="button"
       onClick={toggle}
-      className={`fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-lg transition-all ${
+      className={`fixed bottom-6 right-6 z-40 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-all ${
         isPreviewing
           ? "bg-[#FF9500] text-white hover:bg-[#FF9500]/85"
           : "bg-black text-white hover:bg-black/85"
       }`}
-      aria-label="Toggle starter preview"
+      aria-label={isPreviewing ? "Exit starter preview" : "Preview as starter"}
+      title={isPreviewing ? "Exit starter preview" : "Preview as starter"}
     >
       {isPreviewing ? (
-        <>
-          <EyeOff className="h-4 w-4" />
-          Exit starter preview
-        </>
+        <EyeOff className="h-4 w-4" />
       ) : (
-        <>
-          <Eye className="h-4 w-4" />
-          Preview as starter
-        </>
+        <Eye className="h-4 w-4" />
       )}
     </button>
   );

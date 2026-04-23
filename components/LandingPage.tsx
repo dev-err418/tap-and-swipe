@@ -239,19 +239,19 @@ const LandingPage = () => {
                             {
                                 step: "1",
                                 title: "Find your niche and build",
-                                description: "Pick a niche, validate the idea, and ship your first version with Expo and AI.",
+                                description: "Spot your niche with tips and tricks from the course, plus live input from the community. Then ship your first version fast with AI.",
                                 image: "/step-find-niche.webp",
                             },
                             {
                                 step: "2",
                                 title: "Learn from group calls",
-                                description: "Weekly group calls with makers who've been through the same thing. Real inputs from people who've already shipped.",
+                                description: "Weekly group calls with makers who've been through the same thing, including live app reviews from community members.",
                                 image: "/step-group-calls.webp",
                             },
                             {
                                 step: "3",
                                 title: "Scale and iterate",
-                                description: "Grow with Apple Search Ads, TikTok ads, organic content, SEO, or ASO. Whatever works for your niche.",
+                                description: "Grow with Apple Search Ads, TikTok ads, organic content, SEO, or ASO. Whatever works best for you and your niche.",
                                 image: "/step-scale.webp",
                             },
                         ].flatMap((item, i, arr) => {
