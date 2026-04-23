@@ -74,7 +74,7 @@ export function ShareForm() {
 
       <div>
         <label htmlFor="appLink" className="block text-sm font-medium text-foreground">
-          App Store / Play Store link
+          App Store / Play Store link <span className="text-red-500">*</span>
         </label>
         <input
           id="appLink"
@@ -88,7 +88,7 @@ export function ShareForm() {
 
       <div>
         <label htmlFor="story" className="block text-sm font-medium text-foreground">
-          One sentence about your story
+          One sentence about your story <span className="text-red-500">*</span>
         </label>
         <textarea
           id="story"
@@ -102,7 +102,7 @@ export function ShareForm() {
 
       <div>
         <label htmlFor="contact" className="block text-sm font-medium text-foreground">
-          Best way to reach you
+          Best way to reach you <span className="text-red-500">*</span>
         </label>
         <input
           id="contact"

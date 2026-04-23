@@ -73,6 +73,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     },
     {
+      url: "https://tap-and-swipe.com/partnerships",
+      lastModified: new Date("2026-04-23"),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
       url: "https://tap-and-swipe.com/divvy",
       lastModified: new Date("2026-04-15"),
       changeFrequency: "monthly",

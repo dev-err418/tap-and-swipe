@@ -85,6 +85,14 @@ export function SiteFooter() {
                 Share Your Story
               </Link>
             </li>
+            <li>
+              <Link
+                href="/partnerships"
+                className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
+              >
+                Partnerships
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
