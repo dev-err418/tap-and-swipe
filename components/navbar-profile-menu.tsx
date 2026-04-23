@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { LogOut, MessageCircle } from "lucide-react";
+import { CreditCard, LogOut, MessageCircle } from "lucide-react";
 
 export default function NavbarProfileMenu({
   name,
@@ -59,6 +59,15 @@ export default function NavbarProfileMenu({
           >
             <MessageCircle className="h-4 w-4" />
             Support
+          </a>
+          <a
+            href="https://whop.com/orders"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-black/60 transition-colors hover:bg-black/[0.04]"
+          >
+            <CreditCard className="h-4 w-4" />
+            Subscription
           </a>
           <div className="border-t border-black/10" />
           <button
