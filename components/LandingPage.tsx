@@ -227,7 +227,13 @@ const LandingPage = ({
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center">
                         <h2 className="text-4xl font-semibold tracking-tight text-black sm:text-5xl">What makers are saying</h2>
-                        <p className="mt-4 text-lg text-black/50">Join the community of builders shipping their dreams.</p>
+                        <p className="mt-4 text-lg text-black/50">
+                            Join the community of builders{" "}
+                            <span className="underline decoration-[#FF9500] decoration-wavy decoration-[2px] underline-offset-[5px]">
+                                shipping their dreams
+                            </span>
+                            .
+                        </p>
                     </div>
                 </div>
 

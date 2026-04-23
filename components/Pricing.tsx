@@ -19,7 +19,11 @@ const Pricing = () => {
                         Code your idea fast, build your freedom
                     </h2>
                     <p className="mt-4 text-lg text-black/50 max-w-2xl mx-auto">
-                        Everything you need to stop dreaming and start shipping. Join the community of builders turned into founders.
+                        Everything you need to{" "}
+                        <span className="underline decoration-[#FF9500] decoration-wavy decoration-[2px] underline-offset-[5px]">
+                            stop dreaming and start shipping
+                        </span>
+                        . Join the community of builders turned into founders.
                     </p>
                 </div>
 
