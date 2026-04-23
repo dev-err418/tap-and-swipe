@@ -1,15 +1,23 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, ArrowRight, Star } from "lucide-react";
-import BundleMiniCard from "./BundleMiniCard";
+import { Check, X, ArrowRight, Star } from "lucide-react";
 const features = [
-    "Complete 6-week roadmap",
+    "Private builder community (63+ makers)",
+    "30+ video lessons",
+];
+
+const premiumFeatures = [
+    "2x weekly group calls",
+    "Ready-to-start boilerplate (skip the setup, start building)",
+    "Guest masterclasses with founders >10K€ MRR (coming 2026)",
+];
+
+const basicDismissed = [
     "30+ video lessons",
     "Ready-to-start boilerplate (skip the setup, start building)",
-    "2x weekly group calls",
-    "Revenue scaling systems",
-    "Private builder community (63+ makers)",
+    "Guest masterclasses with founders >10K€ MRR (coming 2026)",
+    "AppSprint ASO Pro",
 ];
 
 const Pricing = () => {
@@ -18,7 +26,7 @@ const Pricing = () => {
 
             <div className="mx-auto max-w-7xl px-6">
                 <div className="mb-16 text-center">
-                    <h2 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">
+                    <h2 className="text-4xl font-semibold tracking-tight text-black sm:text-5xl">
                         Code your idea fast, build your freedom
                     </h2>
                     <p className="mt-4 text-lg text-black/50 max-w-2xl mx-auto">
@@ -26,7 +34,57 @@ const Pricing = () => {
                     </p>
                 </div>
 
-                <div className="max-w-lg mx-auto px-6">
+                <div className="max-w-4xl mx-auto px-6 grid grid-cols-1 gap-6 md:grid-cols-2 items-stretch">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="relative rounded-3xl border border-black/10 bg-black/[0.02] p-8 md:p-10 flex flex-col"
+                    >
+                        <p className="text-lg font-bold text-black mb-4">
+                            Community access
+                        </p>
+
+                        <div className="mb-6">
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-5xl font-extrabold text-black">74&euro;</span>
+                                <span className="text-lg text-black/50">/mo</span>
+                            </div>
+                        </div>
+
+                        <ul className="space-y-2.5">
+                            <li className="flex items-start gap-3">
+                                <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
+                                <span className="text-sm font-medium text-black">Private builder community (63+ makers)</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
+                                <span className="text-sm font-medium text-black">2x weekly group calls</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
+                                <span className="text-sm font-medium text-black">Direct feedback on your app</span>
+                            </li>
+                            {basicDismissed.map((feature, i) => (
+                                <li key={i} className="flex items-start gap-3">
+                                    <X className="h-4 w-4 mt-0.5 shrink-0 text-black/30" />
+                                    <span className="text-sm font-medium text-black/40 line-through">{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <div className="text-center mt-auto pt-8">
+                            <a
+                                href="/api/auth/discord?flow=community-basic"
+                                data-fast-goal="cta_pricing_basic_clicked"
+                                className="group flex w-full h-12 items-center justify-center gap-2 rounded-full border border-black/15 bg-white text-sm font-bold text-black transition-all hover:bg-black/5 cursor-pointer"
+                            >
+                                <span>Join the community</span>
+                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </a>
+                        </div>
+                    </motion.div>
+
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -51,28 +109,59 @@ const Pricing = () => {
                                     <span className="text-sm font-medium text-black">{feature}</span>
                                 </li>
                             ))}
+                            {premiumFeatures.map((feature, i) => (
+                                <li key={i} className="flex items-start gap-3">
+                                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
+                                    <span className="text-sm font-bold text-black">{feature}</span>
+                                </li>
+                            ))}
                             <li className="flex items-start gap-3">
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
-                                <span className="text-sm font-bold text-black">AppSprint ASO Pro included (worth 39€/mo)</span>
+                                <span className="group relative inline-block">
+                                    <a
+                                        href="https://appsprint.app/aso"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm font-bold text-black underline decoration-[#FF9500] decoration-wavy decoration-[1.5px]"
+                                    >
+                                        AppSprint ASO Pro included (worth 39€/mo)
+                                    </a>
+                                    <div
+                                        role="tooltip"
+                                        className="pointer-events-none absolute left-1/2 top-full z-20 mt-3 w-72 -translate-x-1/2 rounded-2xl border border-black/10 bg-white p-5 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100"
+                                    >
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="h-10 w-10 shrink-0 rounded-[10px] bg-black/85 border border-black/15">
+                                                <img
+                                                    src="/aso/app-icon.png"
+                                                    alt="AppSprint ASO"
+                                                    width={40}
+                                                    height={40}
+                                                    className="h-full w-full rounded-[10px] p-1"
+                                                />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-bold text-black">AppSprint ASO</p>
+                                                <p className="text-xs text-black/50">The all-in-one macOS app for ASO</p>
+                                            </div>
+                                        </div>
+                                        <ul className="space-y-2">
+                                            {[
+                                                "Keyword research & tracking",
+                                                "Competitor MRR estimates",
+                                                "Apple Search Ads management",
+                                                "Unlimited keywords & apps",
+                                            ].map((f) => (
+                                                <li key={f} className="flex items-start gap-2">
+                                                    <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-black" />
+                                                    <span className="text-xs text-black/70">{f}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </span>
                             </li>
                         </ul>
-
-                        {/* ASO included */}
-                        <div className="mt-6">
-                            <BundleMiniCard
-                                name="AppSprint ASO"
-                                tagline="The all-in-one macOS app for ASO"
-                                href="https://appsprint.app/aso"
-                                icon="/aso/app-icon.png"
-                                value=""
-                                features={[
-                                    "Keyword research & tracking",
-                                    "Competitor MRR estimates",
-                                    "Apple Search Ads management",
-                                    "Unlimited keywords & apps",
-                                ]}
-                            />
-                        </div>
 
                         <div className="flex -space-x-2 mt-6 justify-center">
                             {[
@@ -118,7 +207,7 @@ const Pricing = () => {
                     </motion.div>
 
                     {/* Money-back / Guarantee note */}
-                    <p className="mt-8 text-center text-sm text-black/30 leading-relaxed max-w-xl mx-auto italic">
+                    <p className="md:col-span-2 mt-0 text-center text-sm text-black/30 leading-relaxed max-w-xl mx-auto italic">
                         By joining, you agree to our Terms of Service. Cancel anytime from your account settings.
                     </p>
                 </div>

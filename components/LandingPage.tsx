@@ -58,18 +58,10 @@ const LandingPage = ({
                     <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
                         Build a mobile app in{" "}
                         weeks{" "}
-                        <span className="relative inline-block">
+                        <span
+                            className="underline decoration-[#FF9500] decoration-wavy decoration-[4px] underline-offset-[6px]"
+                        >
                             not months
-                            <span
-                                aria-hidden
-                                className="pointer-events-none absolute left-0 right-0 -bottom-3 h-[22px] opacity-90 sm:h-[30px] sm:-bottom-4"
-                                style={{
-                                    backgroundRepeat: "repeat-x",
-                                    backgroundSize: "84px 24px",
-                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='8' viewBox='0 0 28 8' fill='none'%3E%3Cpath d='M0 5 C4 1.5 7 6 11 3.5 C14 1.5 18 6.5 22 4 C25 2.5 26.5 6 28 4.5' stroke='%23FF9500' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                                    backgroundPosition: "0px 100%",
-                                }}
-                            />
                         </span>
                     </h1>
                     </div>
@@ -150,7 +142,7 @@ const LandingPage = ({
             <section id="testimonials" data-fast-scroll="scroll_to_testimonials" className="bg-white py-24">
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="mb-16 text-center">
-                        <h2 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">What makers are saying</h2>
+                        <h2 className="text-4xl font-semibold tracking-tight text-black sm:text-5xl">What makers are saying</h2>
                         <p className="mt-4 text-lg text-black/50">Join the community of builders shipping their dreams.</p>
                     </div>
                     <div className="columns-1 gap-6 md:columns-2 lg:columns-3 space-y-6">

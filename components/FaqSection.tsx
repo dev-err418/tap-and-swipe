@@ -73,7 +73,7 @@ export default function FaqSection() {
     return (
         <section id="faq" data-fast-scroll="scroll_to_faq" className="bg-white py-24">
             <div className="mx-auto max-w-3xl px-6">
-                <h2 className="text-4xl font-bold tracking-tight text-black sm:text-5xl text-center">
+                <h2 className="text-4xl font-semibold tracking-tight text-black sm:text-5xl text-center">
                     Frequently asked questions
                 </h2>
                 <div className="mt-12">
