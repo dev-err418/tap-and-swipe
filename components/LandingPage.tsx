@@ -2,7 +2,6 @@ import {
     ArrowRight,
     Star
 } from "lucide-react";
-import Roadmap from "./Roadmap";
 import { FloatingAppIcons } from "./FloatingAppIcons";
 
 const COMMUNITY_ICONS = [
@@ -56,24 +55,27 @@ const LandingPage = ({
                 {/* Centered content: badge + title + subtitle */}
                 <div className="mx-auto max-w-7xl">
                     <div className="fade-in-up" style={{ animationDelay: "0.15s" }}>
-                    <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight leading-[1] sm:text-7xl">
+                    <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
                         Build a mobile app in{" "}
                         weeks{" "}
-                        <span
-                            className="box-decoration-clone px-2 -mx-2 text-[#FF9500]"
-                            style={{
-                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2 12 Q40 6 80 10 Q130 4 170 8 Q190 5 198 2 L199 90 Q170 96 130 92 Q90 98 50 94 Q20 99 1 96 Z' fill='rgba(255,149,0,0.3)'/%3E%3C/svg%3E")`,
-                                backgroundSize: "100% 100%",
-                                backgroundRepeat: "no-repeat",
-                            }}
-                        >
+                        <span className="relative inline-block">
                             not months
+                            <span
+                                aria-hidden
+                                className="pointer-events-none absolute left-0 right-0 -bottom-3 h-[22px] opacity-90 sm:h-[30px] sm:-bottom-4"
+                                style={{
+                                    backgroundRepeat: "repeat-x",
+                                    backgroundSize: "84px 24px",
+                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='8' viewBox='0 0 28 8' fill='none'%3E%3Cpath d='M0 5 C4 1.5 7 6 11 3.5 C14 1.5 18 6.5 22 4 C25 2.5 26.5 6 28 4.5' stroke='%23FF9500' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                                    backgroundPosition: "0px 100%",
+                                }}
+                            />
                         </span>
                     </h1>
                     </div>
 
                     <div className="fade-in-up" style={{ animationDelay: "0.3s" }}>
-                    <p className="mx-auto mt-8 max-w-2xl text-lg text-black/50 sm:text-xl">
+                    <p className="mx-auto mt-6 max-w-xl text-base text-black/60 sm:text-lg">
                         Stop dreaming and start shipping. The complete roadmap to validating, designing, building, and scaling your own mobile app business.
                     </p>
                     </div>
@@ -143,59 +145,6 @@ const LandingPage = ({
                         </div>
                     </div>
                     </div>
-
-            {/* Roadmap Section */}
-            <Roadmap />
-
-            {/* Group Calls Section */}
-            <section id="group-calls" data-fast-scroll="scroll_to_group_calls" className="bg-white py-24">
-                <div className="mx-auto max-w-7xl px-6">
-                    <div className="mb-16 text-center max-w-3xl mx-auto">
-                        <span className="mb-4 inline-flex items-center rounded-full border border-[#FF9500]/30 bg-[#FF9500]/10 px-3 py-1 text-xs text-[#FF9500] font-medium">
-                            Twice per week
-                        </span>
-                        <h2 className="text-4xl font-bold tracking-tight text-black sm:text-5xl">
-                            Weekly group calls
-                        </h2>
-
-                        <p className="mt-8 text-lg text-black/50 leading-relaxed">
-                            This isn&apos;t just a video course you&apos;ll watch and forget. This is a builder&apos;s program designed to take you from a blank screen to your first <strong className="text-black">revenue</strong>.
-                        </p>
-
-                        <div className="mt-8 text-left space-y-6">
-                            <ul className="space-y-4">
-                                <li className="flex gap-4">
-                                    <span className="text-2xl mt-1">📞</span>
-                                    <div>
-                                        <strong className="text-black block text-lg">Strategy group calls</strong>
-                                        <p className="text-black/50">We hop on a call to dissect your specific roadblocks, look at your code, and fix your strategy.</p>
-                                    </div>
-                                </li>
-                                <li className="flex gap-4">
-                                    <span className="text-2xl mt-1">👥</span>
-                                    <div>
-                                        <strong className="text-black block text-lg">Weekly group masterminds</strong>
-                                        <p className="text-black/50">Showcase your progress, get live feedback, and solve problems with a community of builders who are in the trenches with you.</p>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    {/* Group Call Image: Matches Hero Video Style */}
-                    <div className="flex justify-center">
-                        <div className="relative overflow-hidden rounded-[32px] ring-1 ring-black/10 group">
-                            <img
-                                src="/group-calls.jpg"
-                                alt="Weekly group call with community members discussing app development"
-                                width={1920}
-                                height={1080}
-                                loading="lazy"
-                                className="w-full max-w-4xl opacity-90 transition-opacity duration-500 group-hover:opacity-100"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </section>
 
             {/* Testimonials Section */}
             <section id="testimonials" data-fast-scroll="scroll_to_testimonials" className="bg-white py-24">
