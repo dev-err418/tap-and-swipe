@@ -94,6 +94,17 @@ export async function POST(request: NextRequest) {
     const data = webhookData.data as unknown as Record<string, unknown>;
     let discord = extractDiscord(data);
 
+    // Extract visitorId from metadata (set by our checkout route) for analytics attribution
+    function extractVisitorId(d: Record<string, unknown>): string | null {
+      const metadata = d.metadata as Record<string, unknown> | undefined;
+      const v = metadata?.visitorId;
+      return typeof v === "string" && v.length > 0 ? v : null;
+    }
+    const membershipForMeta = data.membership as Record<string, unknown> | undefined;
+    const visitorId =
+      extractVisitorId(data) ??
+      (membershipForMeta ? extractVisitorId(membershipForMeta) : null);
+
     // Fallback 1: check metadata.discordId (set during our checkout flow)
     if (!discord) {
       discord = extractDiscordFromMetadata(data);
@@ -165,6 +176,7 @@ export async function POST(request: NextRequest) {
               subscriptionStatus: "active",
               roleGranted,
               ...(!isActiveElsewhere && { paymentProvider: "whop" }),
+              ...(visitorId && !existingUser?.visitorId && { visitorId }),
             },
             create: {
               discordId: discord.id,
@@ -172,6 +184,7 @@ export async function POST(request: NextRequest) {
               subscriptionStatus: "active",
               paymentProvider: "whop",
               roleGranted,
+              ...(visitorId && { visitorId }),
             },
           });
 

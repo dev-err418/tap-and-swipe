@@ -202,33 +202,42 @@ async function fetchQuizFunnel(since: Date) {
 async function fetchPaidBreakdowns(product: string, since: Date) {
   const [byReferrer, byCountry, totalRow] = await Promise.all([
     prisma.$queryRaw<{ referrer: string | null; count: bigint }[]>`
-      SELECT pv.referrer as referrer, COUNT(DISTINCT pv."visitorId")::bigint as count
-      FROM "PageEvent" pv
-      INNER JOIN "PageEvent" conv
-        ON conv."visitorId" = pv."visitorId"
-        AND conv.product = ${product}
-        AND conv.type = 'paid'
-        AND conv."createdAt" >= ${since}
-      WHERE pv.product = ${product} AND pv.type = 'page_view'
+      SELECT pv.referrer as referrer, COUNT(DISTINCT u."id")::bigint as count
+      FROM "User" u
+      INNER JOIN "PageEvent" pv
+        ON pv."visitorId" = u."visitorId"
+        AND pv.product = ${product}
+        AND pv.type = 'page_view'
+      WHERE u."paymentProvider" IS NOT NULL
+        AND u."visitorId" IS NOT NULL
+        AND u."createdAt" >= ${since}
       GROUP BY pv.referrer
       ORDER BY count DESC
     `,
     prisma.$queryRaw<{ country: string | null; count: bigint }[]>`
-      SELECT pv.country as country, COUNT(DISTINCT pv."visitorId")::bigint as count
-      FROM "PageEvent" pv
-      INNER JOIN "PageEvent" conv
-        ON conv."visitorId" = pv."visitorId"
-        AND conv.product = ${product}
-        AND conv.type = 'paid'
-        AND conv."createdAt" >= ${since}
-      WHERE pv.product = ${product} AND pv.type = 'page_view'
+      SELECT pv.country as country, COUNT(DISTINCT u."id")::bigint as count
+      FROM "User" u
+      INNER JOIN "PageEvent" pv
+        ON pv."visitorId" = u."visitorId"
+        AND pv.product = ${product}
+        AND pv.type = 'page_view'
+      WHERE u."paymentProvider" IS NOT NULL
+        AND u."visitorId" IS NOT NULL
+        AND u."createdAt" >= ${since}
       GROUP BY pv.country
       ORDER BY count DESC
     `,
     prisma.$queryRaw<[{ total: bigint }]>`
-      SELECT COUNT(DISTINCT "visitorId")::bigint as total
-      FROM "PageEvent"
-      WHERE product = ${product} AND type = 'paid' AND "createdAt" >= ${since}
+      SELECT COUNT(DISTINCT u."id")::bigint as total
+      FROM "User" u
+      WHERE u."paymentProvider" IS NOT NULL
+        AND u."createdAt" >= ${since}
+        AND EXISTS (
+          SELECT 1 FROM "PageEvent" pv
+          WHERE pv."visitorId" = u."visitorId"
+            AND pv.product = ${product}
+            AND pv.type = 'page_view'
+        )
     `,
   ]);
 

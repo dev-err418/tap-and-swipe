@@ -20,6 +20,19 @@ export async function GET() {
     const cookieStore = await cookies();
     const visitorId = cookieStore.get("visitor_id")?.value || "";
 
+    if (visitorId) {
+      const user = await prisma.user.findUnique({
+        where: { discordId: session.discordId },
+        select: { id: true, visitorId: true },
+      });
+      if (user && !user.visitorId) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { visitorId },
+        }).catch(() => {});
+      }
+    }
+
     const whop = getWhop();
     const checkout = await whop.checkoutConfigurations.create({
       plan_id: WHOP_COMMUNITY_PLAN_ID,

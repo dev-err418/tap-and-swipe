@@ -33,6 +33,8 @@ model User {
   subscriptionStatus String?
   roleGranted        Boolean            @default(false)
   discordTrialExpiry DateTime?
+  // Attribution
+  visitorId          String?            // visitor_id cookie captured at checkout, for analytics attribution
   // Relations
   lessonProgress     LessonProgress[]
   createdAt          DateTime           @default(now())
@@ -41,6 +43,7 @@ model User {
   @@index([stripeCustomerId])
   @@index([paddleCustomerId])
   @@index([subscriptionId])
+  @@index([visitorId])
 }
 
 model Lesson {
