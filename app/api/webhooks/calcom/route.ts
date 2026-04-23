@@ -59,8 +59,6 @@ export async function POST(request: NextRequest) {
           .is(dateField, null)
           .order("created_at", { ascending: false });
 
-        // The attendee email from the booking
-        const attendeeEmail = event.payload?.attendees?.[0]?.email as string | undefined;
         const attendeeName = event.payload?.attendees?.[0]?.name as string | undefined;
 
         const rows = candidates as unknown as Array<{ id: string; name: string; pipeline: object }>;

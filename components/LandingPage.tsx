@@ -1,6 +1,6 @@
 import {
     ArrowRight,
-    Star
+    Star,
 } from "lucide-react";
 import { FloatingAppIcons } from "./FloatingAppIcons";
 
@@ -68,7 +68,7 @@ const TESTIMONIAL_ROWS: { name: string; text: string; time: string; image: strin
             image: "/user1a1a.webp",
         },
         {
-            name: "raphael adouane",
+            name: "raphael",
             text: "The Discord covers everything you need to ship your first app. Arthur's super helpful and always sharing his expertise. The community itself is a huge plus for feedback too.",
             highlight: "ship your first app",
             time: "10 days after purchase",
@@ -106,17 +106,14 @@ function renderHighlighted(text: string, highlight: string) {
 }
 
 import { Suspense } from "react";
+import Image from "next/image";
 import SuccessOverlay from "./SuccessOverlay";
 import ErrorOverlay from "./ErrorOverlay";
 import Pricing from "./Pricing";
 import FaqSection from "./FaqSection";
 import PageTracker from "./PageTracker";
 
-const LandingPage = ({
-    searchParams,
-}: {
-    searchParams?: Promise<{ status?: string }>;
-}) => {
+const LandingPage = () => {
     return (
         <>
         <div>
@@ -222,6 +219,96 @@ const LandingPage = ({
                     </div>
                     </div>
 
+            {/* How It Works — 3 steps */}
+            <section className="bg-white pt-8 pb-24">
+                <div className="mx-auto max-w-7xl px-6">
+                    <div className="mb-16 text-center">
+                        <h2 className="text-4xl font-semibold tracking-tight text-black sm:text-5xl">
+                            Ship your app in{" "}
+                            <span className="underline decoration-[#FF9500] decoration-wavy decoration-[3px] underline-offset-[6px]">
+                                3 steps
+                            </span>
+                        </h2>
+                        <p className="mt-4 text-lg text-black/50 max-w-2xl mx-auto">
+                            A clear path from idea to launch, without the guesswork.
+                        </p>
+                    </div>
+
+                    <div className="mx-auto flex max-w-sm flex-col items-center gap-4 lg:max-w-none lg:flex-row lg:items-stretch lg:gap-0">
+                        {[
+                            {
+                                step: "1",
+                                title: "Find your niche and build",
+                                description: "Pick a niche, validate the idea, and ship your first version with Expo and AI.",
+                                image: "/step-find-niche.webp",
+                            },
+                            {
+                                step: "2",
+                                title: "Learn from group calls",
+                                description: "Weekly group calls with makers who've been through the same thing. Real inputs from people who've already shipped.",
+                                image: "/step-group-calls.webp",
+                            },
+                            {
+                                step: "3",
+                                title: "Scale and iterate",
+                                description: "Grow with Apple Search Ads, TikTok ads, organic content, SEO, or ASO. Whatever works for your niche.",
+                                image: "/step-scale.webp",
+                            },
+                        ].flatMap((item, i, arr) => {
+                            const card = (
+                                <div
+                                    key={`step-card-${i}`}
+                                    className="relative w-full lg:flex-1 lg:basis-0 lg:min-w-0 rounded-3xl border border-black/10 bg-white shadow-[0_0_24px_rgba(0,0,0,0.08)] overflow-hidden"
+                                >
+                                    <div className="aspect-[16/10] w-full bg-black/5">
+                                        {item.image ? (
+                                            <img
+                                                src={item.image}
+                                                alt={item.title}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : null}
+                                    </div>
+                                    <div className="p-6">
+                                        <h3 className="text-xl font-semibold text-black mb-2">
+                                            {item.step}. {item.title}
+                                        </h3>
+                                        <p className="text-black/50 leading-relaxed text-sm">
+                                            {item.description}
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                            if (i < arr.length - 1) {
+                                return [card, (
+                                    <div key={`step-arrow-${i}`} className="shrink-0 py-2 lg:px-4 lg:py-0 flex items-center">
+                                        <svg
+                                            className="h-6 w-6 text-[#FF9500] lg:hidden"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth={2}
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                        </svg>
+                                        <svg
+                                            className="hidden h-6 w-6 text-[#FF9500] lg:block"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth={2}
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                        </svg>
+                                    </div>
+                                )];
+                            }
+                            return [card];
+                        })}
+                    </div>
+                </div>
+            </section>
+
             {/* Testimonials Section */}
             <section id="testimonials" data-fast-scroll="scroll_to_testimonials" className="bg-white py-24 overflow-hidden">
                 <div className="mx-auto max-w-7xl px-6">
@@ -256,7 +343,7 @@ const LandingPage = ({
                                 {[...row, ...row].map((testimonial, i) => (
                                     <div
                                         key={i}
-                                        className="flex w-[360px] shrink-0 flex-col rounded-3xl border border-black/10 bg-black/[0.02] p-6 transition-all hover:bg-black/[0.04]"
+                                        className="flex w-[360px] shrink-0 flex-col rounded-3xl border border-black/10 bg-black/[0.02] p-6"
                                     >
                                         <div className="flex items-center gap-2 mb-4">
                                             <div className="flex text-[#FF9500]">
@@ -285,6 +372,65 @@ const LandingPage = ({
                             </div>
                         </div>
                     ))}
+                </div>
+            </section>
+
+            {/* Results Section */}
+            <section id="results" data-fast-scroll="scroll_to_results" className="bg-white py-24">
+                <div className="mx-auto max-w-7xl px-6">
+                    <div className="mb-16 text-center">
+                        <h2 className="text-4xl font-semibold tracking-tight text-black sm:text-5xl">
+                            Build your{" "}
+                            <span className="underline decoration-[#FF9500] decoration-wavy decoration-[3px] underline-offset-[6px]">
+                                passive income
+                            </span>
+                        </h2>
+                        <p className="mt-4 text-lg text-black/50 max-w-2xl mx-auto">
+                            Real numbers from makers who shipped with AppSprint.
+                        </p>
+                    </div>
+
+                    <div className="mx-auto grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-3">
+                        {[
+                            {
+                                name: "PauPi",
+                                quote: "Launched with AppSprint, now iterating on my paywall and running Apple Search Ads to scale.",
+                                highlight: "to scale",
+                                image: "/results-paupi.webp",
+                            },
+                            {
+                                name: "Wabey",
+                                quote: "Multiple $80+ days in week 2 after launching my first app, two more in the works.",
+                                highlight: "$80+ days",
+                                image: "/results-wabey.webp",
+                            },
+                            {
+                                name: "Almopt",
+                                quote: "Rebuilt my app as V2 in AppSprint, closing in on $2k/month from 100% organic TikTok.",
+                                highlight: "$2k/month",
+                                image: "/results-almopt.webp",
+                            },
+                        ].map((r) => (
+                            <div
+                                key={r.name}
+                                className="flex flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-black/5 shadow-lg shadow-black/5"
+                            >
+                                <div className="relative aspect-[4/3] w-full bg-black/5">
+                                    <Image
+                                        src={r.image}
+                                        alt={`${r.name}'s RevenueCat revenue screenshot`}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 768px) 100vw, 33vw"
+                                    />
+                                </div>
+                                <div className="flex flex-1 flex-col gap-2 px-6 py-4">
+                                    <p className="text-sm font-semibold text-black">{r.name}</p>
+                                    <p className="text-sm text-black/60">{renderHighlighted(r.quote, r.highlight)}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 

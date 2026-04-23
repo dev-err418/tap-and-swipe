@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, type FormEvent } from "react";
+import { useState, useCallback, useEffect, useMemo, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp, ChevronDown, LoaderCircle } from "lucide-react";
@@ -84,7 +84,10 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
   const [error, setError] = useState("");
 
   const stepIndex = STEPS.indexOf(step);
-  const formState = { firstName, email, hasApp, challenge, businessType };
+  const formState = useMemo(
+    () => ({ firstName, email, hasApp, challenge, businessType }),
+    [firstName, email, hasApp, challenge, businessType],
+  );
 
   // Persist answers to sessionStorage
   useEffect(() => {
@@ -249,13 +252,6 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [goNext, goPrev, step, submitting, handleAppSelect, handleBusinessTypeSelect, handleBudgetSelect]);
-
-  // ── Current step value (for showing/hiding Ok button) ───────────
-
-  const currentHasValue =
-    (step === "firstName" && firstName.trim().length > 0) ||
-    (step === "email" && email.trim().length > 0) ||
-    (step === "challenge"); // always show continue for optional field
 
   const canGoBack = stepIndex > 0;
   const isMultiChoice = step === "hasApp" || step === "businessType" || step === "budget";

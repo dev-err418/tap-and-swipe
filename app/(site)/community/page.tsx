@@ -42,16 +42,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AppSprintPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ status?: string }>;
-}) {
+export default function AppSprintPage() {
   return (
     <>
       <AppSprintJsonLd />
       <FaqJsonLd />
-      <LandingPage searchParams={searchParams} />
+      <LandingPage />
     </>
   );
 }

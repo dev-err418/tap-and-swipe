@@ -1,6 +1,5 @@
 import {
     ArrowRight,
-    Check,
     Star,
     Globe,
     Sparkles,

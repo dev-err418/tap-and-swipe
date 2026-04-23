@@ -73,7 +73,6 @@ export default async function AnalyticsPage({
     : "week") as Period;
 
   const gte = getDateFilter(period);
-  const dateWhere = gte ? { createdAt: { gte } } : {};
 
   function buildUrl(overrides: { period?: Period; tab?: Tab } = {}) {
     const t = overrides.tab ?? tab;
@@ -170,7 +169,7 @@ export default async function AnalyticsPage({
 
   const since = gte ?? new Date("2000-01-01");
 
-  const [countsArr, sourcesRaw, leads, inviteLinks] = await Promise.all([
+  const [countsArr, sourcesRaw, inviteLinks] = await Promise.all([
     // All counts + revenue in a single query
     prisma.$queryRaw<[{
       q_views: number; q_starts: number; q_completes: number; q_bookings: number; q_leads: number;
@@ -214,7 +213,6 @@ export default async function AnalyticsPage({
       WHERE pv.product='aso' AND pv.type='page_view'
       GROUP BY pv.referrer
     `,
-    Promise.resolve([]) as Promise<never[]>,
     prisma.inviteLink.findMany({
       orderBy: { createdAt: "desc" },
     }),

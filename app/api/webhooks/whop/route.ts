@@ -146,7 +146,6 @@ export async function POST(request: NextRequest) {
         const membershipId = String(data.id);
         const email = extractEmail(data);
         const manageUrl = data.manage_url as string | undefined;
-        const isTrial = data.status === "trialing";
 
         // Discord role granting
         if (discord) {

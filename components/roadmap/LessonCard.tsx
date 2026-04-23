@@ -22,7 +22,6 @@ export default function LessonCard({
   order,
   completed: initialCompleted,
   index,
-  isLast,
   hideProgress,
   onToggle,
 }: {
@@ -36,7 +35,6 @@ export default function LessonCard({
   order: number;
   completed: boolean;
   index: number;
-  isLast?: boolean;
   hideProgress?: boolean;
   onToggle?: (lessonId: string, completed: boolean) => void;
 }) {
