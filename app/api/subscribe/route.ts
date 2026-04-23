@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { getPostHogServer } from "@/lib/posthog";
 
 const NEWSLETTER_WEBHOOK = process.env.SUBSCRIBE_DISCORD_WEBHOOK!;
 
@@ -70,15 +69,9 @@ export async function POST(req: Request) {
     }).catch((err) => console.error("Welcome email error:", err));
   }
 
-  // PostHog + Discord notification (best-effort, don't block response)
+  // Discord notification (best-effort, don't block response)
   const h = await headers();
   const country = h.get("cf-ipcountry") || undefined;
-
-  getPostHogServer().capture({
-    distinctId: email,
-    event: "newsletter_subscribe",
-    properties: { country: country ?? null },
-  });
 
   fetch(NEWSLETTER_WEBHOOK, {
     method: "POST",

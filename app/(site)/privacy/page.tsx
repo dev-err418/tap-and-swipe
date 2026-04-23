@@ -63,11 +63,11 @@ export default function PrivacyPage() {
             Website Analytics
           </h3>
           <p className="mt-2">
-            Our website uses PostHog (hosted in the EU) to collect anonymized
-            usage data such as pages visited, approximate geographic region,
-            device type, and referral source. PostHog does not use cookies for
-            tracking. No personal data is shared with third parties through this
-            service.
+            We collect first-party, anonymized usage data on our own servers:
+            pages visited, approximate geographic region (from your IP country),
+            and referral source. We store a single first-party cookie
+            (<code>visitor_id</code>) to deduplicate visitors. No personal data
+            is shared with third parties for analytics.
           </p>
         </section>
 
@@ -130,13 +130,6 @@ export default function PrivacyPage() {
                   </td>
                   <td className="py-2">Hosted on our own infrastructure</td>
                 </tr>
-                <tr>
-                  <td className="py-2 pr-4">PostHog</td>
-                  <td className="py-2 pr-4">Website analytics</td>
-                  <td className="py-2">
-                    PostHog Inc., EU data region (Frankfurt, Germany)
-                  </td>
-                </tr>
               </tbody>
             </table>
           </div>
@@ -155,22 +148,13 @@ export default function PrivacyPage() {
             Amazon Web Services may process data outside the European Economic
             Area. These transfers are safeguarded by Standard Contractual
             Clauses (SCCs) and, where applicable, the EU-US Data Privacy
-            Framework. PostHog data is stored in the EU (Frankfurt). You can
-            learn more at{" "}
+            Framework. You can learn more at{" "}
             <a
               href="https://aws.amazon.com/compliance/gdpr-center/"
               target="_blank"
               rel="noopener noreferrer"
             >
               AWS GDPR Center
-            </a>{" "}
-            and{" "}
-            <a
-              href="https://posthog.com/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              PostHog&apos;s Privacy Policy
             </a>
             .
           </p>

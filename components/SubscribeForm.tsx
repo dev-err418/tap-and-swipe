@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { fire, getVisitorId, getSessionId } from "./PageTracker";
 
 function Spinner() {
   return (
@@ -39,6 +40,9 @@ export function SubscribeForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, website }),
       });
+      if (res.ok) {
+        fire("home", "subscribe", getVisitorId(), getSessionId("home"));
+      }
       setStatus(res.ok ? "ok" : "error");
     } catch {
       setStatus("error");

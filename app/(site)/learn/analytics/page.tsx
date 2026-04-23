@@ -315,7 +315,7 @@ export default async function LearnAnalyticsPage({
 
   const since = getDateFilter(period) ?? new Date("2000-01-01");
 
-  const [coachingEvents, communityEvents, communityPaid, quizFunnel, communityPaidUsers] =
+  const [coachingEvents, communityEvents, communityPaid, quizFunnel, communityPaidUsers, homeEvents, homeSubscribes] =
     await Promise.all([
       fetchBreakdowns("quiz", since),
       fetchBreakdowns("community", since),
@@ -327,11 +327,20 @@ export default async function LearnAnalyticsPage({
           createdAt: { gte: since },
         },
       }),
+      fetchBreakdowns("home", since),
+      prisma.pageEvent.count({
+        where: { product: "home", type: "subscribe", createdAt: { gte: since } },
+      }),
     ]);
 
   const conversionPct =
     communityEvents.visitors > 0
       ? ((communityPaidUsers / communityEvents.visitors) * 100).toFixed(2)
+      : "0.00";
+
+  const homeConversionPct =
+    homeEvents.visitors > 0
+      ? ((homeSubscribes / homeEvents.visitors) * 100).toFixed(2)
       : "0.00";
 
   function buildUrl(p: Period) {
@@ -345,7 +354,7 @@ export default async function LearnAnalyticsPage({
         <div>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Analytics</h1>
           <p className="mt-3 text-lg text-muted-foreground">
-            Traffic sources for coaching and community.
+            Traffic sources for the homepage newsletter, coaching, and community.
           </p>
         </div>
         <div className="flex gap-1 rounded-xl bg-black/5 p-1">
@@ -369,6 +378,13 @@ export default async function LearnAnalyticsPage({
       </div>
 
       <div className="space-y-10">
+        <Block
+          title="Home (newsletter)"
+          subtitle={`${homeSubscribes} subscribers · ${homeConversionPct}% conversion from ${homeEvents.visitors} unique visitors · ${homeEvents.total} page events`}
+          referrers={homeEvents.referrers}
+          countries={homeEvents.countries}
+          total={homeEvents.total}
+        />
         <Block
           title="Community"
           subtitle={`${communityEvents.total} page events`}
@@ -513,7 +529,7 @@ function Block({
         <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
       </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Table title="Traffic sources" rows={referrers} total={total} />
+        <Table title="Traffic sources (top 10)" rows={referrers.slice(0, 10)} total={total} />
         <Table title="Countries (top 10)" rows={countries.slice(0, 10)} total={total} />
       </div>
     </div>

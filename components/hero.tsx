@@ -1,3 +1,4 @@
+import PageTracker from "./PageTracker";
 import { SubscribeForm } from "./SubscribeForm";
 
 type HeroIcon = {
@@ -32,6 +33,7 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
       className="relative flex min-h-[600px] flex-1 flex-col items-center justify-center px-6 text-center"
       style={{ minHeight: "max(600px, calc(100dvh - 72px))" }}
     >
+      <PageTracker product="home" />
       <div className="pointer-events-none absolute inset-0 hidden overflow-hidden xl:block" aria-hidden="true">
         {HERO_ICON_POSITIONS.map((icon) => (
           <img

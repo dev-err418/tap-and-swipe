@@ -2,38 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchWhopMrr } from "@/lib/stats-helpers";
 import { sendPush } from "@/lib/apns";
 import { stripe } from "@/lib/stripe";
+import { prisma } from "@/lib/prisma";
 
-// ── PostHog query helper ────────────────────────────────────────────────
-const PH_HOST =
-  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
-
-async function posthogQuery(query: string): Promise<Record<string, unknown>> {
-  const bustQuery = `/* ${Date.now()} */ ${query}`;
-  const res = await fetch(`${PH_HOST}/api/projects/@current/query`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.POSTHOG_PERSONAL_API_KEY}`,
-    },
-    body: JSON.stringify({ query: { kind: "HogQLQuery", query: bustQuery } }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`PostHog query API: ${res.status} ${text}`);
-  }
-  return res.json();
-}
-
-// ── Today's new subscribers (PostHog) ───────────────────────────────────
+// ── Today's new subscribers (PageEvent) ─────────────────────────────────
 async function fetchTodayNewSubs(): Promise<number> {
-  const result = (await posthogQuery(`
-    SELECT count()
-    FROM events
-    WHERE event = 'newsletter_subscribe'
-      AND toDate(timestamp) = today()
-  `)) as { results?: unknown[][] };
-
-  return Number(result.results?.[0]?.[0] ?? 0);
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  return prisma.pageEvent.count({
+    where: {
+      product: "home",
+      type: "subscribe",
+      createdAt: { gte: startOfToday },
+    },
+  });
 }
 
 // ── Today's revenue (Stripe charges) ────────────────────────────────────

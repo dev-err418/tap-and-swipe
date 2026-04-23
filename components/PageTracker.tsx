@@ -51,25 +51,43 @@ function fire(
   sessionId: string,
   extra?: { referrer?: string; ref?: string },
 ) {
-  fetch("/api/event", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      product,
-      type,
-      visitorId,
-      sessionId,
-      referrer: extra?.referrer || undefined,
-      ref: extra?.ref || undefined,
-    }),
-  }).catch(() => {});
+  const body = JSON.stringify({
+    product,
+    type,
+    visitorId,
+    sessionId,
+    referrer: extra?.referrer || undefined,
+    ref: extra?.ref || undefined,
+  });
+
+  const send = () => {
+    fetch("/api/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  };
+
+  // Defer load-time page_view to browser idle so it never competes with LCP.
+  // Fire user-triggered events immediately so `keepalive` can rescue them if
+  // the user navigates away right after (CTA click → external link, etc).
+  if (
+    type === "page_view" &&
+    typeof window !== "undefined" &&
+    typeof window.requestIdleCallback === "function"
+  ) {
+    window.requestIdleCallback(send, { timeout: 2000 });
+  } else {
+    send();
+  }
 }
 
 export default function PageTracker({
   product,
   ctaSelector,
 }: {
-  product: "aso" | "community" | "quiz" | "coaching";
+  product: "aso" | "community" | "quiz" | "coaching" | "home";
   ctaSelector?: string;
 }) {
   useEffect(() => {
