@@ -109,6 +109,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.1,
     },
     {
+      url: "https://tap-and-swipe.com/notify",
+      lastModified: new Date("2026-04-24"),
+      changeFrequency: "monthly",
+      priority: 0.1,
+    },
+    {
+      url: "https://tap-and-swipe.com/notify/docs",
+      lastModified: new Date("2026-04-24"),
+      changeFrequency: "monthly",
+      priority: 0.2,
+    },
+    {
       url: "https://tap-and-swipe.com/privacy",
       lastModified: new Date("2026-04-15"),
       changeFrequency: "yearly",

@@ -7,6 +7,7 @@ const ALL_APPS = [
   { slug: "versy", name: "Versy", tagline: "Verse of the Day", icon: "/community-icons/versy.jpg" },
   { slug: "lua", name: "Bump Chat", tagline: "Pregnancy Tracker & Kick Counter", icon: "/community-icons/bump-chat.jpg" },
   { slug: "glow", name: "Glow", tagline: "Daily Affirmations", icon: "/community-icons/glow.jpg" },
+  { slug: "notify", name: "Notify", tagline: "Personal Push Webhook", icon: "/community-icons/notify.jpg" },
 ];
 
 type AppLandingProps = {

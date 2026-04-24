@@ -65,6 +65,54 @@ const components: Components = {
     </strong>
   ),
   hr: () => <hr className="my-6 border-border" />,
+  code: ({ children, className }) => {
+    const isBlock = typeof className === "string" && className.startsWith("language-");
+    if (isBlock) {
+      return (
+        <code className={`${className} font-mono text-sm`}>
+          {children}
+        </code>
+      );
+    }
+    return (
+      <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
+        {children}
+      </code>
+    );
+  },
+  pre: ({ children }) => (
+    <pre className="mt-4 overflow-x-auto rounded-lg border border-border bg-muted/60 p-4 text-sm leading-relaxed">
+      {children}
+    </pre>
+  ),
+  table: ({ children }) => (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full border-collapse text-sm">
+        {children}
+      </table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead className="border-b border-border text-left text-foreground">
+      {children}
+    </thead>
+  ),
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => (
+    <tr className="border-b border-border/60 last:border-b-0">
+      {children}
+    </tr>
+  ),
+  th: ({ children }) => (
+    <th className="px-3 py-2 align-top font-semibold text-foreground">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="px-3 py-2 align-top text-muted-foreground">
+      {children}
+    </td>
+  ),
 };
 
 export default function AppLegalPage({
