@@ -65,7 +65,7 @@ const features = [
   {
     title: "🔔 Push via HTTP",
     description:
-      "POST (or GET) to your webhook URL and a notification lands on your iPhone. JSON, form, query string — whatever your script can send.",
+      "POST (or GET) to your webhook URL and a notification lands on your iPhone. JSON, form, query string, whatever your script can send.",
   },
   {
     title: "🔒 On-Device Secret",
@@ -75,7 +75,7 @@ const features = [
   {
     title: "⚙️ Rich Options",
     description:
-      "Title, subtitle, body, sound, thread ID, interruption level, badge count, tap-to-open URL, image — all optional, all through the same endpoint.",
+      "Title, subtitle, body, sound, thread ID, interruption level, badge count, tap-to-open URL, image: all optional, all through the same endpoint.",
   },
   {
     title: "🧰 Built for Scripts & CI",

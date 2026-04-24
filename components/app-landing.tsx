@@ -251,7 +251,7 @@ export default function AppLandingPage({
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
           More apps by Tap &amp; Swipe
         </h2>
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
           {otherApps.map((app) => (
             <Link
               key={app.slug}
