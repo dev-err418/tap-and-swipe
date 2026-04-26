@@ -50,7 +50,7 @@ const nextConfig: NextConfig = {
                     "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com https://cal.com",
                     "object-src 'none'",
                     "base-uri 'self'",
-                    "form-action 'self'",
+                    "form-action 'self' https://claude.ai https://claude.com",
                     "frame-ancestors 'none'",
                     "upgrade-insecure-requests",
                   ].join("; "),

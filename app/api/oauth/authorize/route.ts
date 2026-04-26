@@ -39,7 +39,8 @@ function errorRedirect(redirectUri: string, code: string, description: string, s
   url.searchParams.set("error", code);
   url.searchParams.set("error_description", description);
   if (state) url.searchParams.set("state", state);
-  return NextResponse.redirect(url);
+  // 303 ensures the user-agent issues a GET against the redirect_uri (per RFC 6749 §3.1).
+  return NextResponse.redirect(url, 303);
 }
 
 function htmlError(status: number, title: string, body: string): Response {
@@ -158,7 +159,10 @@ export async function GET(req: NextRequest) {
       "Cache-Control": "no-store",
       // Defense in depth: prevent the page from being framed.
       "X-Frame-Options": "DENY",
-      "Content-Security-Policy": "default-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'",
+      "Content-Security-Policy":
+        "default-src 'self'; style-src 'unsafe-inline'; " +
+        "form-action 'self' https://claude.ai https://claude.com; " +
+        "frame-ancestors 'none'",
     },
   });
 }
@@ -208,7 +212,7 @@ export async function POST(req: NextRequest) {
   const url = new URL(payload.redirectUri);
   url.searchParams.set("code", code);
   if (payload.state) url.searchParams.set("state", payload.state);
-  return NextResponse.redirect(url);
+  return NextResponse.redirect(url, 303);
 }
 
 function escapeHtml(s: string): string {

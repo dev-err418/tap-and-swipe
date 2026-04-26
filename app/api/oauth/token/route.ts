@@ -109,9 +109,7 @@ export async function POST(req: NextRequest) {
       const refreshToken = str(form, "refresh_token");
       if (!refreshToken) throw new OAuthError("invalid_request", "Missing refresh_token");
 
-      const tokens = await rotateRefreshToken(refreshToken);
-      // Refuse rotations that crossed clients (extreme paranoia — lookup is by tokenHash).
-      // No further check needed; rotateRefreshToken stays within the same row.
+      const tokens = await rotateRefreshToken(refreshToken, client.clientId);
       return tokenJson(tokens);
     }
 

@@ -91,58 +91,91 @@ export async function mintAuthorizationCode(args: {
 
 export async function consumeAuthorizationCode(code: string) {
   const codeHash = sha256Hex(code);
-  const record = await prisma.oAuthAuthorizationCode.findUnique({
-    where: { codeHash },
+
+  // Atomic claim: only the first concurrent caller flips consumedAt and gets the row back.
+  // updateMany with a WHERE on consumedAt IS NULL is the closed-system equivalent of
+  // SELECT ... FOR UPDATE; the rowcount tells us whether we won the race.
+  const consumed = await prisma.oAuthAuthorizationCode.updateMany({
+    where: { codeHash, consumedAt: null, expiresAt: { gt: new Date() } },
+    data: { consumedAt: new Date() },
   });
-  if (!record) {
-    throw new OAuthError("invalid_grant", "Authorization code not found");
-  }
-  if (record.expiresAt < new Date()) {
-    await prisma.oAuthAuthorizationCode.delete({ where: { codeHash } });
-    throw new OAuthError("invalid_grant", "Authorization code expired");
-  }
-  if (record.consumedAt) {
-    // Per RFC 6749 §10.5: replay → revoke any tokens already issued from this code.
+
+  if (consumed.count === 0) {
+    // Either: not found, expired, or already consumed. Discriminate for accurate errors
+    // and so we can run the RFC 6749 §10.5 replay-revocation in the consumed-already case.
+    const record = await prisma.oAuthAuthorizationCode.findUnique({ where: { codeHash } });
+    if (!record) {
+      throw new OAuthError("invalid_grant", "Authorization code not found");
+    }
+    if (record.expiresAt < new Date()) {
+      await prisma.oAuthAuthorizationCode.delete({ where: { codeHash } });
+      throw new OAuthError("invalid_grant", "Authorization code expired");
+    }
+    // consumedAt was already set → replay. Revoke any tokens issued under it.
     await prisma.oAuthAccessToken.updateMany({
-      where: { clientId: record.clientId, userId: record.userId, createdAt: { gte: record.createdAt } },
+      where: {
+        clientId: record.clientId,
+        userId: record.userId,
+        createdAt: { gte: record.createdAt },
+        revokedAt: null,
+      },
       data: { revokedAt: new Date() },
     });
     throw new OAuthError("invalid_grant", "Authorization code already used");
   }
-  await prisma.oAuthAuthorizationCode.update({
-    where: { codeHash },
-    data: { consumedAt: new Date() },
-  });
+
+  // We won — re-read the row to return the bound parameters.
+  const record = await prisma.oAuthAuthorizationCode.findUnique({ where: { codeHash } });
+  if (!record) {
+    // Should never happen — we just updated it.
+    throw new OAuthError("server_error", "Code consumed but not found", 500);
+  }
   return record;
 }
 
-export async function rotateRefreshToken(presented: string) {
+export async function rotateRefreshToken(presented: string, requestingClientId: string) {
   const tokenHash = sha256Hex(presented);
-  const record = await prisma.oAuthRefreshToken.findUnique({
-    where: { tokenHash },
+
+  // Atomic claim — only the first concurrent caller flips consumedAt.
+  const claimed = await prisma.oAuthRefreshToken.updateMany({
+    where: {
+      tokenHash,
+      consumedAt: null,
+      expiresAt: { gt: new Date() },
+      clientId: requestingClientId,
+    },
+    data: { consumedAt: new Date() },
   });
+
+  if (claimed.count === 0) {
+    // Did not win the atomic claim. Find out why.
+    const record = await prisma.oAuthRefreshToken.findUnique({ where: { tokenHash } });
+    if (!record) {
+      throw new OAuthError("invalid_grant", "Refresh token not recognized");
+    }
+    if (record.clientId !== requestingClientId) {
+      // Refresh token belongs to a different client — treat as compromise of the family.
+      await revokeFamily(record.familyId);
+      throw new OAuthError("invalid_grant", "Refresh token client mismatch");
+    }
+    if (record.expiresAt <= new Date()) {
+      throw new OAuthError("invalid_grant", "Refresh token expired");
+    }
+    if (record.consumedAt) {
+      // Replay → revoke entire family (OAuth 2.1 §4.3.1).
+      await revokeFamily(record.familyId);
+      throw new OAuthError(
+        "invalid_grant",
+        "Refresh token already consumed — chain revoked",
+      );
+    }
+    throw new OAuthError("invalid_grant", "Refresh token rejected");
+  }
+
+  // Re-read the now-consumed row to mint the next pair from its bindings.
+  const record = await prisma.oAuthRefreshToken.findUnique({ where: { tokenHash } });
   if (!record) {
-    throw new OAuthError("invalid_grant", "Refresh token not recognized");
-  }
-  if (record.expiresAt < new Date()) {
-    throw new OAuthError("invalid_grant", "Refresh token expired");
-  }
-  if (record.consumedAt) {
-    // Replay detection — revoke entire family.
-    await prisma.$transaction([
-      prisma.oAuthAccessToken.updateMany({
-        where: { familyId: record.familyId, revokedAt: null },
-        data: { revokedAt: new Date() },
-      }),
-      prisma.oAuthRefreshToken.updateMany({
-        where: { familyId: record.familyId, consumedAt: null },
-        data: { consumedAt: new Date() },
-      }),
-    ]);
-    throw new OAuthError(
-      "invalid_grant",
-      "Refresh token already consumed — chain revoked",
-    );
+    throw new OAuthError("server_error", "Refresh consumed but not found", 500);
   }
 
   const next = await issueTokens({
@@ -155,13 +188,23 @@ export async function rotateRefreshToken(presented: string) {
 
   await prisma.oAuthRefreshToken.update({
     where: { tokenHash },
-    data: {
-      consumedAt: new Date(),
-      replacedByHash: sha256Hex(next.refreshToken),
-    },
+    data: { replacedByHash: sha256Hex(next.refreshToken) },
   });
 
   return next;
+}
+
+async function revokeFamily(familyId: string): Promise<void> {
+  await prisma.$transaction([
+    prisma.oAuthAccessToken.updateMany({
+      where: { familyId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    }),
+    prisma.oAuthRefreshToken.updateMany({
+      where: { familyId, consumedAt: null },
+      data: { consumedAt: new Date() },
+    }),
+  ]);
 }
 
 export interface VerifiedAccessToken {
