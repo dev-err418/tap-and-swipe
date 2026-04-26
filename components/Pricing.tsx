@@ -41,9 +41,8 @@ const Pricing = () => {
                         <div className="mb-6">
                             <div className="flex items-baseline gap-2">
                                 <span className="text-5xl font-extrabold text-black">67&euro;</span>
-                                <span className="text-lg text-black/50">/mo, billed quarterly</span>
+                                <span className="text-lg text-black/50">/mo</span>
                             </div>
-                            <p className="mt-1 text-sm text-black/50">Billed quarterly</p>
                         </div>
 
                         <ul className="space-y-2.5">
@@ -128,9 +127,8 @@ const Pricing = () => {
                         <div className="mb-6">
                             <div className="flex items-baseline gap-2">
                                 <span className="text-5xl font-extrabold text-black">127&euro;</span>
-                                <span className="text-lg text-black/50">/mo, billed quarterly</span>
+                                <span className="text-lg text-black/50">/mo</span>
                             </div>
-                            <p className="mt-1 text-sm text-black/50">Billed quarterly</p>
                         </div>
 
                         <ul className="space-y-2.5">
@@ -219,21 +217,23 @@ const Pricing = () => {
                             <a
                                 href="/api/auth/discord?flow=community"
                                 data-fast-goal="cta_pricing_clicked"
-                                className="group flex w-full h-12 items-center justify-center gap-2 rounded-full bg-[#FF9500] text-sm font-bold text-white transition-all hover:bg-[#FF9500]/85 hover:ring-4 hover:ring-[#FF9500]/20 cursor-pointer mb-4"
+                                className="group flex w-full h-12 items-center justify-center gap-2 rounded-full bg-[#FF9500] text-sm font-bold text-white transition-all hover:bg-[#FF9500]/85 hover:ring-4 hover:ring-[#FF9500]/20 cursor-pointer"
                             >
                                 <span>Launch your app, now</span>
                                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                             </a>
-                            <div className="flex items-center justify-center gap-2 text-xs text-black/50">
-                                <div className="flex text-[#FF9500]">
-                                    {[...Array(5)].map((_, i) => (
-                                        <Star key={i} className="h-3 w-3 fill-current" />
-                                    ))}
-                                </div>
-                                Rated 5/5 by makers
-                            </div>
                         </div>
                     </motion.div>
+
+                    {/* Rating */}
+                    <div className="md:col-span-2 mt-6 flex items-center justify-center gap-2 text-xs text-black/50">
+                        <div className="flex text-[#FF9500]">
+                            {[...Array(5)].map((_, i) => (
+                                <Star key={i} className="h-3 w-3 fill-current" />
+                            ))}
+                        </div>
+                        Rated 5/5 by makers
+                    </div>
 
                     {/* Money-back / Guarantee note */}
                     <p className="md:col-span-2 mt-0 text-center text-sm text-black/30 leading-relaxed max-w-xl mx-auto italic">
