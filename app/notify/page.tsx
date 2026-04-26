@@ -100,9 +100,9 @@ export default function NotifyPage() {
         appStoreUrl="https://apps.apple.com/app/id6763496503"
         features={features}
         tint={{
-          accent: "#E11D48",
-          buttonBg: "#E11D48",
-          buttonRing: "rgba(225, 29, 72, 0.25)",
+          accent: "#FF9500",
+          buttonBg: "#FF9500",
+          buttonRing: "rgba(255, 149, 0, 0.25)",
         }}
         legal={{
           privacyUrl: "/notify/privacy",
