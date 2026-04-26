@@ -1,19 +1,13 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createMcpServer } from "@/mcp/server";
-import { authorizeRequest, McpAuthError } from "@/mcp/auth";
+import { authenticateMcpRequest } from "@/mcp/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 async function handle(req: Request): Promise<Response> {
-  try {
-    authorizeRequest(req);
-  } catch (err) {
-    if (err instanceof McpAuthError) {
-      return new Response(null, { status: 401 });
-    }
-    return new Response(null, { status: 500 });
-  }
+  const auth = await authenticateMcpRequest(req);
+  if (!auth.ok) return auth.response;
 
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
@@ -21,7 +15,7 @@ async function handle(req: Request): Promise<Response> {
   });
   const server = createMcpServer();
   await server.connect(transport);
-  return transport.handleRequest(req);
+  return transport.handleRequest(req, { authInfo: auth.auth });
 }
 
 export const POST = handle;

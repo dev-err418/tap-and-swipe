@@ -129,6 +129,62 @@ model QuizLead {
   @@index([route, createdAt])
 }
 
+// ── OAuth (MCP server acts as both auth server + resource server) ─────
+
+model OAuthClient {
+  clientId         String   @id
+  clientSecretHash String
+  name             String
+  redirectUris     String[]
+  createdAt        DateTime @default(now())
+}
+
+model OAuthAuthorizationCode {
+  codeHash      String    @id
+  clientId      String
+  userId        String
+  redirectUri   String
+  codeChallenge String
+  scope         String?
+  resource      String
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([expiresAt])
+}
+
+model OAuthAccessToken {
+  tokenHash String    @id
+  clientId  String
+  userId    String
+  scope     String?
+  resource  String
+  expiresAt DateTime
+  revokedAt DateTime?
+  familyId  String
+  createdAt DateTime  @default(now())
+
+  @@index([expiresAt])
+  @@index([familyId])
+}
+
+model OAuthRefreshToken {
+  tokenHash      String    @id
+  clientId       String
+  userId         String
+  scope          String?
+  resource       String
+  expiresAt      DateTime
+  consumedAt     DateTime?
+  replacedByHash String?
+  familyId       String
+  createdAt      DateTime  @default(now())
+
+  @@index([expiresAt])
+  @@index([familyId])
+}
+
 // ── Discord ─────────────────────────────────────────────────────────────
 
 model TrialDiscordMessage {
