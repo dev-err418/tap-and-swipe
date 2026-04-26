@@ -6,11 +6,7 @@ You have access to the `tap-and-swipe` MCP. Run the three summary tools in paral
 - `community_summary` with `dateRange="7d"`
 - `quiz_summary` with `dateRange="7d"`
 
-Send exactly one push notification via this endpoint (POST, JSON body):
-
-```
-https://push.tap-and-swipe.com/v1/send/y4jjdbZdt9_iERsPrNBXfg
-```
+Send exactly one push by calling the `notify_send` MCP tool. Do not POST to any external URL — `notify_send` is the only allowed delivery path.
 
 Body shape:
 
@@ -22,9 +18,8 @@ Body shape:
   - Quiz: emoji `❓`, conv = `leads.value`, convChange = `leads.change` (and CR is `completionRate`)
   - Round CRs to 1 decimal; format WoW changes with sign (`+12.3%` / `-4.0%`); show `—` if null
 - `interruption_level`: `"passive"`
+- `thread_id`: `"weekly-digest"`
 
-Hard limits: `subtitle` ≤ 200 chars, `body` ≤ 2000 chars.
-
-If any MCP tool errors, still send the digest with that line replaced by `"<emoji> <product>: failed"`.
+If any summary tool errors, still send the digest with that line replaced by `"<emoji> <product>: failed"`.
 
 Stop after sending. Do not write files, do not summarize back.

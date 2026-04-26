@@ -5,6 +5,7 @@ import { registerWhopTools } from "@/mcp/tools/whop";
 import { registerQuizLeadTools } from "@/mcp/tools/quiz-leads";
 import { registerSubscriptionTools } from "@/mcp/tools/subscriptions";
 import { registerLessonTools } from "@/mcp/tools/lessons";
+import { registerNotifyTools } from "@/mcp/tools/notify";
 import { registerSchemaResource } from "@/mcp/resources/schema";
 import { registerEnumsResource } from "@/mcp/resources/enums";
 
@@ -28,6 +29,7 @@ export function createMcpServer(): McpServer {
   registerQuizLeadTools(server);
   registerSubscriptionTools(server);
   registerLessonTools(server);
+  registerNotifyTools(server);
   registerSchemaResource(server);
   registerEnumsResource(server);
 
