@@ -27,8 +27,7 @@ model User {
   githubConnectedAt  DateTime?
   // Payment
   stripeCustomerId   String?            @unique
-  paddleCustomerId   String?            @unique
-  paymentProvider    String?            // "stripe" | "paddle" | "whop"
+  paymentProvider    String?            // "stripe" | "whop"
   subscriptionId     String?            @unique
   subscriptionStatus String?
   tier               String?            // "full" | "starter"
@@ -42,7 +41,6 @@ model User {
   updatedAt          DateTime           @updatedAt
 
   @@index([stripeCustomerId])
-  @@index([paddleCustomerId])
   @@index([subscriptionId])
   @@index([visitorId])
 }

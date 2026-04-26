@@ -55,16 +55,16 @@ async function migrate() {
         id, email, name, image, "emailVerified",
         "discordId", "discordUsername", "discordAvatar", "discordAccessToken",
         "githubId", "githubUsername", "githubConnectedAt",
-        "stripeCustomerId", "paddleCustomerId", "paymentProvider",
+        "stripeCustomerId", "paymentProvider",
         "subscriptionId", "subscriptionStatus", "roleGranted", "discordTrialExpiry",
         "createdAt", "updatedAt"
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
       ON CONFLICT (id) DO NOTHING`,
       [
         u.id, null, u.discordUsername, null, null,
         u.discordId, u.discordUsername, u.discordAvatar, u.discordAccessToken,
         u.githubId, u.githubUsername, u.githubConnectedAt,
-        u.stripeCustomerId, u.paddleCustomerId, u.paymentProvider,
+        u.stripeCustomerId, u.paymentProvider,
         u.subscriptionId, u.subscriptionStatus, u.roleGranted, u.discordTrialExpiry,
         u.createdAt, u.updatedAt,
       ]
