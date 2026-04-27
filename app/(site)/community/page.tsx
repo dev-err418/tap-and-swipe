@@ -7,7 +7,7 @@ import FaqJsonLd from "@/components/FaqJsonLd";
 export const metadata: Metadata = {
   title: "AppSprint — Build a Mobile App in Weeks, Not Months",
   description:
-    "Join the 6-week AppSprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating. €137/mo.",
+    "Join the 6-week AppSprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating. $147/mo.",
   keywords: [
     "app sprint",
     "build a mobile app",

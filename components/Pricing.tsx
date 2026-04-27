@@ -40,7 +40,7 @@ const Pricing = () => {
 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-extrabold text-black">67&euro;</span>
+                                <span className="text-5xl font-extrabold text-black">$87</span>
                                 <span className="text-lg text-black/50">/mo</span>
                             </div>
                         </div>
@@ -111,6 +111,14 @@ const Pricing = () => {
                                 <span>Join the community</span>
                                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                             </a>
+                            {process.env.NODE_ENV === "development" && (
+                                <a
+                                    href="/api/checkout?tier=starter"
+                                    className="mt-2 inline-block w-full rounded-full border border-dashed border-black/20 px-4 py-2 text-xs font-mono text-black/50 hover:bg-black/5"
+                                >
+                                    [dev] open paywall directly
+                                </a>
+                            )}
                         </div>
                     </motion.div>
 
@@ -126,7 +134,7 @@ const Pricing = () => {
 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-extrabold text-black">127&euro;</span>
+                                <span className="text-5xl font-extrabold text-black">$147</span>
                                 <span className="text-lg text-black/50">/mo</span>
                             </div>
                         </div>
@@ -222,6 +230,14 @@ const Pricing = () => {
                                 <span>Launch your app, now</span>
                                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                             </a>
+                            {process.env.NODE_ENV === "development" && (
+                                <a
+                                    href="/api/checkout?tier=full"
+                                    className="mt-2 inline-block w-full rounded-full border border-dashed border-black/20 px-4 py-2 text-xs font-mono text-black/50 hover:bg-black/5"
+                                >
+                                    [dev] open paywall directly
+                                </a>
+                            )}
                         </div>
                     </motion.div>
 
