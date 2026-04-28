@@ -73,7 +73,7 @@ export default async function ClassroomPage({
               totalLessons={cat.totalLessons}
               image={"image" in cat ? (cat.image as string) : undefined}
               index={i}
-              locked={isStarter && cat.slug !== "getting-started"}
+              locked={isStarter && cat.slug === "build-with-boilerplate"}
             />
           ))}
       </div>

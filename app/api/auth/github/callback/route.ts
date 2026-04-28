@@ -45,6 +45,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${BUILD_URL}?github_status=error`);
   }
 
+  // Boilerplate repo access is reserved for the Community + Course tier.
+  const tierUser = await prisma.user.findUnique({
+    where: { discordId: session.discordId },
+    select: { tier: true, subscriptionStatus: true },
+  });
+  if (
+    tierUser?.tier !== "full" ||
+    tierUser?.subscriptionStatus !== "active"
+  ) {
+    return NextResponse.redirect(`${BUILD_URL}?github_status=tier_required`);
+  }
+
   try {
     const tokenData = await exchangeCode(code);
     const githubUser = await getUser(tokenData.access_token);

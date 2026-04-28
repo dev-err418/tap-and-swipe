@@ -38,10 +38,10 @@ export default function RefundPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-black">
-              2. Community + Course plan ($149/mo)
+              2. Community + Course + AppSprint ASO plan ($149/mo)
             </h2>
             <p className="mt-2">
-              The Community + Course plan includes the items above plus access
+              The Community + Course + AppSprint ASO plan includes the items above plus access
               to the AppSprint roadmap and the boilerplate. A 14-day refund is
               available on the Course portion of this plan, provided that:
             </p>

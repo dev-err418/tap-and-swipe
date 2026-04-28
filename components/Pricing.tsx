@@ -54,52 +54,6 @@ const Pricing = () => {
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
                                 <span className="text-sm font-medium text-black">30+ video lessons</span>
                             </li>
-                            <li className="flex items-start gap-3">
-                                <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
-                                <span className="group relative inline-block">
-                                    <a
-                                        href="https://appsprint.app/aso"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm font-bold text-black"
-                                    >
-                                        <span className="underline decoration-black decoration-wavy decoration-[1.5px]">AppSprint ASO Solo</span> included (worth 19€/mo)
-                                    </a>
-                                    <div
-                                        role="tooltip"
-                                        className="pointer-events-none absolute left-1/2 top-full z-20 mt-3 w-72 -translate-x-1/2 rounded-2xl border border-black/10 bg-white p-5 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100"
-                                    >
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className="h-10 w-10 shrink-0 rounded-[10px] bg-black/85 border border-black/15">
-                                                <img
-                                                    src="/aso/app-icon.png"
-                                                    alt="AppSprint ASO"
-                                                    width={40}
-                                                    height={40}
-                                                    className="h-full w-full rounded-[10px] p-1"
-                                                />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-bold text-black">AppSprint ASO Solo</p>
-                                                <p className="text-xs text-black/50">Core ASO features for your apps</p>
-                                            </div>
-                                        </div>
-                                        <ul className="space-y-2">
-                                            {[
-                                                "1 app",
-                                                "Keyword research & tracking",
-                                                "Competitor MRR estimates",
-                                                "Price localization",
-                                            ].map((f) => (
-                                                <li key={f} className="flex items-start gap-2">
-                                                    <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-black" />
-                                                    <span className="text-xs text-black/70">{f}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </span>
-                            </li>
                         </ul>
 
                         <div className="text-center mt-auto pt-8">
@@ -129,7 +83,7 @@ const Pricing = () => {
                         className="relative rounded-3xl border border-black/10 bg-black/[0.02] p-8 md:p-10 flex flex-col"
                     >
                         <p className="text-lg font-bold text-black mb-4">
-                            Community + Course
+                            Community + Course + AppSprint ASO
                         </p>
 
                         <div className="mb-6">

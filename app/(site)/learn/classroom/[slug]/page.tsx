@@ -31,8 +31,8 @@ export default async function CategoryPage({
   const isEffectivelyStarter =
     user?.tier === "starter" || (isAdmin && sp.preview === "starter");
 
-  // Starter tier (Community plan) only has access to the first category.
-  if (isEffectivelyStarter && slug !== "getting-started") {
+  // Starter (Community plan) cannot access the boilerplate category.
+  if (isEffectivelyStarter && slug === "build-with-boilerplate") {
     redirect("/learn/classroom" + (sp.preview === "starter" ? "?preview=starter" : ""));
   }
 

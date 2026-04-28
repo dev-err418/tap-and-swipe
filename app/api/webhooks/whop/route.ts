@@ -254,8 +254,8 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          // ASO license generation (Pro for full, Solo for starter)
-          if (email) {
+          // ASO license generation (Pro tier only — Community tier has no ASO)
+          if (email && tier === "full") {
             const { key: licenseKey, isNew: isNewLicense } =
               await generateAsoLicenseWhop(email, membershipId, asoPlan, manageUrl);
 
@@ -273,8 +273,8 @@ export async function POST(request: NextRequest) {
             `[whop] membership.activated — discordId=${discord.id} roleGranted=${roleGranted}`
           );
         } else {
-          // No Discord — still generate ASO license if we have email
-          if (email) {
+          // No Discord — still generate ASO license if we have email and Pro tier
+          if (email && tier === "full") {
             const { key: licenseKey, isNew: isNewLicense } =
               await generateAsoLicenseWhop(email, membershipId, asoPlan, manageUrl);
 
@@ -352,10 +352,12 @@ export async function POST(request: NextRequest) {
         if (membershipId) {
           await reactivateAsoLicensesByWhop(membershipId);
 
-          // Re-grant Discord role and self-heal tier on plan change.
+          // Resolve the tier the customer is currently paying for, from the payload.
           // Whop doesn't fire a dedicated plan-change event, so payment.succeeded
-          // is the most reliable signal that a plan update happened — we resolve
-          // the tier from the event's plan_id and reconcile against the DB.
+          // is the most reliable signal that a plan update happened.
+          const payloadTier = tierFromPlanId(extractPlanId(data));
+
+          // Re-grant Discord role and self-heal stored tier on plan change.
           if (discord) {
             const existingUser = await prisma.user.findUnique({
               where: { discordId: discord.id },
@@ -363,8 +365,7 @@ export async function POST(request: NextRequest) {
             });
             const storedTier =
               existingUser?.tier === "starter" ? "starter" : "full";
-            const eventTier =
-              tierFromPlanId(extractPlanId(data)) ?? storedTier;
+            const eventTier = payloadTier ?? storedTier;
 
             if (eventTier !== storedTier) {
               await removeRole(discord.id, storedTier).catch((err) =>
@@ -387,6 +388,21 @@ export async function POST(request: NextRequest) {
                 ...(eventTier !== storedTier && { tier: eventTier }),
               },
             }).catch(() => {});
+          }
+
+          // If the customer is on Pro tier, ensure an ASO license exists.
+          // Covers the $99 → $149 upgrade case where Whop may only fire
+          // payment.succeeded (no fresh membership.activated). generateAsoLicenseWhop
+          // is idempotent on (membership_id, email) so this is safe to call repeatedly.
+          if (payloadTier === "full") {
+            const email = extractEmail(data);
+            if (email) {
+              const { key: licenseKey, isNew: isNewLicense } =
+                await generateAsoLicenseWhop(email, membershipId, "pro");
+              if (isNewLicense) {
+                await sendLicenseKeyEmail(email, licenseKey, "community");
+              }
+            }
           }
         }
         break;
