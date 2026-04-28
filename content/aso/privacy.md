@@ -99,7 +99,7 @@ As we are based in France and comply with the General Data Protection Regulation
 - **Right to withdraw consent**: Withdraw consent at any time without affecting prior processing
 - **Right to lodge a complaint**: File a complaint with the CNIL or your local supervisory authority
 
-To exercise any of these rights, contact us at arthurs.dev@gmail.com with "GDPR Request" in the subject line. We will respond within 30 days of receipt of your request.
+To exercise any of these rights, contact us at arthur@tap-and-swipe.com with "GDPR Request" in the subject line. We will respond within 30 days of receipt of your request.
 
 ### Data Protection Authority
 
@@ -148,7 +148,7 @@ Your continued use of the App after changes become effective constitutes accepta
 
 If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us at:
 
-**Email**: arthurs.dev@gmail.com
+**Email**: arthur@tap-and-swipe.com
 **Entity**: Tap & Swipe
 **App**: App Sprint ASO
 **Location**: France

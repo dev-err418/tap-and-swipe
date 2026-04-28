@@ -35,7 +35,7 @@ const Pricing = () => {
                         className="relative rounded-3xl border border-black/10 bg-black/[0.02] p-8 md:p-10 flex flex-col"
                     >
                         <p className="text-lg font-bold text-black mb-4">
-                            Starter Community
+                            Community
                         </p>
 
                         <div className="mb-6">
@@ -129,7 +129,7 @@ const Pricing = () => {
                         className="relative rounded-3xl border border-black/10 bg-black/[0.02] p-8 md:p-10 flex flex-col"
                     >
                         <p className="text-lg font-bold text-black mb-4">
-                            AppSprint Community
+                            Community + Course
                         </p>
 
                         <div className="mb-6">
@@ -142,7 +142,7 @@ const Pricing = () => {
                         <ul className="space-y-2.5">
                             <li className="flex items-start gap-3">
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-black" />
-                                <span className="text-sm font-medium text-black">Everything in Starter Community</span>
+                                <span className="text-sm font-medium text-black">Everything in Community</span>
                             </li>
                             {premiumFeatures.map((feature, i) => (
                                 <li key={i} className="flex items-start gap-3">

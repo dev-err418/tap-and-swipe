@@ -169,7 +169,7 @@ We may revise these Terms from time to time. We will provide at least 30 days' n
 
 For questions, concerns, or notices regarding these Terms, please contact us at:
 
-**Email**: arthurs.dev@gmail.com
+**Email**: arthur@tap-and-swipe.com
 **Entity**: Tap & Swipe
 **App**: App Sprint ASO
 **Location**: France

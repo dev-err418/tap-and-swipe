@@ -65,10 +65,10 @@ export default function TermsPage() {
                 that less than 20% of the roadmap content has been accessed or
                 watched. To request a refund, contact us at{" "}
                 <a
-                  href="mailto:arthurs.dev@gmail.com"
+                  href="mailto:arthur@tap-and-swipe.com"
                   className="text-[#FF9500] underline hover:text-[#FF9500]/80"
                 >
-                  arthurs.dev@gmail.com
+                  arthur@tap-and-swipe.com
                 </a>{" "}
                 or reach out on our Discord server.
               </p>
@@ -139,10 +139,10 @@ export default function TermsPage() {
               <p className="mt-2">
                 If you have questions, please reach out at{" "}
                 <a
-                  href="mailto:arthurs.dev@gmail.com"
+                  href="mailto:arthur@tap-and-swipe.com"
                   className="text-[#FF9500] underline hover:text-[#FF9500]/80"
                 >
-                  arthurs.dev@gmail.com
+                  arthur@tap-and-swipe.com
                 </a>{" "}
                 or on our Discord server.
               </p>

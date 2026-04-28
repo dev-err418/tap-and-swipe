@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Youtube, Linkedin } from "lucide-react";
 import { SiX } from "@icons-pack/react-simple-icons";
+import { FooterLegalLinks } from "./FooterLegalLinks";
 
 export function SiteFooter() {
   return (
@@ -97,16 +98,7 @@ export function SiteFooter() {
         </div>
         <div>
           <p className="font-medium text-foreground/80">Legal</p>
-          <ul className="-mx-2 mt-2">
-            <li>
-              <Link
-                href="/privacy"
-                className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
-              >
-                Privacy Policy
-              </Link>
-            </li>
-          </ul>
+          <FooterLegalLinks />
         </div>
       </div>
     </footer>

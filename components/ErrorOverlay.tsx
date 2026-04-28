@@ -69,7 +69,7 @@ const ErrorOverlay = () => {
             Close
           </Button>
           <Button asChild>
-            <a href="mailto:arthurs.dev@gmail.com">Need help?</a>
+            <a href="mailto:arthur@tap-and-swipe.com">Need help?</a>
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           <h1 className="mt-8 text-4xl font-extrabold tracking-tight sm:text-5xl text-black">
             Privacy Policy
           </h1>
-          <p className="mt-2 text-black/40">Effective Date: February 10, 2025</p>
+          <p className="mt-2 text-black/40">Effective Date: April 27, 2026</p>
 
           <div className="mt-10 space-y-8 text-black/50 leading-relaxed">
             <p>
@@ -61,8 +61,9 @@ export default function PrivacyPage() {
               </p>
               <ul className="mt-2 list-disc space-y-1 pl-6">
                 <li>
-                  <strong className="text-black">Stripe</strong> (to handle
-                  payments and subscriptions)
+                  <strong className="text-black">Whop</strong> (checkout,
+                  payment processing, and subscription management; Whop relies
+                  on Stripe as its underlying payment processor)
                 </li>
                 <li>
                   <strong className="text-black">Discord</strong> (for
@@ -108,10 +109,10 @@ export default function PrivacyPage() {
                 If you have any questions or concerns about this Privacy Policy,
                 please contact us at{" "}
                 <a
-                  href="mailto:arthurs.dev@gmail.com"
+                  href="mailto:arthur@tap-and-swipe.com"
                   className="text-[#FF9500] underline hover:text-[#FF9500]/80"
                 >
-                  arthurs.dev@gmail.com
+                  arthur@tap-and-swipe.com
                 </a>{" "}
                 or reach out on our Discord server.
               </p>

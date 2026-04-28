@@ -85,7 +85,7 @@ const organizationJsonLd = {
   ],
   contactPoint: {
     "@type": "ContactPoint",
-    email: "arthurs.dev@gmail.com",
+    email: "arthur@tap-and-swipe.com",
     contactType: "customer support",
   },
   legalName: "TAP & SWIPE SAS",
