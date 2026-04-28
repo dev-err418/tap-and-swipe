@@ -12,6 +12,22 @@ function isCommunitySubscription(sub: Stripe.Subscription): boolean {
   return !!sub.metadata.discordId;
 }
 
+async function hasOtherActiveSubscription(
+  customerId: string,
+  excludeSubId?: string
+): Promise<boolean> {
+  const subs = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 20,
+  });
+  return subs.data.some(
+    (s) =>
+      s.id !== excludeSubId &&
+      (s.status === "active" || s.status === "trialing")
+  );
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
@@ -217,6 +233,15 @@ export async function POST(request: NextRequest) {
           ? subscription.customer
           : subscription.customer.id;
 
+        // If revoking access, skip when another active sub exists on the same
+        // customer (e.g. customer migrated to Whop, which keeps the customer ID).
+        if (!isActive && await hasOtherActiveSubscription(customerId, subscription.id)) {
+          console.log(
+            `[customer.subscription.updated] skipped revoke — customer ${customerId} has another active sub`
+          );
+          break;
+        }
+
         let roleGranted = false;
         if (isActive) {
           roleGranted = await addRole(discordId);
@@ -247,6 +272,13 @@ export async function POST(request: NextRequest) {
         const customerId = typeof subscription.customer === "string"
           ? subscription.customer
           : subscription.customer.id;
+
+        if (await hasOtherActiveSubscription(customerId, subscription.id)) {
+          console.log(
+            `[customer.subscription.deleted] skipped — customer ${customerId} has another active sub (likely migrated to Whop)`
+          );
+          break;
+        }
 
         await prisma.user.update({
           where: { discordId },
@@ -280,6 +312,13 @@ export async function POST(request: NextRequest) {
         const failedCustomerId = typeof subscription.customer === "string"
           ? subscription.customer
           : subscription.customer.id;
+
+        if (await hasOtherActiveSubscription(failedCustomerId, subscription.id)) {
+          console.log(
+            `[invoice.payment_failed] skipped — customer ${failedCustomerId} has another active sub`
+          );
+          break;
+        }
 
         await prisma.user.update({
           where: { discordId },

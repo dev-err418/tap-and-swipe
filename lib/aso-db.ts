@@ -92,12 +92,17 @@ export async function generateAsoLicenseWhop(
     return { key: existing.rows[0].key, isNew: false };
   }
 
-  // Check by email — catches duplicate checkouts
+  // Check by email — catches duplicate checkouts and pre-Whop Stripe licenses.
+  // Backfill whop_membership_id so future Whop deactivations target the correct row.
   const existingByEmail = await asoPool.query(
     "SELECT key FROM aso_licenses WHERE LOWER(email) = LOWER($1) AND active = true LIMIT 1",
     [email]
   );
   if (existingByEmail.rows.length > 0) {
+    await asoPool.query(
+      "UPDATE aso_licenses SET whop_membership_id = $1, whop_manage_url = COALESCE($2, whop_manage_url), provider = 'whop', plan = $3 WHERE key = $4",
+      [whopMembershipId, manageUrl ?? null, plan, existingByEmail.rows[0].key]
+    );
     return { key: existingByEmail.rows[0].key, isNew: false };
   }
 
