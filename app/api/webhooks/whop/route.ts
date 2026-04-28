@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getWhop } from "@/lib/whop";
+import { getWhop, WHOP_STARTER_PLAN_ID, WHOP_COMMUNITY_PLAN_ID } from "@/lib/whop";
 import { prisma } from "@/lib/prisma";
 import { addToGuild, addRole, removeRole } from "@/lib/discord";
 import {
@@ -53,6 +53,30 @@ function extractEmail(data: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
+function extractPlanId(d: Record<string, unknown>): string | undefined {
+  // membership payload: data.plan = { id, ... }
+  // payment payload:    data.plan = { id, ... }; data.membership = { id, status } only
+  const plan = d.plan;
+  if (typeof plan === "string" && plan.length > 0) return plan;
+  if (
+    plan &&
+    typeof plan === "object" &&
+    typeof (plan as Record<string, unknown>).id === "string"
+  ) {
+    return (plan as Record<string, string>).id;
+  }
+  return undefined;
+}
+
+function tierFromPlanId(
+  planId: string | undefined
+): "full" | "starter" | null {
+  if (!planId) return null;
+  if (planId === WHOP_STARTER_PLAN_ID) return "starter";
+  if (planId === WHOP_COMMUNITY_PLAN_ID) return "full";
+  return null;
+}
+
 async function fetchDiscordFromWhop(
   membershipId: string
 ): Promise<{ id: string; username: string } | null> {
@@ -100,21 +124,31 @@ export async function POST(request: NextRequest) {
       const v = metadata?.visitorId;
       return typeof v === "string" && v.length > 0 ? v : null;
     }
-    function extractTier(d: Record<string, unknown>): "full" | "starter" {
+    function extractMetadataTier(
+      d: Record<string, unknown>
+    ): "full" | "starter" | null {
       const metadata = d.metadata as Record<string, unknown> | undefined;
       const t = metadata?.tier;
-      return t === "starter" ? "starter" : "full";
+      if (t === "starter") return "starter";
+      if (t === "full") return "full";
+      return null;
     }
     const membershipForMeta = data.membership as Record<string, unknown> | undefined;
     const visitorId =
       extractVisitorId(data) ??
       (membershipForMeta ? extractVisitorId(membershipForMeta) : null);
+    // Resolve tier in priority order:
+    //   1. metadata.tier from our /api/checkout flow (top-level or nested under membership)
+    //   2. plan.id from the webhook payload (covers direct-on-Whop signups)
+    //   3. fallback to "full"
+    const planIdFromPayload =
+      extractPlanId(data) ??
+      (membershipForMeta ? extractPlanId(membershipForMeta) : undefined);
     const tier: "full" | "starter" =
-      extractTier(data) === "starter"
-        ? "starter"
-        : membershipForMeta
-          ? extractTier(membershipForMeta)
-          : "full";
+      extractMetadataTier(data) ??
+      (membershipForMeta ? extractMetadataTier(membershipForMeta) : null) ??
+      tierFromPlanId(planIdFromPayload) ??
+      "full";
     const asoPlan = tier === "starter" ? "solo" : "pro";
     const emailSource = tier === "starter" ? "community-starter" : "community";
 
