@@ -21,7 +21,7 @@ export default function RefundPage() {
         <div className="mt-10 space-y-8 text-black/50 leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold text-black">
-              1. Community plan ($99/mo)
+              1. Community plan (99€/mo)
             </h2>
             <p className="mt-2">
               The Community subscription gives you immediate access to the
@@ -38,7 +38,7 @@ export default function RefundPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-black">
-              2. Community + Course + AppSprint ASO plan ($149/mo)
+              2. Community + Course + AppSprint ASO plan (149€/mo)
             </h2>
             <p className="mt-2">
               The Community + Course + AppSprint ASO plan includes the items above plus access

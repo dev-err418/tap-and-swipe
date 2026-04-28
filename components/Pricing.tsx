@@ -40,7 +40,7 @@ const Pricing = () => {
 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-extrabold text-black">$99</span>
+                                <span className="text-5xl font-extrabold text-black">99&euro;</span>
                                 <span className="text-lg text-black/50">/mo</span>
                             </div>
                         </div>
@@ -88,7 +88,7 @@ const Pricing = () => {
 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-extrabold text-black">$149</span>
+                                <span className="text-5xl font-extrabold text-black">149&euro;</span>
                                 <span className="text-lg text-black/50">/mo</span>
                             </div>
                         </div>
