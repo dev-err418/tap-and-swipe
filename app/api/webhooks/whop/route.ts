@@ -202,6 +202,24 @@ export async function POST(request: NextRequest) {
             );
           }
 
+          // Plan upgrade/downgrade: if the stored tier differs from the
+          // freshly-resolved tier, remove the old role before granting the new one.
+          const previousTier =
+            existingUser?.tier === "starter" || existingUser?.tier === "full"
+              ? existingUser.tier
+              : null;
+          if (previousTier && previousTier !== tier) {
+            await removeRole(discord.id, previousTier).catch((err) =>
+              console.warn(
+                `[whop] Failed to remove old ${previousTier} role for ${discord.id}:`,
+                err
+              )
+            );
+            console.log(
+              `[whop] Plan change detected — ${previousTier} → ${tier} for ${discord.id}`
+            );
+          }
+
           const roleGranted = await addRole(discord.id, tier);
           if (!roleGranted) {
             console.warn(
@@ -275,6 +293,26 @@ export async function POST(request: NextRequest) {
       case "membership.deactivated": {
         const membershipId = String(data.id);
 
+        // Defensive check: if this deactivation references a different plan
+        // than what the user currently has, it's almost certainly a stale
+        // "old plan deactivated during plan change" event — skip it so we
+        // don't revoke access during an upgrade/downgrade.
+        if (discord) {
+          const existingUser = await prisma.user.findUnique({
+            where: { discordId: discord.id },
+            select: { tier: true },
+          });
+          const storedTier =
+            existingUser?.tier === "starter" ? "starter" : "full";
+          const eventTier = tierFromPlanId(extractPlanId(data));
+          if (eventTier && eventTier !== storedTier) {
+            console.log(
+              `[whop] membership.deactivated ignored — event tier=${eventTier} but user is on tier=${storedTier} (likely plan change). membership=${membershipId}`
+            );
+            break;
+          }
+        }
+
         // Deactivate ASO licenses
         await deactivateAsoLicensesByWhop(membershipId);
 
@@ -314,20 +352,39 @@ export async function POST(request: NextRequest) {
         if (membershipId) {
           await reactivateAsoLicensesByWhop(membershipId);
 
-          // Re-grant Discord role (look up stored tier)
+          // Re-grant Discord role and self-heal tier on plan change.
+          // Whop doesn't fire a dedicated plan-change event, so payment.succeeded
+          // is the most reliable signal that a plan update happened — we resolve
+          // the tier from the event's plan_id and reconcile against the DB.
           if (discord) {
             const existingUser = await prisma.user.findUnique({
               where: { discordId: discord.id },
               select: { tier: true },
             });
-            const userTier = existingUser?.tier === "starter" ? "starter" : "full";
-            await addRole(discord.id, userTier).catch(() => {});
+            const storedTier =
+              existingUser?.tier === "starter" ? "starter" : "full";
+            const eventTier =
+              tierFromPlanId(extractPlanId(data)) ?? storedTier;
+
+            if (eventTier !== storedTier) {
+              await removeRole(discord.id, storedTier).catch((err) =>
+                console.warn(
+                  `[whop] payment.succeeded — failed to remove old ${storedTier} role:`,
+                  err
+                )
+              );
+              console.log(
+                `[whop] payment.succeeded — plan change ${storedTier} → ${eventTier} for ${discord.id}`
+              );
+            }
+            await addRole(discord.id, eventTier).catch(() => {});
 
             await prisma.user.update({
               where: { discordId: discord.id },
               data: {
                 subscriptionStatus: "active",
                 roleGranted: true,
+                ...(eventTier !== storedTier && { tier: eventTier }),
               },
             }).catch(() => {});
           }
