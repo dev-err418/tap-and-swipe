@@ -1,53 +1,40 @@
-import type { Metadata } from "next";
-import LandingPage from "@/components/LandingPage";
-import AppSprintJsonLd from "@/components/AppSprintJsonLd";
-import FaqJsonLd from "@/components/FaqJsonLd";
+import { headers, cookies } from "next/headers";
+import { permanentRedirect } from "next/navigation";
+import { randomUUID } from "crypto";
+import { prisma } from "@/lib/prisma";
 
+const WHOP_URL = "https://whop.com/appsprint-community/app-sprint-access/";
 
-export const metadata: Metadata = {
-  title: "AppSprint — Build a Mobile App in Weeks, Not Months",
-  description:
-    "Join the 6-week AppSprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating. 149€/mo.",
-  keywords: [
-    "app sprint",
-    "build a mobile app",
-    "mobile app course",
-    "expo react native course",
-    "app development program",
-    "indie app maker",
-    "launch mobile app",
-    "learn to build apps",
-    "mobile app builder course",
-    "app building community",
-  ],
-  openGraph: {
-    title: "AppSprint — Build a Mobile App in Weeks, Not Months",
-    description:
-      "Join the 6-week AppSprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating.",
-    type: "website",
-    locale: "en_US",
-    siteName: "Tap & Swipe",
-    images: [{ url: "/opengraph-image.png", width: 1200, height: 630 }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    creator: "@arthursbuilds",
-    title: "AppSprint — Build a Mobile App in Weeks, Not Months",
-    description:
-      "Join the 6-week AppSprint program to build and launch your own mobile app with Expo, React Native, and AI. 63+ makers, weekly group calls, 5/5 rating.",
-    images: ["/opengraph-image.png"],
-  },
-  alternates: {
-    canonical: "/community",
-  },
-};
+export const dynamic = "force-dynamic";
 
-export default function AppSprintPage() {
-  return (
-    <>
-      <AppSprintJsonLd />
-      <FaqJsonLd />
-      <LandingPage />
-    </>
-  );
+export default async function CommunityRedirect({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string }>;
+}) {
+  const [h, c, params] = await Promise.all([headers(), cookies(), searchParams]);
+
+  let referrer: string | null = null;
+  const referer = h.get("referer");
+  if (referer) {
+    try {
+      referrer = new URL(referer).hostname.replace(/^www\./, "") || null;
+    } catch {}
+  }
+
+  await prisma.pageEvent
+    .create({
+      data: {
+        product: "community",
+        type: "page_view",
+        visitorId: c.get("visitor_id")?.value ?? randomUUID(),
+        sessionId: randomUUID(),
+        country: h.get("cf-ipcountry") || null,
+        referrer,
+        ref: params.ref ?? null,
+      },
+    })
+    .catch(() => {});
+
+  permanentRedirect(WHOP_URL);
 }
