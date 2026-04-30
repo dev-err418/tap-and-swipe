@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type Tab = { label: string; href: string; disabled: boolean };
+type Tab = {
+  label: string;
+  href: string;
+  disabled: boolean;
+  badge?: string;
+};
 
 const BASE_TABS: Tab[] = [
   { label: "Community", href: "/learn/community", disabled: true },
   { label: "Classroom", href: "/learn/classroom", disabled: false },
   { label: "Calendar", href: "/learn/calendar", disabled: false },
+  { label: "Affiliate", href: "/learn/earn", disabled: false, badge: "Earn 30%" },
 ];
 
 export default function LearnTabs({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -29,9 +35,11 @@ export default function LearnTabs({ isAdmin = false }: { isAdmin?: boolean }) {
               key={tab.label}
               className="relative pb-3 text-sm font-medium text-black/25 cursor-default select-none"
             >
-              {tab.label}
-              <span className="ml-1.5 rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] font-medium text-black/30">
-                Soon
+              <span className="relative inline-block">
+                {tab.label}
+                <span className="absolute -top-3 left-full -ml-2 whitespace-nowrap rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] font-medium leading-none text-black/30">
+                  Soon
+                </span>
               </span>
             </span>
           );
@@ -45,7 +53,14 @@ export default function LearnTabs({ isAdmin = false }: { isAdmin?: boolean }) {
               active ? "text-black" : "text-black/40 hover:text-black/60"
             }`}
           >
-            {tab.label}
+            <span className="relative inline-block">
+              {tab.label}
+              {tab.badge && (
+                <span className="absolute -top-3 left-full -ml-2 whitespace-nowrap rounded-full bg-black px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                  {tab.badge}
+                </span>
+              )}
+            </span>
             {active && (
               <span className="absolute bottom-0 left-0 right-0 h-[3px] rounded-full bg-black" />
             )}
