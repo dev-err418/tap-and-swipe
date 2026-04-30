@@ -278,10 +278,12 @@ export async function POST(request: NextRequest) {
                   ? `1. the course is at https://tap-and-swipe.com/learn, start with the **Getting Started** category
 2. your **ASO Pro** license should already be in your inbox, comes with the sub
 3. group calls are **wed and sun at 9pm CET**
-4. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with`
+4. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with
+5. share your build progress: start a thread in <#1480509051489095782>, one per app`
                   : `1. the course is at https://tap-and-swipe.com/learn, start with the **Getting Started** category
 2. group calls are **wed and sun at 9pm CET**
-3. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with`;
+3. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with
+4. share your build progress: start a thread in <#1480509051489095782>, one per app`;
 
               const message = `hey <@${discord.id}>, welcome in 👋
 
