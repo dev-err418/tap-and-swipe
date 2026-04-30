@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getWhop, WHOP_STARTER_PLAN_ID, WHOP_COMMUNITY_PLAN_ID } from "@/lib/whop";
 import { prisma } from "@/lib/prisma";
-import { addToGuild, addRole, removeRole } from "@/lib/discord";
+import {
+  addToGuild,
+  addRole,
+  removeRole,
+  createPrivateChannel,
+  sendChannelMessage,
+} from "@/lib/discord";
 import {
   generateAsoLicenseWhop,
   deactivateAsoLicensesByWhop,
@@ -253,6 +259,48 @@ export async function POST(request: NextRequest) {
               ...(visitorId && { visitorId }),
             },
           });
+
+          // First-time activation: create a private welcome channel.
+          if (isNew) {
+            try {
+              const usernameSlug = discord.username
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, "-");
+              const channelName = `👋・welcome-${usernameSlug}`;
+              const channelId = await createPrivateChannel(
+                discord.id,
+                channelName,
+                process.env.DISCORD_WELCOME_CATEGORY_ID
+              );
+
+              const steps =
+                tier === "full"
+                  ? `1. the course is at https://tap-and-swipe.com/learn, start with the **Getting Started** category
+2. your **ASO Pro** license should already be in your inbox, comes with the sub
+3. DM me your **github username** and i'll add you to the boilerplate repo
+4. group calls are **wed and sun at 9pm CET**
+5. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with`
+                  : `1. the course is at https://tap-and-swipe.com/learn, start with the **Getting Started** category
+2. group calls are **wed and sun at 9pm CET**
+3. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with`;
+
+              const message = `hey <@${discord.id}>, welcome in 👋
+
+happy you made it. this is your channel, ping me anything you need and i'll get to it
+
+heads up: this channel auto-deletes in 72h, so don't leave anything important in here
+
+few things to get you sorted:
+${steps}`;
+
+              await sendChannelMessage(channelId, message, true);
+            } catch (err) {
+              console.error(
+                `[whop] Failed to create welcome channel for ${discord.id}:`,
+                err
+              );
+            }
+          }
 
           // ASO license generation (Pro tier only — Community tier has no ASO)
           if (email && tier === "full") {

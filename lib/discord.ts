@@ -191,15 +191,16 @@ export async function addRoleById(
 }
 
 /**
- * Create a private text channel under the SUPPORT category.
+ * Create a private text channel under a category (defaults to SUPPORT).
  * Only the admin and the target user can see it.
  */
 export async function createPrivateChannel(
   discordUserId: string,
-  channelName: string
+  channelName: string,
+  categoryId?: string
 ): Promise<string> {
   const guildId = process.env.DISCORD_GUILD_ID!;
-  const categoryId = process.env.DISCORD_SUPPORT_CATEGORY_ID!;
+  const parentId = categoryId ?? process.env.DISCORD_SUPPORT_CATEGORY_ID!;
   const adminId = process.env.ADMIN_DISCORD_ID!;
   const botId = process.env.DISCORD_CLIENT_ID!;
 
@@ -215,7 +216,7 @@ export async function createPrivateChannel(
     body: JSON.stringify({
       name: channelName,
       type: 0, // text channel
-      parent_id: categoryId,
+      parent_id: parentId,
       permission_overwrites: [
         {
           id: everyoneRoleId,
@@ -248,6 +249,43 @@ export async function createPrivateChannel(
 
   const channel = await res.json();
   return channel.id;
+}
+
+interface DiscordChannel {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  type: number;
+}
+
+export async function listGuildChannels(): Promise<DiscordChannel[]> {
+  const guildId = process.env.DISCORD_GUILD_ID!;
+  const res = await fetch(`${DISCORD_API}/guilds/${guildId}/channels`, {
+    headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Discord listGuildChannels failed: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
+export async function deleteChannel(channelId: string): Promise<void> {
+  const res = await fetch(`${DISCORD_API}/channels/${channelId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+  });
+  if (!res.ok && res.status !== 404) {
+    const text = await res.text();
+    throw new Error(`Discord deleteChannel failed: ${res.status} ${text}`);
+  }
+}
+
+const DISCORD_EPOCH_MS = BigInt("1420070400000");
+
+export function snowflakeCreatedAt(snowflake: string): Date {
+  const ms = (BigInt(snowflake) >> BigInt(22)) + DISCORD_EPOCH_MS;
+  return new Date(Number(ms));
 }
 
 export async function sendChannelMessage(
