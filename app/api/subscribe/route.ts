@@ -52,10 +52,10 @@ export async function POST(req: Request) {
     const plunkSecretKey = process.env.PLUNK_API_KEY;
     // /v1/track only accepts the public (pk_*) key, never the secret key.
     const plunkPublicKey = process.env.PLUNK_PUBLIC_KEY;
-    const plunkEvent = process.env.PLUNK_NEWSLETTER_EVENT ?? "newsletter_subscribed";
+    const plunkEvent = process.env.PLUNK_NEWSLETTER_EVENT;
 
-    if (!plunkUrl || !plunkPublicKey) {
-      console.error("Missing PLUNK_API_URL or PLUNK_PUBLIC_KEY env vars");
+    if (!plunkUrl || !plunkPublicKey || !plunkEvent) {
+      console.error("Missing PLUNK_API_URL, PLUNK_PUBLIC_KEY, or PLUNK_NEWSLETTER_EVENT env vars");
       return NextResponse.json({ error: "Newsletter not configured" }, { status: 500 });
     }
 
