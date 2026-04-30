@@ -277,9 +277,8 @@ export async function POST(request: NextRequest) {
                 tier === "full"
                   ? `1. the course is at https://tap-and-swipe.com/learn, start with the **Getting Started** category
 2. your **ASO Pro** license should already be in your inbox, comes with the sub
-3. DM me your **github username** and i'll add you to the boilerplate repo
-4. group calls are **wed and sun at 9pm CET**
-5. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with`
+3. group calls are **wed and sun at 9pm CET**
+4. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with`
                   : `1. the course is at https://tap-and-swipe.com/learn, start with the **Getting Started** category
 2. group calls are **wed and sun at 9pm CET**
 3. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with`;
