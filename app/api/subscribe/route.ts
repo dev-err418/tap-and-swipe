@@ -18,6 +18,16 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, tim
   }
 }
 
+// Pull the primary 2-letter language tag from an Accept-Language header.
+// "en-US,en;q=0.9,fr;q=0.8" → "en". Plunk's `locale` field expects this shape.
+function parseLocale(acceptLanguage: string | null): string | undefined {
+  if (!acceptLanguage) return undefined;
+  const primary = acceptLanguage.split(",")[0]?.trim();
+  if (!primary) return undefined;
+  const lang = primary.split(/[-;]/)[0]?.toLowerCase();
+  return lang && /^[a-z]{2,3}$/.test(lang) ? lang : undefined;
+}
+
 function formatCountry(countryCode?: string): string {
   if (!countryCode) return "\u{1F310} Unknown";
   const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -61,6 +71,18 @@ export async function POST(req: Request) {
 
     const h = await headers();
     const country = h.get("cf-ipcountry") || undefined;
+    const locale = parseLocale(h.get("accept-language"));
+    const referer = h.get("referer") || undefined;
+    const userAgent = h.get("user-agent") || undefined;
+
+    // Plunk treats `locale` as a special field for auto-translation in templates.
+    // The other fields are custom data we stash for later analytics / segmentation.
+    const contactData: Record<string, string> = {};
+    if (country) contactData.country = country;
+    if (locale) contactData.locale = locale;
+    if (referer) contactData.referer = referer;
+    if (userAgent) contactData.userAgent = userAgent;
+    const hasData = Object.keys(contactData).length > 0;
 
     // 1. Upsert the contact via /contacts. Plunk returns _meta.isNew so we can
     //    tell a fresh signup apart from a re-submit (and only ping Discord on
@@ -80,7 +102,7 @@ export async function POST(req: Request) {
             body: JSON.stringify({
               email: normalizedEmail,
               subscribed: true,
-              data: country ? { country } : undefined,
+              data: hasData ? contactData : undefined,
             }),
           },
           PLUNK_TIMEOUT_MS
@@ -115,7 +137,7 @@ export async function POST(req: Request) {
           email: normalizedEmail,
           event: plunkEvent,
           subscribed: true,
-          data: country ? { country } : undefined,
+          data: hasData ? contactData : undefined,
         }),
       },
       PLUNK_TIMEOUT_MS
