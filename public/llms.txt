@@ -29,5 +29,5 @@ Tap & Swipe covers interviews with indie app developers, mobile app building and
 
 ## Optional
 
-- [Privacy Policy](https://tap-and-swipe.com/app-sprint-community/privacy): Community privacy policy
-- [Terms of Service](https://tap-and-swipe.com/app-sprint-community/tos): Community terms of service
+- [Privacy Policy](https://tap-and-swipe.com/community/privacy): Community privacy policy
+- [Terms of Service](https://tap-and-swipe.com/community/tos): Community terms of service

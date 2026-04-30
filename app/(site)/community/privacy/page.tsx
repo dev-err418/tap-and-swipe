@@ -5,6 +5,10 @@ export const metadata = {
   alternates: {
     canonical: "/community/privacy",
   },
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default function PrivacyPage() {

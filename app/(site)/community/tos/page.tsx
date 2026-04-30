@@ -7,6 +7,10 @@ export const metadata = {
   alternates: {
     canonical: "/community/tos",
   },
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default function TermsPage() {
