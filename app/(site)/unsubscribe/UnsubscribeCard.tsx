@@ -82,16 +82,13 @@ export function UnsubscribeCard({ contactId }: { contactId: string | null }) {
 
   return (
     <CardShell>
-      <div className="mb-1 text-xs uppercase tracking-wider text-black/50">Email</div>
-      <div className="mb-6 break-all text-base font-medium">{contact.email}</div>
+      <h1 className="mb-6 text-center text-3xl font-semibold tracking-tight sm:text-4xl">
+        Manage your subscription
+      </h1>
 
-      <div className="mb-1 text-xs uppercase tracking-wider text-black/50">Status</div>
-      <div className="mb-8 text-base font-medium">
-        {contact.subscribed ? (
-          <span className="text-emerald-600">Subscribed</span>
-        ) : (
-          <span className="text-black/50">Unsubscribed</span>
-        )}
+      <div className="mb-8 text-center text-base font-medium text-black/70">
+        We're sorry to see you go. Are you sure you want to unsubscribe{" "}
+        {contact.email} from receiving emails?
       </div>
 
       {contact.subscribed ? (
