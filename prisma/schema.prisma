@@ -208,8 +208,11 @@ model NewsletterSubscriber {
   lastEmailIndex Int       @default(1) // 1 = welcome sent on signup; cron progresses to 2, 3, 4
   lastEmailAt    DateTime?
   unsubscribed   Boolean   @default(false)
+  dripLockedAt   DateTime?
+  dripLockedBy   String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   @@index([unsubscribed, lastEmailIndex, subscribedAt])
+  @@index([dripLockedAt])
 }
