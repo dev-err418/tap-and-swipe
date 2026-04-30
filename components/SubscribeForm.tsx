@@ -25,7 +25,7 @@ function Spinner() {
 }
 
 export function SubscribeForm() {
-  const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "ok" | "already" | "error">("idle");
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,10 +40,15 @@ export function SubscribeForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, website }),
       });
-      if (res.ok) {
+      if (!res.ok) {
+        setStatus("error");
+        return;
+      }
+      const data = (await res.json().catch(() => ({}))) as { alreadySubscribed?: boolean };
+      if (!data.alreadySubscribed) {
         fire("home", "subscribe", getVisitorId(), getSessionId("home"));
       }
-      setStatus(res.ok ? "ok" : "error");
+      setStatus(data.alreadySubscribed ? "already" : "ok");
     } catch {
       setStatus("error");
     }
@@ -51,6 +56,9 @@ export function SubscribeForm() {
 
   if (status === "ok") {
     return <p className="mt-10 text-sm font-medium text-emerald-600">Check your inbox! Welcome in.</p>;
+  }
+  if (status === "already") {
+    return <p className="mt-10 text-sm font-medium text-black/70">You&apos;re already on the list.</p>;
   }
 
   return (

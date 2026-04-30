@@ -49,11 +49,12 @@ export async function POST(req: Request) {
     }
 
     const plunkUrl = process.env.PLUNK_API_URL;
+    const plunkSecretKey = process.env.PLUNK_API_KEY;
     // /v1/track only accepts the public (pk_*) key, never the secret key.
-    const plunkKey = process.env.PLUNK_PUBLIC_KEY;
+    const plunkPublicKey = process.env.PLUNK_PUBLIC_KEY;
     const plunkEvent = process.env.PLUNK_NEWSLETTER_EVENT ?? "newsletter_subscribed";
 
-    if (!plunkUrl || !plunkKey) {
+    if (!plunkUrl || !plunkPublicKey) {
       console.error("Missing PLUNK_API_URL or PLUNK_PUBLIC_KEY env vars");
       return NextResponse.json({ error: "Newsletter not configured" }, { status: 500 });
     }
@@ -61,17 +62,54 @@ export async function POST(req: Request) {
     const h = await headers();
     const country = h.get("cf-ipcountry") || undefined;
 
-    // Plunk's /v1/track auto-creates the contact and fires the event, which
-    // triggers the Workflow we configured (welcome → wait 2d → drip 2 → ...).
-    // Re-subscribers are no-ops on contact creation but the event still fires
-    // (Plunk dedupes drip workflows by contact + workflow).
+    // 1. Upsert the contact via /contacts. Plunk returns _meta.isNew so we can
+    //    tell a fresh signup apart from a re-submit (and only ping Discord on
+    //    fresh ones). Best-effort — if /contacts fails we still fire the
+    //    workflow trigger below; we just won't ping Discord.
+    let isNewContact = false;
+    if (plunkSecretKey) {
+      try {
+        const contactsRes = await fetchWithTimeout(
+          `${plunkUrl}/contacts`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${plunkSecretKey}`,
+            },
+            body: JSON.stringify({
+              email: normalizedEmail,
+              subscribed: true,
+              data: country ? { country } : undefined,
+            }),
+          },
+          PLUNK_TIMEOUT_MS
+        );
+        if (contactsRes.ok) {
+          const body = (await contactsRes.json().catch(() => null)) as
+            | { _meta?: { isNew?: boolean } }
+            | null;
+          isNewContact = body?._meta?.isNew === true;
+        } else {
+          const errBody = await contactsRes.text().catch(() => "");
+          console.error("Plunk /contacts error:", contactsRes.status, errBody);
+        }
+      } catch (err) {
+        console.error("Plunk /contacts error:", err);
+      }
+    }
+
+    // 2. Fire the workflow trigger event. /v1/track auto-creates the contact
+    //    if the /contacts call above failed; for fresh contacts this kicks off
+    //    the Welcome → Day 2 → Day 4 → Day 6 sequence. Plunk dedupes workflow
+    //    runs per contact so re-firing on a re-subscriber is safe.
     const res = await fetchWithTimeout(
       `${plunkUrl}/v1/track`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${plunkKey}`,
+          Authorization: `Bearer ${plunkPublicKey}`,
         },
         body: JSON.stringify({
           email: normalizedEmail,
@@ -89,8 +127,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Subscription failed" }, { status: 500 });
     }
 
-    // Discord notification (best-effort, don't block response)
-    if (NEWSLETTER_WEBHOOK) {
+    // Discord notification — only for genuinely new contacts.
+    if (isNewContact && NEWSLETTER_WEBHOOK) {
       try {
         const discordRes = await fetchWithTimeout(
           NEWSLETTER_WEBHOOK,
@@ -121,7 +159,7 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, alreadySubscribed: !isNewContact });
   } catch (err) {
     console.error("Newsletter subscribe error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
