@@ -14,14 +14,16 @@ export default async function UnsubscribePage({
 }) {
   const { contact } = await searchParams;
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center px-6 py-24">
-      <h1 className="mb-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-        Manage your subscription
-      </h1>
-      <p className="mb-10 text-center text-sm text-black/60">
-        Update your Tap & Swipe newsletter preferences.
-      </p>
-      <UnsubscribeCard contactId={contact ?? null} />
-    </main>
+    <section className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+      <div className="w-full max-w-xl">
+        <h1 className="mb-3 text-center text-3xl font-semibold tracking-tight sm:text-4xl">
+          Manage your subscription
+        </h1>
+        <p className="mb-10 text-center text-sm text-black/60">
+          Update your Tap & Swipe newsletter preferences.
+        </p>
+        <UnsubscribeCard contactId={contact ?? null} />
+      </div>
+    </section>
   );
 }
