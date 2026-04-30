@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { prisma } from "@/lib/prisma";
 
 const NEWSLETTER_WEBHOOK = process.env.SUBSCRIBE_DISCORD_WEBHOOK!;
 
@@ -52,6 +53,15 @@ export async function POST(req: Request) {
     console.error("Listmonk error:", res.status, body);
     return NextResponse.json({ error: "Subscription failed" }, { status: 500 });
   }
+
+  // Mirror to local DB so the drip cron can pick them up.
+  // On re-subscribe of an existing row, only flip unsubscribed back to false;
+  // never reset lastEmailIndex/subscribedAt or they'd get the drip again.
+  await prisma.newsletterSubscriber.upsert({
+    where: { email },
+    create: { email, lastEmailIndex: 1, lastEmailAt: new Date() },
+    update: { unsubscribed: false },
+  });
 
   // Send welcome email via Listmonk transactional API
   if (listmonkUser && listmonkPass && welcomeTemplateId) {
