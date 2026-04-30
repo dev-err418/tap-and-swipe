@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function CommunityRedirect({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string; utm_code?: string }>;
 }) {
   const [h, c, params] = await Promise.all([headers(), cookies(), searchParams]);
 
@@ -31,7 +31,7 @@ export default async function CommunityRedirect({
         sessionId: randomUUID(),
         country: h.get("cf-ipcountry") || null,
         referrer,
-        ref: params.ref ?? null,
+        ref: params.utm_code ?? params.ref ?? null,
       },
     })
     .catch(() => {});

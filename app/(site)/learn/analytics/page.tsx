@@ -200,7 +200,7 @@ async function fetchQuizFunnel(since: Date) {
 }
 
 async function fetchPaidBreakdowns(product: string, since: Date) {
-  const [byReferrer, byCountry, totalRow] = await Promise.all([
+  const [byReferrer, byCountry, byRef, totalRow] = await Promise.all([
     prisma.$queryRaw<{ referrer: string | null; count: bigint }[]>`
       SELECT pv.referrer as referrer, COUNT(DISTINCT u."id")::bigint as count
       FROM "User" u
@@ -227,6 +227,20 @@ async function fetchPaidBreakdowns(product: string, since: Date) {
       GROUP BY pv.country
       ORDER BY count DESC
     `,
+    prisma.$queryRaw<{ ref: string | null; count: bigint }[]>`
+      SELECT pv.ref as ref, COUNT(DISTINCT u."id")::bigint as count
+      FROM "User" u
+      INNER JOIN "PageEvent" pv
+        ON pv."visitorId" = u."visitorId"
+        AND pv.product = ${product}
+        AND pv.type = 'page_view'
+      WHERE u."paymentProvider" IS NOT NULL
+        AND u."visitorId" IS NOT NULL
+        AND u."createdAt" >= ${since}
+        AND pv.ref IS NOT NULL
+      GROUP BY pv.ref
+      ORDER BY count DESC
+    `,
     prisma.$queryRaw<[{ total: bigint }]>`
       SELECT COUNT(DISTINCT u."id")::bigint as total
       FROM "User" u
@@ -247,16 +261,22 @@ async function fetchPaidBreakdowns(product: string, since: Date) {
     icon: null as ReactNode,
     count: Number(r.count),
   }));
+  const refRows = byRef.map((r) => ({
+    label: r.ref ?? "(empty)",
+    icon: null as ReactNode,
+    count: Number(r.count),
+  }));
 
   return {
     total: Number(totalRow[0]?.total ?? 0),
     referrers: groupReferrers(referrerRows),
     countries: countryRows,
+    refs: refRows,
   };
 }
 
 async function fetchBreakdowns(product: string, since: Date) {
-  const [byReferrer, byCountry, totalRow, visitorsRow] = await Promise.all([
+  const [byReferrer, byCountry, byRef, totalRow, visitorsRow] = await Promise.all([
     prisma.$queryRaw<{ referrer: string | null; count: bigint }[]>`
       SELECT referrer, COUNT(*)::bigint as count
       FROM "PageEvent"
@@ -269,6 +289,13 @@ async function fetchBreakdowns(product: string, since: Date) {
       FROM "PageEvent"
       WHERE product = ${product} AND "createdAt" >= ${since}
       GROUP BY country
+      ORDER BY count DESC
+    `,
+    prisma.$queryRaw<{ ref: string | null; count: bigint }[]>`
+      SELECT ref, COUNT(*)::bigint as count
+      FROM "PageEvent"
+      WHERE product = ${product} AND "createdAt" >= ${since} AND ref IS NOT NULL
+      GROUP BY ref
       ORDER BY count DESC
     `,
     prisma.$queryRaw<[{ total: bigint }]>`
@@ -289,12 +316,18 @@ async function fetchBreakdowns(product: string, since: Date) {
     icon: null as ReactNode,
     count: Number(r.count),
   }));
+  const refRows = byRef.map((r) => ({
+    label: r.ref ?? "(empty)",
+    icon: null as ReactNode,
+    count: Number(r.count),
+  }));
 
   return {
     total: Number(totalRow[0]?.total ?? 0),
     visitors: Number(visitorsRow[0]?.visitors ?? 0),
     referrers: groupReferrers(referrerRows),
     countries: countryRows,
+    refs: refRows,
   };
 }
 
@@ -383,6 +416,7 @@ export default async function LearnAnalyticsPage({
           subtitle={`${homeSubscribes} subscribers · ${homeConversionPct}% conversion from ${homeEvents.visitors} unique visitors · ${homeEvents.total} page events`}
           referrers={homeEvents.referrers}
           countries={homeEvents.countries}
+          refs={homeEvents.refs}
           total={homeEvents.total}
         />
         <Block
@@ -390,6 +424,7 @@ export default async function LearnAnalyticsPage({
           subtitle={`${communityEvents.total} page events`}
           referrers={communityEvents.referrers}
           countries={communityEvents.countries}
+          refs={communityEvents.refs}
           total={communityEvents.total}
         />
         <Block
@@ -397,6 +432,7 @@ export default async function LearnAnalyticsPage({
           subtitle={`${communityPaidUsers} paid customers · ${conversionPct}% conversion from ${communityEvents.visitors} unique visitors · ${communityPaid.total} with attribution`}
           referrers={communityPaid.referrers}
           countries={communityPaid.countries}
+          refs={communityPaid.refs}
           total={communityPaid.total}
         />
         <Block
@@ -404,6 +440,7 @@ export default async function LearnAnalyticsPage({
           subtitle={`${coachingEvents.total} page events`}
           referrers={coachingEvents.referrers}
           countries={coachingEvents.countries}
+          refs={coachingEvents.refs}
           total={coachingEvents.total}
         />
       </div>
@@ -514,12 +551,14 @@ function Block({
   subtitle,
   referrers,
   countries,
+  refs,
   total,
 }: {
   title: string;
   subtitle: string;
   referrers: DisplayRow[];
   countries: DisplayRow[];
+  refs?: DisplayRow[];
   total: number;
 }) {
   return (
@@ -531,6 +570,9 @@ function Block({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Table title="Traffic sources (top 10)" rows={referrers.slice(0, 10)} total={total} />
         <Table title="Countries (top 10)" rows={countries.slice(0, 10)} total={total} />
+        {refs && refs.length > 0 && (
+          <Table title="By source code (utm_code / ref)" rows={refs.slice(0, 10)} total={total} />
+        )}
       </div>
     </div>
   );
