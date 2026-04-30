@@ -1,0 +1,152 @@
+# Plunk self-hosted, Coolify-ready compose.
+# Plunk's official compose ships an all-in-one container with internal nginx
+# routing by Host header. Coolify's reverse proxy terminates TLS and forwards
+# to port 80 inside the plunk container; the container then routes to the
+# right service (api/dashboard/landing/wiki) based on the requested hostname.
+#
+# Coolify setup steps:
+#   1. New resource → Docker Compose → paste this file
+#   2. Paste env vars from .env.example (set real values)
+#   3. Add domains to the `plunk` service:
+#        - plunk.tap-and-swipe.com         (dashboard)
+#        - plunk-api.tap-and-swipe.com     (api)
+#      Leave the landing/wiki domains undeclared in Coolify — DNS won't resolve
+#      them, so they're unreachable, which is what we want.
+#   4. Cloudflare DNS: add CNAMEs for both subdomains pointing to the Coolify host.
+#      Set proxy to "DNS only" (gray cloud) for initial Let's Encrypt issuance;
+#      flip to proxied after the cert is live if you want CF in front.
+#      NOTE: `mail.tap-and-swipe.com` is reserved for SES bounce handling
+#      (MX + SPF). Do NOT reuse that subdomain.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: plunk
+      POSTGRES_USER: plunk
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plunk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-plunk}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    restart: unless-stopped
+    command: serve
+    environment:
+      - TZ=UTC
+    volumes:
+      - ntfy_cache:/var/cache/ntfy
+      - ntfy_etc:/etc/ntfy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --tries=1 http://localhost:80/v1/health -O - | grep -Eo '\"healthy\"\\s*:\\s*true' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  plunk:
+    image: ghcr.io/useplunk/plunk:latest
+    restart: unless-stopped
+    environment:
+      SERVICE: all
+      NODE_ENV: production
+
+      # DB
+      DATABASE_URL: postgresql://plunk:${DB_PASSWORD}@postgres:5432/plunk
+      DIRECT_DATABASE_URL: postgresql://plunk:${DB_PASSWORD}@postgres:5432/plunk
+      REDIS_URL: redis://redis:6379
+
+      # Security
+      JWT_SECRET: ${JWT_SECRET}
+
+      # Domains. Coolify-routed hosts get DNS; the others are placeholders
+      # so Plunk's internal nginx still boots cleanly without conflicting
+      # server_name directives.
+      API_DOMAIN: plunk-api.tap-and-swipe.com
+      DASHBOARD_DOMAIN: plunk.tap-and-swipe.com
+      LANDING_DOMAIN: plunk-landing.internal.invalid
+      WIKI_DOMAIN: plunk-wiki.internal.invalid
+      USE_HTTPS: "true"
+
+      # AWS SES
+      AWS_SES_REGION: ${AWS_SES_REGION}
+      AWS_SES_ACCESS_KEY_ID: ${AWS_SES_ACCESS_KEY_ID}
+      AWS_SES_SECRET_ACCESS_KEY: ${AWS_SES_SECRET_ACCESS_KEY}
+      SES_CONFIGURATION_SET: ${SES_CONFIGURATION_SET:-plunk-tracking}
+      SES_CONFIGURATION_SET_NO_TRACKING: ${SES_CONFIGURATION_SET_NO_TRACKING:-plunk-no-tracking}
+
+      # S3-compatible storage (the bundled minio above)
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-plunk}
+      S3_ACCESS_KEY_SECRET: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-uploads}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-https://plunk-api.tap-and-swipe.com/uploads}
+      S3_FORCE_PATH_STYLE: "true"
+
+      # ntfy notifications (internal)
+      NTFY_URL: http://ntfy/plunk-notifications
+
+      AUTO_PROJECT_DISABLE: "false"
+    volumes:
+      - plunk_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      ntfy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # SMTP relay ports are not exposed — we don't need other apps to send
+    # through Plunk over SMTP. Uncomment if you change your mind:
+    # ports:
+    #   - "465:465"
+    #   - "587:587"
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  plunk_data:
+  ntfy_cache:
+  ntfy_etc:

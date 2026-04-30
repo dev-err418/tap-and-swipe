@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
 
 const NEWSLETTER_WEBHOOK = process.env.SUBSCRIBE_DISCORD_WEBHOOK!;
-const LISTMONK_TIMEOUT_MS = 10_000;
+const PLUNK_TIMEOUT_MS = 10_000;
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
-}
-
-function basicAuth(user: string, pass: string): string {
-  return `Basic ${Buffer.from(`${user}:${pass}`).toString("base64")}`;
 }
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number) {
@@ -53,77 +48,48 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const listmonkUrl = process.env.LISTMONK_URL;
-    const listUuid = process.env.LISTMONK_LIST_UUID;
-    const listmonkUser = process.env.LISTMONK_API_USER;
-    const listmonkPass = process.env.LISTMONK_API_PASSWORD;
-    const welcomeTemplateId = process.env.LISTMONK_WELCOME_TEMPLATE_ID;
+    const plunkUrl = process.env.PLUNK_API_URL;
+    // /v1/track only accepts the public (pk_*) key, never the secret key.
+    const plunkKey = process.env.PLUNK_PUBLIC_KEY;
+    const plunkEvent = process.env.PLUNK_NEWSLETTER_EVENT ?? "newsletter_subscribed";
 
-    if (!listmonkUrl || !listUuid) {
-      console.error("Missing LISTMONK_URL or LISTMONK_LIST_UUID env vars");
+    if (!plunkUrl || !plunkKey) {
+      console.error("Missing PLUNK_API_URL or PLUNK_PUBLIC_KEY env vars");
       return NextResponse.json({ error: "Newsletter not configured" }, { status: 500 });
     }
 
-    const res = await fetchWithTimeout(
-      `${listmonkUrl}/api/public/subscription`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: normalizedEmail,
-          list_uuids: [listUuid],
-        }),
-      },
-      LISTMONK_TIMEOUT_MS
-    );
-
-    if (!res.ok) {
-      const body = await res.text();
-      console.error("Listmonk error:", res.status, body);
-      return NextResponse.json({ error: "Subscription failed" }, { status: 500 });
-    }
-
-    // Mirror to local DB so the drip cron can pick them up.
-    // On re-subscribe of an existing row, only flip unsubscribed back to false;
-    // never reset lastEmailIndex/subscribedAt or they'd get the drip again.
-    await prisma.newsletterSubscriber.upsert({
-      where: { email: normalizedEmail },
-      create: { email: normalizedEmail, lastEmailIndex: 1, lastEmailAt: new Date() },
-      update: { unsubscribed: false },
-    });
-
-    // Send welcome email via Listmonk transactional API
-    if (listmonkUser && listmonkPass && welcomeTemplateId) {
-      try {
-        const welcomeRes = await fetchWithTimeout(
-          `${listmonkUrl}/api/tx`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: basicAuth(listmonkUser, listmonkPass),
-            },
-            body: JSON.stringify({
-              subscriber_email: normalizedEmail,
-              template_id: Number(welcomeTemplateId),
-              content_type: "html",
-            }),
-          },
-          LISTMONK_TIMEOUT_MS
-        );
-        if (!welcomeRes.ok) {
-          const body = await welcomeRes.text().catch(() => "");
-          console.error("Welcome email error:", welcomeRes.status, body);
-        }
-      } catch (err) {
-        console.error("Welcome email error:", err);
-      }
-    }
-
-    // Discord notification (best-effort, don't block response)
     const h = await headers();
     const country = h.get("cf-ipcountry") || undefined;
 
+    // Plunk's /v1/track auto-creates the contact and fires the event, which
+    // triggers the Workflow we configured (welcome → wait 2d → drip 2 → ...).
+    // Re-subscribers are no-ops on contact creation but the event still fires
+    // (Plunk dedupes drip workflows by contact + workflow).
+    const res = await fetchWithTimeout(
+      `${plunkUrl}/v1/track`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${plunkKey}`,
+        },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          event: plunkEvent,
+          subscribed: true,
+          data: country ? { country } : undefined,
+        }),
+      },
+      PLUNK_TIMEOUT_MS
+    );
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error("Plunk track error:", res.status, body);
+      return NextResponse.json({ error: "Subscription failed" }, { status: 500 });
+    }
+
+    // Discord notification (best-effort, don't block response)
     if (NEWSLETTER_WEBHOOK) {
       try {
         const discordRes = await fetchWithTimeout(
@@ -145,7 +111,7 @@ export async function POST(req: Request) {
               ],
             }),
           },
-          LISTMONK_TIMEOUT_MS
+          PLUNK_TIMEOUT_MS
         );
         if (!discordRes.ok) {
           console.error("Newsletter Discord webhook error:", discordRes.status);
