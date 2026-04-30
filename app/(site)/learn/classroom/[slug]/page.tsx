@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { CATEGORIES } from "@/lib/roadmap";
+import { CATEGORIES, isStarterLocked } from "@/lib/roadmap";
 import LessonListClient from "@/components/roadmap/LessonListClient";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -31,8 +31,8 @@ export default async function CategoryPage({
   const isEffectivelyStarter =
     user?.tier === "starter" || (isAdmin && sp.preview === "starter");
 
-  // Starter (Community plan) cannot access the boilerplate category.
-  if (isEffectivelyStarter && slug === "build-with-boilerplate") {
+  // Starter (Community plan) cannot access locked categories.
+  if (isEffectivelyStarter && isStarterLocked(slug)) {
     redirect("/learn/classroom" + (sp.preview === "starter" ? "?preview=starter" : ""));
   }
 

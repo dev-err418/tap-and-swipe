@@ -321,9 +321,17 @@ Done. You can now clone repos, push code, and use Git anywhere on your Mac.`,
     description: "Step-by-step setup of the boilerplate for you project",
     type: "video",
     youtubeUrl: "https://youtu.be/GJrtl5IfTfU",
-    markdownContent: `\`\`\`bash
-git clone https://github.com/App-Sprint/expo-boilerplate.git
-\`\`\``,
+    markdownContent: `The boilerplate lives in a private GitHub repo, so you need access before you can clone it.
+
+**Step 1.** Send a DM on Discord to Arthur and share your GitHub username. He'll send you an invite to the repo, then accept it from your GitHub notifications.
+
+**Step 2.** Once you've accepted the invite, open a terminal in the folder where you want the project to live and clone the repo:
+
+\`\`\`bash
+git clone https://github.com/getappsprint/expo-boilerplate.git
+\`\`\`
+
+From here, follow the video to finish the setup.`,
     order: 5,
   },
   {
@@ -583,15 +591,15 @@ $5/week feels different than 40kr/week. Price for the market, not just for the U
     order: 1,
   },
   {
-    category: "launch-and-grow",
+    category: "scaling",
     title: "Apple Ads: your first campaign setup",
     description: "Set up Apple Search Ads to drive targeted installs",
     type: "video",
     youtubeUrl: "https://www.youtube.com/watch?v=3OtfqONYR80",
-    order: 2,
+    order: 1,
   },
   {
-    category: "launch-and-grow",
+    category: "scaling",
     title: "Target the US (or any country) on TikTok with a proxy",
     description: "Set up a spare iPhone with an ISP proxy to post TikTok content in any country",
     type: "markdown",
@@ -626,10 +634,10 @@ If either check fails, fix your proxy configuration before proceeding.
 **9. Download TikTok and sign up with Apple.** Since your iCloud account is US-based, Sign in with Apple goes through cleanly.
 
 **10. Warm up the account** for 2-3 days before posting. See the tutorial below.`,
-    order: 3,
+    order: 2,
   },
   {
-    category: "launch-and-grow",
+    category: "scaling",
     title: "Warm up a fresh TikTok account",
     description: "Build trust with the algorithm before posting content",
     type: "markdown",
@@ -673,7 +681,7 @@ Add a neutral profile picture and a simple bio (no links, no selling). Post 2-3 
 - When a format stops working (6+ posts under baseline), switch to something new
 - If views drop: stop posting that format, wait 48h, test something different
 - Pausing preserves account health. Pushing harder when things aren't working makes it worse`,
-    order: 4,
+    order: 3,
   },
   {
     category: "launch-and-grow",
@@ -813,7 +821,7 @@ Don't cross-post TikTok content to Instagram with a watermark. Instagram deprior
   },
 
   {
-    category: "launch-and-grow",
+    category: "scaling",
     title: "A/B test your paywall with RevenueCat Experiments",
     description: "Set up experiments to test pricing, trials, and paywall design without shipping a new build",
     type: "markdown",
@@ -918,11 +926,8 @@ If you've never tested your paywall:
 - One experiment at a time per audience. Running multiple tests on the same users pollutes results.
 - When you find a winner, test it against a new variant. Keep going.
 - Experiments requires a RevenueCat Pro or Enterprise plan.`,
-    order: 7,
+    order: 4,
   },
-
-  // Scaling (empty — placeholder)
-  // No lessons for this category
 
   // Weekly Call Replays
   {
@@ -983,6 +988,21 @@ async function main() {
     await prisma.lesson
       .delete({ where: { id: `seed-build-${order}` } })
       .catch(() => {});
+  }
+
+  // One-shot migration: 4 lessons moved from launch-and-grow to scaling.
+  // Re-point existing LessonProgress so users keep their completion state.
+  const lessonMoves: Array<[string, string]> = [
+    ["seed-launch-and-grow-2", "seed-scaling-1"],
+    ["seed-launch-and-grow-3", "seed-scaling-2"],
+    ["seed-launch-and-grow-4", "seed-scaling-3"],
+    ["seed-launch-and-grow-7", "seed-scaling-4"],
+  ];
+  for (const [oldId, newId] of lessonMoves) {
+    await prisma.lessonProgress
+      .updateMany({ where: { lessonId: oldId }, data: { lessonId: newId } })
+      .catch(() => {});
+    await prisma.lesson.delete({ where: { id: oldId } }).catch(() => {});
   }
 
   console.log(`Seeded ${lessons.length} lessons.`);

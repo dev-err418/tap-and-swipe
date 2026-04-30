@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { CATEGORIES } from "@/lib/roadmap";
+import { CATEGORIES, isStarterLocked } from "@/lib/roadmap";
 import CategoryCard from "@/components/roadmap/CategoryCard";
 import AdminStatsButton from "@/components/roadmap/AdminStatsButton";
 
@@ -73,7 +73,7 @@ export default async function ClassroomPage({
               totalLessons={cat.totalLessons}
               image={"image" in cat ? (cat.image as string) : undefined}
               index={i}
-              locked={isStarter && cat.slug === "build-with-boilerplate"}
+              locked={isStarter && isStarterLocked(cat.slug)}
             />
           ))}
       </div>
