@@ -409,6 +409,8 @@ function mapCategories(
 interface SensorTowerData {
   topCountries?: string[];
   genres?: string[];
+  rating?: number;
+  ratingCount?: number;
 }
 
 // Keyed by app ID (numeric iOS ID or Android package name)
@@ -451,7 +453,16 @@ async function fetchSensorTowerBatch(
         ? mapCategories(platform, categories)
         : undefined;
 
-      map.set(appId, { topCountries, genres });
+      // global_rating_count counts ratings across every storefront, so we
+      // prefer it over iTunes' per-country count and Google Play's number.
+      const rating =
+        typeof app.rating === "number" ? (app.rating as number) : undefined;
+      const ratingCount =
+        typeof app.global_rating_count === "number"
+          ? (app.global_rating_count as number)
+          : undefined;
+
+      map.set(appId, { topCountries, genres, rating, ratingCount });
     }
 
     console.log(`  ✓ Got data for ${map.size} app(s)`);
@@ -517,6 +528,10 @@ async function main() {
       if (appData.ios && stData) {
         appData.ios.topCountries = stData.topCountries;
         if (stData.genres?.length) appData.ios.genres = stData.genres;
+        // Override the storefront-specific iTunes counts with the global
+        // numbers when SensorTower has them.
+        if (stData.rating != null) appData.ios.rating = stData.rating;
+        if (stData.ratingCount != null) appData.ios.ratingCount = stData.ratingCount;
       }
     }
 
@@ -526,6 +541,8 @@ async function main() {
       if (appData.android && stData) {
         appData.android.topCountries = stData.topCountries;
         if (stData.genres?.length) appData.android.genres = stData.genres;
+        if (stData.rating != null) appData.android.rating = stData.rating;
+        if (stData.ratingCount != null) appData.android.ratingCount = stData.ratingCount;
       }
     }
 

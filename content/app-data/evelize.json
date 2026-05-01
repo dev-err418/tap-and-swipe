@@ -1,8 +1,7 @@
 {
-  "lastUpdated": "2026-05-01T10:12:09.053Z",
+  "lastUpdated": "2026-05-01T10:26:28.455Z",
   "ios": {
     "title": "Video Teleprompter - Evelize",
-    "subtitle": "Prompter: Record & Edit Videos",
     "icon": "/apps/evelize/icon-ios.webp",
     "screenshots": [
       "/apps/evelize/ios-1.webp",
@@ -12,7 +11,7 @@
       "/apps/evelize/ios-5.webp"
     ],
     "rating": 4.8,
-    "ratingCount": 125,
+    "ratingCount": 479,
     "price": "Free",
     "storeUrl": "https://apps.apple.com/us/app/video-teleprompter-evelize/id6446815796?uo=4",
     "topCountries": [
