@@ -307,12 +307,24 @@ async function fetchSensorTowerBatch(
   if (appIds.length === 0) return map;
 
   const ids = appIds.join(",");
-  console.log(`\nFetching SensorTower (${platform}) for ${appIds.length} app(s)...`);
+  // SensorTower's public API blocks/rate-limits many datacenter IPs (GitHub
+  // Actions runners included). When SENSORTOWER_PROXY_URL is set, we route
+  // through our own /api/internal/sensortower endpoint, which forwards the
+  // request from the production server's IP (which SensorTower allows).
+  const proxyUrl = process.env.SENSORTOWER_PROXY_URL;
+  const proxySecret = process.env.SENSORTOWER_PROXY_SECRET;
+  const url = proxyUrl
+    ? `${proxyUrl}?platform=${platform}&app_ids=${encodeURIComponent(ids)}`
+    : `https://app.sensortower.com/api/${platform}/apps?app_ids=${ids}`;
+  const headers: Record<string, string> =
+    proxyUrl && proxySecret ? { authorization: `Bearer ${proxySecret}` } : {};
+
+  console.log(
+    `\nFetching SensorTower (${platform}) for ${appIds.length} app(s)${proxyUrl ? " via proxy" : ""}...`
+  );
 
   try {
-    const res = await fetch(
-      `https://app.sensortower.com/api/${platform}/apps?app_ids=${ids}`
-    );
+    const res = await fetch(url, { headers });
     if (!res.ok) {
       console.warn(`  ⚠ SensorTower ${platform} returned ${res.status}, skipping`);
       return map;
