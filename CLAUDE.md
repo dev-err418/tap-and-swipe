@@ -110,6 +110,26 @@ All protected by `CRON_SECRET` header.
 
 `next.config.ts` redirects India/Brazil traffic from `/app-sprint` to `/app-sprint-community` using Cloudflare's `cf-ipcountry` header. The same header is read in checkout flows and stored in PageEvent records.
 
+### Drafts
+
+Long-form content (episodes, case studies) can be authored in private at `/drafts/{id}` before going live. Drafts live in `content/drafts/{id}.mdx`, render via `app/(site)/drafts/[id]/page.tsx`, and reuse the same `<EpisodeContent>` renderer as published episodes.
+
+**Privacy guarantees**: drafts are excluded from the sitemap (`app/sitemap.ts`), RSS (`app/rss.xml/route.ts`), homepage (`app/(site)/page.tsx`), and the `/episodes` listing — all of which read `content/episodes/`, never `content/drafts/`. The route also sets `robots: { index: false, follow: false, nocache: true }` and uses `dynamic = "force-dynamic"` (no static generation). `/drafts` is in the robots.txt disallow list. The id is a random 8-char hex (~4B values) so the URL is unguessable, but it's not a real auth boundary — anyone with the URL can view it. Don't put truly sensitive material in a draft.
+
+**Workflow**:
+
+```bash
+npx tsx scripts/new-draft.ts "My title"            # writes content/drafts/{id}.mdx, prints URLs
+# edit the file, share /drafts/{id} for review
+npx tsx scripts/publish-draft.ts {id} {slug}             # episode only
+npx tsx scripts/publish-draft.ts {id} {slug} --case-study  # case study only
+npx tsx scripts/publish-draft.ts {id} {slug} --pair        # both, cross-linked
+```
+
+`--pair` is the typical mode: the long-form draft body becomes the case study, and a minimal episode shell is written at the same slug with `caseStudySlug` / `episodeSlug` already wired up. Edit the episode after to add the `youtubeId` and any video-specific intro.
+
+Frontmatter shape matches an episode (`title`, `description`, `date`, `guest`, `guestInfo`, `youtubeId`, `appSlug`, `appStoreId`, `playStoreId`, `revenueAtRecording`, `recordedAt`, `tags`, `image`). The publish script strips empty-string fields so the production mdx isn't polluted with scaffold blanks, and drops platform-specific fields (`youtubeId` from case studies, `updatedDate`/`imageAlt`/`episodeSlug` from episodes). After publishing with `appSlug` + store IDs, run `scripts/update-app-data.ts` once locally to populate the app card JSON (see next section).
+
 ### Episode & Case Study App Cards
 
 Episode and case-study pages render `<AppShowcase>` (`components/app-showcase.tsx`) showing the featured app's icon, screenshots, rating, top countries, and the founder's revenue at the time of recording.

@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/learn"],
+        disallow: ["/api/", "/learn", "/drafts"],
       },
     ],
     sitemap: "https://tap-and-swipe.com/sitemap.xml",
