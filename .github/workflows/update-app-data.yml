@@ -20,7 +20,7 @@ jobs:
       - run: npx tsx scripts/update-app-data.ts
         env:
           SENSORTOWER_PROXY_URL: ${{ secrets.SENSORTOWER_PROXY_URL }}
-          SENSORTOWER_PROXY_SECRET: ${{ secrets.SENSORTOWER_PROXY_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: refresh app-data"

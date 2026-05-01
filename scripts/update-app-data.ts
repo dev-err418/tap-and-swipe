@@ -311,13 +311,14 @@ async function fetchSensorTowerBatch(
   // Actions runners included). When SENSORTOWER_PROXY_URL is set, we route
   // through our own /api/internal/sensortower endpoint, which forwards the
   // request from the production server's IP (which SensorTower allows).
+  // Auth reuses CRON_SECRET, same pattern as /api/cron/* routes.
   const proxyUrl = process.env.SENSORTOWER_PROXY_URL;
-  const proxySecret = process.env.SENSORTOWER_PROXY_SECRET;
+  const cronSecret = process.env.CRON_SECRET;
   const url = proxyUrl
     ? `${proxyUrl}?platform=${platform}&app_ids=${encodeURIComponent(ids)}`
     : `https://app.sensortower.com/api/${platform}/apps?app_ids=${ids}`;
   const headers: Record<string, string> =
-    proxyUrl && proxySecret ? { authorization: `Bearer ${proxySecret}` } : {};
+    proxyUrl && cronSecret ? { authorization: `Bearer ${cronSecret}` } : {};
 
   console.log(
     `\nFetching SensorTower (${platform}) for ${appIds.length} app(s)${proxyUrl ? " via proxy" : ""}...`
