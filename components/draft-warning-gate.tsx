@@ -36,7 +36,12 @@ export function DraftWarningGate({ children }: { children: React.ReactNode }) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button onClick={() => setAcknowledged(true)}>OK</Button>
+            <Button
+              className="cursor-pointer"
+              onClick={() => setAcknowledged(true)}
+            >
+              OK
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
