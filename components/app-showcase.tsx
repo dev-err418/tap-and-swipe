@@ -138,7 +138,9 @@ export function AppShowcase({
     combinedRating = androidRating;
   }
 
-  const showRating = totalCount > 0;
+  // Always show the rating tile so brand-new apps with 0 ratings still
+  // render the card (value collapses to "-", label collapses to "Ratings ()").
+  const showRating = true;
   const ratingValue =
     combinedRating != null && combinedRating > 0
       ? (Math.round(combinedRating * 10) / 10).toFixed(1)
