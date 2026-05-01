@@ -1,7 +1,4 @@
-"use client";
-
-import { useState } from "react";
-import type { AppData, PlatformData } from "@/lib/app-data";
+import type { AppData } from "@/lib/app-data";
 import { SiApple, SiAndroid } from "@icons-pack/react-simple-icons";
 import { ArrowUpRight } from "lucide-react";
 
@@ -56,38 +53,35 @@ function timeAgo(dateStr: string): string {
   return `${months} months ago`;
 }
 
+function formatRecordedAt(value: string): string | null {
+  // Accept "YYYY-MM" or "YYYY-MM-DD"
+  const match = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(value);
+  if (!match) return null;
+  const [, year, month] = match;
+  const date = new Date(Number(year), Number(month) - 1, 1);
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
 // ── Stat Card ──────────────────────────────────────────────────────
 
 function StatCard({
   label,
   value,
-  estimate,
   children,
 }: {
-  label: string;
+  label: React.ReactNode;
   value?: string;
-  estimate?: boolean;
   children?: React.ReactNode;
 }) {
   return (
     <div className="relative flex min-w-0 flex-1 flex-col rounded-lg border border-border px-4 py-3">
-      <p key={label} className="animate-fade-in text-xs text-muted-foreground">{label}</p>
-      {estimate && (
-        <span className="group absolute -top-0.5 right-2">
-          <span className="cursor-help text-[11px] text-muted-foreground/50">
-            ?
-          </span>
-          <span className="pointer-events-none absolute right-0 top-full z-10 mt-1 w-48 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
-            This is an estimate and may not reflect exact figures. Use as an indicator only.
-          </span>
-        </span>
-      )}
+      <p className="flex items-center gap-1 text-xs text-muted-foreground">{label}</p>
       {value ? (
         <div className="flex flex-1 items-center justify-center">
-          <span key={value} className="animate-fade-in text-4xl font-bold">{value}</span>
+          <span className="text-4xl font-bold">{value}</span>
         </div>
       ) : (
-        <div key={String(children)} className="mt-1 animate-fade-in text-sm font-medium">{children}</div>
+        <div className="mt-1 text-sm font-medium">{children}</div>
       )}
     </div>
   );
@@ -95,26 +89,61 @@ function StatCard({
 
 // ── Component ──────────────────────────────────────────────────────
 
-type Platform = "ios" | "android";
-
-export function AppShowcase({ data }: { data: AppData }) {
-  const hasIos = !!data.ios;
-  const hasAndroid = !!data.android;
-  const hasBoth = hasIos && hasAndroid;
-  const defaultPlatform: Platform = hasIos ? "ios" : "android";
-
-  const [activePlatform, setActivePlatform] = useState<Platform>(defaultPlatform);
-
+export function AppShowcase({
+  data,
+  revenueAtRecording,
+  recordedAt,
+}: {
+  data: AppData;
+  revenueAtRecording?: string;
+  recordedAt?: string;
+}) {
+  // iOS preferred for everything visible (icon, screenshots, rating, top countries).
+  // Falls back to Android only when there is no iOS data at all.
   const primary = data.ios || data.android;
   if (!primary) return null;
 
-  const active: PlatformData = (activePlatform === "ios" ? data.ios : data.android) || primary;
+  const hasIos = !!data.ios?.storeUrl;
+  const hasAndroid = !!data.android?.storeUrl;
+  const hasBothStores = hasIos && hasAndroid;
+
+  const recordedAtLabel = recordedAt ? formatRecordedAt(recordedAt) : null;
+  const dateSuffix = recordedAtLabel ? ` (as of ${recordedAtLabel})` : "";
+  const revenueLabel = `Revenue${dateSuffix}`;
+
+  // Combined rating across iOS + Android (weighted by review count).
+  const iosRating = data.ios?.rating ?? null;
+  const iosCount = data.ios?.ratingCount ?? 0;
+  const androidRating = data.android?.rating ?? null;
+  const androidCount = data.android?.ratingCount ?? 0;
+  const totalCount = iosCount + androidCount;
+
+  let combinedRating: number | null = null;
+  if (iosRating != null && androidRating != null && totalCount > 0) {
+    combinedRating =
+      (iosRating * iosCount + androidRating * androidCount) / totalCount;
+  } else if (iosRating != null) {
+    combinedRating = iosRating;
+  } else if (androidRating != null) {
+    combinedRating = androidRating;
+  }
+
+  const showRating = combinedRating != null && totalCount > 0;
+  const showRatingBreakdown = hasBothStores && iosCount > 0 && androidCount > 0;
+  const ratingLabel: React.ReactNode = showRatingBreakdown ? (
+    <>
+      Ratings ({totalCount.toLocaleString()} -{" "}
+      <SiApple size={10} color="currentColor" /> {iosCount.toLocaleString()} +{" "}
+      <SiAndroid size={10} color="currentColor" /> {androidCount.toLocaleString()})
+    </>
+  ) : (
+    `Ratings (${totalCount.toLocaleString()})`
+  );
 
   const hasStats =
-    active.rating != null ||
-    active.downloadsEstimate ||
-    active.revenueEstimate ||
-    active.topCountries?.length;
+    showRating ||
+    !!revenueAtRecording ||
+    !!primary.topCountries?.length;
 
   return (
     <div className="my-8 overflow-hidden rounded-xl border border-border bg-card">
@@ -124,29 +153,16 @@ export function AppShowcase({ data }: { data: AppData }) {
           Updated {timeAgo(data.lastUpdated)}
         </span>
         <div className="flex items-start gap-4">
-          {/* App icons */}
-          <div className="flex shrink-0 items-end -space-x-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={primary.icon}
-              alt={primary.title}
-              width={64}
-              height={64}
-              className="h-16 w-16 rounded-[14px] ring-2 ring-card"
-            />
-            {hasBoth && data.android && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={data.android.icon}
-                alt={`${data.android.title} (Android)`}
-                width={36}
-                height={36}
-                className="h-9 w-9 rounded-[8px] ring-2 ring-card"
-              />
-            )}
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={primary.icon}
+            alt={primary.title}
+            width={64}
+            height={64}
+            className="h-16 w-16 shrink-0 rounded-[14px] ring-2 ring-card"
+          />
 
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h3 className="font-semibold leading-snug">{primary.title}</h3>
             <p className="mt-0.5 text-sm text-muted-foreground">
               {primary.genres?.[0] || primary.subtitle}
@@ -155,68 +171,57 @@ export function AppShowcase({ data }: { data: AppData }) {
               <p className="mt-1 text-sm text-muted-foreground">{primary.price}</p>
             )}
           </div>
-        </div>
 
-        {/* Store link + platform toggle */}
-        <div className="mt-4 flex items-center justify-between">
-          {/* "See on ..." link — follows active platform */}
-          {active.storeUrl && (
-            <a
-              href={active.storeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              See on {activePlatform === "ios" ? "App Store" : "Google Play"}
-              <ArrowUpRight size={14} />
-            </a>
-          )}
-          {hasBoth && (
-            <div className="flex rounded-lg border border-border p-0.5">
-              <button
-                onClick={() => setActivePlatform("ios")}
-                className={`inline-flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                  activePlatform === "ios"
-                    ? "bg-foreground/10 text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <SiApple size={12} color="currentColor" /> iOS
-              </button>
-              <button
-                onClick={() => setActivePlatform("android")}
-                className={`inline-flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                  activePlatform === "android"
-                    ? "bg-foreground/10 text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <SiAndroid size={12} color="currentColor" /> Android
-              </button>
+          {/* Store links — bottom-right of the header row */}
+          {(hasIos || hasAndroid) && (
+            <div className="flex shrink-0 items-center gap-1.5 self-end">
+              {data.ios?.storeUrl && (
+                <a
+                  href={data.ios.storeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="See on App Store"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+                >
+                  <SiApple size={12} color="currentColor" />
+                  <span className="hidden sm:inline">App Store</span>
+                  <ArrowUpRight size={12} />
+                </a>
+              )}
+              {data.android?.storeUrl && (
+                <a
+                  href={data.android.storeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="See on Google Play"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+                >
+                  <SiAndroid size={12} color="currentColor" />
+                  <span className="hidden sm:inline">Google Play</span>
+                  <ArrowUpRight size={12} />
+                </a>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Stat cards — react to platform toggle */}
+      {/* Stat cards (iOS data) */}
       {hasStats && (
         <div className="flex items-stretch gap-3 overflow-x-auto px-5 pb-4 scrollbar-none">
-          {active.rating != null && active.ratingCount != null && (
+          {showRating && combinedRating != null && (
             <StatCard
-              label={`Rating (${active.ratingCount.toLocaleString()})`}
-              value={(Math.round(active.rating * 10) / 10).toFixed(1)}
+              label={ratingLabel}
+              value={(Math.round(combinedRating * 10) / 10).toFixed(1)}
             />
           )}
-          {active.downloadsEstimate && (
-            <StatCard label="Downloads / mo" value={active.downloadsEstimate} estimate />
+          {revenueAtRecording && (
+            <StatCard label={revenueLabel} value={revenueAtRecording} />
           )}
-          {active.revenueEstimate && (
-            <StatCard label="Revenue / mo" value={active.revenueEstimate} estimate />
-          )}
-          {active.topCountries && active.topCountries.length > 0 && (
+          {primary.topCountries && primary.topCountries.length > 0 && (
             <StatCard label="Top countries">
               <div className="flex flex-col gap-0.5">
-                {active.topCountries.map((c) => (
+                {primary.topCountries.map((c) => (
                   <span key={c}>{countryFlag(c)} {countryName(c)}</span>
                 ))}
               </div>
@@ -225,15 +230,15 @@ export function AppShowcase({ data }: { data: AppData }) {
         </div>
       )}
 
-      {/* Screenshots — based on active platform */}
-      {active.screenshots.length > 0 && (
+      {/* Screenshots (iOS) */}
+      {primary.screenshots.length > 0 && (
         <div className="flex gap-3 overflow-x-auto px-5 pb-5 scrollbar-none">
-          {active.screenshots.map((src, i) => (
+          {primary.screenshots.map((src, i) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              key={`${activePlatform}-${i}`}
+              key={i}
               src={src}
-              alt={`${activePlatform === "ios" ? "iOS" : "Android"} screenshot ${i + 1}`}
+              alt={`Screenshot ${i + 1}`}
               width={280}
               height={560}
               className="h-[280px] w-auto shrink-0 rounded-lg"

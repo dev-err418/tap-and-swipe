@@ -278,7 +278,11 @@ export default async function EpisodePage({
         {/* App showcase */}
         {appData && (
           <div className="mt-10">
-            <AppShowcase data={appData} />
+            <AppShowcase
+              data={appData}
+              revenueAtRecording={episode.revenueAtRecording}
+              recordedAt={episode.recordedAt}
+            />
           </div>
         )}
 

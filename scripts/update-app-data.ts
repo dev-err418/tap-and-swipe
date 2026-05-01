@@ -37,8 +37,6 @@ interface PlatformData {
   price: string;
   genres?: string[];
   storeUrl?: string;
-  downloadsEstimate?: string;
-  revenueEstimate?: string;
   topCountries?: string[];
 }
 
@@ -294,8 +292,6 @@ function mapCategories(
 // ── SensorTower (batched) ──────────────────────────────────────────
 
 interface SensorTowerData {
-  downloadsEstimate?: string;
-  revenueEstimate?: string;
   topCountries?: string[];
   genres?: string[];
 }
@@ -331,24 +327,13 @@ async function fetchSensorTowerBatch(
       const appId = String(app.app_id ?? app.bundle_id ?? "");
       if (!appId) continue;
 
-      const downloads = app.humanized_worldwide_last_month_downloads as
-        | { string: string }
-        | undefined;
-      const revenue = app.humanized_worldwide_last_month_revenue as
-        | { string: string }
-        | undefined;
       const topCountries = app.top_countries as string[] | undefined;
       const categories = app.categories as Array<number | string> | undefined;
       const genres = categories?.length
         ? mapCategories(platform, categories)
         : undefined;
 
-      map.set(appId, {
-        downloadsEstimate: downloads?.string?.replace(/k\b/g, "K").replace(/< /g, "<"),
-        revenueEstimate: revenue?.string?.replace(/k\b/g, "K").replace(/< /g, "<"),
-        topCountries,
-        genres,
-      });
+      map.set(appId, { topCountries, genres });
     }
 
     console.log(`  ✓ Got data for ${map.size} app(s)`);
@@ -411,8 +396,6 @@ async function main() {
       appData.ios = await fetchIosData(app.appStoreId, app.appSlug);
       const stData = stIos.get(app.appStoreId);
       if (appData.ios && stData) {
-        appData.ios.downloadsEstimate = stData.downloadsEstimate;
-        appData.ios.revenueEstimate = stData.revenueEstimate;
         appData.ios.topCountries = stData.topCountries;
         if (stData.genres?.length) appData.ios.genres = stData.genres;
       }
@@ -422,8 +405,6 @@ async function main() {
       appData.android = await fetchAndroidData(app.playStoreId, app.appSlug);
       const stData = stAndroid.get(app.playStoreId);
       if (appData.android && stData) {
-        appData.android.downloadsEstimate = stData.downloadsEstimate;
-        appData.android.revenueEstimate = stData.revenueEstimate;
         appData.android.topCountries = stData.topCountries;
         if (stData.genres?.length) appData.android.genres = stData.genres;
       }

@@ -169,7 +169,9 @@ function FounderCard({ guest }: { guest: GuestInfo }) {
 function createMdxComponents(
   slugifyFn: (text: string) => string,
   guestInfo?: GuestInfo,
-  appData?: AppData | null
+  appData?: AppData | null,
+  revenueAtRecording?: string,
+  recordedAt?: string
 ) {
   return {
     FounderCard: () =>
@@ -200,7 +202,13 @@ function createMdxComponents(
             className="mt-12 mb-4 text-2xl font-semibold tracking-tight scroll-mt-24"
             {...props}
           />
-          {isAppSection && appData && <AppShowcase data={appData} />}
+          {isAppSection && appData && (
+            <AppShowcase
+              data={appData}
+              revenueAtRecording={revenueAtRecording}
+              recordedAt={recordedAt}
+            />
+          )}
         </>
       );
     },
@@ -303,7 +311,13 @@ export default async function CaseStudyPage({
 
   const appData = getAppData(cs.appSlug || slug);
   const tocItems = extractToc(cs.content);
-  const mdxComponents = createMdxComponents(slugify, cs.guestInfo, appData);
+  const mdxComponents = createMdxComponents(
+    slugify,
+    cs.guestInfo,
+    appData,
+    cs.revenueAtRecording,
+    cs.recordedAt
+  );
 
   const jsonLd = [
     {

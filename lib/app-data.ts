@@ -13,8 +13,6 @@ export interface PlatformData {
   price: string;
   genres?: string[];
   storeUrl?: string;
-  downloadsEstimate?: string;
-  revenueEstimate?: string;
   topCountries?: string[];
 }
 

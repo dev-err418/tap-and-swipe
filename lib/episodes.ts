@@ -17,6 +17,8 @@ export interface EpisodeMeta {
   appSlug?: string;
   appStoreId?: string;
   playStoreId?: string;
+  revenueAtRecording?: string;
+  recordedAt?: string;
   tags?: string[];
   image?: string;
   caseStudySlug?: string;
@@ -50,6 +52,8 @@ export function getAllEpisodes(): EpisodeMeta[] {
         appSlug: data.appSlug,
         appStoreId: data.appStoreId,
         playStoreId: data.playStoreId,
+        revenueAtRecording: data.revenueAtRecording,
+        recordedAt: data.recordedAt,
         tags: data.tags,
         image: data.image,
         caseStudySlug: data.caseStudySlug,
@@ -76,6 +80,8 @@ export function getEpisodeBySlug(slug: string): Episode | null {
     appSlug: data.appSlug,
     appStoreId: data.appStoreId,
     playStoreId: data.playStoreId,
+    revenueAtRecording: data.revenueAtRecording,
+    recordedAt: data.recordedAt,
     tags: data.tags,
     image: data.image,
     caseStudySlug: data.caseStudySlug,
