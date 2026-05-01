@@ -53,6 +53,16 @@ function timeAgo(dateStr: string): string {
   return `${months} months ago`;
 }
 
+function formatCount(n: number): string {
+  if (n < 1000) return n.toLocaleString();
+  if (n < 1_000_000) {
+    const k = n / 1000;
+    return (k < 100 ? k.toFixed(1).replace(/\.0$/, "") : Math.round(k).toString()) + "K";
+  }
+  const m = n / 1_000_000;
+  return (m < 100 ? m.toFixed(1).replace(/\.0$/, "") : Math.round(m).toString()) + "M";
+}
+
 function formatRecordedAt(value: string): string | null {
   // Accept "YYYY-MM" or "YYYY-MM-DD"
   const match = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(value);
@@ -128,19 +138,23 @@ export function AppShowcase({
     combinedRating = androidRating;
   }
 
-  const showRating = combinedRating != null && totalCount > 0;
+  const showRating = totalCount > 0;
+  const ratingValue =
+    combinedRating != null && combinedRating > 0
+      ? (Math.round(combinedRating * 10) / 10).toFixed(1)
+      : "-";
   const ratingLabel: React.ReactNode = (
     <>
       Ratings (
       {iosCount > 0 && (
         <>
-          <SiApple size={10} color="currentColor" /> {iosCount.toLocaleString()}
+          <SiApple size={10} color="currentColor" /> {formatCount(iosCount)}
         </>
       )}
       {iosCount > 0 && androidCount > 0 && " + "}
       {androidCount > 0 && (
         <>
-          <SiAndroid size={10} color="currentColor" /> {androidCount.toLocaleString()}
+          <SiAndroid size={10} color="currentColor" /> {formatCount(androidCount)}
         </>
       )}
       )
@@ -224,11 +238,8 @@ export function AppShowcase({
       {/* Stat cards (iOS data) */}
       {hasStats && (
         <div className="flex items-stretch gap-3 overflow-x-auto px-5 pb-4 scrollbar-none">
-          {showRating && combinedRating != null && (
-            <StatCard
-              label={ratingLabel}
-              value={(Math.round(combinedRating * 10) / 10).toFixed(1)}
-            />
+          {showRating && (
+            <StatCard label={ratingLabel} value={ratingValue} />
           )}
           {revenueAtRecording && (
             <StatCard label={revenueLabel} value={revenueAtRecording} />
