@@ -173,7 +173,7 @@ export function AppShowcase({
               <p className="mt-1 text-sm text-muted-foreground">
                 {primary.price}
                 {primary.price && primary.genres?.[0] && (
-                  <span className="mx-1.5 text-muted-foreground/50">•</span>
+                  <span className="mx-2.5 text-muted-foreground/50">•</span>
                 )}
                 {primary.genres?.[0]}
               </p>
