@@ -164,11 +164,19 @@ export function AppShowcase({
 
           <div className="min-w-0 flex-1">
             <h3 className="font-semibold leading-snug">{primary.title}</h3>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {primary.genres?.[0] || primary.subtitle}
-            </p>
-            {primary.price && (
-              <p className="mt-1 text-sm text-muted-foreground">{primary.price}</p>
+            {primary.subtitle && (
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {primary.subtitle}
+              </p>
+            )}
+            {(primary.price || primary.genres?.[0]) && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {primary.price}
+                {primary.price && primary.genres?.[0] && (
+                  <span className="mx-1.5 text-muted-foreground/50">•</span>
+                )}
+                {primary.genres?.[0]}
+              </p>
             )}
           </div>
 
