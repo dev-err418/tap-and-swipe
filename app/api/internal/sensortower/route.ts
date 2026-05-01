@@ -22,7 +22,16 @@ export async function GET(request: NextRequest) {
   }
 
   const upstream = `https://app.sensortower.com/api/${platform}/apps?app_ids=${encodeURIComponent(appIds)}`;
-  const res = await fetch(upstream);
+  const res = await fetch(upstream, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+      Accept: "application/json, text/plain, */*",
+      "Accept-Language": "en-US,en;q=0.9",
+      Referer: "https://app.sensortower.com/",
+      Origin: "https://app.sensortower.com",
+    },
+  });
   const body = await res.text();
 
   return new NextResponse(body, {
