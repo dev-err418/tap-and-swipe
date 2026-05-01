@@ -16,7 +16,21 @@ npx tsx scripts/<name>.ts  # Run admin scripts (grant-role, import-whop-users, r
 
 ## Tech Stack
 
-Next.js 16 (App Router), React 19, TypeScript, TailwindCSS 4, shadcn/ui (New York style, configured in `components.json`), PostgreSQL with Prisma ORM (@prisma/adapter-pg), Auth.js v5 (Google + email magic link) + legacy Discord OAuth, Cloudflare R2 for video hosting, Resend for email. Deployed as standalone Docker build.
+Next.js 16 (App Router), React 19, TypeScript, TailwindCSS 4, shadcn/ui (New York style, configured in `components.json`), PostgreSQL with Prisma ORM (@prisma/adapter-pg), Auth.js v5 (Google + email magic link) + legacy Discord OAuth, Cloudflare R2 for video hosting, Resend for email.
+
+## Hosting
+
+Self-hosted on **Coolify** (running on an Oracle VPS). Not Vercel. Do not assume Vercel-specific features (Edge runtime defaults, `@vercel/*` packages, Vercel Cron, Vercel KV, Vercel Blob, etc.). The app ships as a standalone Docker build and is deployed via Coolify. Cron jobs are triggered via HTTP calls to `/api/cron/*` endpoints (protected by `CRON_SECRET`), not Vercel Cron.
+
+## Local Development
+
+The PostgreSQL database runs in a Docker container on the same Oracle VPS (also managed by Coolify) and is **not exposed to the public internet**. To run anything locally that touches the DB (dev server, Prisma seed/migrate/generate, admin scripts), an SSH tunnel must be open:
+
+```bash
+ssh -f -N -L 15432:10.0.2.10:5432 oracle-web
+```
+
+`.env.local` then points `DATABASE_URL` at `localhost:15432`. Full setup, TablePlus connection details, and teardown are in `TUNNEL.md`. If a Prisma command hangs or fails to connect locally, the tunnel is the first thing to check.
 
 ## Architecture
 
@@ -110,7 +124,7 @@ Old URLs (`/app-sprint-community/roadmap/*`) are 301-redirected to `/learn/*`.
 
 ## Databases
 
-Two separate PostgreSQL databases:
+Two separate PostgreSQL databases. **Both run on the Oracle VPS via Coolify and require the SSH tunnel from `TUNNEL.md` for local access** (Prisma commands, admin scripts, TablePlus, etc.).
 
 1. **Main database** (`DATABASE_URL`, Prisma) — Users, Accounts, Sessions, VerificationTokens, Lessons, LessonProgress, QuizLeads, QuizEvents, PageEvents, PremiumUsers, InviteLinks, RevenueCatEvents, TrialDiscordMessages. Prisma client generated to `lib/generated/prisma` (not the default location). Import via:
    ```typescript
