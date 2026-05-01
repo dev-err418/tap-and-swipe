@@ -307,29 +307,15 @@ async function fetchSensorTowerBatch(
   if (appIds.length === 0) return map;
 
   const ids = appIds.join(",");
-  // SensorTower's public API blocks/rate-limits many datacenter IPs (GitHub
-  // Actions runners included). When CRON_SECRET is set we route through our
-  // own /api/internal/sensortower endpoint, which forwards the request from
-  // the production server's IP. Auth reuses CRON_SECRET, same pattern as
-  // /api/cron/* routes. SENSORTOWER_PROXY_URL is an optional override (e.g.
-  // for local testing against a staging deploy).
-  const cronSecret = process.env.CRON_SECRET;
-  const proxyUrl = cronSecret
-    ? process.env.SENSORTOWER_PROXY_URL ?? "https://tap-and-swipe.com/api/internal/sensortower"
-    : null;
-  const url = proxyUrl
-    ? `${proxyUrl}?platform=${platform}&app_ids=${encodeURIComponent(ids)}`
-    : `https://app.sensortower.com/api/${platform}/apps?app_ids=${ids}`;
-  const headers: Record<string, string> = proxyUrl
-    ? { authorization: `Bearer ${cronSecret}` }
-    : {};
-
-  console.log(
-    `\nFetching SensorTower (${platform}) for ${appIds.length} app(s)${proxyUrl ? " via proxy" : ""}...`
-  );
+  // SensorTower's public API blocks datacenter IPs (Coolify, GitHub Actions,
+  // and most cloud providers all return empty responses), so this script is
+  // intended to be run from a residential IP — i.e. your laptop.
+  console.log(`\nFetching SensorTower (${platform}) for ${appIds.length} app(s)...`);
 
   try {
-    const res = await fetch(url, { headers });
+    const res = await fetch(
+      `https://app.sensortower.com/api/${platform}/apps?app_ids=${ids}`
+    );
     if (!res.ok) {
       console.warn(`  ⚠ SensorTower ${platform} returned ${res.status}, skipping`);
       return map;
@@ -427,35 +413,7 @@ async function main() {
       }
     }
 
-    // SensorTower returns empty bodies to many datacenter IPs (e.g. GitHub
-    // Actions runners), so when topCountries / genres come back empty,
-    // preserve whatever the previous JSON had instead of erasing it.
     const outPath = path.join(APP_DATA_DIR, `${app.appSlug}.json`);
-    let previous: AppData | null = null;
-    if (fs.existsSync(outPath)) {
-      try {
-        previous = JSON.parse(fs.readFileSync(outPath, "utf-8")) as AppData;
-      } catch {
-        previous = null;
-      }
-    }
-    if (appData.ios) {
-      if (!appData.ios.topCountries?.length && previous?.ios?.topCountries?.length) {
-        appData.ios.topCountries = previous.ios.topCountries;
-      }
-      if (!appData.ios.genres?.length && previous?.ios?.genres?.length) {
-        appData.ios.genres = previous.ios.genres;
-      }
-    }
-    if (appData.android) {
-      if (!appData.android.topCountries?.length && previous?.android?.topCountries?.length) {
-        appData.android.topCountries = previous.android.topCountries;
-      }
-      if (!appData.android.genres?.length && previous?.android?.genres?.length) {
-        appData.android.genres = previous.android.genres;
-      }
-    }
-
     fs.writeFileSync(outPath, JSON.stringify(appData, null, 2) + "\n");
     console.log(`  ✓ Wrote ${outPath}`);
   }

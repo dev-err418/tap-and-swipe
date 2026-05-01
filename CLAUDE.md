@@ -110,6 +110,24 @@ All protected by `CRON_SECRET` header.
 
 `next.config.ts` redirects India/Brazil traffic from `/app-sprint` to `/app-sprint-community` using Cloudflare's `cf-ipcountry` header. The same header is read in checkout flows and stored in PageEvent records.
 
+### Episode & Case Study App Cards
+
+Episode and case-study pages render `<AppShowcase>` (`components/app-showcase.tsx`) showing the featured app's icon, screenshots, rating, top countries, and the founder's revenue at the time of recording.
+
+**Frontmatter fields** (in `content/episodes/*.mdx` and `content/case-studies/*.mdx`):
+
+```yaml
+appSlug: "evelize"                # filename for content/app-data/{slug}.json
+appStoreId: "6446815796"          # numeric iOS App ID (optional if Android-only)
+playStoreId: "com.evelize.tele"   # Android package name (optional if iOS-only)
+revenueAtRecording: "$20K/mo"     # founder-quoted, displayed verbatim
+recordedAt: "2026-05"             # YYYY-MM, formats to "May 2026" on the card
+```
+
+**Refreshing the JSON**: run `npx tsx scripts/update-app-data.ts` once when authoring the episode. The script scans both content dirs for `appSlug` + store IDs, fetches data from iTunes Search API + `google-play-scraper` (always works) and SensorTower (`top_countries`, `categories`), and writes `content/app-data/{appSlug}.json` plus icons/screenshots into `public/apps/{appSlug}/`.
+
+**IMPORTANT**: SensorTower's public API blocks every datacenter IP (Coolify, GitHub Actions, AWS, etc.) — they return empty bodies. The script must be run from a residential IP, i.e. your laptop. There is no cron; data is captured once at authoring time. If `topCountries` shows up missing, the SensorTower fetch was blocked — re-run from a different network.
+
 ## URL Structure
 
 | URL | Purpose | Auth |
