@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-05-01T09:46:43.204Z",
+  "lastUpdated": "2026-05-01T09:53:52.469Z",
   "ios": {
     "title": "Tarsi - Budget Tracker",
     "icon": "/apps/tarsi/icon-ios.webp",
@@ -12,6 +12,28 @@
       "PH",
       "CA",
       "AU"
+    ],
+    "genres": [
+      "Finance"
+    ]
+  },
+  "android": {
+    "title": "Tarsi - Budget Tracker",
+    "subtitle": "Track expenses, budgets, goals, and debts — all in one simple app",
+    "icon": "/apps/tarsi/icon-android.webp",
+    "screenshots": [
+      "/apps/tarsi/android-1.webp",
+      "/apps/tarsi/android-2.webp",
+      "/apps/tarsi/android-3.webp",
+      "/apps/tarsi/android-4.webp",
+      "/apps/tarsi/android-5.webp"
+    ],
+    "price": "$3.49",
+    "storeUrl": "https://play.google.com/store/apps/details?id=com.tarsi.app&hl=en&gl=us",
+    "topCountries": [
+      "PH",
+      "ID",
+      "IN"
     ],
     "genres": [
       "Finance"
