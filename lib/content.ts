@@ -6,6 +6,7 @@ export interface GuestInfo {
   linkedin?: string;
   threads?: string;
   mastodon?: string;
+  github?: string;
   website?: string;
 }
 

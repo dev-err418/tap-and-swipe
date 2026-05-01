@@ -5,7 +5,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { getAppData } from "@/lib/app-data";
 import { AppShowcase } from "@/components/app-showcase";
 import { SiX, SiThreads, SiMastodon } from "@icons-pack/react-simple-icons";
-import { Globe, Linkedin, FileText } from "lucide-react";
+import { Globe, Linkedin, FileText, Github } from "lucide-react";
 
 function GuestCard({ guest }: { guest: GuestInfo }) {
   const isPlaceholder =
@@ -77,6 +77,17 @@ function GuestCard({ guest }: { guest: GuestInfo }) {
             aria-label="Mastodon"
           >
             <SiMastodon size={16} color="currentColor" />
+          </a>
+        )}
+        {guest.github && (
+          <a
+            href={guest.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="GitHub"
+          >
+            <Github size={16} />
           </a>
         )}
         {guest.website && (
