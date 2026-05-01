@@ -410,8 +410,35 @@ async function main() {
       }
     }
 
-    // Write JSON
+    // SensorTower returns empty bodies to many datacenter IPs (e.g. GitHub
+    // Actions runners), so when topCountries / genres come back empty,
+    // preserve whatever the previous JSON had instead of erasing it.
     const outPath = path.join(APP_DATA_DIR, `${app.appSlug}.json`);
+    let previous: AppData | null = null;
+    if (fs.existsSync(outPath)) {
+      try {
+        previous = JSON.parse(fs.readFileSync(outPath, "utf-8")) as AppData;
+      } catch {
+        previous = null;
+      }
+    }
+    if (appData.ios) {
+      if (!appData.ios.topCountries?.length && previous?.ios?.topCountries?.length) {
+        appData.ios.topCountries = previous.ios.topCountries;
+      }
+      if (!appData.ios.genres?.length && previous?.ios?.genres?.length) {
+        appData.ios.genres = previous.ios.genres;
+      }
+    }
+    if (appData.android) {
+      if (!appData.android.topCountries?.length && previous?.android?.topCountries?.length) {
+        appData.android.topCountries = previous.android.topCountries;
+      }
+      if (!appData.android.genres?.length && previous?.android?.genres?.length) {
+        appData.android.genres = previous.android.genres;
+      }
+    }
+
     fs.writeFileSync(outPath, JSON.stringify(appData, null, 2) + "\n");
     console.log(`  ✓ Wrote ${outPath}`);
   }

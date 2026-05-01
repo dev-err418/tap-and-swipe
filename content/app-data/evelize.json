@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-05-01T08:41:18.332Z",
+  "lastUpdated": "2026-05-01T08:42:56.969Z",
   "ios": {
     "title": "Video Teleprompter - Evelize",
     "icon": "/apps/evelize/icon-ios.webp",
@@ -13,7 +13,16 @@
     "rating": 4.8,
     "ratingCount": 125,
     "price": "Free",
-    "storeUrl": "https://apps.apple.com/us/app/video-teleprompter-evelize/id6446815796?uo=4"
+    "storeUrl": "https://apps.apple.com/us/app/video-teleprompter-evelize/id6446815796?uo=4",
+    "topCountries": [
+      "GB",
+      "US",
+      "TW"
+    ],
+    "genres": [
+      "Photo & Video",
+      "Productivity"
+    ]
   },
   "android": {
     "title": "Video Teleprompter - Evelize",
@@ -29,6 +38,14 @@
     "rating": 4.7843137,
     "ratingCount": 765,
     "price": "Free",
-    "storeUrl": "https://play.google.com/store/apps/details?id=com.evelize.teleprompter&hl=en&gl=us"
+    "storeUrl": "https://play.google.com/store/apps/details?id=com.evelize.teleprompter&hl=en&gl=us",
+    "topCountries": [
+      "PH",
+      "US",
+      "GB"
+    ],
+    "genres": [
+      "Video Players & Editors"
+    ]
   }
 }
