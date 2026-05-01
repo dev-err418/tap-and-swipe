@@ -148,13 +148,13 @@ export function AppShowcase({
       Ratings (
       {iosCount > 0 && (
         <>
-          <SiApple size={10} color="currentColor" /> {formatCount(iosCount)}
+          <SiApple size={10} color="currentColor" className="mx-0.5" /> {formatCount(iosCount)}
         </>
       )}
       {iosCount > 0 && androidCount > 0 && " + "}
       {androidCount > 0 && (
         <>
-          <SiAndroid size={10} color="currentColor" /> {formatCount(androidCount)}
+          <SiAndroid size={10} color="currentColor" className="mx-0.5" /> {formatCount(androidCount)}
         </>
       )}
       )
