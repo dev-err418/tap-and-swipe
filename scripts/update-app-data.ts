@@ -22,6 +22,7 @@ import sharp from "sharp";
 const ROOT = path.resolve(__dirname, "..");
 const EPISODES_DIR = path.join(ROOT, "content", "episodes");
 const CASE_STUDIES_DIR = path.join(ROOT, "content", "case-studies");
+const DRAFTS_DIR = path.join(ROOT, "content", "drafts");
 const APP_DATA_DIR = path.join(ROOT, "content", "app-data");
 const PUBLIC_APPS_DIR = path.join(ROOT, "public", "apps");
 
@@ -352,13 +353,14 @@ async function fetchSensorTowerBatch(
 async function main() {
   console.log("Scanning content directories for appSlug + store IDs...\n");
 
-  // Scan both content dirs
+  // Scan all three content dirs (drafts included so app cards render in review)
   const episodeEntries = scanDir(EPISODES_DIR);
   const caseStudyEntries = scanDir(CASE_STUDIES_DIR);
+  const draftEntries = scanDir(DRAFTS_DIR);
 
-  // Deduplicate by appSlug — merge store IDs from both content types
+  // Deduplicate by appSlug — merge store IDs from all content types
   const appMap = new Map<string, AppEntry>();
-  for (const entry of [...episodeEntries, ...caseStudyEntries]) {
+  for (const entry of [...episodeEntries, ...caseStudyEntries, ...draftEntries]) {
     const existing = appMap.get(entry.appSlug);
     if (existing) {
       if (!existing.appStoreId && entry.appStoreId)

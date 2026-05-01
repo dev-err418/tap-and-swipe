@@ -1,0 +1,20 @@
+{
+  "lastUpdated": "2026-05-01T09:46:43.204Z",
+  "ios": {
+    "title": "Tarsi - Budget Tracker",
+    "icon": "/apps/tarsi/icon-ios.webp",
+    "screenshots": [],
+    "rating": 5,
+    "ratingCount": 2,
+    "price": "$4.99",
+    "storeUrl": "https://apps.apple.com/us/app/tarsi-budget-tracker/id6760278399?uo=4",
+    "topCountries": [
+      "PH",
+      "CA",
+      "AU"
+    ],
+    "genres": [
+      "Finance"
+    ]
+  }
+}
