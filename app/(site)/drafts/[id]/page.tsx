@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getAllEpisodes } from "@/lib/episodes";
-import { getAllCaseStudies } from "@/lib/case-studies";
 import { getDraftById } from "@/lib/drafts";
 import { EpisodeContent } from "@/components/episode-content";
 import { CaseStudyContent } from "@/components/case-study-content";
@@ -39,15 +37,9 @@ export default async function DraftPage({
         </div>
       </div>
       {draft.kind === "case-study" ? (
-        <CaseStudyContent
-          caseStudy={draft.data}
-          otherCaseStudies={getAllCaseStudies().slice(0, 3)}
-        />
+        <CaseStudyContent caseStudy={draft.data} otherCaseStudies={[]} />
       ) : (
-        <EpisodeContent
-          episode={draft.data}
-          otherEpisodes={getAllEpisodes().slice(0, 3)}
-        />
+        <EpisodeContent episode={draft.data} otherEpisodes={[]} />
       )}
     </>
   );
