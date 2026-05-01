@@ -1,0 +1,27 @@
+{
+  "lastUpdated": "2026-05-01T10:12:11.112Z",
+  "ios": {
+    "title": "Mayi - Travel Buddy",
+    "subtitle": "Your Travel Companion",
+    "icon": "/apps/mayi/icon-ios.webp",
+    "screenshots": [
+      "/apps/mayi/ios-1.webp",
+      "/apps/mayi/ios-2.webp",
+      "/apps/mayi/ios-3.webp",
+      "/apps/mayi/ios-4.webp",
+      "/apps/mayi/ios-5.webp"
+    ],
+    "rating": 0,
+    "ratingCount": 0,
+    "price": "$2.99",
+    "storeUrl": "https://apps.apple.com/us/app/mayi-travel-buddy/id6762192203?uo=4",
+    "topCountries": [
+      "PH",
+      "US",
+      "ES"
+    ],
+    "genres": [
+      "Travel"
+    ]
+  }
+}

@@ -9,7 +9,7 @@ import { DocsToc } from "@/components/docs-toc";
 import { getAppData, type AppData } from "@/lib/app-data";
 import { AppShowcase } from "@/components/app-showcase";
 import { SiX, SiThreads, SiMastodon } from "@icons-pack/react-simple-icons";
-import { Globe, Linkedin, Play, Github } from "lucide-react";
+import { Globe, Linkedin, Play, Github, ImageIcon } from "lucide-react";
 
 const PLACEHOLDER_IMAGE = "/episodes/placeholder.webp";
 
@@ -131,6 +131,25 @@ function createMdxComponents(
   return {
     FounderCard: () =>
       guestInfo ? <FounderCard guest={guestInfo} /> : null,
+    AppShowcase: ({
+      appSlug,
+      revenueAtRecording: rar,
+      recordedAt: ra,
+    }: {
+      appSlug: string;
+      revenueAtRecording?: string;
+      recordedAt?: string;
+    }) => {
+      const inlineData = getAppData(appSlug);
+      if (!inlineData) return null;
+      return (
+        <AppShowcase
+          data={inlineData}
+          revenueAtRecording={rar}
+          recordedAt={ra}
+        />
+      );
+    },
     YouTube: ({ id }: { id: string }) => (
       <div className="my-6 overflow-hidden rounded-xl">
         <AspectRatio ratio={16 / 9}>
@@ -310,10 +329,9 @@ export function CaseStudyContent({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-accent">
-                <span className="text-sm text-muted-foreground">
-                  Coming soon
-                </span>
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-accent text-muted-foreground">
+                <ImageIcon className="h-10 w-10 opacity-40" />
+                <span className="text-sm">Coming soon</span>
               </div>
             )}
           </AspectRatio>

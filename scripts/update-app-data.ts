@@ -84,24 +84,44 @@ async function downloadImage(
   }
 }
 
+// Pull `<AppShowcase appSlug="..." appStoreId="..." playStoreId="..." />`
+// references out of the MDX body. Used for secondary apps mentioned inline
+// in an article (e.g. a founder's second / third app).
+function scanInlineAppShowcases(content: string): AppEntry[] {
+  const entries: AppEntry[] = [];
+  const tagRe = /<AppShowcase\b([^>]*?)\/>/g;
+  for (const match of content.matchAll(tagRe)) {
+    const attrs = match[1];
+    const slug = /appSlug=["']([^"']+)["']/.exec(attrs)?.[1];
+    if (!slug) continue;
+    const appStoreId = /appStoreId=["']([^"']+)["']/.exec(attrs)?.[1];
+    const playStoreId = /playStoreId=["']([^"']+)["']/.exec(attrs)?.[1];
+    if (!appStoreId && !playStoreId) continue;
+    entries.push({ appSlug: slug, appStoreId, playStoreId });
+  }
+  return entries;
+}
+
 function scanDir(dir: string): AppEntry[] {
   if (!fs.existsSync(dir)) return [];
 
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith(".mdx"))
-    .map((file) => {
-      const raw = fs.readFileSync(path.join(dir, file), "utf-8");
-      const { data } = matter(raw);
-      const appSlug = data.appSlug as string | undefined;
-      if (!appSlug) return null;
-      return {
-        appSlug,
-        appStoreId: data.appStoreId as string | undefined,
-        playStoreId: data.playStoreId as string | undefined,
-      };
-    })
-    .filter((e): e is NonNullable<typeof e> => e !== null && !!(e.appStoreId || e.playStoreId));
+  const out: AppEntry[] = [];
+  for (const file of fs.readdirSync(dir).filter((f) => f.endsWith(".mdx"))) {
+    const raw = fs.readFileSync(path.join(dir, file), "utf-8");
+    const { data, content } = matter(raw);
+
+    // Primary app from frontmatter
+    const appSlug = data.appSlug as string | undefined;
+    const appStoreId = data.appStoreId as string | undefined;
+    const playStoreId = data.playStoreId as string | undefined;
+    if (appSlug && (appStoreId || playStoreId)) {
+      out.push({ appSlug, appStoreId, playStoreId });
+    }
+
+    // Secondary apps referenced inline in the body via <AppShowcase ... />
+    out.push(...scanInlineAppShowcases(content));
+  }
+  return out;
 }
 
 // ── iTunes API ─────────────────────────────────────────────────────
