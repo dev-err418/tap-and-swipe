@@ -19,7 +19,6 @@ jobs:
       - run: npm ci
       - run: npx tsx scripts/update-app-data.ts
         env:
-          SENSORTOWER_PROXY_URL: ${{ secrets.SENSORTOWER_PROXY_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:

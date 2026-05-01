@@ -308,17 +308,21 @@ async function fetchSensorTowerBatch(
 
   const ids = appIds.join(",");
   // SensorTower's public API blocks/rate-limits many datacenter IPs (GitHub
-  // Actions runners included). When SENSORTOWER_PROXY_URL is set, we route
-  // through our own /api/internal/sensortower endpoint, which forwards the
-  // request from the production server's IP (which SensorTower allows).
-  // Auth reuses CRON_SECRET, same pattern as /api/cron/* routes.
-  const proxyUrl = process.env.SENSORTOWER_PROXY_URL;
+  // Actions runners included). When CRON_SECRET is set we route through our
+  // own /api/internal/sensortower endpoint, which forwards the request from
+  // the production server's IP. Auth reuses CRON_SECRET, same pattern as
+  // /api/cron/* routes. SENSORTOWER_PROXY_URL is an optional override (e.g.
+  // for local testing against a staging deploy).
   const cronSecret = process.env.CRON_SECRET;
+  const proxyUrl = cronSecret
+    ? process.env.SENSORTOWER_PROXY_URL ?? "https://tap-and-swipe.com/api/internal/sensortower"
+    : null;
   const url = proxyUrl
     ? `${proxyUrl}?platform=${platform}&app_ids=${encodeURIComponent(ids)}`
     : `https://app.sensortower.com/api/${platform}/apps?app_ids=${ids}`;
-  const headers: Record<string, string> =
-    proxyUrl && cronSecret ? { authorization: `Bearer ${cronSecret}` } : {};
+  const headers: Record<string, string> = proxyUrl
+    ? { authorization: `Bearer ${cronSecret}` }
+    : {};
 
   console.log(
     `\nFetching SensorTower (${platform}) for ${appIds.length} app(s)${proxyUrl ? " via proxy" : ""}...`
