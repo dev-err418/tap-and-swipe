@@ -145,7 +145,8 @@ export function AppShowcase({
     combinedRating != null && combinedRating > 0
       ? (Math.round(combinedRating * 10) / 10).toFixed(1)
       : "-";
-  const ratingLabel: React.ReactNode = (
+  const hasAnyCount = iosCount > 0 || androidCount > 0;
+  const ratingLabel: React.ReactNode = hasAnyCount ? (
     <>
       Ratings (
       {iosCount > 0 && (
@@ -161,6 +162,8 @@ export function AppShowcase({
       )}
       )
     </>
+  ) : (
+    "Ratings"
   );
 
   const hasStats =
