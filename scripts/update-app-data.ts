@@ -106,6 +106,90 @@ function scanDir(dir: string): AppEntry[] {
 
 // ── iTunes API ─────────────────────────────────────────────────────
 
+// iTunes Search API skips subtitle for many apps and sometimes returns
+// empty screenshotUrls (e.g. for paid apps and brand-new releases). The
+// canonical source is the App Store web page itself, which embeds a JSON
+// blob in <script id="serialized-server-data"> with both fields. We scrape
+// it as a fallback / override for those two specific fields. Other fields
+// (rating, price, store URL) come from iTunes since the contract is stable.
+async function fetchAppStoreWebData(
+  appStoreId: string
+): Promise<{ subtitle?: string; screenshotUrls: string[] }> {
+  try {
+    const res = await fetch(
+      `https://apps.apple.com/us/app/id${appStoreId}`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      }
+    );
+    if (!res.ok) return { screenshotUrls: [] };
+    const html = await res.text();
+    const match = html.match(
+      /<script type="application\/json" id="serialized-server-data">([\s\S]+?)<\/script>/
+    );
+    if (!match) return { screenshotUrls: [] };
+
+    let data: unknown;
+    try {
+      data = JSON.parse(match[1]);
+    } catch {
+      return { screenshotUrls: [] };
+    }
+
+    let subtitle: string | undefined;
+    function findLockup(obj: unknown): boolean {
+      if (!obj || typeof obj !== "object") return false;
+      if (Array.isArray(obj)) return obj.some(findLockup);
+      const o = obj as Record<string, unknown>;
+      const lockup = o.lockup;
+      if (lockup && typeof lockup === "object") {
+        const l = lockup as Record<string, unknown>;
+        if (typeof l.subtitle === "string" && l.subtitle.length > 0) {
+          subtitle = l.subtitle;
+          return true;
+        }
+      }
+      return Object.values(o).some(findLockup);
+    }
+    findLockup(data);
+
+    const screenshotUrls: string[] = [];
+    function walkUrls(obj: unknown) {
+      if (typeof obj === "string") {
+        if (
+          obj.includes("mzstatic.com") &&
+          /\/SC_[0-9]+\.jpg\//.test(obj) &&
+          !obj.includes("Placeholder")
+        ) {
+          // Template URLs end in `/{w}x{h}{c}.{f}` — substitute a high-res
+          // png so the downloader gets a usable image.
+          const concrete = obj
+            .replace("{w}x{h}{c}.{f}", "1290x2796bb.png")
+            .replace("{w}x{h}", "1290x2796");
+          if (!screenshotUrls.includes(concrete)) screenshotUrls.push(concrete);
+        }
+      } else if (Array.isArray(obj)) {
+        obj.forEach(walkUrls);
+      } else if (obj && typeof obj === "object") {
+        Object.values(obj as Record<string, unknown>).forEach(walkUrls);
+      }
+    }
+    walkUrls(data);
+
+    return { subtitle, screenshotUrls };
+  } catch (err) {
+    console.warn(
+      `  ⚠ App Store web scrape failed for ${appStoreId}:`,
+      (err as Error).message
+    );
+    return { screenshotUrls: [] };
+  }
+}
+
 async function fetchIosData(
   appStoreId: string,
   slug: string
@@ -129,6 +213,11 @@ async function fetchIosData(
   }
 
   const app = json.results[0];
+
+  // Scrape the App Store page in parallel for the fields iTunes is unreliable
+  // about (subtitle, screenshots).
+  const webData = await fetchAppStoreWebData(appStoreId);
+
   const assetsDir = path.join(PUBLIC_APPS_DIR, slug);
   ensureDir(assetsDir);
 
@@ -139,13 +228,18 @@ async function fetchIosData(
     await downloadImage(iconUrl, path.join(PUBLIC_APPS_DIR, slug, "icon-ios.webp"));
   }
 
-  // Screenshots (max 5)
-  const screenshotUrls = ((app.screenshotUrls as string[]) || []).slice(0, 5);
+  // Screenshots: prefer the scraped list (more reliable) and fall back to
+  // whatever iTunes returned. Cap at 5.
+  const itunesScreens = (app.screenshotUrls as string[]) || [];
+  const screenshotSources = (
+    webData.screenshotUrls.length > 0 ? webData.screenshotUrls : itunesScreens
+  ).slice(0, 5);
+
   const screenshots: string[] = [];
-  for (let i = 0; i < screenshotUrls.length; i++) {
+  for (let i = 0; i < screenshotSources.length; i++) {
     const dest = `/apps/${slug}/ios-${i + 1}.webp`;
     const ok = await downloadImage(
-      screenshotUrls[i],
+      screenshotSources[i],
       path.join(PUBLIC_APPS_DIR, slug, `ios-${i + 1}.webp`)
     );
     if (ok) screenshots.push(dest);
@@ -153,7 +247,7 @@ async function fetchIosData(
 
   return {
     title: app.trackName as string,
-    subtitle: (app.subtitle as string) || undefined,
+    subtitle: webData.subtitle || (app.subtitle as string) || undefined,
     icon: iconPath,
     screenshots,
     rating: app.averageUserRating as number | undefined,
