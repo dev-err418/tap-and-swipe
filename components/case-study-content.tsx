@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
@@ -12,6 +14,18 @@ import { SiX, SiThreads, SiMastodon } from "@icons-pack/react-simple-icons";
 import { Globe, Linkedin, Play, Github, ImageIcon } from "lucide-react";
 
 const PLACEHOLDER_IMAGE = "/episodes/placeholder.webp";
+
+// True when the image is set to a real, on-disk asset (or a remote URL).
+// Drafts often reference a path that hasn't been uploaded yet, in which
+// case we want to fall through to the placeholder rather than render a
+// broken <img>.
+function imageExists(src: string | undefined): boolean {
+  if (!src) return false;
+  if (src === PLACEHOLDER_IMAGE) return false;
+  if (src.startsWith("http://") || src.startsWith("https://")) return true;
+  const filePath = path.join(process.cwd(), "public", src);
+  return fs.existsSync(filePath);
+}
 
 function slugify(text: string): string {
   return text
@@ -318,7 +332,7 @@ export function CaseStudyContent({
         {/* Featured image */}
         <div className="mt-8 overflow-hidden rounded-xl">
           <AspectRatio ratio={16 / 9}>
-            {cs.image && cs.image !== PLACEHOLDER_IMAGE ? (
+            {imageExists(cs.image) ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={cs.image}
@@ -368,7 +382,7 @@ export function CaseStudyContent({
                   className="group flex gap-4 rounded-lg"
                 >
                   <div className="w-32 shrink-0 overflow-hidden rounded-lg bg-accent aspect-video">
-                    {other.image && other.image !== PLACEHOLDER_IMAGE ? (
+                    {imageExists(other.image) ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={other.image}
