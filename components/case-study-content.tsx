@@ -312,7 +312,7 @@ export function CaseStudyContent({
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-accent">
                 <span className="text-sm text-muted-foreground">
-                  No image
+                  Coming soon
                 </span>
               </div>
             )}
