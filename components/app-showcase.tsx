@@ -129,15 +129,22 @@ export function AppShowcase({
   }
 
   const showRating = combinedRating != null && totalCount > 0;
-  const showRatingBreakdown = hasBothStores && iosCount > 0 && androidCount > 0;
-  const ratingLabel: React.ReactNode = showRatingBreakdown ? (
+  const ratingLabel: React.ReactNode = (
     <>
-      Ratings ({totalCount.toLocaleString()} -{" "}
-      <SiApple size={10} color="currentColor" /> {iosCount.toLocaleString()} +{" "}
-      <SiAndroid size={10} color="currentColor" /> {androidCount.toLocaleString()})
+      Ratings (
+      {iosCount > 0 && (
+        <>
+          <SiApple size={10} color="currentColor" /> {iosCount.toLocaleString()}
+        </>
+      )}
+      {iosCount > 0 && androidCount > 0 && " + "}
+      {androidCount > 0 && (
+        <>
+          <SiAndroid size={10} color="currentColor" /> {androidCount.toLocaleString()}
+        </>
+      )}
+      )
     </>
-  ) : (
-    `Ratings (${totalCount.toLocaleString()})`
   );
 
   const hasStats =

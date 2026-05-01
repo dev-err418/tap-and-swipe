@@ -135,18 +135,23 @@ function scanDir(dir: string): AppEntry[] {
 async function fetchAppStoreWebData(
   appStoreId: string
 ): Promise<{ subtitle?: string; screenshotUrls: string[] }> {
+  const headers = {
+    "User-Agent":
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+  };
+  const url = `https://apps.apple.com/us/app/id${appStoreId}`;
   try {
-    const res = await fetch(
-      `https://apps.apple.com/us/app/id${appStoreId}`,
-      {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-      }
-    );
-    if (!res.ok) return { screenshotUrls: [] };
+    let res = await fetch(url, { headers });
+    if (res.status === 429) {
+      console.warn(`  ⚠ App Store scrape 429 for ${appStoreId}, retrying after 6s...`);
+      await new Promise((r) => setTimeout(r, 6000));
+      res = await fetch(url, { headers });
+    }
+    if (!res.ok) {
+      console.warn(`  ⚠ App Store scrape ${appStoreId} returned ${res.status}`);
+      return { screenshotUrls: [] };
+    }
     const html = await res.text();
     const match = html.match(
       /<script type="application\/json" id="serialized-server-data">([\s\S]+?)<\/script>/
@@ -546,7 +551,48 @@ async function main() {
       }
     }
 
+    // Apple rate-limits the App Store web scrape (429), and SensorTower
+    // sometimes returns nothing too. When the current run came up empty for
+    // fields we've successfully scraped before, prefer the previous JSON's
+    // values over erasing them.
     const outPath = path.join(APP_DATA_DIR, `${app.appSlug}.json`);
+    let previous: AppData | null = null;
+    if (fs.existsSync(outPath)) {
+      try {
+        previous = JSON.parse(fs.readFileSync(outPath, "utf-8")) as AppData;
+      } catch {
+        previous = null;
+      }
+    }
+    if (appData.ios && previous?.ios) {
+      if (!appData.ios.subtitle && previous.ios.subtitle) {
+        appData.ios.subtitle = previous.ios.subtitle;
+      }
+      if (appData.ios.screenshots.length === 0 && previous.ios.screenshots.length > 0) {
+        appData.ios.screenshots = previous.ios.screenshots;
+      }
+      if (!appData.ios.topCountries?.length && previous.ios.topCountries?.length) {
+        appData.ios.topCountries = previous.ios.topCountries;
+      }
+      if (!appData.ios.genres?.length && previous.ios.genres?.length) {
+        appData.ios.genres = previous.ios.genres;
+      }
+    }
+    if (appData.android && previous?.android) {
+      if (!appData.android.subtitle && previous.android.subtitle) {
+        appData.android.subtitle = previous.android.subtitle;
+      }
+      if (appData.android.screenshots.length === 0 && previous.android.screenshots.length > 0) {
+        appData.android.screenshots = previous.android.screenshots;
+      }
+      if (!appData.android.topCountries?.length && previous.android.topCountries?.length) {
+        appData.android.topCountries = previous.android.topCountries;
+      }
+      if (!appData.android.genres?.length && previous.android.genres?.length) {
+        appData.android.genres = previous.android.genres;
+      }
+    }
+
     fs.writeFileSync(outPath, JSON.stringify(appData, null, 2) + "\n");
     console.log(`  ✓ Wrote ${outPath}`);
   }
