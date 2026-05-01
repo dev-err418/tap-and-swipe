@@ -85,7 +85,7 @@ function StatCard({
 }) {
   return (
     <div className="relative flex min-w-0 flex-1 flex-col rounded-lg border border-border px-4 py-3">
-      <p className="flex items-center gap-1 text-xs text-muted-foreground">{label}</p>
+      <p className="flex items-center text-xs text-muted-foreground">{label}</p>
       {value ? (
         <div className="flex flex-1 items-center justify-center">
           <span className="text-4xl font-bold">{value}</span>
