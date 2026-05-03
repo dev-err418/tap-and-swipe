@@ -32,7 +32,7 @@ export default function JoinDiscordPage() {
       </p>
 
       <h2 className="mt-12 mb-4 text-2xl font-semibold tracking-tight">
-        2. Join the App Sprint Discord
+        2. Join the AppSprint Community discord
       </h2>
       <p className="mb-5 leading-relaxed text-foreground/70">
         Once your Discord is connected on Whop, you&apos;ll be invited to the server
