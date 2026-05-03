@@ -61,9 +61,14 @@ export default function JoinDiscordPage() {
         Stuck?
       </h2>
       <p className="mb-5 leading-relaxed text-foreground/70">
-        If something didn&apos;t trigger after a couple of minutes, reply to the
-        Whop welcome email or DM Arthur on Discord. Include the email you used
-        at checkout so we can match it up.
+        Contact me on Whop support, or email me directly at{" "}
+        <a
+          href="mailto:arthurs.dev@gmail.com"
+          className="font-medium text-foreground underline underline-offset-4 hover:no-underline"
+        >
+          arthurs.dev@gmail.com
+        </a>
+        .
       </p>
     </div>
   );
