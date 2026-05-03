@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { AUTHOR_NAME, AUTHOR_SAME_AS, SITE_URL } from "@/lib/seo/author";
 
 const uncutSans = localFont({
   src: "./fonts/UncutSans-Variable.woff2",
@@ -14,7 +15,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tap-and-swipe.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Tap & Swipe — Build & Launch Mobile Apps",
     template: "%s — Tap & Swipe",
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     "mobile apps",
     "app development",
   ],
-  authors: [{ name: "Arthur", url: "https://www.youtube.com/@ArthurBuildsStuff" }],
+  authors: [{ name: AUTHOR_NAME, url: AUTHOR_SAME_AS[0] }],
   creator: "Tap & Swipe",
   publisher: "Tap & Swipe",
   robots: {
@@ -68,21 +69,18 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: "Tap & Swipe",
   alternateName: "Tap and Swipe",
-  url: "https://tap-and-swipe.com",
-  logo: "https://tap-and-swipe.com/icon.png",
+  url: SITE_URL,
+  logo: `${SITE_URL}/icon.png`,
   description:
     "Indie developer studio building mobile apps and helping others do the same. Makers of Versy, Lua, Glow, and the AppSprint program.",
   founder: {
     "@type": "Person",
-    name: "Arthur Spalanzani",
+    name: AUTHOR_NAME,
     jobTitle: "Founder",
-    url: "https://www.youtube.com/@ArthurBuildsStuff",
+    url: AUTHOR_SAME_AS[0],
+    sameAs: [...AUTHOR_SAME_AS],
   },
-  sameAs: [
-    "https://www.youtube.com/@ArthurBuildsStuff",
-    "https://www.linkedin.com/in/arthur-spalanzani/",
-    "https://x.com/arthursbuilds",
-  ],
+  sameAs: [...AUTHOR_SAME_AS],
   contactPoint: {
     "@type": "ContactPoint",
     email: "arthur@tap-and-swipe.com",

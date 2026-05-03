@@ -30,6 +30,7 @@ export function getDraftById(id: string): Draft | null {
       title: data.title || "Untitled draft",
       description: data.description || "",
       date: data.date || new Date().toISOString().slice(0, 10),
+      updatedDate: data.updatedDate,
       guest: data.guest,
       guestInfo: data.guestInfo,
       youtubeId: data.youtubeId,

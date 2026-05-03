@@ -15,6 +15,7 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
+import { checkFile, summarize } from "./seo/check-discover-readiness";
 
 const args = process.argv.slice(2);
 const flags = new Set(args.filter((a) => a.startsWith("--")));
@@ -128,12 +129,43 @@ if (willWriteCaseStudy) {
   written.push(path.relative(ROOT, caseStudyPath));
 }
 
-fs.unlinkSync(draftPath);
+// Validate the just-written files against Discover requirements. If any hard
+// error fires, roll back the writes and keep the draft so the user can fix the
+// frontmatter (typically a missing image / imageAlt on a case study) and re-run.
+const writtenPaths: string[] = [];
+if (willWriteEpisode) writtenPaths.push(episodePath);
+if (willWriteCaseStudy) writtenPaths.push(caseStudyPath);
 
-console.log(`✓ Promoted draft ${id}`);
-for (const file of written) console.log(`    ${file}`);
-console.log("\nNext steps:");
-if (willWriteEpisode) console.log(`  /episodes/${slug}     ← set youtubeId in frontmatter`);
-if (willWriteCaseStudy) console.log(`  /case-studies/${slug}`);
-console.log("\nIf the frontmatter has appSlug + store IDs, run:");
-console.log("  npx tsx scripts/update-app-data.ts");
+void (async () => {
+  const checkResults = await Promise.all(writtenPaths.map((p) => checkFile(p)));
+  for (const r of checkResults) {
+    if (r.issues.length === 0) continue;
+    const rel = path.relative(ROOT, r.file);
+    console.error(`\n${rel}`);
+    for (const i of r.issues) {
+      const tag = i.kind === "error" ? "✗" : "!";
+      console.error(`  ${tag} ${i.message}`);
+    }
+  }
+  const { errors } = summarize(checkResults);
+  if (errors > 0) {
+    for (const p of writtenPaths) {
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    }
+    console.error(
+      `\nDiscover readiness check failed (${errors} error${errors === 1 ? "" : "s"}). ` +
+        `Draft kept at ${path.relative(ROOT, draftPath)}, fix the frontmatter and re-run.`
+    );
+    process.exit(1);
+  }
+
+  fs.unlinkSync(draftPath);
+
+  console.log(`✓ Promoted draft ${id}`);
+  for (const file of written) console.log(`    ${file}`);
+  console.log("\nNext steps:");
+  if (willWriteEpisode) console.log(`  /episodes/${slug}     ← set youtubeId in frontmatter`);
+  if (willWriteCaseStudy) console.log(`  /case-studies/${slug}`);
+  console.log("\nIf the frontmatter has appSlug + store IDs, run:");
+  console.log("  npx tsx scripts/update-app-data.ts");
+})();

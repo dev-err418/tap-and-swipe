@@ -28,6 +28,9 @@ const scaffold = `---
 title: "${title.replace(/"/g, '\\"')}"
 description: ""
 date: "${today}"
+updatedDate: ""
+image: ""
+imageAlt: ""
 guest: ""
 guestInfo:
   name: ""
@@ -35,16 +38,20 @@ guestInfo:
   role: ""
   twitter: ""
 youtubeId: ""
+caseStudySlug: ""
+episodeSlug: ""
 appSlug: ""
 appStoreId: ""
 playStoreId: ""
 revenueAtRecording: ""
 recordedAt: "${recorded}"
 tags: []
-image: ""
 ---
 
 Body goes here.
+
+<!-- Field reference: content/drafts/_TEMPLATE.mdx -->
+<!-- Discover guide:  seo/discover-playbook.md -->
 `;
 
 fs.writeFileSync(filePath, scaffold);

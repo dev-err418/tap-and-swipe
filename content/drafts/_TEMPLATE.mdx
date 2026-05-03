@@ -1,0 +1,68 @@
+---
+# ─── Required ──────────────────────────────────────────────────────────────
+title: "Headline goes here"                # ≤90 chars (Discover truncates beyond that)
+description: "One-paragraph hook"          # ≤160 chars (search snippets cap there)
+date: "2026-05-03"                         # YYYY-MM-DD, original publish date
+
+# ─── Discover / freshness ─────────────────────────────────────────────────
+# Bump updatedDate when you make a meaningful edit. Feeds dateModified in the
+# Article JSON-LD on both episodes and case studies — Discover prefers fresh.
+updatedDate: ""                            # YYYY-MM-DD, optional
+
+# ─── Hero image (REQUIRED for case studies, optional for episodes) ────────
+# Episodes fall back to YouTube maxresdefault (1280×720). Case studies must
+# declare a real file at /public/case-studies/{slug}.webp, ≥1200px wide.
+# `npx tsx scripts/seo/check-discover-readiness.ts` enforces this at publish.
+image: ""                                  # e.g. "/case-studies/{slug}.webp"
+imageAlt: ""                               # ≥15 chars, describes the image (case studies)
+
+# ─── Guest ─────────────────────────────────────────────────────────────────
+guest: ""
+guestInfo:
+  name: ""
+  photo: ""                                # e.g. "/guests/firstname-lastname.webp"
+  role: ""
+  twitter: ""
+
+# ─── Episode-only ──────────────────────────────────────────────────────────
+youtubeId: ""                              # populate after recording
+caseStudySlug: ""                          # set automatically by --pair publish
+
+# ─── Case-study-only ──────────────────────────────────────────────────────
+episodeSlug: ""                            # set automatically by --pair publish
+
+# ─── App showcase (drives <AppShowcase /> card) ───────────────────────────
+appSlug: ""                                # filename for content/app-data/{slug}.json
+appStoreId: ""                             # numeric iOS App ID
+playStoreId: ""                            # Android package name
+revenueAtRecording: ""                     # founder-quoted, displayed verbatim
+recordedAt: "2026-05"                      # YYYY-MM, formats to "May 2026"
+
+# ─── Tags (used as JSON-LD keywords + OG tags) ────────────────────────────
+tags: []                                   # e.g. ["indie dev", "monetization"]
+
+# ─── Draft preview only ───────────────────────────────────────────────────
+# Drafts render as a case study by default. Set type: "episode" to preview the
+# episode shell instead. This field is dropped when publishing.
+# type: "episode"
+---
+
+# How to use this template
+
+This file is a reference. To start a real draft, run:
+
+```bash
+npx tsx scripts/new-draft.ts "Working title"
+```
+
+That writes `content/drafts/{8-hex}.mdx` with the same shape as below — the random ID keeps the URL unguessable. Edit the file, share `/drafts/{id}` for review (noindex, not in sitemap/RSS), then publish:
+
+```bash
+npx tsx scripts/publish-draft.ts {id} {final-slug} --pair   # typical: episode + case study
+npx tsx scripts/publish-draft.ts {id} {final-slug}          # episode only
+npx tsx scripts/publish-draft.ts {id} {final-slug} --case-study
+```
+
+The publish script runs the Discover readiness check and rolls back on failure. Empty-string fields are stripped before writing the published file, so leave anything you don't need blank rather than deleting the line.
+
+See `seo/discover-playbook.md` for headline/image guidance.

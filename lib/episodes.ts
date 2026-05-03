@@ -11,6 +11,7 @@ export interface EpisodeMeta {
   title: string;
   description: string;
   date: string;
+  updatedDate?: string;
   guest?: string;
   guestInfo?: GuestInfo;
   youtubeId?: string;
@@ -46,6 +47,7 @@ export function getAllEpisodes(): EpisodeMeta[] {
         title: data.title,
         description: data.description,
         date: data.date,
+        updatedDate: data.updatedDate,
         guest: data.guest,
         guestInfo: data.guestInfo,
         youtubeId: data.youtubeId,
@@ -74,6 +76,7 @@ export function getEpisodeBySlug(slug: string): Episode | null {
     title: data.title,
     description: data.description,
     date: data.date,
+    updatedDate: data.updatedDate,
     guest: data.guest,
     guestInfo: data.guestInfo,
     youtubeId: data.youtubeId,

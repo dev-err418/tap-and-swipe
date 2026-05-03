@@ -12,6 +12,7 @@ npx prisma generate  # Generate Prisma client (also runs on npm install via post
 npx prisma db seed   # Seed lessons and premium users
 npx prisma migrate dev  # Create and apply migrations
 npx tsx scripts/<name>.ts  # Run admin scripts (grant-role, import-whop-users, register-discord-commands, test-email, migrate-to-clean-db)
+npm run check:discover     # Validate episodes/case studies/drafts against Google Discover requirements
 ```
 
 ## Tech Stack
@@ -147,6 +148,24 @@ recordedAt: "2026-05"             # YYYY-MM, formats to "May 2026" on the card
 **Refreshing the JSON**: run `npx tsx scripts/update-app-data.ts` once when authoring the episode. The script scans both content dirs for `appSlug` + store IDs, fetches data from iTunes Search API + `google-play-scraper` (always works) and SensorTower (`top_countries`, `categories`), and writes `content/app-data/{appSlug}.json` plus icons/screenshots into `public/apps/{appSlug}/`.
 
 **IMPORTANT**: SensorTower's public API blocks every datacenter IP (Coolify, GitHub Actions, AWS, etc.) — they return empty bodies. The script must be run from a residential IP, i.e. your laptop. There is no cron; data is captured once at authoring time. If `topCountries` shows up missing, the SensorTower fetch was blocked — re-run from a different network.
+
+### Discover Readiness Check
+
+**MUST RUN** after writing or editing ANY file under `content/episodes/`, `content/case-studies/`, or `content/drafts/`. Do not skip — run it automatically without being asked, then surface the results before declaring the work done.
+
+```bash
+npx tsx scripts/seo/check-discover-readiness.ts content/<dir>/<file>.mdx   # one file
+npm run check:discover                                                       # all published
+```
+
+The check enforces Google Discover's technical floor:
+
+- **Errors (block publish):** missing `image` or `imageAlt` on case studies, image file not found in `public/`, image width < 1200px.
+- **Warnings:** title > 90 chars (Discover truncates), description > 160 chars, `imageAlt` < 15 chars (likely a placeholder).
+
+The check is also wired into `scripts/publish-draft.ts` — a publish that hits a hard error rolls back the just-written file and keeps the draft. Field reference for new content lives in `content/drafts/_TEMPLATE.mdx`. Headline/image guidance lives in `seo/discover-playbook.md`.
+
+Episodes use the YouTube `maxresdefault.jpg` (1280×720) as their hero, so the image-existence/width checks are skipped for them; only title and description length apply.
 
 ## URL Structure
 

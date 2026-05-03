@@ -6,8 +6,9 @@ import {
   getCaseStudyBySlug,
 } from "@/lib/case-studies";
 import { CaseStudyContent } from "@/components/case-study-content";
+import { authorJsonLd, publisherJsonLd, SITE_URL } from "@/lib/seo/author";
 
-const BASE_URL = "https://tap-and-swipe.com";
+const BASE_URL = SITE_URL;
 
 export async function generateStaticParams() {
   return getAllCaseStudySlugs().map((slug) => ({ slug }));
@@ -78,17 +79,8 @@ export default async function CaseStudyPage({
       description: cs.description,
       datePublished: new Date(cs.date).toISOString(),
       dateModified: new Date(cs.updatedDate || cs.date).toISOString(),
-      author: {
-        "@type": "Person",
-        name: "Arthur",
-        url: "https://www.youtube.com/@ArthurBuildsStuff",
-      },
-      publisher: {
-        "@type": "Organization",
-        name: "Tap & Swipe",
-        url: BASE_URL,
-        logo: { "@type": "ImageObject", url: `${BASE_URL}/icon.png` },
-      },
+      author: authorJsonLd,
+      publisher: publisherJsonLd,
       mainEntityOfPage: `${BASE_URL}/case-studies/${slug}`,
       ...(cs.image && {
         image: cs.image.startsWith("http")

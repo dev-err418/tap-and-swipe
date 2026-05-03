@@ -6,8 +6,9 @@ import {
   getEpisodeBySlug,
 } from "@/lib/episodes";
 import { EpisodeContent } from "@/components/episode-content";
+import { authorJsonLd, publisherJsonLd, SITE_URL } from "@/lib/seo/author";
 
-const BASE_URL = "https://tap-and-swipe.com";
+const BASE_URL = SITE_URL;
 
 export async function generateStaticParams() {
   return getAllEpisodeSlugs().map((slug) => ({ slug }));
@@ -63,18 +64,35 @@ export default async function EpisodePage({
     .filter((s) => s.slug !== slug)
     .slice(0, 3);
 
+  const thumbnail = `https://img.youtube.com/vi/${episode.youtubeId}/maxresdefault.jpg`;
+  const datePublished = new Date(episode.date).toISOString();
+  const dateModified = new Date(episode.updatedDate || episode.date).toISOString();
+
   const jsonLd = [
     {
       "@context": "https://schema.org",
       "@type": "VideoObject",
       name: episode.title,
       description: episode.description,
-      thumbnailUrl: `https://img.youtube.com/vi/${episode.youtubeId}/maxresdefault.jpg`,
-      uploadDate: new Date(episode.date).toISOString(),
+      thumbnailUrl: thumbnail,
+      uploadDate: datePublished,
       embedUrl: `https://www.youtube-nocookie.com/embed/${episode.youtubeId}`,
       ...(episode.guest && {
         contributor: { "@type": "Person", name: episode.guest },
       }),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: episode.title,
+      description: episode.description,
+      image: thumbnail,
+      datePublished,
+      dateModified,
+      author: authorJsonLd,
+      publisher: publisherJsonLd,
+      mainEntityOfPage: `${BASE_URL}/episodes/${slug}`,
+      ...(episode.tags && { keywords: episode.tags.join(", ") }),
     },
     {
       "@context": "https://schema.org",
