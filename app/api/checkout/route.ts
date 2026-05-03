@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const whop = getWhop();
     const checkout = await whop.checkoutConfigurations.create({
       plan_id: planId,
-      redirect_url: "https://tap-and-swipe.com/learn",
+      redirect_url: `${APP_URL}/join-discord`,
       metadata: {
         ...(user && { userId: user.id }),
         discordId: session.discordId,

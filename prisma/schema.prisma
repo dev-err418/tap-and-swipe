@@ -31,6 +31,7 @@ model User {
   subscriptionId     String?            @unique
   subscriptionStatus String?
   tier               String?            // "full" | "starter"
+  whopMembershipId   String?            @unique  // populated when Whop activates without a Discord ID; later linked when user joins guild
   roleGranted        Boolean            @default(false)
   discordTrialExpiry DateTime?
   // Attribution

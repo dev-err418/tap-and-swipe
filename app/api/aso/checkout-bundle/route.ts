@@ -23,7 +23,7 @@ export async function GET() {
     const whop = getWhop();
     const checkout = await whop.checkoutConfigurations.create({
       plan_id: WHOP_COMMUNITY_PLAN_ID,
-      redirect_url: `${APP_URL}/community?status=success`,
+      redirect_url: `${APP_URL}/join-discord?bundle=aso`,
       metadata: {
         discordId: session.discordId,
         visitorId,

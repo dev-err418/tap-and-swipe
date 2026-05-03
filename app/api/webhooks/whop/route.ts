@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getWhop, WHOP_STARTER_PLAN_ID, WHOP_COMMUNITY_PLAN_ID } from "@/lib/whop";
 import { prisma } from "@/lib/prisma";
-import {
-  addToGuild,
-  addRole,
-  removeRole,
-  createPrivateChannel,
-  sendChannelMessage,
-} from "@/lib/discord";
+import { addRole, removeRole } from "@/lib/discord";
 import {
   generateAsoLicenseWhop,
   deactivateAsoLicensesByWhop,
   reactivateAsoLicensesByWhop,
 } from "@/lib/aso-db";
 import { sendLicenseKeyEmail } from "@/lib/aso-email";
+import { grantAccess } from "@/lib/grant-access";
 
 function extractDiscord(data: Record<string, unknown>): {
   id: string;
@@ -187,153 +182,50 @@ export async function POST(request: NextRequest) {
         const email = extractEmail(data);
         const manageUrl = data.manage_url as string | undefined;
 
-        // Discord role granting
         if (discord) {
-          const existingUser = await prisma.user.findUnique({
-            where: { discordId: discord.id },
+          await grantAccess({
+            discordId: discord.id,
+            discordUsername: discord.username,
+            tier,
+            email,
+            whopMembershipId: membershipId,
+            manageUrl,
+            visitorId: visitorId ?? undefined,
+            source: "whop-webhook",
           });
-
-          // Add user to guild using stored OAuth access token, then assign role
-          if (existingUser?.discordAccessToken) {
-            await addToGuild(discord.id, existingUser.discordAccessToken).catch(
-              (err) =>
-                console.warn(
-                  `[whop] addToGuild failed for ${discord.id}:`,
-                  err
-                )
-            );
-          } else {
-            console.warn(
-              `[whop] No access token stored for ${discord.id} — cannot add to guild`
-            );
-          }
-
-          // Plan upgrade/downgrade: if the stored tier differs from the
-          // freshly-resolved tier, remove the old role before granting the new one.
-          const previousTier =
-            existingUser?.tier === "starter" || existingUser?.tier === "full"
-              ? existingUser.tier
-              : null;
-          if (previousTier && previousTier !== tier) {
-            await removeRole(discord.id, previousTier).catch((err) =>
-              console.warn(
-                `[whop] Failed to remove old ${previousTier} role for ${discord.id}:`,
-                err
-              )
-            );
-            console.log(
-              `[whop] Plan change detected — ${previousTier} → ${tier} for ${discord.id}`
-            );
-          }
-
-          const roleGranted = await addRole(discord.id, tier);
-          if (!roleGranted) {
-            console.warn(
-              `[whop] addRole returned false for ${discord.id} — user may not be in the guild`
-            );
-          }
-
-          const isNew = !existingUser;
-          const isActiveElsewhere =
-            existingUser &&
-            existingUser.paymentProvider !== "whop" &&
-            existingUser.paymentProvider !== null &&
-            existingUser.subscriptionStatus === "active";
-
-          await prisma.user.upsert({
-            where: { discordId: discord.id },
-            update: {
-              subscriptionStatus: "active",
-              roleGranted,
-              tier,
-              ...(!isActiveElsewhere && { paymentProvider: "whop" }),
-              ...(visitorId && !existingUser?.visitorId && { visitorId }),
-            },
-            create: {
-              discordId: discord.id,
-              discordUsername: discord.username,
-              subscriptionStatus: "active",
-              paymentProvider: "whop",
-              roleGranted,
-              tier,
-              ...(visitorId && { visitorId }),
-            },
-          });
-
-          // First-time activation: create a private welcome channel.
-          if (isNew) {
-            try {
-              const usernameSlug = discord.username
-                .toLowerCase()
-                .replace(/[^a-z0-9-]/g, "-");
-              const channelName = `👋・welcome-${usernameSlug}`;
-              const channelId = await createPrivateChannel(
-                discord.id,
-                channelName,
-                process.env.DISCORD_WELCOME_CATEGORY_ID
-              );
-
-              const steps =
-                tier === "full"
-                  ? `1. the course is at https://tap-and-swipe.com/learn, start with the **Getting Started** category
-2. your **ASO Pro** license should already be in your inbox, comes with the sub
-3. group calls are **wed and sun at 9pm CET**
-4. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with
-5. share your build progress: start a thread in <#1480509051489095782>, one per app`
-                  : `1. the course is at https://tap-and-swipe.com/learn, start with the **Getting Started** category
-2. group calls are **wed and sun at 9pm CET**
-3. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with
-4. share your build progress: start a thread in <#1480509051489095782>, one per app`;
-
-              const message = `hey <@${discord.id}>, welcome in 👋
-
-happy you made it. this is your channel, ping me anything you need and i'll get to it
-
-heads up: this channel auto-deletes in 72h, so don't leave anything important in here
-
-few things to get you sorted:
-${steps}`;
-
-              await sendChannelMessage(channelId, message, true);
-            } catch (err) {
-              console.error(
-                `[whop] Failed to create welcome channel for ${discord.id}:`,
-                err
-              );
-            }
-          }
-
-          // ASO license generation (Pro tier only — Community tier has no ASO)
-          if (email && tier === "full") {
-            const { key: licenseKey, isNew: isNewLicense } =
-              await generateAsoLicenseWhop(email, membershipId, asoPlan, manageUrl);
-
-            if (isNewLicense || isNew) {
-              await sendLicenseKeyEmail(
-                email,
-                licenseKey,
-                emailSource,
-                manageUrl
-              );
-            }
-          }
-
-          console.log(
-            `[whop] membership.activated — discordId=${discord.id} roleGranted=${roleGranted}`
-          );
         } else {
-          // No Discord — still generate ASO license if we have email and Pro tier
+          // No Discord linked yet — generate ASO license if we have email and
+          // Pro tier, AND create a placeholder User row so the bot can claim
+          // it when the user later links Discord and joins the guild.
           if (email && tier === "full") {
             const { key: licenseKey, isNew: isNewLicense } =
               await generateAsoLicenseWhop(email, membershipId, asoPlan, manageUrl);
-
             if (isNewLicense) {
               await sendLicenseKeyEmail(email, licenseKey, emailSource, manageUrl);
             }
           }
 
+          await prisma.user.upsert({
+            where: { whopMembershipId: membershipId },
+            update: {
+              subscriptionStatus: "active",
+              tier,
+              ...(email && { email }),
+              ...(visitorId && { visitorId }),
+            },
+            create: {
+              whopMembershipId: membershipId,
+              subscriptionStatus: "active",
+              paymentProvider: "whop",
+              roleGranted: false,
+              tier,
+              ...(email && { email }),
+              ...(visitorId && { visitorId }),
+            },
+          });
+
           console.warn(
-            `[whop] membership.activated — no Discord ID found. membership=${membershipId}`
+            `[whop] membership.activated — no Discord ID, placeholder User stored. membership=${membershipId} email=${email ?? "(none)"}`
           );
         }
         break;
