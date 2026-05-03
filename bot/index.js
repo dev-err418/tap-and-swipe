@@ -29,6 +29,7 @@ const client = new Client({
 
 client.once(Events.ClientReady, (c) => {
   console.log(`[bot] logged in as ${c.user.tag} — listening for joins on guild ${DISCORD_GUILD_ID}`);
+  console.log(`[bot] will POST joins to ${ENDPOINT}`);
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
