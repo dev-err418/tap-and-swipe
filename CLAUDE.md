@@ -9,7 +9,7 @@ npm run dev          # Next.js dev server
 npm run build        # Production build
 npm run lint         # ESLint (flat config, next/core-web-vitals + next/typescript)
 npx prisma generate  # Generate Prisma client (also runs on npm install via postinstall)
-npx prisma db seed   # Seed lessons and premium users
+npx prisma db seed   # Seed lessons
 npx prisma migrate dev  # Create and apply migrations
 npx tsx scripts/<name>.ts  # Run admin scripts (grant-role, import-whop-users, register-discord-commands, test-email, migrate-to-clean-db)
 npm run check:discover     # Validate episodes/case studies/drafts against Google Discover requirements
@@ -52,8 +52,8 @@ The course lives at `/learn` (gated, requires auth). Key pieces:
 - **Categories** defined in `lib/roadmap.ts` — ordered list: getting-started, find-your-idea, design, build, build-with-boilerplate, monetize, launch-and-grow, scaling, weekly-calls.
 - **Lessons** seeded via `prisma/seed.ts` with stable IDs `seed-{category}-{order}`. Each lesson is video or markdown type. Videos can be hosted on R2 (`videoUrl`) or YouTube (`youtubeUrl`).
 - **Progress** tracked per-user in LessonProgress table.
-- **Premium tiers** (`lib/premium.ts`): standard, boilerplate, full. Controls category access via an access matrix. PremiumUser table maps user IDs to tiers.
-- **Invite links**: token-based system (InviteLink model) to grant premium tier access. Redemption creates a private Discord support channel with welcome messages.
+- **Access control**: `User.subscriptionStatus = "active"` is the only field gated on in the learn flow (`app/api/learn/progress/route.ts`). The `User.tier` column exists (`"full" | "starter"`) but is not currently enforced anywhere in code, so granting access means setting `subscriptionStatus = "active"`. There is no `PremiumUser` table and no `lib/premium.ts`. Use `scripts/check-and-fix-access.ts <discordId>` to upsert a user as active.
+- **Invite links**: token-based system (InviteLink model) to grant access. Redemption creates a private Discord support channel with welcome messages.
 
 **CRITICAL**: When adding lessons to `prisma/seed.ts`, ALWAYS append to the end of a category. Never insert in the middle or reorder — progress is tracked by `seed-{category}-{order}` IDs.
 
@@ -183,7 +183,7 @@ Old URLs (`/app-sprint-community/roadmap/*`) are 301-redirected to `/learn/*`.
 
 Two separate PostgreSQL databases. **Both run on the Oracle VPS via Coolify and require the SSH tunnel from `TUNNEL.md` for local access** (Prisma commands, admin scripts, TablePlus, etc.).
 
-1. **Main database** (`DATABASE_URL`, Prisma) — Users, Accounts, Sessions, VerificationTokens, Lessons, LessonProgress, QuizLeads, QuizEvents, PageEvents, PremiumUsers, InviteLinks, RevenueCatEvents, TrialDiscordMessages. Prisma client generated to `lib/generated/prisma` (not the default location). Import via:
+1. **Main database** (`DATABASE_URL`, Prisma) — Users, Lessons, LessonProgress, QuizLeads, QuizEvents, PageEvents, InviteLinks, RevenueCatEvents, TrialDiscordMessages. (No `PremiumUser`, `Account`, `Session`, or `VerificationToken` tables in the current schema.) Prisma client generated to `lib/generated/prisma` (not the default location). Import via:
    ```typescript
    import { prisma } from "@/lib/prisma";
    ```

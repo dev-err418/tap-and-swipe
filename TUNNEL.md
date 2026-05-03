@@ -7,7 +7,7 @@ The production database runs inside a Docker container on the Oracle VPS. It's n
 **1. Start the tunnel**
 
 ```bash
-ssh -f -N -L 15432:10.0.2.10:5432 oracle-web
+ssh -f -N -L 15432:10.0.2.14:5432 oracle-web
 ```
 
 This maps `localhost:15432` to the Postgres container on the VPS.
@@ -36,7 +36,7 @@ kill $(lsof -t -i :15432)
 
 | Field | Value |
 |-------|-------|
-| Host | `10.0.2.10` |
+| Host | `10.0.2.14` |
 | Port | `5432` |
 | User | `postgres` |
 | Password | `fetpF6Qedm1wI4BWhw3K8o72gppUGARIY6c4s3C41bKMLqrUhBNMsWrWKzuY2dht` |
@@ -50,3 +50,8 @@ kill $(lsof -t -i :15432)
 - The tunnel must be running for any local Prisma command (seed, migrate, generate with introspection, etc.)
 - The old database (`web`) is on a different container at `10.0.2.8`. Don't use it for new development.
 - If the tunnel dies, just re-run the ssh command above.
+- The container's internal IP can change when Coolify rebuilds Postgres. If the tunnel reaches a port but the connection resets (`ECONNRESET` / `ConnectionClosed`), the IP has drifted. Find the current one with:
+  ```bash
+  ssh oracle-web 'sudo docker inspect tsajq8axqtejmfz0mgxkxwv7 --format "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'
+  ```
+  The container name (`tsajq8axqtejmfz0mgxkxwv7`) is Coolify's UUID for the tap-and-swipe Postgres instance and is stable across rebuilds — only the IP rotates. Update this doc if it changes.
