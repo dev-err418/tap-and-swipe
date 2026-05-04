@@ -18,7 +18,8 @@ export function createMcpServer(): McpServer {
         "Read-only analytics MCP for tap-and-swipe.com. Newsletter funnel uses product='home' " +
         "with type='subscribe' for conversions; community uses product='community' with type='paid'; " +
         "quiz uses product='quiz' plus the QuizLead table. All subscriptions are on Whop. " +
-        "PII (emails, names, discord IDs) is masked by default — pass reveal=true to unmask. " +
+        "PII (emails, names, discord IDs) is masked by default, pass reveal=true to unmask. " +
+        "Course content (categories + lessons + notes) is exposed via course_outline. " +
         "Read the taprm://enums/page-events resource before composing tool inputs.",
     },
   );
