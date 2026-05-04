@@ -1,6 +1,6 @@
 import MonthCalendar, { type CalendarEvent } from "@/components/roadmap/MonthCalendar";
 
-// Generate recurring weekly calls for Wednesdays and Sundays
+// Generate recurring weekly calls for Wednesdays and Saturdays
 // 9 PM UTC+2 = 7 PM UTC = 3 PM ET = 12 PM PT
 function generateRecurringEvents(): CalendarEvent[] {
   const events: CalendarEvent[] = [];
@@ -9,8 +9,8 @@ function generateRecurringEvents(): CalendarEvent[] {
 
   const current = new Date(start);
   while (current <= end) {
-    const day = current.getDay(); // 0 = Sunday, 3 = Wednesday
-    if (day === 0 || day === 3) {
+    const day = current.getDay(); // 6 = Saturday, 3 = Wednesday
+    if (day === 6 || day === 3) {
       const yyyy = current.getFullYear();
       const mm = String(current.getMonth() + 1).padStart(2, "0");
       const dd = String(current.getDate()).padStart(2, "0");
