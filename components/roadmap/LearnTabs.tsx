@@ -21,7 +21,11 @@ export default function LearnTabs({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
 
   const tabs: Tab[] = isAdmin
-    ? [...BASE_TABS, { label: "Analytics", href: "/learn/analytics", disabled: false }]
+    ? [
+        ...BASE_TABS,
+        { label: "Posting", href: "/learn/posting", disabled: false },
+        { label: "Analytics", href: "/learn/analytics", disabled: false },
+      ]
     : BASE_TABS;
 
   return (
