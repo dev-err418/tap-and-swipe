@@ -28,10 +28,10 @@ Self-hosted on **Coolify** (running on an Oracle VPS). Not Vercel. Do not assume
 The PostgreSQL database runs in a Docker container on the same Oracle VPS (also managed by Coolify) and is **not exposed to the public internet**. To run anything locally that touches the DB (dev server, Prisma seed/migrate/generate, admin scripts), an SSH tunnel must be open:
 
 ```bash
-ssh -f -N -L 15432:10.0.2.10:5432 oracle-web
+ssh -f -N -L 15432:10.0.2.14:5432 oracle-web
 ```
 
-`.env.local` then points `DATABASE_URL` at `localhost:15432`. Full setup, TablePlus connection details, and teardown are in `TUNNEL.md`. If a Prisma command hangs or fails to connect locally, the tunnel is the first thing to check.
+`.env.local` then points `DATABASE_URL` at `localhost:15432`. Full setup, TablePlus connection details, and teardown are in `TUNNEL.md`. If a Prisma command hangs or fails to connect locally, the tunnel is the first thing to check. The container's Docker IP can drift when Coolify rebuilds — TUNNEL.md has the lookup command for the current IP.
 
 ## Architecture
 
