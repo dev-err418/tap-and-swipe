@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Check, ArrowRight, Star } from "lucide-react";
 
 const premiumFeatures = [
-    "2x weekly group calls",
+    "3x weekly group calls",
     "Ready-to-start Expo boilerplate (skip the setup, start building)",
     "Guest masterclasses with founders >10K€ MRR (coming 2026)",
 ];
