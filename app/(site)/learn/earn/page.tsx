@@ -1,11 +1,4 @@
-import {
-  ArrowUpRight,
-  DollarSign,
-  Link2,
-  Repeat,
-  Share2,
-  Wallet,
-} from "lucide-react";
+import { ArrowUpRight, Link2, Repeat, Wallet } from "lucide-react";
 import EarningsTable from "@/components/roadmap/EarningsTable";
 
 const WHOP_AFFILIATE_LINKS_URL = "https://whop.com/appsprint-community/affiliates/";
@@ -63,17 +56,17 @@ export default function EarnPage() {
         </h2>
         <ol className="mt-4 grid gap-4 sm:grid-cols-3">
           <Step
-            icon={<Link2 className="h-5 w-5" />}
+            number="1."
             title="Grab your affiliate link"
             body="Open the affiliate dashboard above (sign in to Whop if asked) and copy your unique referral URL."
           />
           <Step
-            icon={<Share2 className="h-5 w-5" />}
+            number="2."
             title="Share it anywhere"
             body="Post it on X, in YouTube descriptions, in your newsletter, or DM it to a friend who's been thinking about building an app."
           />
           <Step
-            icon={<DollarSign className="h-5 w-5" />}
+            number="3."
             title="Get paid"
             body="Whop pays out commissions automatically after a 30-day clearing period. Track your earnings inside the affiliate dashboard."
           />
@@ -120,21 +113,20 @@ function Highlight({
 }
 
 function Step({
-  icon,
+  number,
   title,
   body,
 }: {
-  icon: React.ReactNode;
+  number: string;
   title: string;
   body: string;
 }) {
   return (
     <li className="rounded-2xl border border-black/10 bg-white p-5">
-      <span className="text-black">{icon}</span>
-      <div className="mt-3">
-        <h3 className="font-semibold text-black">{title}</h3>
-        <p className="mt-1 text-sm text-black/55">{body}</p>
-      </div>
+      <h3 className="font-semibold text-black">
+        {number} {title}
+      </h3>
+      <p className="mt-1 text-sm text-black/55">{body}</p>
     </li>
   );
 }
