@@ -1,5 +1,6 @@
 import PageTracker from "./PageTracker";
 import { SubscribeForm } from "./SubscribeForm";
+import { HeroMobileMarquee } from "./hero-mobile-icons";
 
 type HeroIcon = {
   top: string;
@@ -53,6 +54,8 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
           />
         ))}
       </div>
+
+      <HeroMobileMarquee />
 
       <div className="relative z-10">
         <h1 className="max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
