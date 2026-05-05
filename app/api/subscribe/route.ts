@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { sendPushNotification } from "@/lib/notify";
 
 const NEWSLETTER_WEBHOOK = process.env.SUBSCRIBE_DISCORD_WEBHOOK!;
 const PLUNK_TIMEOUT_MS = 10_000;
@@ -157,36 +158,44 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Subscription failed" }, { status: 500 });
     }
 
-    // Discord notification — only for genuinely new contacts.
-    if (isNewContact && NEWSLETTER_WEBHOOK) {
-      try {
-        const discordRes = await fetchWithTimeout(
-          NEWSLETTER_WEBHOOK,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              embeds: [
-                {
-                  title: "New newsletter subscriber",
-                  color: 0xff9500,
-                  fields: [
-                    { name: "Email", value: normalizedEmail, inline: true },
-                    { name: "Country", value: formatCountry(country), inline: true },
+    // Discord + phone push notifications — only for genuinely new contacts.
+    if (isNewContact) {
+      const countryLabel = formatCountry(country);
+      await Promise.allSettled([
+        NEWSLETTER_WEBHOOK
+          ? fetchWithTimeout(
+              NEWSLETTER_WEBHOOK,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  embeds: [
+                    {
+                      title: "New newsletter subscriber",
+                      color: 0xff9500,
+                      fields: [
+                        { name: "Email", value: normalizedEmail, inline: true },
+                        { name: "Country", value: countryLabel, inline: true },
+                      ],
+                      timestamp: new Date().toISOString(),
+                    },
                   ],
-                  timestamp: new Date().toISOString(),
-                },
-              ],
-            }),
-          },
-          PLUNK_TIMEOUT_MS
-        );
-        if (!discordRes.ok) {
-          console.error("Newsletter Discord webhook error:", discordRes.status);
-        }
-      } catch (err) {
-        console.error("Newsletter Discord webhook error:", err);
-      }
+                }),
+              },
+              PLUNK_TIMEOUT_MS
+            )
+              .then((r) => {
+                if (!r.ok) console.error("Newsletter Discord webhook error:", r.status);
+              })
+              .catch((err) => console.error("Newsletter Discord webhook error:", err))
+          : Promise.resolve(),
+        sendPushNotification({
+          title: "New newsletter sub",
+          subtitle: countryLabel,
+          body: normalizedEmail,
+          thread_id: "newsletter",
+        }),
+      ]);
     }
 
     return NextResponse.json({ ok: true, alreadySubscribed: !isNewContact });
