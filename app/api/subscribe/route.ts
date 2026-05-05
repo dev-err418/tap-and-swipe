@@ -64,8 +64,16 @@ export async function POST(req: Request) {
     const plunkPublicKey = process.env.PLUNK_PUBLIC_KEY;
     const plunkEvent = process.env.PLUNK_NEWSLETTER_EVENT;
 
-    if (!plunkUrl || !plunkPublicKey || !plunkEvent) {
-      console.error("Missing PLUNK_API_URL, PLUNK_PUBLIC_KEY, or PLUNK_NEWSLETTER_EVENT env vars");
+    const missing = [
+      !plunkUrl && "PLUNK_API_URL",
+      !plunkPublicKey && "PLUNK_PUBLIC_KEY",
+      !plunkEvent && "PLUNK_NEWSLETTER_EVENT",
+    ].filter(Boolean);
+    if (missing.length > 0) {
+      console.error(
+        `Newsletter env vars missing or empty: ${missing.join(", ")} ` +
+          `(secret_present=${Boolean(plunkSecretKey)})`
+      );
       return NextResponse.json({ error: "Newsletter not configured" }, { status: 500 });
     }
 
