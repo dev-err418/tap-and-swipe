@@ -129,14 +129,6 @@ Cal AI onboarding analysis: [on Figma](https://www.figma.com/board/vXMqEHxmISELk
   // Build (basic — no boilerplate required)
   {
     category: "build",
-    title: "From zero to running app with Expo + AI tools",
-    description: "Set up your dev environment and create your first Expo app",
-    type: "video",
-    youtubeUrl: null,
-    order: 1,
-  },
-  {
-    category: "build",
     title: "App Store Connect setup",
     description: "Configure your app in App Store Connect for submission",
     type: "video",
@@ -150,106 +142,6 @@ Cal AI onboarding analysis: [on Figma](https://www.figma.com/board/vXMqEHxmISELk
     type: "video",
     youtubeUrl: "https://youtu.be/qMoPSXUm6LQ",
     order: 3,
-  },
-  {
-    category: "build",
-    title: "Set up Sentry, PostHog & Supabase",
-    description: "Add crash monitoring, analytics, and a backend to your app",
-    type: "markdown",
-    markdownContent: `Three services you should set up before launch: **Sentry** for crash monitoring, **PostHog** for analytics and AB testing, and **Supabase** for your backend.
-
----
-
-## Sentry — crash monitoring
-
-Go to [sentry.io](https://sentry.io) and create a free account. Create a new project, select **React Native**, and follow the setup wizard.
-
-Sentry catches crashes and errors in production so you know what's breaking before users complain.
-
-\`\`\`bash
-npx expo install @sentry/react-native
-\`\`\`
-
-Wrap your app entry with \`Sentry.init()\` using your DSN from the Sentry dashboard. That's the minimum setup — you'll get crash reports immediately.
-
----
-
-## PostHog — analytics & AB testing
-
-Go to [posthog.com](https://posthog.com) and create a free account (generous free tier: 1M events/month).
-
-\`\`\`bash
-npx expo install posthog-react-native
-\`\`\`
-
-Initialize PostHog with your project API key and instance URL. Then track events with \`posthog.capture('event_name')\`.
-
-PostHog also supports **feature flags** and **AB tests** out of the box — you can test different paywalls, onboarding flows, and pricing without shipping new builds.
-
----
-
-## Supabase — backend & database
-
-Go to [supabase.com](https://supabase.com) and create a free account (big free tier, 2 projects). Click **New Project**, pick a name and a region close to your users, set a database password (save it somewhere), and hit **Create**.
-
-Wait a minute for the project to spin up.
-
-### Set up the database
-
-From the left sidebar, click **SQL Editor**. Paste the following and hit **Run**:
-
-\`\`\`sql
--- Onboarding responses table
-create table onboarding_responses (
-  id bigint generated always as identity primary key,
-  revenuecat_user_id text not null unique,
-  name text,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
--- Feedback table
-create table feedback (
-  id bigint generated always as identity primary key,
-  revenuecat_user_id text not null,
-  comment text,
-  context jsonb,
-  created_at timestamptz default now()
-);
-
--- Auto-update updated_at on onboarding_responses
-create or replace function update_updated_at()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
-
-create trigger onboarding_responses_updated_at
-  before update on onboarding_responses
-  for each row execute function update_updated_at();
-
--- Enable RLS
-alter table onboarding_responses enable row level security;
-alter table feedback enable row level security;
-
--- Allow inserts/upserts from anon key
-create policy "Allow anon insert" on onboarding_responses for all using (true) with check (true);
-create policy "Allow anon insert" on feedback for all using (true) with check (true);
-\`\`\`
-
-### Get your API keys
-
-Go back to the Supabase dashboard home page. Click on the **Connect** button under your project name at the top. Select the **API Keys** tab.
-
-You need two values for your app:
-
-- **Project URL** — looks like \`https://xxxxx.supabase.co\`
-- **Anon Key** — the long JWT string (this is safe to embed in your app, RLS protects your data)
-
-Copy both into your app's environment variables. That's it, your backend is ready.`,
-    order: 4,
   },
 
   // Build with the boilerplate (premium)
@@ -980,8 +872,12 @@ async function main() {
     });
   }
 
-  // Clean up orphaned build lessons (old build-5 through build-16)
-  for (let order = 5; order <= 16; order++) {
+  // Clean up orphaned build lessons. Removed build-1 ("From zero to running
+  // app with Expo + AI tools") and build-4 ("Set up Sentry, PostHog &
+  // Supabase"); the remaining build lessons (orders 2 and 3) keep their IDs
+  // so existing user progress is preserved.
+  const orphanedBuildOrders = [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+  for (const order of orphanedBuildOrders) {
     await prisma.lessonProgress
       .deleteMany({ where: { lessonId: `seed-build-${order}` } })
       .catch(() => {});

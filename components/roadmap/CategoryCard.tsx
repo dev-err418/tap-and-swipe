@@ -34,8 +34,9 @@ export default function CategoryCard({
         )}
         {locked && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-[2px]">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/15 bg-white text-black shadow-sm">
-              <Lock className="h-4 w-4" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-black/15 bg-white px-3 py-1.5 text-xs font-medium text-black shadow-sm">
+              <Lock className="h-3.5 w-3.5" />
+              {totalLessons} {totalLessons === 1 ? "lesson" : "lessons"}
             </span>
           </div>
         )}
