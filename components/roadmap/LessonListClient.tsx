@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
-import { CheckCircle2, Circle } from "lucide-react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { CheckCircle2, Circle, Link2, Check } from "lucide-react";
 import ProgressBar from "./ProgressBar";
 import MarkdownContent from "./MarkdownContent";
 
@@ -23,25 +23,65 @@ export default function LessonListClient({
   hideProgress,
   categoryTitle,
   categorySubtitle,
+  categorySlug,
+  initialLessonId,
+  isAdmin = false,
 }: {
   lessons: Lesson[];
   initialCompletedIds: string[];
   hideProgress: boolean;
   categoryTitle: string;
   categorySubtitle: string;
+  categorySlug: string;
+  initialLessonId?: string | null;
+  isAdmin?: boolean;
 }) {
   const [completedIds, setCompletedIds] = useState(
     () => new Set(initialCompletedIds)
   );
 
   const defaultLessonId = useMemo(() => {
+    if (initialLessonId && lessons.some((l) => l.id === initialLessonId)) {
+      return initialLessonId;
+    }
     const firstUncompleted = lessons.find(
       (l) => !initialCompletedIds.includes(l.id) && l.sectionType !== "github-connect"
     );
     return firstUncompleted?.id ?? lessons[0]?.id ?? null;
-  }, [lessons, initialCompletedIds]);
+  }, [lessons, initialCompletedIds, initialLessonId]);
 
   const [selectedId, setSelectedId] = useState<string | null>(defaultLessonId);
+  const [copied, setCopied] = useState(false);
+
+  const selectLesson = useCallback(
+    (id: string) => {
+      setSelectedId(id);
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("lesson", id);
+        window.history.replaceState(null, "", url.toString());
+      }
+    },
+    []
+  );
+
+  const copyShareLink = useCallback(async () => {
+    if (!selectedId || typeof window === "undefined") return;
+    const url = `${window.location.origin}/learn/classroom/${categorySlug}?lesson=${selectedId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  }, [selectedId, categorySlug]);
+
+  useEffect(() => {
+    if (!initialLessonId) return;
+    const el = document.querySelector(`[data-lesson-id="${initialLessonId}"]`);
+    el?.scrollIntoView({ block: "nearest" });
+  }, [initialLessonId]);
 
   const selectedLesson = lessons.find((l) => l.id === selectedId) ?? null;
   const completedCount = completedIds.size;
@@ -85,7 +125,7 @@ export default function LessonListClient({
               l.sectionType !== "github-connect"
           );
           if (nextUncompleted) {
-            setSelectedId(nextUncompleted.id);
+            selectLesson(nextUncompleted.id);
           }
         }
       } catch {
@@ -99,7 +139,7 @@ export default function LessonListClient({
         setIsPending(false);
       }
     },
-    [lessons, completedIds]
+    [lessons, completedIds, selectLesson]
   );
 
   const isVideo = selectedLesson?.type === "video";
@@ -137,7 +177,8 @@ export default function LessonListClient({
               return (
                 <button
                   key={lesson.id}
-                  onClick={() => setSelectedId(lesson.id)}
+                  data-lesson-id={lesson.id}
+                  onClick={() => selectLesson(lesson.id)}
                   className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
                     isActive
                       ? "bg-black/[0.06] text-black font-medium"
@@ -184,9 +225,30 @@ export default function LessonListClient({
             {/* Title, description, and done button */}
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
-                <h2 className="text-3xl font-bold text-black mb-1">
-                  {selectedLesson.title}
-                </h2>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-3xl font-bold text-black">
+                    {selectedLesson.title}
+                  </h2>
+                  {isAdmin && (
+                    <button
+                      onClick={copyShareLink}
+                      title="Copy share link"
+                      className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1 text-xs text-black/60 hover:text-black hover:bg-black/[0.04] transition-colors cursor-pointer"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-3.5 w-3.5" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Link2 className="h-3.5 w-3.5" />
+                          Share
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
                 {selectedLesson.description && (
                   <p className="text-sm text-black/50">
                     {selectedLesson.description}
@@ -211,14 +273,17 @@ export default function LessonListClient({
 
             {/* Video player */}
             {isVideo && selectedLesson.videoUrl && (
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/5 mb-6">
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black mb-6">
                 <video
                   key={selectedLesson.id}
                   src={selectedLesson.videoUrl}
                   controls
+                  controlsList="nodownload noremoteplayback noplaybackrate"
+                  disablePictureInPicture
+                  onContextMenu={(e) => e.preventDefault()}
                   playsInline
                   preload="metadata"
-                  className="absolute inset-0 w-full h-full"
+                  className="absolute inset-0 w-full h-full object-contain"
                 />
               </div>
             )}

@@ -24,6 +24,7 @@ const lessons: Lesson[] = [
     title: "Welcome to the roadmap",
     description: "What you'll learn and how the course works",
     type: "video",
+    videoUrl: "https://videos.tap-and-swipe.com/getting-started/welcome-to-the-roadmap.mp4",
     youtubeUrl: "https://youtu.be/Zq37It_smAk",
     order: 1,
   },

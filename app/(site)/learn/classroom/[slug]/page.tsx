@@ -11,7 +11,7 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ preview?: string }>;
+  searchParams: Promise<{ preview?: string; lesson?: string }>;
 }) {
   const { slug } = await params;
   const sp = await searchParams;
@@ -84,6 +84,9 @@ export default async function CategoryPage({
         hideProgress={hideProgress}
         categoryTitle={category.title}
         categorySubtitle={category.subtitle}
+        categorySlug={slug}
+        initialLessonId={sp.lesson ?? null}
+        isAdmin={isAdmin}
       />
     </div>
   );
