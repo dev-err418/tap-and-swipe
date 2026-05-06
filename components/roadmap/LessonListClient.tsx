@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { CheckCircle2, Circle, Link2, Check } from "lucide-react";
 import ProgressBar from "./ProgressBar";
 import MarkdownContent from "./MarkdownContent";
+import { buildLessonShortPath } from "@/lib/roadmap";
 
 type Lesson = {
   id: string;
@@ -67,7 +68,10 @@ export default function LessonListClient({
 
   const copyShareLink = useCallback(async () => {
     if (!selectedId || typeof window === "undefined") return;
-    const url = `${window.location.origin}/learn/classroom/${categorySlug}?lesson=${selectedId}`;
+    const shortPath = buildLessonShortPath(categorySlug, selectedId);
+    const url = shortPath
+      ? `${window.location.origin}${shortPath}`
+      : `${window.location.origin}/learn/classroom/${categorySlug}?lesson=${selectedId}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

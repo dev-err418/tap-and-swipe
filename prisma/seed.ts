@@ -30,6 +30,14 @@ const lessons: Lesson[] = [
   },
   {
     category: "getting-started",
+    title: "The funnel approach",
+    description: "How a mobile app drives sales: traffic, store, download, onboarding, trial, paid",
+    type: "video",
+    videoUrl: "https://videos.tap-and-swipe.com/getting-started/funnel-approach.mp4",
+    order: 2,
+  },
+  {
+    category: "getting-started",
     title: "Tools & setup",
     description: "Everything you need before you start building",
     type: "video",
@@ -37,7 +45,7 @@ const lessons: Lesson[] = [
     markdownContent: `Get **20% off [Astro](https://tryastro.app/?aff=GPEbM)** (the ASO tool) using code **WELCOMEBACK** through this link!
 
 Apply for the [Apple Small Business Program](https://developer.apple.com/app-store/small-business-program/) immediately. Apple takes 15% instead of 30%. Free money.`,
-    order: 2,
+    order: 3,
   },
 
   // Find Your Idea
@@ -843,6 +851,43 @@ If you've never tested your paywall:
 
 async function main() {
   console.log("Seeding lessons...");
+
+  // One-shot migration: insert "The funnel approach" between "Welcome" (1)
+  // and "Tools & setup" (was 2, now 3). Move "Tools & setup" from id -2 to
+  // id -3, taking its LessonProgress rows along, before the upsert loop
+  // recreates id -2 as the new funnel lesson. Guarded so it only runs once.
+  const renamedToolsSetup = await prisma.lesson.findUnique({
+    where: { id: "seed-getting-started-3" },
+  });
+  if (!renamedToolsSetup) {
+    const oldToolsSetup = await prisma.lesson.findUnique({
+      where: { id: "seed-getting-started-2" },
+    });
+    if (oldToolsSetup && oldToolsSetup.title === "Tools & setup") {
+      await prisma.$transaction([
+        prisma.lesson.create({
+          data: {
+            id: "seed-getting-started-3",
+            category: oldToolsSetup.category,
+            title: oldToolsSetup.title,
+            description: oldToolsSetup.description,
+            type: oldToolsSetup.type,
+            videoUrl: oldToolsSetup.videoUrl,
+            youtubeUrl: oldToolsSetup.youtubeUrl,
+            markdownContent: oldToolsSetup.markdownContent,
+            sectionType: oldToolsSetup.sectionType,
+            order: 3,
+          },
+        }),
+        prisma.lessonProgress.updateMany({
+          where: { lessonId: "seed-getting-started-2" },
+          data: { lessonId: "seed-getting-started-3" },
+        }),
+        prisma.lesson.delete({ where: { id: "seed-getting-started-2" } }),
+      ]);
+      console.log("Migrated seed-getting-started-2 → -3 (Tools & setup, with progress).");
+    }
+  }
 
   for (const lesson of lessons) {
     await prisma.lesson.upsert({
