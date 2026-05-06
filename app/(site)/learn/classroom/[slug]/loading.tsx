@@ -24,19 +24,20 @@ export default function CategoryLoading() {
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="hidden lg:block w-px bg-black/10 shrink-0" />
-
-        {/* Right: Content */}
+        {/* Right: Content card */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <div className="h-8 w-64 rounded-lg bg-black/[0.04] animate-pulse mb-2" />
-              <div className="h-4 w-80 rounded-lg bg-black/[0.04] animate-pulse" />
+          <div className="rounded-2xl border border-black/10 bg-white p-6 space-y-6">
+            {/* Header: title + done button */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="h-7 w-64 rounded-lg bg-black/[0.04] animate-pulse mb-2" />
+                <div className="h-4 w-80 max-w-full rounded-lg bg-black/[0.04] animate-pulse" />
+              </div>
+              <div className="h-10 w-36 rounded-full bg-black/[0.04] animate-pulse shrink-0" />
             </div>
-            <div className="h-10 w-36 rounded-full bg-black/[0.04] animate-pulse shrink-0" />
+            {/* Video */}
+            <div className="aspect-video w-full rounded-xl bg-black/[0.04] animate-pulse" />
           </div>
-          <div className="aspect-video w-full rounded-xl bg-black/[0.04] animate-pulse" />
         </div>
       </div>
     </div>

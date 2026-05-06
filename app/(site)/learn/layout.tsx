@@ -54,11 +54,13 @@ export default async function LearnLayout({
   const isAdmin = session?.discordId === process.env.ADMIN_DISCORD_ID;
 
   return (
-    <div className="px-6 pb-24">
-      <div className="mx-auto w-full max-w-5xl">
-        <div className="mb-10">
+    <div className="min-h-screen bg-black/[0.02]">
+      <div className="border-b border-black/10 bg-white">
+        <div className="mx-auto w-full max-w-5xl px-6 pt-8">
           <LearnTabs isAdmin={isAdmin} />
         </div>
+      </div>
+      <div className="mx-auto w-full max-w-5xl px-6 pt-10 pb-24">
         {children}
       </div>
       {isAdmin && <AdminStarterPreviewToggle />}

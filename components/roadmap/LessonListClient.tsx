@@ -220,24 +220,22 @@ export default function LessonListClient({
         </div>
       </div>
 
-      <div className="hidden lg:block w-px bg-black/10 shrink-0" />
-
       {/* Right: Content */}
       <div className="flex-1 min-w-0">
         {selectedLesson ? (
-          <div>
-            {/* Title, description, and done button */}
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-3xl font-bold text-black">
+          <div className="rounded-2xl border border-black/10 bg-white p-6 space-y-6">
+            {/* Header: title, subtitle, share, done */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-black">
                     {selectedLesson.title}
                   </h2>
                   {isAdmin && (
                     <button
                       onClick={copyShareLink}
                       title="Copy share link"
-                      className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1 text-xs text-black/60 hover:text-black hover:bg-black/[0.04] transition-colors cursor-pointer"
+                      className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-2.5 py-1 text-xs text-black/60 hover:text-black hover:bg-black/[0.04] transition-colors cursor-pointer"
                     >
                       {copied ? (
                         <>
@@ -254,7 +252,7 @@ export default function LessonListClient({
                   )}
                 </div>
                 {selectedLesson.description && (
-                  <p className="text-sm text-black/50">
+                  <p className="mt-1 text-sm text-black/50">
                     {selectedLesson.description}
                   </p>
                 )}
@@ -277,7 +275,7 @@ export default function LessonListClient({
 
             {/* Video player */}
             {isVideo && selectedLesson.videoUrl && (
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black mb-6">
+              <div className="relative w-full aspect-video overflow-hidden rounded-xl bg-black">
                 <video
                   key={selectedLesson.id}
                   src={selectedLesson.videoUrl}
@@ -293,7 +291,7 @@ export default function LessonListClient({
             )}
 
             {isVideo && !selectedLesson.videoUrl && ytId && (
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/5 mb-6">
+              <div className="relative w-full aspect-video overflow-hidden rounded-xl bg-black">
                 <iframe
                   key={selectedLesson.id}
                   src={`https://www.youtube.com/embed/${ytId}`}
@@ -306,18 +304,20 @@ export default function LessonListClient({
             )}
 
             {isVideo && !hasVideo && (
-              <div className="flex items-center justify-center aspect-video rounded-xl bg-black/[0.03] mb-6">
+              <div className="flex items-center justify-center aspect-video overflow-hidden rounded-xl bg-black/[0.03]">
                 <span className="text-sm text-black/30">Coming soon</span>
               </div>
             )}
 
             {/* Markdown content */}
             {selectedLesson.markdownContent && (
-              <div className="rounded-xl bg-black/[0.03] p-6 mb-6">
+              <div>
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/40">
+                  Resources
+                </h3>
                 <MarkdownContent content={selectedLesson.markdownContent} />
               </div>
             )}
-
           </div>
         ) : (
           <div className="flex items-center justify-center h-64 text-black/30 text-sm">

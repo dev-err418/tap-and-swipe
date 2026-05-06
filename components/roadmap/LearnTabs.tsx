@@ -29,7 +29,7 @@ export default function LearnTabs({ isAdmin = false }: { isAdmin?: boolean }) {
     : BASE_TABS;
 
   return (
-    <div className="flex gap-8 border-b border-black/10">
+    <div className="flex gap-8">
       {tabs.map((tab) => {
         const active = pathname.startsWith(tab.href);
 

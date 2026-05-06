@@ -41,10 +41,15 @@ const lessons: Lesson[] = [
     title: "Tools & setup",
     description: "Everything you need before you start building",
     type: "video",
+    videoUrl: "https://videos.tap-and-swipe.com/getting-started/tools-and-setup.mp4",
     youtubeUrl: "https://youtu.be/Bd1WvyJEEuU",
-    markdownContent: `Get **20% off [Astro](https://tryastro.app/?aff=GPEbM)** (the ASO tool) using code **WELCOMEBACK** through this link!
+    markdownContent: `Apply for the **[Apple Small Business Program](https://developer.apple.com/app-store/small-business-program/)** immediately. Apple takes 15% instead of 30%. Free money.
 
-Apply for the [Apple Small Business Program](https://developer.apple.com/app-store/small-business-program/) immediately. Apple takes 15% instead of 30%. Free money.`,
+I highly recommend using an ASO tool:
+
+- If you're a pro member of the community, you have **AppSprint ASO** for free (check your emails).
+- Get 20% off **[AppSprint ASO](https://appsprint.app/aso)** with code **COMMUNITY-20**.
+- Get 20% off **[Astro](https://tryastro.app/?aff=GPEbM)** with code **WELCOMEBACK**.`,
     order: 3,
   },
 

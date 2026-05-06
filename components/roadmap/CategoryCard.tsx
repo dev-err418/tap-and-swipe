@@ -66,14 +66,14 @@ export default function CategoryCard({
         <div
           aria-disabled
           title="Upgrade to Founder to unlock this category"
-          className="block overflow-hidden rounded-2xl border border-black/10 bg-black/[0.02] opacity-60 cursor-not-allowed select-none"
+          className="block overflow-hidden rounded-2xl border border-black/10 bg-white opacity-60 cursor-not-allowed select-none"
         >
           {cardBody}
         </div>
       ) : (
         <Link
           href={`/learn/classroom/${slug}`}
-          className="group block overflow-hidden rounded-2xl border border-black/10 bg-black/[0.02] transition-all hover:bg-black/[0.04] hover:border-black/15"
+          className="group block overflow-hidden rounded-2xl border border-black/10 bg-white transition-all hover:border-black/20 hover:shadow-sm"
         >
           {cardBody}
         </Link>

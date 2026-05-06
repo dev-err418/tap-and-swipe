@@ -11,7 +11,7 @@ const components: Components = {
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-xl font-bold text-[#FF9500] mb-3 mt-5">{children}</h2>
+    <h2 className="text-xl font-bold text-black mb-3 mt-5">{children}</h2>
   ),
   h3: ({ children }) => (
     <h3 className="text-lg font-semibold text-black mb-2 mt-4">
@@ -19,31 +19,31 @@ const components: Components = {
     </h3>
   ),
   p: ({ children }) => (
-    <p className="text-black/60 leading-relaxed mb-4">{children}</p>
+    <p className="text-black leading-relaxed mb-4">{children}</p>
   ),
   ul: ({ children }) => (
-    <ul className="list-disc pl-5 text-black/60 mb-4 space-y-1">
+    <ul className="list-disc pl-5 text-black mb-4 space-y-1">
       {children}
     </ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal pl-5 text-black/60 mb-4 space-y-1">
+    <ol className="list-decimal pl-5 text-black mb-4 space-y-1">
       {children}
     </ol>
   ),
-  li: ({ children }) => <li className="text-black/60">{children}</li>,
+  li: ({ children }) => <li className="text-black">{children}</li>,
   a: ({ href, children }) => (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-[#FF9500] underline hover:text-[#FF9500]/80 transition-colors"
+      className="text-black underline underline-offset-2 hover:text-black/70 transition-colors"
     >
       {children}
     </a>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-[#FF9500]/40 pl-4 my-4 text-black/50 italic">
+    <blockquote className="border-l-2 border-black/15 pl-4 my-4 text-black/50 italic">
       {children}
     </blockquote>
   ),
@@ -57,7 +57,7 @@ const components: Components = {
       );
     }
     return (
-      <code className="bg-black/[0.06] rounded px-1.5 py-0.5 text-sm text-[#FF9500]">
+      <code className="bg-black/[0.06] rounded px-1.5 py-0.5 text-sm text-black/80">
         {children}
       </code>
     );
@@ -77,7 +77,7 @@ const components: Components = {
   hr: () => <hr className="border-black/10 my-6" />,
   table: ({ children }) => (
     <div className="overflow-x-auto mb-4">
-      <table className="w-full text-sm text-black/60">{children}</table>
+      <table className="w-full text-sm text-black">{children}</table>
     </div>
   ),
   th: ({ children }) => (
