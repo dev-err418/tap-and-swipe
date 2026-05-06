@@ -159,10 +159,42 @@ Cal AI onboarding analysis: [on Figma](https://www.figma.com/board/vXMqEHxmISELk
   },
   {
     category: "build",
+    title: "Set up your website, policies & support page",
+    description: "Spin up the marketing site, privacy/terms, and support URL Apple expects",
+    type: "video",
+    videoUrl: "https://videos.tap-and-swipe.com/build/set-up-website-policies.mp4",
+    order: 4,
+    markdownContent: `**The prompt I used**
+
+\`\`\`
+Build a simple one-page landing site for my app.
+
+INPUTS
+- App name: {NAME}
+- App icon: {URL or attached file}
+- One-liner: {PITCH}
+- Support email: {EMAIL}
+- Platforms: {iOS / Android / both}
+- Store links: {App Store URL, Play Store URL}
+- Third-party tools used: {e.g. RevenueCat (payments), PostHog (analytics), Sentry (crash reporting), Supabase (auth + DB), Tenjin (attribution), Resend (email)}
+
+DELIVERABLES
+
+Home: hero with icon + name + one-liner + store badges. Short feature section. Footer with Privacy, Terms, Contact links.
+/privacy: full privacy policy. Explicitly list each tool from "Third-party tools used" with what data it processes and link to its policy. GDPR-friendly. Contact = {EMAIL}. Last updated = today.
+/terms: standard mobile app terms of use. Contact = {EMAIL}. Last updated = today.
+/contact: form with name, email, message. Submits to {EMAIL} (Resend if backend, mailto fallback otherwise). Show success state.
+
+STYLE
+Minimal, mobile-first, single accent color pulled from the icon. No stock photos.
+\`\`\``,
+  },
+  {
+    category: "build",
     title: "How not to get rejected on first submission (iOS)",
     description: "What Apple actually checks on review, and how to pass first time",
     type: "markdown",
-    order: 4,
+    order: 5,
     markdownContent: `> Apple rejects almost half of first submissions. Most of those rejections are on this list. Spend 30 minutes here, save a week.
 
 ---
@@ -1095,6 +1127,47 @@ async function main() {
     }
   }
 
+  // One-shot migration: insert "Set up your website, policies & support
+  // page" between "Submitting to TestFlight" (3) and "How not to get
+  // rejected" (was 4, now 5). Move the rejection lesson from id -4 to id
+  // -5 with its progress before the upsert recreates id -4 as the new
+  // website lesson. Guarded so it only runs once.
+  const renamedNotRejected = await prisma.lesson.findUnique({
+    where: { id: "seed-build-5" },
+  });
+  if (!renamedNotRejected) {
+    const oldNotRejected = await prisma.lesson.findUnique({
+      where: { id: "seed-build-4" },
+    });
+    if (
+      oldNotRejected &&
+      oldNotRejected.title.startsWith("How not to get rejected")
+    ) {
+      await prisma.$transaction([
+        prisma.lesson.create({
+          data: {
+            id: "seed-build-5",
+            category: oldNotRejected.category,
+            title: oldNotRejected.title,
+            description: oldNotRejected.description,
+            type: oldNotRejected.type,
+            videoUrl: oldNotRejected.videoUrl,
+            youtubeUrl: oldNotRejected.youtubeUrl,
+            markdownContent: oldNotRejected.markdownContent,
+            sectionType: oldNotRejected.sectionType,
+            order: 5,
+          },
+        }),
+        prisma.lessonProgress.updateMany({
+          where: { lessonId: "seed-build-4" },
+          data: { lessonId: "seed-build-5" },
+        }),
+        prisma.lesson.delete({ where: { id: "seed-build-4" } }),
+      ]);
+      console.log("Migrated seed-build-4 → -5 (How not to get rejected, with progress).");
+    }
+  }
+
   for (const lesson of lessons) {
     await prisma.lesson.upsert({
       where: {
@@ -1125,10 +1198,10 @@ async function main() {
   }
 
   // Clean up orphaned build lessons. Removed build-1 ("From zero to running
-  // app with Expo + AI tools"); seed-build-4 was once the deprecated
-  // "Set up Sentry, PostHog & Supabase" but is now reused for "How not to
-  // get rejected on first submission" so it stays out of this list.
-  const orphanedBuildOrders = [1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+  // app with Expo + AI tools"). seed-build-4 ("Set up your website,
+  // policies & support page") and seed-build-5 ("How not to get rejected")
+  // are now real lessons, so they stay out of this list.
+  const orphanedBuildOrders = [1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
   for (const order of orphanedBuildOrders) {
     await prisma.lessonProgress
       .deleteMany({ where: { lessonId: `seed-build-${order}` } })
