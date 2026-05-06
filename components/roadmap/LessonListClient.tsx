@@ -312,9 +312,11 @@ export default function LessonListClient({
             {/* Markdown content */}
             {selectedLesson.markdownContent && (
               <div>
-                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/40">
-                  Resources
-                </h3>
+                {isVideo && (
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/40">
+                    Resources
+                  </h3>
+                )}
                 <MarkdownContent content={selectedLesson.markdownContent} />
               </div>
             )}

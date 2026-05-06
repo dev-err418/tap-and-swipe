@@ -1,8 +1,46 @@
 "use client";
 
+import { useRef, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
+
+function CodeBlock({ children }: { children: React.ReactNode }) {
+  const [copied, setCopied] = useState(false);
+  const ref = useRef<HTMLPreElement>(null);
+
+  const handleCopy = async () => {
+    if (!ref.current || typeof navigator === "undefined") return;
+    const text = ref.current.textContent ?? "";
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <div className="relative mb-4">
+      <button
+        type="button"
+        onClick={handleCopy}
+        aria-label={copied ? "Copied" : "Copy code"}
+        className="absolute top-2 right-2 inline-flex items-center justify-center rounded-md border border-black/10 bg-white/85 px-1.5 py-1 text-black/50 backdrop-blur transition-colors hover:bg-white hover:text-black cursor-pointer"
+      >
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
+      <pre
+        ref={ref}
+        className="overflow-x-auto rounded-xl bg-black/[0.06] p-4 pr-12"
+      >
+        {children}
+      </pre>
+    </div>
+  );
+}
 
 const components: Components = {
   h1: ({ children }) => (
@@ -48,21 +86,20 @@ const components: Components = {
     </blockquote>
   ),
   code: ({ className, children }) => {
-    const isBlock = className?.includes("language-");
+    const text = Array.isArray(children)
+      ? children.join("")
+      : String(children ?? "");
+    const isBlock = !!className?.includes("language-") || text.includes("\n");
     if (isBlock) {
-      return (
-        <code className="block bg-black/[0.06] rounded-xl p-4 text-sm text-black/70 overflow-x-auto mb-4 font-mono">
-          {children}
-        </code>
-      );
+      return <code className="font-mono text-sm text-black/80">{children}</code>;
     }
     return (
-      <code className="bg-black/[0.06] rounded px-1.5 py-0.5 text-sm text-black/80">
+      <code className="bg-black/[0.06] rounded px-1.5 py-0.5 text-sm text-black/80 font-mono">
         {children}
       </code>
     );
   },
-  pre: ({ children }) => <pre className="mb-4">{children}</pre>,
+  pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
   img: ({ src, alt, width, height }) => (
     <img
       src={src}

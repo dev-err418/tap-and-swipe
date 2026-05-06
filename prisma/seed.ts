@@ -157,6 +157,207 @@ Cal AI onboarding analysis: [on Figma](https://www.figma.com/board/vXMqEHxmISELk
     youtubeUrl: "https://youtu.be/qMoPSXUm6LQ",
     order: 3,
   },
+  {
+    category: "build",
+    title: "How not to get rejected on first submission (iOS)",
+    description: "What Apple actually checks on review, and how to pass first time",
+    type: "markdown",
+    order: 4,
+    markdownContent: `> Apple rejects almost half of first submissions. Most of those rejections are on this list. Spend 30 minutes here, save a week.
+
+---
+
+## Notes
+
+This isn't a guidelines summary. It's the stuff that actually gets apps rejected.
+
+---
+
+## 1. App completeness (2.1)
+
+The single biggest rejection bucket. Roughly 40% of all rejections are filed here. It's Apple's catch-all for "your app isn't ready."
+
+What flags it:
+
+- Crashes on launch or anywhere in the main flow
+- Placeholder text (Lorem ipsum, "TODO", test images, fake user data)
+- "Beta", "test", or "alpha" in the app name or version number
+- Demo account login that doesn't work
+- Backend that goes down during review
+- Broken paywall, broken sign-up, dead buttons
+
+Pre-submit drill: delete the app, install fresh from TestFlight, walk through every flow as if you were a brand new user. Then search your codebase for "lorem", "TODO", "FIXME", "test123".
+
+---
+
+## 2. Account deletion (5.1.1(v))
+
+If your app has any account creation, even anonymous ones, you must offer in-app account deletion. No exceptions for indie apps.
+
+Rules:
+
+- The flow has to live inside the app, not on a webpage or via support email
+- It has to be findable (Settings is fine)
+- It has to actually delete the account and the personal data, not just disable
+- For UGC apps, that includes the user's posts and comments
+
+Tip: in your App Review notes, write "Account deletion: Settings > Delete Account." Reviewers spend ten minutes on most apps. Don't make them hunt.
+
+---
+
+## 3. Privacy, ATT, nutrition labels
+
+**Privacy policy URL** is required. Apple checks the link loads. The policy must mention every SDK that sends data off-device (RevenueCat, PostHog, Sentry, Supabase, Tenjin) and explain how to request deletion (usually through an email request).
+
+**ATT prompt (5.1.2)** is required if you ship any tracking SDK (attribution, ads). Three rules:
+
+- Don't incentivize "Allow." No "tap Allow to unlock features."
+- Be honest about what tracking does. Standard wording that passes: "We use this to deliver a more personalized experience and improve our app."
+- Handle "Don't Allow" without breaking the app
+
+Kids' category apps cannot use ATT at all.
+
+**Privacy nutrition labels** in App Store Connect must match what your app actually does. If you say "no data collected" while running PostHog, you're rejected. When in doubt, over-disclose.
+
+---
+
+## 4. Subscriptions and paywalls (3.1.2)
+
+The most-reviewed area of any subscription app. Reviewers test the paywall manually. Every. Time.
+
+The paywall needs:
+
+- Clear, legible price ($4.99/week, not just "Weekly")
+- Trial length and what happens after ("3-day free trial, then $4.99/week")
+- Restore Purchases button, visible
+- Working links to Terms of Use and Privacy Policy
+- Auto-renewal disclosure
+- A visible Close (X) button
+
+For hard paywalls (no usable free version), you also need to show what's locked. "Subscribe to continue" with no feature list is an instant reject. Either list the features on the paywall, or run a short tour before it.
+
+Other things that get apps killed under 3.1.2 or 5.6:
+
+- Charging for built-in iOS features (push, iCloud)
+- Hiding the "skip" option in tiny grey text
+- Aggressive exit offers that feel coercive
+- Fake urgency ("Limited time!" that's always there)
+
+Heads up: first-time apps need to submit in-app purchases **with** the build, not separately. There's a checkbox for it on the version page.
+
+---
+
+## 5. Sign in with Apple (4.8)
+
+Offering Google, Facebook, or any social login? You also need Sign in with Apple. The rule technically allows any equivalent provider that limits data and lets users hide their email, but Sign in with Apple is the only one that meets all three conditions out of the box. Just add it.
+
+Email-only login is fine without Apple sign-in.
+
+---
+
+## 6. Metadata and screenshots (2.3)
+
+App name and subtitle: no "free", no pricing, no "#1", no "best", no "beta", no "for Android", no competitor names.
+
+Screenshots:
+
+- Show the actual app, not concepts or "coming soon"
+- Match the build you're submitting
+- First screenshot shouldn't be a splash screen (frequent 2.3.3 reject)
+
+Description: don't mention competitors by name, don't include external URLs other than your own. Add this block at the end if you have subscriptions:
+
+\`\`\`
+Terms of Use: https://yourapp.com/terms
+Privacy Policy: https://yourapp.com/privacy
+EULA: https://yourapp.com/eula
+\`\`\`
+
+If you don't have a custom EULA, you can use Apple's standard one (https://www.apple.com/legal/internet-services/itunes/dev/stdeula/), which applies by default unless you've uploaded your own in App Store Connect. This block is one of the most-forgotten things on subscription apps. Reviewers look for it.
+
+---
+
+## 7. The App Review notes that prevent half of rejections
+
+This is the single most underrated thing you can do before submitting. The "App Review Information" section in App Store Connect is where you brief the reviewer. A clear brief there will save you from the most common first-submission rejections (reviewer can't figure out the app, can't trigger the feature, doesn't know how to test the paywall).
+
+A short video of the app's main feature attached to the notes also helps a lot. Reviewers don't have time to discover your app. Hand them the path.
+
+Use this exact structure. Fill in the bracketed parts with your own app's details.
+
+\`\`\`
+USE CASE
+[Two or three sentences describing what the app does and how
+people use it. Plain English, no marketing fluff. Pretend the
+reviewer has never heard of your app or your niche.]
+
+Typical uses:
+[Two or three concrete examples of when someone would use the
+app. Specific scenarios, not feature lists.]
+
+STEP BY STEP TEST GUIDE FOR REVIEWERS
+- [Step 1: launch, allow any required permission.]
+- [Step 2: what they see on the main screen and what to tap.]
+- [Step 3: the action that demonstrates your app's main feature.]
+- [Step 4: any second flow worth showing, like edit / save / paywall.]
+
+DEMO ACCOUNT (if login required)
+- Email: [demo@yourapp.com]
+- Password: [yourpassword]
+- Notes: [anything special about the demo account, e.g. "this
+  account already has Premium for paywall testing"]
+
+SUBSCRIPTION (if you have a paywall)
+- What's behind the paywall: [list the locked features]
+- Trial terms: [e.g. "3-day free trial, then $4.99/week"]
+- Restore Purchases is on the paywall screen.
+
+EXTERNAL SERVICES
+- [Service 1, e.g. "RevenueCat"]:
+  [What it does and what data it sees.]
+- [Service 2, e.g. "Supabase"]:
+  [What it does and what data it sees.]
+- [Service 3, e.g. "PostHog"]:
+  [What it does and what data it sees.]
+\`\`\`
+
+Why this works:
+
+- **USE CASE** answers the question "what does this app actually do?" in 60 seconds. If the reviewer doesn't get it, they reject.
+- **STEP BY STEP TEST GUIDE** removes every excuse. The reviewer literally follows your steps and your app does what you said it would. No "I couldn't figure out the feature" rejections.
+- **DEMO ACCOUNT** and **SUBSCRIPTION** blocks are optional but kill the most common follow-up rejections.
+- **EXTERNAL SERVICES** answers privacy / data / network questions before they become a back-and-forth. Apple is paranoid about what data leaves the device. Tell them, calmly and specifically.
+
+---
+
+## If you do get rejected
+
+Read the email. Apple cites the exact guideline ("Guideline 5.1.1(v)"). The fix is usually obvious from there.
+
+Reply through Resolution Center, not by silently resubmitting. Format that works:
+
+\`\`\`
+Hi App Review team,
+
+Thanks for the review. Regarding the rejection under Guideline 5.1.1(v):
+
+We've added an in-app account deletion flow accessible from
+Settings > Delete Account. Tapping it permanently deletes the
+account, all associated data, and the user's RevenueCat
+entitlement.
+
+Demo credentials are in the App Review Information section.
+
+Thanks,
+[Your name]
+\`\`\`
+
+Specific. Documents what changed. Doesn't argue.
+
+If you've gone two rounds and you're still stuck, you can request a call with App Review through the Resolution Center.
+
+Most rejections are fixable in a few hours. Don't take it personally. It's a checklist.`,
+  },
 
   // Build with the boilerplate (premium)
   {
@@ -924,10 +1125,10 @@ async function main() {
   }
 
   // Clean up orphaned build lessons. Removed build-1 ("From zero to running
-  // app with Expo + AI tools") and build-4 ("Set up Sentry, PostHog &
-  // Supabase"); the remaining build lessons (orders 2 and 3) keep their IDs
-  // so existing user progress is preserved.
-  const orphanedBuildOrders = [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+  // app with Expo + AI tools"); seed-build-4 was once the deprecated
+  // "Set up Sentry, PostHog & Supabase" but is now reused for "How not to
+  // get rejected on first submission" so it stays out of this list.
+  const orphanedBuildOrders = [1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
   for (const order of orphanedBuildOrders) {
     await prisma.lessonProgress
       .deleteMany({ where: { lessonId: `seed-build-${order}` } })
