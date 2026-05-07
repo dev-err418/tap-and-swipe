@@ -52,27 +52,26 @@ const BUSINESS_TYPE_OPTIONS = [
 ] as const;
 
 const BUDGET_OPTIONS = [
-  { value: "under-2000", label: "Under $2,000" },
+  { value: "under-2000", label: "Under $2,000 — not the right time" },
   { value: "2000-4000", label: "$2,000 – $4,000" },
   { value: "4000-8000", label: "$4,000 – $8,000" },
   { value: "8000-plus", label: "$8,000+" },
-  { value: "not-sure", label: "Not sure yet" },
+  { value: "not-sure", label: "I need to think about it" },
 ] as const;
 
 const HIGH_TICKET_BUDGETS = ["2000-4000", "4000-8000", "8000-plus"];
 const CHALLENGE_MIN_CHARS = 50;
 
 // Steps visible on the path the user has selected so far
-function getVisibleSteps(hasApp: string, businessType: string): StepId[] {
+function getVisibleSteps(hasApp: string): StepId[] {
   const steps: StepId[] = ["firstName", "email", "hasApp"];
   if (hasApp === "revenue") steps.push("revenue");
-  steps.push("challenge", "businessType");
-  if (businessType === "business") steps.push("budget");
+  steps.push("challenge", "businessType", "budget");
   return steps;
 }
 
-function getStepNumber(stepId: StepId, hasApp: string, businessType: string) {
-  return getVisibleSteps(hasApp, businessType).indexOf(stepId) + 1;
+function getStepNumber(stepId: StepId, hasApp: string) {
+  return getVisibleSteps(hasApp).indexOf(stepId) + 1;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -153,8 +152,8 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
   }, [debugSkip, router]);
 
   const visibleSteps = useMemo(
-    () => getVisibleSteps(hasApp, businessType),
-    [hasApp, businessType],
+    () => getVisibleSteps(hasApp),
+    [hasApp],
   );
   const stepIndex = visibleSteps.indexOf(step);
   const totalSteps = visibleSteps.length;
@@ -290,18 +289,13 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
   );
 
   const handleBusinessTypeSelect = useCallback(
-    async (value: string) => {
+    (value: string) => {
       if (submitting) return;
       setBusinessType(value);
-      if (value === "individual") {
-        setSubmitting(true);
-        await submitQuiz(value, undefined);
-        return;
-      }
       setDirection(1);
       setStep("budget");
     },
-    [submitting, submitQuiz],
+    [submitting],
   );
 
   const handleBudgetSelect = useCallback(
@@ -385,7 +379,7 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
   const challengeCount = challenge.trim().length;
   const challengeMet = challengeCount >= CHALLENGE_MIN_CHARS;
 
-  const stepNumber = (id: StepId) => getStepNumber(id, hasApp, businessType);
+  const stepNumber = (id: StepId) => getStepNumber(id, hasApp);
 
   if (step === "confirmation") {
     return (
@@ -703,8 +697,8 @@ export default function JoinClient({ allowHighTicket = true }: { allowHighTicket
                     {stepNumber("budget")}
                   </span>
                   <p className="text-xl font-semibold text-black">
-                    AppSprint programs start at $2,000. What&apos;s your budget
-                    to invest in growth over the next 90 days?<span className="text-[#FF9500]">*</span>
+                    AppSprint starts at $2,000. What can you realistically
+                    invest in growing your app over the next 90 days?<span className="text-[#FF9500]">*</span>
                   </p>
                 </div>
                 <p className="mb-6 text-center text-xs text-black/40">

@@ -18,9 +18,9 @@ export const BUSINESS_TYPE_LABEL: Record<string, string> = {
 };
 
 export const BUDGET_LABEL: Record<string, string> = {
-  "under-2000": "Under $2,000",
+  "under-2000": "Under $2,000 — not the right time",
   "2000-4000": "$2,000 – $4,000",
   "4000-8000": "$4,000 – $8,000",
   "8000-plus": "$8,000+",
-  "not-sure": "Not sure yet",
+  "not-sure": "I need to think about it",
 };
