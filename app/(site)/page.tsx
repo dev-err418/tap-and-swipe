@@ -19,6 +19,7 @@ export const metadata: Metadata = {
     "react native",
     "expo",
     "app development podcast",
+    "Arthur Spalanzani",
     "ArthurBuildsStuff",
     "Tap & Swipe",
   ],

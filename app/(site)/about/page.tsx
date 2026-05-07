@@ -229,8 +229,8 @@ export default function AboutPage() {
             made sense.
           </p>
           <p className="mb-5 leading-relaxed text-foreground/70">
-            I launched my YouTube channel, Arthur Builds Stuff, to document
-            what I was learning. Got 20,000 subscribers in three videos, which
+            I launched my YouTube channel to document what I was learning.
+            Got 20,000 subscribers in three videos, which
             told me people cared about this stuff. I built a{" "}
             <Link href="/case-studies/arthur-spalanzani-app-portfolio" className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60">small portfolio of
             apps</Link> that hit $10K MRR at its peak. Launched an{" "}
@@ -243,7 +243,7 @@ export default function AboutPage() {
           <figure className="my-6">
             <Image
               src="/arthur-youtube.webp"
-              alt="Arthur Builds Stuff YouTube channel"
+              alt="Arthur Spalanzani YouTube channel"
               width={529}
               height={204}
               className="mx-auto w-full max-w-md rounded-xl"
