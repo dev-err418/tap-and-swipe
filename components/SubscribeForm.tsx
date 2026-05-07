@@ -75,7 +75,7 @@ export function SubscribeForm() {
         <input
           type="email"
           name="email"
-          placeholder="you@email.com"
+          placeholder="your-best-email@email.com"
           required
           className="h-full flex-1 rounded-full bg-transparent px-5 text-sm text-black placeholder:text-black/30 outline-none"
         />

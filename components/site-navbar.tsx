@@ -27,7 +27,7 @@ export async function SiteNavbar() {
             Tap &amp; Swipe
           </span>
           <span className="hidden text-sm text-muted-foreground sm:ml-2.5 sm:inline">
-            by ArthurBuildsStuff
+            by Arthur Spalanzani
           </span>
         </Link>
         <div className="flex items-center gap-6">
