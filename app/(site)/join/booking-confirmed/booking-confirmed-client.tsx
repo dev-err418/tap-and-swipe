@@ -16,23 +16,34 @@ export default function BookingConfirmedClient() {
   }, []);
 
   return (
-    <div
-      className="-mt-[var(--navbar-h)] flex min-h-dvh flex-col items-center justify-center px-6 py-16"
-      style={{ "--navbar-h": "68px" } as React.CSSProperties}
-    >
+    <div className="flex min-h-dvh flex-col items-center justify-start px-6 pt-32 pb-12 sm:pt-40">
       <PageTracker product="quiz" />
-      <div className="w-full max-w-xl rounded-3xl border border-black/10 bg-white px-8 py-12 text-center shadow-sm sm:px-12">
-        <p className="text-3xl font-bold leading-tight tracking-tight text-black sm:text-4xl">
-          You&apos;re booked{firstName ? `, ${firstName}` : ""}.
-        </p>
-        <p className="mt-5 text-base text-black/70">
-          Check your inbox for the calendar invite.
-        </p>
-        <p className="mt-4 text-sm text-black/55">
-          Please accept the invite within 24h to confirm. Unconfirmed slots
-          reopen automatically.
-        </p>
-        <p className="mt-8 text-sm text-black/60">
+      <div className="w-full max-w-5xl">
+        <div className="px-2 text-center">
+          <p className="text-4xl font-bold leading-tight tracking-tight text-black sm:text-6xl">
+            You&apos;re booked{firstName ? `, ${firstName}` : ""}.
+          </p>
+          <p className="mt-4 text-lg text-black/70 sm:text-xl">
+            Check your inbox for the calendar invite. Please accept within 24h
+            to confirm, unconfirmed slots reopen automatically.
+          </p>
+        </div>
+
+        <div className="mx-auto mt-6 w-full max-w-xl overflow-hidden rounded-2xl bg-black shadow-sm">
+          <video
+            src="https://videos.tap-and-swipe.com/join/booked.mp4"
+            autoPlay
+            muted
+            playsInline
+            controls
+            controlsList="nodownload"
+            onContextMenu={(e) => e.preventDefault()}
+            preload="metadata"
+            className="aspect-video w-full"
+          />
+        </div>
+
+        <p className="mt-6 text-center text-sm text-black/60">
           Talk soon.
           <br />
           — Arthur

@@ -841,11 +841,25 @@ function CalConfirmation({
       <div className="w-full max-w-5xl">
         <div className="px-2 text-center">
           <p className="text-4xl font-bold leading-tight tracking-tight text-black sm:text-6xl">
-            Thanks, {firstName || "there"}. 🎯
+            Thanks, {firstName || "there"}.
           </p>
           <p className="mt-4 text-lg text-black/70 sm:text-xl">
             Pick a time and let&apos;s talk about your app.
           </p>
+        </div>
+
+        <div className="mx-auto mt-6 w-full max-w-xl overflow-hidden rounded-2xl bg-black shadow-sm">
+          <video
+            src="https://videos.tap-and-swipe.com/join/before-call.mp4"
+            autoPlay
+            muted
+            playsInline
+            controls
+            controlsList="nodownload"
+            onContextMenu={(e) => e.preventDefault()}
+            preload="metadata"
+            className="aspect-video w-full"
+          />
         </div>
 
         <div className="mt-6">
