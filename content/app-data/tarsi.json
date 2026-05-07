@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-05-01T13:23:34.035Z",
+  "lastUpdated": "2026-05-07T15:58:44.406Z",
   "ios": {
     "title": "Tarsi - Budget Tracker",
     "subtitle": "Your Personal Budget Tracker",
@@ -12,13 +12,13 @@
       "/apps/tarsi/ios-5.webp"
     ],
     "rating": 5,
-    "ratingCount": 269,
+    "ratingCount": 298,
     "price": "$4.99",
     "storeUrl": "https://apps.apple.com/us/app/tarsi-budget-tracker/id6760278399?uo=4",
     "topCountries": [
       "PH",
       "CA",
-      "AU"
+      "US"
     ],
     "genres": [
       "Finance"
@@ -40,8 +40,8 @@
     "storeUrl": "https://play.google.com/store/apps/details?id=com.tarsi.app&hl=en&gl=us",
     "topCountries": [
       "PH",
-      "ID",
-      "IN"
+      "IN",
+      "ID"
     ],
     "genres": [
       "Finance"

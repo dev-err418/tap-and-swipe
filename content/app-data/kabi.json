@@ -1,8 +1,8 @@
 {
-  "lastUpdated": "2026-05-01T13:23:37.010Z",
+  "lastUpdated": "2026-05-07T15:58:51.755Z",
   "ios": {
     "title": "Kabi - Gym Bro",
-    "subtitle": "Your Workout Tracker",
+    "subtitle": "Your Personal Fitness Tracker",
     "icon": "/apps/kabi/icon-ios.webp",
     "screenshots": [
       "/apps/kabi/ios-1.webp",
@@ -12,12 +12,13 @@
       "/apps/kabi/ios-5.webp"
     ],
     "rating": 0,
-    "ratingCount": 0,
+    "ratingCount": 5,
     "price": "$2.99",
     "storeUrl": "https://apps.apple.com/us/app/kabi-gym-bro/id6763519763?uo=4",
     "topCountries": [
       "PH",
-      "US"
+      "KH",
+      "CA"
     ],
     "genres": [
       "Health & Fitness"
