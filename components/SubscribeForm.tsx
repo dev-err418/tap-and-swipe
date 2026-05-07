@@ -84,7 +84,7 @@ export function SubscribeForm() {
           disabled={status === "loading"}
           className="relative -my-px -mr-px h-[calc(100%+2px)] shrink-0 cursor-pointer rounded-full bg-black px-5 text-sm font-bold text-white transition-all hover:bg-black/85 disabled:opacity-50"
         >
-          <span className={status === "loading" ? "invisible" : ""}>Subscribe</span>
+          <span className={status === "loading" ? "invisible" : ""}>Send it</span>
           {status === "loading" && (
             <span className="absolute inset-0 flex items-center justify-center">
               <Spinner />
@@ -94,7 +94,7 @@ export function SubscribeForm() {
       </div>
       {status === "error" && <p className="pl-5 text-xs text-red-500">Something went wrong. Try again.</p>}
       <p className="pl-5 text-xs text-black/60">
-        Real app founders. Real revenue. Real moves you can steal.
+        I write it myself. No ghostwriter, no AI slop.
       </p>
     </form>
   );

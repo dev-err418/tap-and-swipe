@@ -59,12 +59,12 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
 
       <div className="relative z-10">
         <h1 className="max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
-          Real stories from people building mobile apps
+          I build mobile apps, and I talk to people who do too.
         </h1>
 
         <div className="fade-in-up" style={{ animationDelay: "0.2s" }}>
           <p className="mt-6 mx-auto max-w-xl text-base text-black/60 sm:text-lg">
-            Every week I sit down with an app builder and ask them everything: the idea, the grind, the failures, and what finally worked.
+            One founder breakdown a week, plus everything I&apos;m learning building.
           </p>
         </div>
 
