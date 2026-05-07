@@ -16,18 +16,14 @@ import SchedulePostForm from "./SchedulePostForm";
 
 export default function PostingClient({
   posts,
-  ytConnected,
-  ytAccountName,
 }: {
   posts: ScheduledPostEvent[];
-  ytConnected: boolean;
-  ytAccountName: string | null;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this scheduled post? If already uploaded to YouTube, the video will be removed too.")) return;
+    if (!confirm("Delete this scheduled post?")) return;
     const res = await fetch(`/api/posting/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
@@ -57,14 +53,12 @@ export default function PostingClient({
           </DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader>
-              <DialogTitle>Schedule a post</DialogTitle>
+              <DialogTitle>Plan a post</DialogTitle>
               <DialogDescription>
-                {ytConnected
-                  ? `Posting to YouTube as ${ytAccountName ?? "your channel"}.`
-                  : "Connect YouTube to start scheduling."}
+                Block out a slot in your content calendar. Posting still happens manually on each platform.
               </DialogDescription>
             </DialogHeader>
-            <SchedulePostForm ytConnected={ytConnected} onSubmitted={handleSubmitted} />
+            <SchedulePostForm onSubmitted={handleSubmitted} />
           </DialogContent>
         </Dialog>
       </div>

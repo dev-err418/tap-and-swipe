@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Readable } from "stream";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { uploadVideo } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+
+const VALID_PLATFORMS = new Set([
+  "linkedin",
+  "youtube-long",
+  "youtube-shorts",
+  "instagram-reels",
+]);
 
 async function requireAdmin() {
   const session = await getSession();
@@ -45,17 +49,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const form = await request.formData();
-  const title = String(form.get("title") ?? "").trim();
-  const description = (form.get("description") as string | null)?.toString().trim() || null;
-  const caption = (form.get("caption") as string | null)?.toString().trim() || null;
-  const tagsRaw = (form.get("tags") as string | null)?.toString().trim() ?? "";
-  const tags = tagsRaw
-    ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean)
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const title = String(body.title ?? "").trim();
+  const description =
+    typeof body.description === "string" && body.description.trim()
+      ? body.description.trim()
+      : null;
+  const platforms = Array.isArray(body.platforms)
+    ? body.platforms.map(String).filter((p: string) => VALID_PLATFORMS.has(p))
     : [];
-  const platforms = form.getAll("platforms").map((p) => String(p).trim()).filter(Boolean);
-  if (platforms.length === 0) platforms.push("youtube");
-  const publishAtRaw = String(form.get("publishAt") ?? "").trim();
+  const publishAtRaw = String(body.publishAt ?? "").trim();
   const publishAt = publishAtRaw ? new Date(publishAtRaw) : null;
 
   if (!title) {
@@ -64,57 +71,13 @@ export async function POST(request: NextRequest) {
   if (!publishAt || Number.isNaN(publishAt.getTime())) {
     return NextResponse.json({ error: "publishAt must be a valid date" }, { status: 400 });
   }
-
-  const file = form.get("video");
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "video file is required" }, { status: 400 });
+  if (platforms.length === 0) {
+    return NextResponse.json({ error: "Pick at least one platform" }, { status: 400 });
   }
 
   const post = await prisma.scheduledPost.create({
-    data: {
-      platforms,
-      status: "publishing",
-      publishAt,
-      title,
-      description,
-      caption,
-      tags,
-    },
+    data: { title, description, platforms, publishAt },
   });
 
-  try {
-    let youtubeVideoId: string | null = null;
-    let youtubeUrl: string | null = null;
-    if (platforms.includes("youtube")) {
-      const stream = Readable.fromWeb(file.stream() as never);
-      const result = await uploadVideo({
-        title,
-        description: description ?? undefined,
-        tags,
-        publishAt,
-        videoStream: stream,
-      });
-      youtubeVideoId = result.videoId;
-      youtubeUrl = result.url;
-    }
-
-    const updated = await prisma.scheduledPost.update({
-      where: { id: post.id },
-      data: {
-        status: "scheduled",
-        youtubeVideoId,
-        youtubeUrl,
-      },
-    });
-
-    return NextResponse.json({ post: updated });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown upload error";
-    await prisma.scheduledPost.update({
-      where: { id: post.id },
-      data: { status: "failed", lastError: message },
-    });
-    console.error("[posting] upload failed", err);
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  return NextResponse.json({ post });
 }

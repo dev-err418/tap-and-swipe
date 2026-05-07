@@ -186,48 +186,20 @@ model OAuthRefreshToken {
   @@index([familyId])
 }
 
-// ── Posting (admin-only scheduler for YouTube/Instagram) ──────────────
-
-model PlatformAccount {
-  id            String   @id @default(cuid())
-  platform      String   @unique // "youtube" | "instagram"
-  accountId     String?  // YT channel ID, IG business account ID
-  accountName   String?  // display label
-  accessToken   String?  // current short-lived token (YT)
-  refreshToken  String?  // long-lived (YT)
-  expiresAt     DateTime?
-  scope         String?
-  rawMetadata   Json?
-  connectedAt   DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
+// ── Posting (admin-only content calendar) ─────────────────────────────
 
 model ScheduledPost {
-  id              String    @id @default(cuid())
-  platforms       String[]  // ["youtube"], future: ["youtube", "instagram"]
-  status          String    @default("scheduled") // scheduled | publishing | published | failed
-  publishAt       DateTime
-  // Common content
-  title           String
-  description     String?
-  caption         String?   // for IG (later)
-  tags            String[]
-  // Video file (optional reference, e.g. R2 key once we add IG)
-  videoR2Key      String?
-  // Per-platform results
-  youtubeVideoId  String?
-  youtubeUrl      String?
-  instagramMediaId String?
-  instagramUrl    String?
-  // Status tracking
-  lastError       String?
-  notifiedAt      DateTime?
-  publishedAt     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  platforms   String[] // "linkedin" | "youtube-long" | "youtube-shorts" | "instagram-reels"
+  publishAt   DateTime
+  title       String
+  description String?
+  notifiedAt  DateTime? // set when the reminder push has been sent
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  @@index([status, publishAt])
   @@index([publishAt])
+  @@index([notifiedAt])
 }
 
 // ── Discord ─────────────────────────────────────────────────────────────

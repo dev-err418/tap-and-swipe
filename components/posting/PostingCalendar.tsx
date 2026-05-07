@@ -7,10 +7,7 @@ export type ScheduledPostEvent = {
   id: string;
   title: string;
   publishAt: string; // ISO
-  status: "scheduled" | "publishing" | "published" | "failed";
   platforms: string[];
-  youtubeUrl: string | null;
-  instagramUrl: string | null;
 };
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -19,11 +16,18 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-const STATUS_COLOR: Record<ScheduledPostEvent["status"], string> = {
-  scheduled: "bg-amber-100 text-amber-800",
-  publishing: "bg-blue-100 text-blue-800",
-  published: "bg-emerald-100 text-emerald-800",
-  failed: "bg-red-100 text-red-800",
+const PLATFORM_LABEL: Record<string, string> = {
+  "linkedin": "LinkedIn",
+  "youtube-long": "YT Long",
+  "youtube-shorts": "YT Shorts",
+  "instagram-reels": "IG Reel",
+};
+
+const PLATFORM_COLOR: Record<string, string> = {
+  "linkedin": "bg-sky-100 text-sky-800",
+  "youtube-long": "bg-red-100 text-red-800",
+  "youtube-shorts": "bg-rose-100 text-rose-800",
+  "instagram-reels": "bg-fuchsia-100 text-fuchsia-800",
 };
 
 function getMonthData(year: number, month: number) {
@@ -125,46 +129,34 @@ export default function PostingCalendar({
                 isToday ? "bg-black text-white font-semibold" : "text-black/70"
               }`}>{day}</span>
               <div className="mt-1 space-y-1">
-                {dayEvents.map((event) => {
-                  const link = event.youtubeUrl ?? event.instagramUrl;
-                  const inner = (
-                    <>
-                      <div className="flex items-center gap-1">
-                        <span className="truncate font-medium text-black/80">
-                          {timeLabel(event.publishAt)} · {event.title}
-                        </span>
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-1">
-                        <span className={`rounded-full px-1 text-[9px] font-medium ${STATUS_COLOR[event.status]}`}>
-                          {event.status}
-                        </span>
-                        {event.platforms.map((p) => (
-                          <span key={p} className="text-[9px] text-black/40">{p}</span>
-                        ))}
-                      </div>
-                    </>
-                  );
-                  return (
-                    <div
-                      key={event.id}
-                      className="group rounded-md bg-black/[0.06] px-1.5 py-1 text-[10px] leading-tight"
-                    >
-                      {link ? (
-                        <a href={link} target="_blank" rel="noopener noreferrer" className="block">
-                          {inner}
-                        </a>
-                      ) : inner}
-                      {onDelete && event.status !== "published" && (
-                        <button
-                          onClick={() => onDelete(event.id)}
-                          className="mt-0.5 text-[9px] text-red-600 opacity-0 transition-opacity group-hover:opacity-100"
-                        >
-                          Delete
-                        </button>
-                      )}
+                {dayEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="group rounded-md bg-black/[0.06] px-1.5 py-1 text-[10px] leading-tight"
+                  >
+                    <div className="truncate font-medium text-black/80">
+                      {timeLabel(event.publishAt)} · {event.title}
                     </div>
-                  );
-                })}
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                      {event.platforms.map((p) => (
+                        <span
+                          key={p}
+                          className={`rounded-full px-1 text-[9px] font-medium ${PLATFORM_COLOR[p] ?? "bg-black/10 text-black/60"}`}
+                        >
+                          {PLATFORM_LABEL[p] ?? p}
+                        </span>
+                      ))}
+                    </div>
+                    {onDelete && (
+                      <button
+                        onClick={() => onDelete(event.id)}
+                        className="mt-0.5 text-[9px] text-red-600 opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           );

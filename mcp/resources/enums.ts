@@ -41,6 +41,14 @@ const ENUM_BODY = {
     subscriptionStatus: ["active", "past_due", "canceled", null],
     paymentProvider: ["whop", "stripe", null],
   },
+  scheduledPost: {
+    platforms: ["linkedin", "youtube-long", "youtube-shorts", "instagram-reels"],
+    notes: {
+      "reminder push":
+        "When publishAt is reached, the posting-reminders cron fires a push notification and stamps notifiedAt. " +
+        "Pass resetNotified=true on posting_update if you push publishAt forward and want the reminder to fire again.",
+    },
+  },
 };
 
 export function registerEnumsResource(server: McpServer) {
