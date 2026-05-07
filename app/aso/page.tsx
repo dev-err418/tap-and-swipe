@@ -103,7 +103,7 @@ export default function AsoPage() {
             <header className="relative overflow-hidden pt-32 pb-16">
                 <div className="mx-auto max-w-7xl px-6 text-center">
                     <a
-                        href="https://www.youtube.com/@ArthurBuildsStuff"
+                        href="https://www.youtube.com/@arthurspalanzani"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mb-6 flex items-center justify-center gap-2 transition-opacity hover:opacity-80"

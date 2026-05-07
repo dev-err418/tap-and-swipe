@@ -3,7 +3,7 @@ export const SITE_URL = "https://tap-and-swipe.com";
 export const AUTHOR_NAME = "Arthur Spalanzani";
 
 export const AUTHOR_SAME_AS = [
-  "https://www.youtube.com/@ArthurBuildsStuff",
+  "https://www.youtube.com/@arthurspalanzani",
   "https://www.linkedin.com/in/arthur-spalanzani/",
   "https://x.com/arthursbuilds",
 ] as const;

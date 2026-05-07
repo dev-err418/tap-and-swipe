@@ -93,7 +93,7 @@ function buildJsonLd() {
       "https://yt3.googleusercontent.com/8G2AIp9fMdSdZDw1IrGEZM9-Jf6CDjt5xyNFGqK1885tfO-DdQ8rIJNbBZoQ_1esZ-NjMRdmd2U=s160-c-k-c0x00ffffff-no-rj",
     jobTitle: "Founder",
     sameAs: [
-      "https://www.youtube.com/@ArthurBuildsStuff",
+      "https://www.youtube.com/@arthurspalanzani",
       "https://www.linkedin.com/in/arthur-spalanzani/",
       "https://x.com/arthursbuilds",
     ],

@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 const socials = [
   {
     label: "YouTube",
-    href: "https://www.youtube.com/@ArthurBuildsStuff",
+    href: "https://www.youtube.com/@arthurspalanzani",
     icon: Youtube,
   },
   {
@@ -72,7 +72,7 @@ function buildJsonLd() {
       "Indie app business",
     ],
     sameAs: [
-      "https://www.youtube.com/@ArthurBuildsStuff",
+      "https://www.youtube.com/@arthurspalanzani",
       "https://www.linkedin.com/in/arthur-spalanzani/",
       "https://x.com/arthursbuilds",
     ],

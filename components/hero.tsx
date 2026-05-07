@@ -1,6 +1,29 @@
+import { Linkedin } from "lucide-react";
+import { SiYoutube, SiInstagram } from "@icons-pack/react-simple-icons";
 import PageTracker from "./PageTracker";
 import { SubscribeForm } from "./SubscribeForm";
 import { HeroMobileMarquee } from "./hero-mobile-icons";
+
+const SOCIAL_BADGES = [
+  {
+    label: "@arthurspalanzani",
+    href: "https://www.youtube.com/@arthurspalanzani",
+    Icon: SiYoutube,
+    color: "#FF0000",
+  },
+  {
+    label: "@arthurspalanzani",
+    href: "https://www.instagram.com/arthurspalanzani",
+    Icon: SiInstagram,
+    color: "#FF0069",
+  },
+  {
+    label: "@arthurspalanzani",
+    href: "https://www.linkedin.com/in/arthur-spalanzani/",
+    Icon: Linkedin,
+    color: "#0A66C2",
+  },
+] as const;
 
 type HeroIcon = {
   top: string;
@@ -61,6 +84,21 @@ export function Hero({ showSubscribe = true }: { showSubscribe?: boolean }) {
         <h1 className="max-w-4xl text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
           I build mobile apps, and I talk to people who do too.
         </h1>
+
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 fade-in-up" style={{ animationDelay: "0.1s" }}>
+          {SOCIAL_BADGES.map(({ label, href, Icon, color }) => (
+            <a
+              key={href}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground [&>svg]:size-3"
+            >
+              <Icon color={color} />
+              {label}
+            </a>
+          ))}
+        </div>
 
         <div className="fade-in-up" style={{ animationDelay: "0.2s" }}>
           <p className="mt-6 mx-auto max-w-xl text-base text-black/60 sm:text-lg">
