@@ -112,41 +112,51 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
     existing.paymentProvider !== null &&
     existing.subscriptionStatus === "active";
 
-  const upserted = await prisma.user.upsert({
-    where: { discordId },
-    update: {
-      discordUsername,
-      subscriptionStatus: "active",
-      roleGranted,
-      tier,
-      ...(whopMembershipId && { whopMembershipId }),
-      ...(email && { email }),
-      ...(!isActiveElsewhere && { paymentProvider: "whop" }),
-      ...(visitorId && !existing?.visitorId && { visitorId }),
-    },
-    create: {
-      discordId,
-      discordUsername,
-      subscriptionStatus: "active",
-      paymentProvider: "whop",
-      roleGranted,
-      tier,
-      ...(whopMembershipId && { whopMembershipId }),
-      ...(email && { email }),
-      ...(visitorId && { visitorId }),
-    },
-  });
-
-  // If we found a placeholder by whopMembershipId but it's a different row
-  // than the discordId-keyed row, remove the placeholder so we don't keep two
-  const isClaimingPlaceholder = !!existingByWhop && !existingByDiscord;
-  if (isClaimingPlaceholder && existingByWhop && existingByWhop.id !== upserted.id) {
-    await prisma.user.delete({ where: { id: existingByWhop.id } }).catch((err) =>
-      console.warn(
-        `[grantAccess:${source}] failed to remove placeholder ${existingByWhop.id}:`,
-        err
-      )
-    );
+  // When claiming a placeholder (matched by whopMembershipId, no discordId row
+  // yet), update that row in place. A blind upsert(where:{discordId}) would
+  // fall through to create and trip the unique index on email/whopMembershipId
+  // since the placeholder already owns both.
+  let upserted;
+  if (existingByWhop && !existingByDiscord) {
+    upserted = await prisma.user.update({
+      where: { id: existingByWhop.id },
+      data: {
+        discordId,
+        discordUsername,
+        subscriptionStatus: "active",
+        roleGranted,
+        tier,
+        ...(whopMembershipId && { whopMembershipId }),
+        ...(email && existingByWhop.email !== email && { email }),
+        ...(!isActiveElsewhere && { paymentProvider: "whop" }),
+        ...(visitorId && !existingByWhop.visitorId && { visitorId }),
+      },
+    });
+  } else {
+    upserted = await prisma.user.upsert({
+      where: { discordId },
+      update: {
+        discordUsername,
+        subscriptionStatus: "active",
+        roleGranted,
+        tier,
+        ...(whopMembershipId && { whopMembershipId }),
+        ...(email && { email }),
+        ...(!isActiveElsewhere && { paymentProvider: "whop" }),
+        ...(visitorId && !existing?.visitorId && { visitorId }),
+      },
+      create: {
+        discordId,
+        discordUsername,
+        subscriptionStatus: "active",
+        paymentProvider: "whop",
+        roleGranted,
+        tier,
+        ...(whopMembershipId && { whopMembershipId }),
+        ...(email && { email }),
+        ...(visitorId && { visitorId }),
+      },
+    });
   }
 
   // Welcome channel only on truly first activation (no prior Discord link)

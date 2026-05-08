@@ -46,35 +46,44 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing discordId" }, { status: 400 });
   }
 
-  // Skip if we've already granted this user — bot may re-fire on relogin
-  const existing = await prisma.user.findUnique({
-    where: { discordId },
-    select: { roleGranted: true, subscriptionStatus: true },
-  });
-  if (existing?.roleGranted && existing.subscriptionStatus === "active") {
-    return NextResponse.json({ status: "already_granted" });
-  }
+  try {
+    // Skip if we've already granted this user — bot may re-fire on relogin
+    const existing = await prisma.user.findUnique({
+      where: { discordId },
+      select: { roleGranted: true, subscriptionStatus: true },
+    });
+    if (existing?.roleGranted && existing.subscriptionStatus === "active") {
+      return NextResponse.json({ status: "already_granted" });
+    }
 
-  // Look up the matching active Whop membership
-  const match = await findActiveMembershipByDiscordId(discordId);
-  if (!match) {
-    console.log(
-      `[discord/member-joined] no active Whop membership for discordId=${discordId} (likely free joiner)`
+    // Look up the matching active Whop membership
+    const match = await findActiveMembershipByDiscordId(discordId);
+    if (!match) {
+      console.log(
+        `[discord/member-joined] no active Whop membership for discordId=${discordId} (likely free joiner)`
+      );
+      return NextResponse.json({ status: "no_membership" });
+    }
+
+    const tier = tierFromWhopPlanId(match.planId);
+
+    const result = await grantAccess({
+      discordId: match.discord.id,
+      discordUsername: incomingUsername ?? match.discord.username,
+      tier,
+      email: match.email ?? undefined,
+      whopMembershipId: match.membershipId,
+      manageUrl: match.manageUrl ?? undefined,
+      source: "discord-join",
+    });
+
+    return NextResponse.json({ status: "granted", ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      `[discord/member-joined] failed for discordId=${discordId}:`,
+      err
     );
-    return NextResponse.json({ status: "no_membership" });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const tier = tierFromWhopPlanId(match.planId);
-
-  const result = await grantAccess({
-    discordId: match.discord.id,
-    discordUsername: incomingUsername ?? match.discord.username,
-    tier,
-    email: match.email ?? undefined,
-    whopMembershipId: match.membershipId,
-    manageUrl: match.manageUrl ?? undefined,
-    source: "discord-join",
-  });
-
-  return NextResponse.json({ status: "granted", ...result });
 }

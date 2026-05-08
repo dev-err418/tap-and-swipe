@@ -205,27 +205,50 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          await prisma.user.upsert({
+          // Claim an existing row by whopMembershipId first, then by email
+          // (covers users who already have a User record from a prior signup,
+          // quiz lead, or earlier Whop sub) before falling through to create.
+          const existingByWhop = await prisma.user.findUnique({
             where: { whopMembershipId: membershipId },
-            update: {
-              subscriptionStatus: "active",
-              tier,
-              ...(email && { email }),
-              ...(visitorId && { visitorId }),
-            },
-            create: {
-              whopMembershipId: membershipId,
-              subscriptionStatus: "active",
-              paymentProvider: "whop",
-              roleGranted: false,
-              tier,
-              ...(email && { email }),
-              ...(visitorId && { visitorId }),
-            },
           });
+          const existingByEmail =
+            !existingByWhop && email
+              ? await prisma.user.findUnique({ where: { email } })
+              : null;
+          const existing = existingByWhop ?? existingByEmail;
+
+          if (existing) {
+            const isActiveElsewhere =
+              existing.paymentProvider !== "whop" &&
+              existing.paymentProvider !== null &&
+              existing.subscriptionStatus === "active";
+            await prisma.user.update({
+              where: { id: existing.id },
+              data: {
+                subscriptionStatus: "active",
+                tier,
+                whopMembershipId: membershipId,
+                ...(email && existing.email !== email && { email }),
+                ...(!isActiveElsewhere && { paymentProvider: "whop" }),
+                ...(visitorId && !existing.visitorId && { visitorId }),
+              },
+            });
+          } else {
+            await prisma.user.create({
+              data: {
+                whopMembershipId: membershipId,
+                subscriptionStatus: "active",
+                paymentProvider: "whop",
+                roleGranted: false,
+                tier,
+                ...(email && { email }),
+                ...(visitorId && { visitorId }),
+              },
+            });
+          }
 
           console.warn(
-            `[whop] membership.activated — no Discord ID, placeholder User stored. membership=${membershipId} email=${email ?? "(none)"}`
+            `[whop] membership.activated — no Discord ID, placeholder User stored. membership=${membershipId} email=${email ?? "(none)"} claimed=${existing ? "existing" : "new"}`
           );
         }
         break;
