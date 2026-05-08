@@ -125,7 +125,10 @@ export function SubscribeForm() {
         </div>
       )}
       {status === "error" && <p className="pl-5 text-xs text-red-500">Something went wrong. Try again.</p>}
-      <p className="pl-5 text-xs text-black/60">
+      <p
+        aria-hidden={finished}
+        className={`pl-5 text-xs text-black/60 ${finished ? "invisible" : ""}`}
+      >
         I write it myself. No ghostwriter, no AI slop.
       </p>
     </form>
