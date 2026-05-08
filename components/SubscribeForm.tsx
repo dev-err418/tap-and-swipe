@@ -79,12 +79,7 @@ export function SubscribeForm() {
     }
   }
 
-  if (status === "ok") {
-    return <p className="mt-10 text-sm font-medium text-black">Thank you for signing up, check your inbox!</p>;
-  }
-  if (status === "already") {
-    return <p className="mt-10 text-sm font-medium text-black/70">You&apos;re already on the list.</p>;
-  }
+  const finished = status === "ok" || status === "already";
 
   return (
     <form onSubmit={handleSubmit} className="mt-10 mx-auto flex w-full max-w-sm flex-col gap-2">
@@ -96,27 +91,39 @@ export function SubscribeForm() {
         aria-hidden="true"
         className="absolute h-0 w-0 pointer-events-none opacity-0"
       />
-      <div className="flex h-12 rounded-full border border-black/15 bg-black/5 transition-colors focus-within:border-black/40 focus-within:ring-1 focus-within:ring-black/40">
-        <input
-          type="email"
-          name="email"
-          placeholder="your-best-email@email.com"
-          required
-          className="h-full flex-1 rounded-full bg-transparent px-5 text-sm text-black placeholder:text-black/30 outline-none"
-        />
-        <button
-          type="submit"
-          disabled={status === "loading"}
-          className="relative -my-px -mr-px h-[calc(100%+2px)] shrink-0 cursor-pointer rounded-full bg-black px-5 text-sm font-bold text-white transition-all hover:bg-black/85 disabled:opacity-50"
+      {finished ? (
+        <div
+          className={`flex h-12 items-center justify-center px-5 text-center text-sm font-medium ${
+            status === "ok" ? "text-black" : "text-black/70"
+          }`}
         >
-          <span className={status === "loading" ? "invisible" : ""}>Send it</span>
-          {status === "loading" && (
-            <span className="absolute inset-0 flex items-center justify-center">
-              <Spinner />
-            </span>
-          )}
-        </button>
-      </div>
+          {status === "ok"
+            ? "Thank you for signing up, check your inbox!"
+            : "You're already on the list."}
+        </div>
+      ) : (
+        <div className="flex h-12 rounded-full border border-black/15 bg-black/5 transition-colors focus-within:border-black/40 focus-within:ring-1 focus-within:ring-black/40">
+          <input
+            type="email"
+            name="email"
+            placeholder="your-best-email@email.com"
+            required
+            className="h-full flex-1 rounded-full bg-transparent px-5 text-sm text-black placeholder:text-black/30 outline-none"
+          />
+          <button
+            type="submit"
+            disabled={status === "loading"}
+            className="relative -my-px -mr-px h-[calc(100%+2px)] shrink-0 cursor-pointer rounded-full bg-black px-5 text-sm font-bold text-white transition-all hover:bg-black/85 disabled:opacity-50"
+          >
+            <span className={status === "loading" ? "invisible" : ""}>Send it</span>
+            {status === "loading" && (
+              <span className="absolute inset-0 flex items-center justify-center">
+                <Spinner />
+              </span>
+            )}
+          </button>
+        </div>
+      )}
       {status === "error" && <p className="pl-5 text-xs text-red-500">Something went wrong. Try again.</p>}
       <p className="pl-5 text-xs text-black/60">
         I write it myself. No ghostwriter, no AI slop.
