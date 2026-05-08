@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { sendPush } from "@/lib/apns";
 import { sendDiscordNotification } from "@/lib/discord-webhook";
 import { prisma } from "@/lib/prisma";
+import { markCalBookedInPlunk } from "@/lib/plunk";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -172,6 +173,12 @@ export async function POST(request: NextRequest) {
       try {
         await sendPush("High-Ticket Call Booked", `${name} (${email})`);
       } catch {}
+
+      if (email !== "Unknown") {
+        markCalBookedInPlunk(email.toLowerCase(), name !== "Unknown" ? name : undefined).catch(
+          (err) => console.error("[calcom] markCalBookedInPlunk failed:", err),
+        );
+      }
     }
   }
 

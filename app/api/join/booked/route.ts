@@ -1,84 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendDiscordNotification } from "@/lib/discord-webhook";
+import { markCalBookedInPlunk } from "@/lib/plunk";
 import {
   HAS_APP_LABEL,
   REVENUE_LABEL,
   BUSINESS_TYPE_LABEL,
   BUDGET_LABEL,
 } from "@/lib/join-labels";
-
-const PLUNK_TIMEOUT_MS = 10_000;
-
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(input, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-// Flips contact.data.calBooked = "true" and fires PLUNK_CAL_BOOKED_EVENT so
-// the high-ticket Plunk workflow's condition steps short-circuit before the
-// 1h / 24h reminder emails go out.
-async function markCallBookedInPlunk(email: string, firstName: string) {
-  const plunkUrl = process.env.PLUNK_API_URL;
-  const plunkSecretKey = process.env.PLUNK_API_KEY;
-  const plunkPublicKey = process.env.PLUNK_PUBLIC_KEY;
-  const plunkEvent = process.env.PLUNK_CAL_BOOKED_EVENT;
-  if (!plunkUrl || !plunkSecretKey) {
-    console.error("[plunk:cal-booked] missing PLUNK_API_URL / PLUNK_API_KEY");
-    return;
-  }
-
-  const data: Record<string, string> = {
-    firstName,
-    calBooked: "true",
-  };
-
-  try {
-    const res = await fetchWithTimeout(
-      `${plunkUrl}/contacts`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${plunkSecretKey}`,
-        },
-        body: JSON.stringify({ email, data }),
-      },
-      PLUNK_TIMEOUT_MS
-    );
-    if (!res.ok) {
-      console.error("[plunk:cal-booked] /contacts error:", res.status, await res.text().catch(() => ""));
-    }
-  } catch (err) {
-    console.error("[plunk:cal-booked] /contacts error:", err);
-  }
-
-  if (plunkPublicKey && plunkEvent) {
-    try {
-      const res = await fetchWithTimeout(
-        `${plunkUrl}/v1/track`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${plunkPublicKey}`,
-          },
-          body: JSON.stringify({ email, event: plunkEvent, data }),
-        },
-        PLUNK_TIMEOUT_MS
-      );
-      if (!res.ok) {
-        console.error("[plunk:cal-booked] /track error:", res.status, await res.text().catch(() => ""));
-      }
-    } catch (err) {
-      console.error("[plunk:cal-booked] /track error:", err);
-    }
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -124,7 +52,7 @@ export async function POST(request: NextRequest) {
       leadsWebhook,
     ).catch(() => {});
 
-    markCallBookedInPlunk(email.trim().toLowerCase(), firstName.trim()).catch(
+    markCalBookedInPlunk(email.trim().toLowerCase(), firstName.trim()).catch(
       (err) => console.error("[plunk:cal-booked] failed:", err),
     );
 
