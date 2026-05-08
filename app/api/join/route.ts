@@ -42,7 +42,12 @@ async function triggerHighTicketWorkflow(input: {
     return;
   }
 
-  const data: Record<string, string> = { firstName: input.firstName };
+  // calBooked starts "false" so the Plunk workflow can gate each email
+  // step on data.calBooked == "false". /api/join/booked flips it to "true".
+  const data: Record<string, string> = {
+    firstName: input.firstName,
+    calBooked: "false",
+  };
   if (input.country) data.country = input.country;
   if (input.budget) data.budget = BUDGET_LABEL[input.budget] ?? input.budget;
   if (input.revenue) data.mrr = REVENUE_LABEL[input.revenue] ?? input.revenue;
