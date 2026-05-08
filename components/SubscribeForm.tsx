@@ -1,15 +1,9 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { fire, getVisitorId, getSessionId } from "./PageTracker";
 
 type Status = "idle" | "loading" | "ok" | "already" | "error";
-
-const DEBUG_FINAL: Record<string, Status> = {
-  ok: "ok",
-  already: "already",
-  error: "error",
-};
 
 function Spinner() {
   return (
@@ -34,23 +28,6 @@ function Spinner() {
 
 export function SubscribeForm() {
   const [status, setStatus] = useState<Status>("idle");
-
-  // ?debug=ok | already | error | loading — simulate the lifecycle without
-  // hitting /api/subscribe so we can preview the spinner + final message.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const debug = new URLSearchParams(window.location.search).get("debug");
-    if (!debug) return;
-    if (debug === "loading") {
-      setStatus("loading");
-      return;
-    }
-    const final = DEBUG_FINAL[debug];
-    if (!final) return;
-    setStatus("loading");
-    const t = setTimeout(() => setStatus(final), 1500);
-    return () => clearTimeout(t);
-  }, []);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
