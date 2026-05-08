@@ -80,7 +80,7 @@ export function SubscribeForm() {
   }
 
   if (status === "ok") {
-    return <p className="mt-10 text-sm font-medium text-[#FF9500]">Check your inbox! Welcome in.</p>;
+    return <p className="mt-10 text-sm font-medium text-black">Check your inbox! Welcome in.</p>;
   }
   if (status === "already") {
     return <p className="mt-10 text-sm font-medium text-black/70">You&apos;re already on the list.</p>;
