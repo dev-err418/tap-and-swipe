@@ -6,7 +6,7 @@ export const CATEGORIES = [
   { slug: "build-with-boilerplate", shortCode: "bw", title: "Build with the boilerplate", subtitle: "Ship faster with the starter template", emoji: "⚡", order: 5, image: "/learn/build-with-boilerplate.webp" },
   { slug: "monetize", shortCode: "m", title: "Monetize", subtitle: "Add subscriptions and maximize revenue", emoji: "💳", order: 6, image: "/learn/monetize.webp" },
   { slug: "launch-and-grow", shortCode: "l", title: "Launch & grow", subtitle: "Get featured and acquire your first users", emoji: "📈", order: 7, image: "/learn/launch-and-grow.webp" },
-  { slug: "scaling", shortCode: "s", title: "Scaling", subtitle: "Grow beyond your first 1,000 users", emoji: "📊", order: 8, image: "/learn/scaling.webp" },
+  { slug: "scaling", shortCode: "s", title: "Scaling with AppSprint", subtitle: "Grow beyond your first 1,000 users", emoji: "📊", order: 8, image: "/learn/scaling.webp" },
   { slug: "weekly-calls", shortCode: "w", title: "Weekly call replays", subtitle: "Live Q&A sessions with the community", emoji: "🎙️", order: 9 },
 ] as const;
 

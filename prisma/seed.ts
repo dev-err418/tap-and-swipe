@@ -68,10 +68,14 @@ I highly recommend using an ASO tool:
     title: "ASO basics: pick keywords that get you discovered",
     description: "Use keyword research to validate demand before building",
     type: "video",
-    youtubeUrl: "https://youtu.be/xqvQHfgc5fg",
+    youtubeUrl: "https://youtu.be/f14ZhFcrfnA",
     markdownContent: `Find keywords with popularity above 20 and difficulty below 50 (US).
 
-Get **20% off [Astro](https://tryastro.app/?aff=GPEbM)** (the ASO tool) using code **WELCOMEBACK** through this link!`,
+I highly recommend using an ASO tool:
+
+- If you're a pro member of the community, you have **AppSprint ASO** for free (check your emails).
+- Get 20% off **[AppSprint ASO](https://appsprint.app/aso)** with code **COMMUNITY-20**.
+- Get 20% off **[Astro](https://tryastro.app/?aff=GPEbM)** with code **WELCOMEBACK**.`,
     order: 2,
   },
   {
@@ -728,6 +732,14 @@ $5/week feels different than 40kr/week. Price for the market, not just for the U
     type: "video",
     youtubeUrl: "https://youtu.be/ujwN2dGdUmU",
     order: 1,
+  },
+  {
+    category: "scaling",
+    title: "MMP - AppSprint",
+    description: "Coming soon",
+    type: "markdown",
+    markdownContent: "",
+    order: 0,
   },
   {
     category: "scaling",
