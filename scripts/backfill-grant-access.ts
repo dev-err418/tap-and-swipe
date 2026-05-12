@@ -14,18 +14,16 @@
  *
  * Required env (must be present where this runs — typically Coolify):
  *   DATABASE_URL, WHOP_API_KEY, DISCORD_BOT_TOKEN, DISCORD_GUILD_ID,
- *   DISCORD_ROLE_ID, DISCORD_STARTER_ROLE_ID, DISCORD_WELCOME_CATEGORY_ID
+ *   DISCORD_ROLE_ID
+ *
+ * Optional env:
+ *   DISCORD_STARTER_ROLE_ID (falls back to DISCORD_ROLE_ID),
+ *   DISCORD_WELCOME_CATEGORY_ID (falls back to DISCORD_SUPPORT_CATEGORY_ID)
  */
 
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local", override: true });
 loadEnv({ path: ".env" });
-
-import {
-  findActiveMembershipByDiscordId,
-  tierFromWhopPlanId,
-} from "../lib/whop";
-import { grantAccess } from "../lib/grant-access";
 
 async function main() {
   const discordId = process.argv[2];
@@ -37,6 +35,11 @@ async function main() {
     );
     process.exit(1);
   }
+
+  const { findActiveMembershipByDiscordId, tierFromWhopPlanId } = await import(
+    "../lib/whop"
+  );
+  const { grantAccess } = await import("../lib/grant-access");
 
   console.log(`Looking up Whop membership for discordId=${discordId}…`);
   const match = await findActiveMembershipByDiscordId(discordId);

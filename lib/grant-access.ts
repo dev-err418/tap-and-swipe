@@ -65,14 +65,20 @@ ${steps}`;
 export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessResult> {
   const { discordId, discordUsername, tier, email, whopMembershipId, manageUrl, visitorId, source } = input;
 
-  // Look up by discordId first; fall back to whopMembershipId so we can
-  // claim a placeholder row created when Whop activated without Discord.
-  const existingByDiscord = await prisma.user.findUnique({ where: { discordId } });
-  const existingByWhop =
-    !existingByDiscord && whopMembershipId
-      ? await prisma.user.findUnique({ where: { whopMembershipId } })
-      : null;
-  const existing = existingByDiscord ?? existingByWhop;
+  // Look up by every unique identifier we may receive. Whop can activate
+  // before Discord is linked, while Auth.js/quiz/signup flows may already
+  // have created a User row for the email. Claiming that row avoids P2002
+  // crashes when the Discord bot later posts a guildMemberAdd event.
+  const [existingByDiscord, existingByWhop, existingByEmail] = await Promise.all([
+    prisma.user.findUnique({ where: { discordId } }),
+    whopMembershipId
+      ? prisma.user.findUnique({ where: { whopMembershipId } })
+      : Promise.resolve(null),
+    email ? prisma.user.findUnique({ where: { email } }) : Promise.resolve(null),
+  ]);
+  const existing = existingByDiscord ?? existingByWhop ?? existingByEmail;
+  const alreadyHadActiveRole =
+    existing?.subscriptionStatus === "active" && existing.roleGranted;
 
   // Add to guild if we have a stored OAuth token (only the case for users
   // who logged in via our Discord OAuth before paying)
@@ -112,40 +118,105 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
     existing.paymentProvider !== null &&
     existing.subscriptionStatus === "active";
 
-  // When claiming a placeholder (matched by whopMembershipId, no discordId row
-  // yet), update that row in place. A blind upsert(where:{discordId}) would
-  // fall through to create and trip the unique index on email/whopMembershipId
-  // since the placeholder already owns both.
   let upserted;
-  if (existingByWhop && !existingByDiscord) {
-    upserted = await prisma.user.update({
-      where: { id: existingByWhop.id },
-      data: {
-        discordId,
-        discordUsername,
-        subscriptionStatus: "active",
-        roleGranted,
-        tier,
-        ...(whopMembershipId && { whopMembershipId }),
-        ...(email && existingByWhop.email !== email && { email }),
-        ...(!isActiveElsewhere && { paymentProvider: "whop" }),
-        ...(visitorId && !existingByWhop.visitorId && { visitorId }),
-      },
+  if (existing) {
+    const claimableConflictIds = new Set<string>();
+    for (const conflict of [existingByWhop, existingByEmail]) {
+      if (!conflict || conflict.id === existing.id || claimableConflictIds.has(conflict.id)) {
+        continue;
+      }
+
+      const ownsCurrentWhop =
+        Boolean(whopMembershipId) && conflict.whopMembershipId === whopMembershipId;
+      const isEmailOnlyMatch =
+        Boolean(email) && conflict.email === email && !conflict.whopMembershipId;
+      const hasOtherDiscord = conflict.discordId && conflict.discordId !== discordId;
+      const hasNonWhopBilling =
+        (conflict.paymentProvider && conflict.paymentProvider !== "whop") ||
+        conflict.stripeCustomerId ||
+        conflict.subscriptionId;
+
+      if (!ownsCurrentWhop && !isEmailOnlyMatch) {
+        console.warn(
+          `[grantAccess:${source}] User row ${conflict.id} owns a different membership; skipping merge for discordId=${discordId}`
+        );
+        continue;
+      }
+      if (hasOtherDiscord || hasNonWhopBilling || conflict.githubId) {
+        console.warn(
+          `[grantAccess:${source}] User row ${conflict.id} has linked identity/billing data; skipping merge for discordId=${discordId}`
+        );
+        continue;
+      }
+
+      const progressCount = await prisma.lessonProgress.count({
+        where: { userId: conflict.id },
+      });
+      if (progressCount > 0) {
+        console.warn(
+          `[grantAccess:${source}] User row ${conflict.id} has lesson progress; skipping merge for discordId=${discordId}`
+        );
+        continue;
+      }
+
+      claimableConflictIds.add(conflict.id);
+    }
+
+    const emailOwnedByOther =
+      existingByEmail !== null &&
+      existingByEmail.id !== existing.id &&
+      !claimableConflictIds.has(existingByEmail.id);
+    const whopOwnedByOther =
+      existingByWhop !== null &&
+      existingByWhop.id !== existing.id &&
+      !claimableConflictIds.has(existingByWhop.id);
+    const canClaimDiscordId = !existing.discordId || existing.discordId === discordId;
+
+    if (emailOwnedByOther) {
+      console.warn(
+        `[grantAccess:${source}] email=${email} already belongs to another User row; skipping email update for discordId=${discordId}`
+      );
+    }
+    if (whopOwnedByOther) {
+      console.warn(
+        `[grantAccess:${source}] whopMembershipId=${whopMembershipId} already belongs to another User row; skipping membership update for discordId=${discordId}`
+      );
+    }
+    if (!canClaimDiscordId) {
+      console.warn(
+        `[grantAccess:${source}] User row ${existing.id} already has discordId=${existing.discordId}; skipping discordId update to ${discordId}`
+      );
+    }
+
+    if (claimableConflictIds.size > 0) {
+      console.log(
+        `[grantAccess:${source}] merging ${claimableConflictIds.size} placeholder User row(s) into ${existing.id} for discordId=${discordId}`
+      );
+    }
+
+    upserted = await prisma.$transaction(async (tx) => {
+      for (const id of claimableConflictIds) {
+        await tx.user.delete({ where: { id } });
+      }
+
+      return tx.user.update({
+        where: { id: existing.id },
+        data: {
+          ...(canClaimDiscordId && { discordId }),
+          discordUsername,
+          subscriptionStatus: "active",
+          roleGranted,
+          tier,
+          ...(whopMembershipId && !whopOwnedByOther && { whopMembershipId }),
+          ...(email && !emailOwnedByOther && { email }),
+          ...(!isActiveElsewhere && { paymentProvider: "whop" }),
+          ...(visitorId && !existing.visitorId && { visitorId }),
+        },
+      });
     });
   } else {
-    upserted = await prisma.user.upsert({
-      where: { discordId },
-      update: {
-        discordUsername,
-        subscriptionStatus: "active",
-        roleGranted,
-        tier,
-        ...(whopMembershipId && { whopMembershipId }),
-        ...(email && { email }),
-        ...(!isActiveElsewhere && { paymentProvider: "whop" }),
-        ...(visitorId && !existing?.visitorId && { visitorId }),
-      },
-      create: {
+    upserted = await prisma.user.create({
+      data: {
         discordId,
         discordUsername,
         subscriptionStatus: "active",
@@ -159,9 +230,12 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
     });
   }
 
-  // Welcome channel only on truly first activation (no prior Discord link)
+  // Welcome channel on first successful access activation. Users may already
+  // have a Discord-only row from OAuth, but they still need onboarding when
+  // the paid membership is first granted.
   const isNewUser = !existingByDiscord;
-  if (isNewUser && roleGranted) {
+  const shouldCreateWelcomeChannel = !alreadyHadActiveRole;
+  if (shouldCreateWelcomeChannel && roleGranted) {
     try {
       const usernameSlug = discordUsername.toLowerCase().replace(/[^a-z0-9-]/g, "-");
       const channelName = `👋・welcome-${usernameSlug}`;
@@ -186,7 +260,7 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
         "pro",
         manageUrl
       );
-      if (isNewLicense || isNewUser) {
+      if (isNewLicense || shouldCreateWelcomeChannel) {
         await sendLicenseKeyEmail(email, key, "community", manageUrl);
         asoLicenseSent = true;
       }
