@@ -57,18 +57,28 @@ export function SiteFooter() {
           <p className="font-medium text-foreground/80">Products</p>
           <ul className="-mx-2 mt-2">
             <li>
+              <a
+                href="https://appsprint.app"
+                target="_blank"
+                rel="noopener"
+                className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
+              >
+                AppSprint
+              </a>
+            </li>
+            <li>
               <Link
                 href="/community"
                 className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
               >
-                AppSprint Community
+                Community
               </Link>
             </li>
             <li>
               <a
                 href="https://appsprint.app/aso"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener"
                 className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
               >
                 AppSprint ASO
