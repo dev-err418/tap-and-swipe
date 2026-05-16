@@ -180,14 +180,14 @@ INPUTS
 - Support email: {EMAIL}
 - Platforms: {iOS / Android / both}
 - Store links: {App Store URL, Play Store URL}
-- Third-party tools used: {e.g. RevenueCat (payments), PostHog (analytics), Sentry (crash reporting), Supabase (auth + DB), Tenjin (attribution), Resend (email)}
+- Third-party tools used: {e.g. RevenueCat (payments), PostHog (analytics), Sentry (crash reporting), Supabase (auth + DB), Tenjin (attribution), Plunk / Amazon SES (email)}
 
 DELIVERABLES
 
 Home: hero with icon + name + one-liner + store badges. Short feature section. Footer with Privacy, Terms, Contact links.
 /privacy: full privacy policy. Explicitly list each tool from "Third-party tools used" with what data it processes and link to its policy. GDPR-friendly. Contact = {EMAIL}. Last updated = today.
 /terms: standard mobile app terms of use. Contact = {EMAIL}. Last updated = today.
-/contact: form with name, email, message. Submits to {EMAIL} (Resend if backend, mailto fallback otherwise). Show success state.
+/contact: form with name, email, message. Submits to {EMAIL} (Plunk / Amazon SES if backend, mailto fallback otherwise). Show success state.
 
 STYLE
 Minimal, mobile-first, single accent color pulled from the icon. No stock photos.

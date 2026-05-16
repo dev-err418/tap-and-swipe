@@ -1,29 +1,49 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { sendPlunkEmail } from "@/lib/plunk-email";
 
 export type LicenseEmailSource = "aso" | "community" | "community-starter";
 
+function getAppSprintPlunkConfig() {
+  const apiUrl = process.env.APPSPRINT_PLUNK_API_URL ?? process.env.PLUNK_API_URL;
+  const apiKey = process.env.APPSPRINT_PLUNK_API_KEY;
+
+  if (!apiUrl || !apiKey) {
+    throw new Error("APPSPRINT_PLUNK_API_URL and APPSPRINT_PLUNK_API_KEY must be set");
+  }
+
+  return { apiUrl, apiKey };
+}
+
 const SOURCE_CONFIG: Record<
   LicenseEmailSource,
-  { from: string; subject: string; templateId: string; label: string }
+  {
+    from: { name: string; email: string };
+    subject: string;
+    templateId: string;
+    label: string;
+  }
 > = {
   aso: {
-    from: "Arthur from AppSprint ASO <arthur@appsprint.app>",
+    from: { name: "Arthur from AppSprint ASO", email: "arthur@appsprint.app" },
     subject: "Your license key is ready! Let's get you more downloads :)",
-    templateId: "onboarding-email",
+    templateId:
+      process.env.APPSPRINT_PLUNK_ASO_LICENSE_TEMPLATE_ID ||
+      "onboarding-email",
     label: "ASO",
   },
   community: {
-    from: "Arthur from AppSprint <arthur@appsprint.app>",
+    from: { name: "Arthur from AppSprint", email: "arthur@appsprint.app" },
     subject: "Your free ASO Pro license is ready!",
-    templateId: "community-email",
+    templateId:
+      process.env.APPSPRINT_PLUNK_COMMUNITY_PRO_TEMPLATE_ID ||
+      "community-email",
     label: "Community",
   },
   "community-starter": {
-    from: "Arthur from AppSprint <arthur@appsprint.app>",
+    from: { name: "Arthur from AppSprint", email: "arthur@appsprint.app" },
     subject: "Your free ASO Solo license is ready!",
-    templateId: "community-email-starter",
+    templateId:
+      process.env.APPSPRINT_PLUNK_COMMUNITY_STARTER_TEMPLATE_ID ||
+      "community-email-starter",
     label: "Community-Starter",
   },
 };
@@ -43,15 +63,18 @@ export async function sendLicenseKeyEmail(
       variables.MANAGE_URL = manageUrl;
     }
 
-    await resend.emails.send({
+    await sendPlunkEmail({
       from: config.from,
       to,
       subject: config.subject,
-      template: {
-        id: config.templateId,
-        variables,
-      },
-    } as any);
+      template: config.templateId,
+      data: Object.fromEntries(
+        Object.entries(variables).map(([key, value]) => [
+          key,
+          { value, persistent: false },
+        ]),
+      ),
+    }, getAppSprintPlunkConfig());
   } catch (err) {
     console.error(`[${config.label}] Failed to send license email:`, err);
   }

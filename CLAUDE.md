@@ -17,7 +17,7 @@ npm run check:discover     # Validate episodes/case studies/drafts against Googl
 
 ## Tech Stack
 
-Next.js 16 (App Router), React 19, TypeScript, TailwindCSS 4, shadcn/ui (New York style, configured in `components.json`), PostgreSQL with Prisma ORM (@prisma/adapter-pg), Auth.js v5 (Google + email magic link) + legacy Discord OAuth, Cloudflare R2 for video hosting, Resend for email.
+Next.js 16 (App Router), React 19, TypeScript, TailwindCSS 4, shadcn/ui (New York style, configured in `components.json`), PostgreSQL with Prisma ORM (@prisma/adapter-pg), Auth.js v5 (Google + email magic link) + legacy Discord OAuth, Cloudflare R2 for video hosting, self-hosted Plunk over AWS SES for email.
 
 ## Hosting
 

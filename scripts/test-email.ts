@@ -1,25 +1,30 @@
-import { Resend } from "resend";
+import { config as loadEnv } from "dotenv";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { sendPlunkEmail } from "@/lib/plunk-email";
+
+loadEnv({ path: ".env.local", override: true });
+loadEnv({ path: ".env" });
 
 async function main() {
-  const { data, error } = await resend.emails.send({
-    from: "Arthur from AppSprint ASO <arthur@appsprint.app>",
+  const apiUrl = process.env.APPSPRINT_PLUNK_API_URL ?? process.env.PLUNK_API_URL;
+  const apiKey = process.env.APPSPRINT_PLUNK_API_KEY;
+
+  const data = await sendPlunkEmail({
+    from: { name: "Arthur from AppSprint ASO", email: "arthur@appsprint.app" },
     to: "arthur.spalanzani@gmail.com",
     subject: "Your license key is ready — let's get you more downloads",
-    template: {
-      id: "onboarding-email",
-      variables: {
-        LICENCE_KEY: "ASO-TEST-ABCD-1234-EFGH",
+    template:
+      process.env.APPSPRINT_PLUNK_ASO_LICENSE_TEMPLATE_ID ||
+      "onboarding-email",
+    data: {
+      LICENCE_KEY: {
+        value: "ASO-TEST-ABCD-1234-EFGH",
+        persistent: false,
       },
     },
-  } as any);
+  }, { apiUrl, apiKey });
 
-  if (error) {
-    console.error("Error:", error);
-  } else {
-    console.log("Sent!", data);
-  }
+  console.log("Sent!", data);
 }
 
 main();
