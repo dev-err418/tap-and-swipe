@@ -474,6 +474,12 @@ export default function AsoPage() {
                     </p>
                     <div className="flex gap-6">
                         <a
+                            href="/aso/manage"
+                            className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]"
+                        >
+                            Manage subscription
+                        </a>
+                        <a
                             href="/aso/terms"
                             className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]"
                         >

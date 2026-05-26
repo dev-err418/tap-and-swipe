@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Check, Copy, Download, MessageCircle } from "lucide-react";
+import { Check, Copy, CreditCard, Download, MessageCircle } from "lucide-react";
 
 const DOWNLOAD_URL = "https://github.com/dev-err418/app-sprint-aso-releases/releases/latest/download/AppSprintASO.dmg";
 
@@ -21,15 +21,13 @@ function AsoSuccessContent() {
     const bonusActivated = searchParams.get("bonus") === "activated";
 
     const [licenseKey, setLicenseKey] = useState("");
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(Boolean(sessionId));
+    const [error, setError] = useState(sessionId ? "" : "Invalid session");
     const [copied, setCopied] = useState(false);
     const [isYearlyPro, setIsYearlyPro] = useState(false);
 
     useEffect(() => {
         if (!sessionId) {
-            setError("Invalid session");
-            setLoading(false);
             return;
         }
 
@@ -116,10 +114,10 @@ function AsoSuccessContent() {
                                 <Check className="h-8 w-8 text-[#f4cf8f]" />
                             </motion.div>
                             <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-                                You're in!
+                                You&apos;re in!
                             </h1>
                             <p className="mt-3 text-lg text-[#c9c4bc]">
-                                Here's your license key — we also sent it to your email.
+                                Here&apos;s your license key — we also sent it to your email.
                             </p>
                         </div>
 
@@ -159,6 +157,14 @@ function AsoSuccessContent() {
                         >
                             <Download className="h-4 w-4" />
                             Download AppSprint ASO
+                        </a>
+
+                        <a
+                            href="/aso/manage"
+                            className="inline-flex items-center justify-center gap-2 text-sm font-medium text-[#c9c4bc] transition hover:text-[#f1ebe2]"
+                        >
+                            <CreditCard className="h-4 w-4" />
+                            Manage or cancel subscription
                         </a>
 
                         {/* Yearly Pro Discord bonus */}
