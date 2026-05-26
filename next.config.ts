@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
 
+const noTransformHeaders = [
+  {
+    key: "Cache-Control",
+    value: "private, no-transform",
+  },
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
@@ -21,6 +28,26 @@ const nextConfig: NextConfig = {
             value: "public, max-age=31536000, immutable",
           },
         ],
+      },
+      {
+        source: "/privacy",
+        headers: noTransformHeaders,
+      },
+      {
+        source: "/case-studies/:path*",
+        headers: noTransformHeaders,
+      },
+      {
+        source: "/:app(versy|glow|divvy|netpay|lua|notify)/:path*",
+        headers: noTransformHeaders,
+      },
+      {
+        source: "/community/:path*",
+        headers: noTransformHeaders,
+      },
+      {
+        source: "/join-discord",
+        headers: noTransformHeaders,
       },
       {
         source: "/(.*)",
