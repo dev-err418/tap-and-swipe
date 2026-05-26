@@ -3,11 +3,13 @@ import { asoPool } from "@/lib/aso-db";
 import { stripe } from "@/lib/stripe";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
+const WHOP_MEMBERSHIPS_URL = "https://whop.com/@me/settings/memberships/";
 
 type LicenseRow = {
   key: string;
   active: boolean;
   stripe_customer_id: string | null;
+  whop_membership_id: string | null;
   whop_manage_url: string | null;
   provider: string | null;
 };
@@ -29,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { rows } = await asoPool.query<LicenseRow>(
-      `SELECT key, active, stripe_customer_id, whop_manage_url, provider
+      `SELECT key, active, stripe_customer_id, whop_membership_id, whop_manage_url, provider
        FROM aso_licenses
        WHERE UPPER(key) = UPPER($1)
        LIMIT 1`,
@@ -44,9 +46,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (license.whop_manage_url) {
+    if (
+      license.provider === "whop" ||
+      license.whop_membership_id ||
+      license.whop_manage_url
+    ) {
       return NextResponse.json({
-        url: license.whop_manage_url,
+        url: WHOP_MEMBERSHIPS_URL,
         provider: "whop",
       });
     }

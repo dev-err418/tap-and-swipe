@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { ArrowLeft, CreditCard, ExternalLink, KeyRound, Loader2 } from "lucide-react";
 
+const WHOP_MEMBERSHIPS_URL = "https://whop.com/@me/settings/memberships/";
+
 export default function AsoManagePage() {
   const [licenseKey, setLicenseKey] = useState("");
   const [error, setError] = useState("");
@@ -101,7 +103,15 @@ export default function AsoManagePage() {
           </form>
 
           <p className="text-sm leading-6 text-[#c9c4bc]">
-            Bought through Whop? This page redirects to Whop when a management link is attached to your license.
+            Bought through Whop? You can also open your Whop memberships directly.
+            {" "}
+            <a
+              href={WHOP_MEMBERSHIPS_URL}
+              className="font-semibold text-[#f4cf8f] underline-offset-4 transition hover:text-[#ffe1a8] hover:underline"
+            >
+              Manage on Whop
+            </a>
+            .
           </p>
         </section>
       </div>

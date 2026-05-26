@@ -2,6 +2,8 @@ import { sendPlunkEmail } from "@/lib/plunk-email";
 
 export type LicenseEmailSource = "aso" | "community" | "community-starter";
 
+const WHOP_MEMBERSHIPS_URL = "https://whop.com/@me/settings/memberships/";
+
 function getAppSprintPlunkConfig() {
   const apiUrl = process.env.APPSPRINT_PLUNK_API_URL ?? process.env.PLUNK_API_URL;
   const apiKey = process.env.APPSPRINT_PLUNK_API_KEY;
@@ -56,11 +58,14 @@ export async function sendLicenseKeyEmail(
 ): Promise<void> {
   const config = SOURCE_CONFIG[source];
   try {
+    const resolvedManageUrl =
+      manageUrl ??
+      (source.startsWith("community") ? WHOP_MEMBERSHIPS_URL : undefined);
     const variables: Record<string, string> = {
       LICENCE_KEY: licenseKey,
     };
-    if (manageUrl) {
-      variables.MANAGE_URL = manageUrl;
+    if (resolvedManageUrl) {
+      variables.MANAGE_URL = resolvedManageUrl;
     }
 
     await sendPlunkEmail({

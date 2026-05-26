@@ -360,11 +360,15 @@ export async function POST(request: NextRequest) {
           // is idempotent on (membership_id, email) so this is safe to call repeatedly.
           if (payloadTier === "full") {
             const email = extractEmail(data);
+            const membership = data.membership as Record<string, unknown> | undefined;
+            const manageUrl =
+              (typeof data.manage_url === "string" ? data.manage_url : undefined) ??
+              (typeof membership?.manage_url === "string" ? membership.manage_url : undefined);
             if (email) {
               const { key: licenseKey, isNew: isNewLicense } =
-                await generateAsoLicenseWhop(email, membershipId, "pro");
+                await generateAsoLicenseWhop(email, membershipId, "pro", manageUrl);
               if (isNewLicense) {
-                await sendLicenseKeyEmail(email, licenseKey, "community");
+                await sendLicenseKeyEmail(email, licenseKey, "community", manageUrl);
               }
             }
           }
