@@ -15,8 +15,8 @@ async function cancelStripeSubscription(key: string) {
     );
     const customerId = rows[0]?.stripe_customer_id;
     if (!customerId) return;
-    const subs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 10 });
-    for (const sub of subs.data) {
+    const subs = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 10 });
+    for (const sub of subs.data.filter((s) => s.status === "active" || s.status === "trialing")) {
       await stripe.subscriptions.cancel(sub.id);
     }
   } catch (e) {

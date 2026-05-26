@@ -128,9 +128,15 @@ export async function GET(req: Request) {
   // Unique licenses = distinct licenses that made requests in this period
   summary.uniqueLicenses = usageRows.length;
 
-  // Trial abuse: machine_ids with 2+ licenses (all statuses)
-  // Use active boolean as fallback for pre-migration licenses where status='active' but active=false
+  // Trial abuse: machine_ids with multiple owners. Plan changes can leave
+  // multiple same-email keys on one Mac, which is not abuse.
   const { rows: trialAbuse } = await pool.query(`
+    WITH license_owners AS (
+      SELECT *,
+             COALESCE(NULLIF(LOWER(email), ''), NULLIF(stripe_customer_id, ''), key) as owner_key
+      FROM aso_licenses
+      WHERE machine_id IS NOT NULL
+    )
     SELECT machine_id,
            COUNT(*)::int as license_count,
            array_agg(email ORDER BY created_at) as emails,
@@ -141,10 +147,9 @@ export async function GET(req: Request) {
            array_agg(warned_at ORDER BY created_at) as warned_dates,
            array_agg(created_at ORDER BY created_at) as created_dates,
            bool_or(active) as has_active
-    FROM aso_licenses
-    WHERE machine_id IS NOT NULL
+    FROM license_owners
     GROUP BY machine_id
-    HAVING COUNT(*) >= 2
+    HAVING COUNT(DISTINCT owner_key) >= 2
     ORDER BY MAX(warned_at) DESC NULLS LAST, MAX(created_at) DESC
   `);
 
