@@ -4,7 +4,7 @@ import AppLandingPage from "@/components/app-landing";
 export const metadata: Metadata = {
   title: "Glow — Daily Affirmations & Mood Tracker",
   description:
-    "Start your day with positive affirmations, mood tracking, and journaling. Lock screen widgets, beautiful themes, and categories for every mood. Download Glow on the App Store or Google Play.",
+    "Start your day with positive affirmations, mood tracking, and journaling. Lock screen widgets, beautiful themes, and categories for every mood. Download Glow on the App Store.",
   keywords: [
     "affirmations app",
     "daily affirmations",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Glow — Daily Affirmations & Mood Tracker",
     description:
-      "Start your day with positive affirmations, mood tracking, and journaling. Lock screen widgets, beautiful themes, and categories for every mood. Download Glow on the App Store or Google Play.",
+      "Start your day with positive affirmations, mood tracking, and journaling. Lock screen widgets, beautiful themes, and categories for every mood. Download Glow on the App Store.",
     type: "website",
     locale: "en_US",
     siteName: "Tap & Swipe",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     creator: "@arthursbuilds",
     title: "Glow — Daily Affirmations & Mood Tracker",
     description:
-      "Start your day with positive affirmations, mood tracking, and journaling. Lock screen widgets, beautiful themes, and categories for every mood. Download Glow on the App Store or Google Play.",
+      "Start your day with positive affirmations, mood tracking, and journaling. Lock screen widgets, beautiful themes, and categories for every mood. Download Glow on the App Store.",
     images: ["/community-icons/glow.jpg"],
   },
   alternates: {
@@ -48,7 +48,7 @@ const glowJsonLd = {
   description:
     "Start your day with positive affirmations, mood tracking, and journaling. Lock screen widgets, beautiful themes, and categories for every mood.",
   applicationCategory: "HealthApplication",
-  operatingSystem: "iOS, Android",
+  operatingSystem: "iOS",
   author: {
     "@type": "Organization",
     name: "Tap & Swipe",
@@ -106,7 +106,6 @@ export default function GlowPage() {
         description="Glow gives you a fresh affirmation every morning. Set it as a widget on your lock screen or home screen so it's the first thing you see. Keep a streak going to build the habit. There are categories for anxiety, motivation, mindfulness, sleep, self-love, and more, so you can pick what fits your day. Switch between animated, light, dark, and seasonal themes. And when you find one you love, share it as a card on Instagram, TikTok, or wherever."
         iconUrl="/community-icons/glow.jpg"
         appStoreUrl="https://apps.apple.com/app/id6753347459"
-        playStoreUrl="https://play.google.com/store/apps/details?id=com.tapandswipe.glow"
         rating={4.3}
         ratingCount={114}
         features={features}

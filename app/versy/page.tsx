@@ -4,7 +4,7 @@ import AppLandingPage from "@/components/app-landing";
 export const metadata: Metadata = {
   title: "Versy — Bible Verse Widget & Prayer",
   description:
-    "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your lock screen and home screen. Download Versy on the App Store or Google Play.",
+    "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your lock screen and home screen. Download Versy on the App Store.",
   keywords: [
     "bible verse app",
     "bible verse widget",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Versy — Bible Verse Widget & Prayer",
     description:
-      "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your lock screen and home screen. Download Versy on the App Store or Google Play.",
+      "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your lock screen and home screen. Download Versy on the App Store.",
     type: "website",
     locale: "en_US",
     siteName: "Tap & Swipe",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     creator: "@arthursbuilds",
     title: "Versy — Bible Verse Widget & Prayer",
     description:
-      "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your lock screen and home screen. Download Versy on the App Store or Google Play.",
+      "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your lock screen and home screen. Download Versy on the App Store.",
     images: ["/community-icons/versy.jpg"],
   },
   alternates: {
@@ -48,7 +48,7 @@ const versyJsonLd = {
   description:
     "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your lock screen and home screen.",
   applicationCategory: "LifestyleApplication",
-  operatingSystem: "iOS, Android",
+  operatingSystem: "iOS",
   author: {
     "@type": "Organization",
     name: "Tap & Swipe",
@@ -106,7 +106,6 @@ export default function VersyPage() {
         description="Versy puts scripture right on your phone. Add a widget to your lock screen or home screen and you'll see a new Bible verse every time you pick up your device. There are animated, light, dark, and seasonal themes so it looks the way you want. Set morning reminders to build a daily devotional streak, keep a prayer journal, and share scripture images with friends and family on social media."
         iconUrl="/community-icons/versy.jpg"
         appStoreUrl="https://apps.apple.com/app/id6756516842"
-        playStoreUrl="https://play.google.com/store/apps/details?id=com.tapandswipe.versy"
         rating={4.7}
         ratingCount={411}
         features={features}
