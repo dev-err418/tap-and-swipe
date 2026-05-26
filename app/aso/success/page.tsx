@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Check, Copy, CreditCard, Download, MessageCircle } from "lucide-react";
 
 const DOWNLOAD_URL = "https://github.com/dev-err418/app-sprint-aso-releases/releases/latest/download/AppSprintASO.dmg";
+const WHOP_MEMBERSHIPS_URL = "https://whop.com/@me/settings/memberships/";
 
 export default function AsoSuccessPage() {
     return (
@@ -160,7 +161,7 @@ function AsoSuccessContent() {
                         </a>
 
                         <a
-                            href="/aso/manage"
+                            href={WHOP_MEMBERSHIPS_URL}
                             className="inline-flex items-center justify-center gap-2 text-sm font-medium text-[#c9c4bc] transition hover:text-[#f1ebe2]"
                         >
                             <CreditCard className="h-4 w-4" />

@@ -12,6 +12,8 @@ import AsoLastUpdate from "./last-update";
 import PageTracker from "@/components/PageTracker";
 import HeroVideo from "./hero-video";
 
+const WHOP_MEMBERSHIPS_URL = "https://whop.com/@me/settings/memberships/";
+
 const softwareApplicationJsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -474,7 +476,7 @@ export default function AsoPage() {
                     </p>
                     <div className="flex gap-6">
                         <a
-                            href="/aso/manage"
+                            href={WHOP_MEMBERSHIPS_URL}
                             className="text-sm text-[#c9c4bc] hover:text-[#f1ebe2]"
                         >
                             Manage subscription
