@@ -38,9 +38,10 @@ function welcomeMessage(discordId: string, tier: GrantTier): string {
 4. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with
 5. share your build progress: start a thread in <#1480509051489095782>, one per app`
       : `1. the course is at https://tap-and-swipe.com/learn, start with the **Getting Started** category
-2. group calls are **mon and wed at 9pm CET, sat at 8pm CET**
-3. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with
-4. share your build progress: start a thread in <#1480509051489095782>, one per app`;
+2. your **ASO Solo** license should already be in your inbox, comes with the sub
+3. group calls are **mon and wed at 9pm CET, sat at 8pm CET**
+4. once you're settled in, drop a quick intro in <#1441443597269467176>: what you're building, where you're at, what you need help with
+5. share your build progress: start a thread in <#1480509051489095782>, one per app`;
 
   return `hey <@${discordId}>, welcome in 👋
 
@@ -76,7 +77,7 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
       : Promise.resolve(null),
     email ? prisma.user.findUnique({ where: { email } }) : Promise.resolve(null),
   ]);
-  const existing = existingByDiscord ?? existingByWhop ?? existingByEmail;
+  const existing = existingByWhop ?? existingByDiscord ?? existingByEmail;
   const alreadyHadActiveRole =
     existing?.subscriptionStatus === "active" && existing.roleGranted;
 
@@ -121,7 +122,7 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
   let upserted;
   if (existing) {
     const claimableConflictIds = new Set<string>();
-    for (const conflict of [existingByWhop, existingByEmail]) {
+    for (const conflict of [existingByDiscord, existingByWhop, existingByEmail]) {
       if (!conflict || conflict.id === existing.id || claimableConflictIds.has(conflict.id)) {
         continue;
       }
@@ -130,13 +131,15 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
         Boolean(whopMembershipId) && conflict.whopMembershipId === whopMembershipId;
       const isEmailOnlyMatch =
         Boolean(email) && conflict.email === email && !conflict.whopMembershipId;
+      const isDiscordOnlyMatch =
+        conflict.discordId === discordId && !conflict.whopMembershipId;
       const hasOtherDiscord = conflict.discordId && conflict.discordId !== discordId;
       const hasNonWhopBilling =
         (conflict.paymentProvider && conflict.paymentProvider !== "whop") ||
         conflict.stripeCustomerId ||
         conflict.subscriptionId;
 
-      if (!ownsCurrentWhop && !isEmailOnlyMatch) {
+      if (!ownsCurrentWhop && !isEmailOnlyMatch && !isDiscordOnlyMatch) {
         console.warn(
           `[grantAccess:${source}] User row ${conflict.id} owns a different membership; skipping merge for discordId=${discordId}`
         );
@@ -170,7 +173,16 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
       existingByWhop !== null &&
       existingByWhop.id !== existing.id &&
       !claimableConflictIds.has(existingByWhop.id);
-    const canClaimDiscordId = !existing.discordId || existing.discordId === discordId;
+    const discordOwnedByOther =
+      existingByDiscord !== null &&
+      existingByDiscord.id !== existing.id &&
+      !claimableConflictIds.has(existingByDiscord.id);
+    const canClaimDiscordId =
+      !existing.discordId ||
+      existing.discordId === discordId ||
+      (Boolean(whopMembershipId) &&
+        existing.whopMembershipId === whopMembershipId &&
+        !discordOwnedByOther);
 
     if (emailOwnedByOther) {
       console.warn(
@@ -180,6 +192,11 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
     if (whopOwnedByOther) {
       console.warn(
         `[grantAccess:${source}] whopMembershipId=${whopMembershipId} already belongs to another User row; skipping membership update for discordId=${discordId}`
+      );
+    }
+    if (discordOwnedByOther) {
+      console.warn(
+        `[grantAccess:${source}] discordId=${discordId} already belongs to another User row; skipping discordId update for User row ${existing.id}`
       );
     }
     if (!canClaimDiscordId) {
@@ -250,18 +267,20 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
     }
   }
 
-  // ASO license: Pro tier only
+  // ASO license: Pro gets ASO Pro, Starter gets ASO Solo.
   let asoLicenseSent = false;
-  if (email && tier === "full" && whopMembershipId) {
+  if (email && whopMembershipId) {
     try {
+      const asoPlan = tier === "starter" ? "solo" : "pro";
+      const emailSource = tier === "starter" ? "community-starter" : "community";
       const { key, isNew: isNewLicense } = await generateAsoLicenseWhop(
         email,
         whopMembershipId,
-        "pro",
+        asoPlan,
         manageUrl
       );
       if (isNewLicense || shouldCreateWelcomeChannel) {
-        await sendLicenseKeyEmail(email, key, "community", manageUrl);
+        await sendLicenseKeyEmail(email, key, emailSource, manageUrl);
         asoLicenseSent = true;
       }
     } catch (err) {
