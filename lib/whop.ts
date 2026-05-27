@@ -18,6 +18,31 @@ export const WHOP_COMMUNITY_PLAN_ID =
 export const WHOP_STARTER_PLAN_ID =
   process.env.WHOP_STARTER_PLAN_ID ?? "plan_hH1PeE0AurETn";
 
+export const WHOP_ASO_PRODUCT_ID =
+  process.env.WHOP_ASO_PRODUCT_ID ?? "prod_abrmSHV7CFEx9";
+
+export const WHOP_ASO_SOLO_MONTHLY_PLAN_ID =
+  process.env.WHOP_ASO_SOLO_MONTHLY_PLAN_ID ?? "plan_fK1oF70OvsVrX";
+
+export const WHOP_ASO_PRO_MONTHLY_PLAN_ID =
+  process.env.WHOP_ASO_PRO_MONTHLY_PLAN_ID ?? "plan_RQHfHA6tQgBih";
+
+export const WHOP_ASO_SOLO_YEARLY_PLAN_ID =
+  process.env.WHOP_ASO_SOLO_YEARLY_PLAN_ID ?? "plan_tYVsXnoZiUwWb";
+
+export const WHOP_ASO_PRO_YEARLY_PLAN_ID =
+  process.env.WHOP_ASO_PRO_YEARLY_PLAN_ID ?? "plan_9Etf61vjiXNg6";
+
+const WHOP_ASO_SOLO_PLAN_IDS = new Set([
+  WHOP_ASO_SOLO_MONTHLY_PLAN_ID,
+  WHOP_ASO_SOLO_YEARLY_PLAN_ID,
+]);
+
+const WHOP_ASO_PRO_PLAN_IDS = new Set([
+  WHOP_ASO_PRO_MONTHLY_PLAN_ID,
+  WHOP_ASO_PRO_YEARLY_PLAN_ID,
+]);
+
 export interface WhopMembershipMatch {
   membershipId: string;
   email: string | null;
@@ -124,4 +149,17 @@ export async function findActiveMembershipByDiscordId(
 export function tierFromWhopPlanId(planId: string | null | undefined): "full" | "starter" {
   if (planId === WHOP_STARTER_PLAN_ID) return "starter";
   return "full";
+}
+
+export function asoPlanFromWhopPlanId(
+  planId: string | null | undefined
+): "solo" | "pro" | null {
+  if (!planId) return null;
+  if (WHOP_ASO_SOLO_PLAN_IDS.has(planId)) return "solo";
+  if (WHOP_ASO_PRO_PLAN_IDS.has(planId)) return "pro";
+  return null;
+}
+
+export function isAsoWhopPlanId(planId: string | null | undefined): boolean {
+  return asoPlanFromWhopPlanId(planId) !== null;
 }

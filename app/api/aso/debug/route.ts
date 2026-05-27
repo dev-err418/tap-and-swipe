@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { asoPool, generateAsoLicense, deactivateAsoLicenses, reactivateAsoLicenses } from "@/lib/aso-db";
+import {
+  type AsoPlan,
+  asoPool,
+  generateAsoLicense,
+  generateAsoLicenseWhop,
+  deactivateAsoLicenses,
+  reactivateAsoLicenses,
+} from "@/lib/aso-db";
+import { sendLicenseKeyEmail } from "@/lib/aso-email";
 
 // Temporary debug route — DELETE AFTER TESTING
 // Protected by CRON_SECRET
+const WHOP_MEMBERSHIPS_URL = "https://whop.com/@me/settings/memberships/";
 
 function authorized(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get("secret");
@@ -14,6 +23,7 @@ function authorized(req: NextRequest) {
 // GET /api/aso/debug?secret=xxx&action=deactivate&customer=cus_xxx — Deactivate licenses
 // GET /api/aso/debug?secret=xxx&action=reactivate&customer=cus_xxx — Reactivate licenses
 // GET /api/aso/debug?secret=xxx&action=update-plan&customer=cus_xxx&plan=pro — Update plan
+// GET /api/aso/debug?secret=xxx&action=backfill-whop&email=x&membership=mem_x&plan=pro — Create/resend Whop license
 // GET /api/aso/debug?secret=xxx&action=delete-test — Delete all test licenses
 export async function GET(req: NextRequest) {
   if (!authorized(req)) {
@@ -24,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   if (!action) {
     const { rows } = await asoPool.query(
-      "SELECT key, email, plan, active, stripe_customer_id, machine_id, created_at FROM aso_licenses ORDER BY created_at DESC LIMIT 20"
+      "SELECT key, email, plan, active, provider, stripe_customer_id, whop_membership_id, whop_manage_url, machine_id, created_at FROM aso_licenses ORDER BY created_at DESC LIMIT 20"
     );
     return NextResponse.json({ licenses: rows });
   }
@@ -34,6 +44,43 @@ export async function GET(req: NextRequest) {
     const plan = (req.nextUrl.searchParams.get("plan") || "pro") as "solo" | "pro";
     const { key } = await generateAsoLicense(email, `debug_${Date.now()}`, plan);
     return NextResponse.json({ key, email, plan });
+  }
+
+  if (action === "backfill-whop") {
+    const email = req.nextUrl.searchParams.get("email")?.trim().toLowerCase();
+    const membership = req.nextUrl.searchParams.get("membership")?.trim();
+    const requestedPlan = req.nextUrl.searchParams.get("plan") ?? "pro";
+    const plan: AsoPlan = requestedPlan === "solo" ? "solo" : "pro";
+    const manageUrl =
+      req.nextUrl.searchParams.get("manageUrl") ?? WHOP_MEMBERSHIPS_URL;
+    const shouldSend = req.nextUrl.searchParams.get("send") !== "0";
+
+    if (!email || !membership) {
+      return NextResponse.json(
+        { error: "email and membership required" },
+        { status: 400 }
+      );
+    }
+
+    const { key, isNew } = await generateAsoLicenseWhop(
+      email,
+      membership,
+      plan,
+      manageUrl
+    );
+    const emailSent = shouldSend
+      ? await sendLicenseKeyEmail(email, key, "aso", manageUrl)
+      : false;
+
+    return NextResponse.json({
+      key,
+      email,
+      plan,
+      whop_membership_id: membership,
+      isNew,
+      emailSent,
+      emailProvider: "plunk",
+    });
   }
 
   if (action === "deactivate") {

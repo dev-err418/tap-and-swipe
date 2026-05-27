@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getWhop, WHOP_STARTER_PLAN_ID, WHOP_COMMUNITY_PLAN_ID } from "@/lib/whop";
+import { Whop } from "@whop/sdk";
+import {
+  asoPlanFromWhopPlanId,
+  getWhop,
+  WHOP_ASO_PRODUCT_ID,
+  WHOP_STARTER_PLAN_ID,
+  WHOP_COMMUNITY_PLAN_ID,
+} from "@/lib/whop";
 import { prisma } from "@/lib/prisma";
 import { addRole, removeRole } from "@/lib/discord";
 import {
+  type AsoPlan,
   generateAsoLicenseWhop,
   deactivateAsoLicensesByWhop,
   reactivateAsoLicensesByWhop,
 } from "@/lib/aso-db";
 import { sendLicenseKeyEmail } from "@/lib/aso-email";
 import { grantAccess } from "@/lib/grant-access";
+
+type WhopWebhookData = ReturnType<ReturnType<typeof getWhop>["webhooks"]["unwrap"]>;
+
+const WHOP_MEMBERSHIPS_URL = "https://whop.com/@me/settings/memberships/";
 
 function extractDiscord(data: Record<string, unknown>): {
   id: string;
@@ -54,19 +66,37 @@ function extractEmail(data: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
+function extractStringId(value: unknown): string | undefined {
+  if (typeof value === "string" && value.length > 0) return value;
+  if (
+    value &&
+    typeof value === "object" &&
+    typeof (value as Record<string, unknown>).id === "string"
+  ) {
+    return (value as Record<string, string>).id;
+  }
+  return undefined;
+}
+
 function extractPlanId(d: Record<string, unknown>): string | undefined {
   // membership payload: data.plan = { id, ... }
   // payment payload:    data.plan = { id, ... }; data.membership = { id, status } only
-  const plan = d.plan;
-  if (typeof plan === "string" && plan.length > 0) return plan;
-  if (
-    plan &&
-    typeof plan === "object" &&
-    typeof (plan as Record<string, unknown>).id === "string"
-  ) {
-    return (plan as Record<string, string>).id;
-  }
-  return undefined;
+  return extractStringId(d.plan) ?? extractStringId(d.plan_id);
+}
+
+function extractProductId(d: Record<string, unknown>): string | undefined {
+  return (
+    extractStringId(d.product) ??
+    extractStringId(d.product_id) ??
+    extractStringId(d.access_pass) ??
+    extractStringId(d.access_pass_id)
+  );
+}
+
+function extractManageUrl(data: Record<string, unknown>): string | undefined {
+  return typeof data.manage_url === "string" && data.manage_url.length > 0
+    ? data.manage_url
+    : undefined;
 }
 
 function tierFromPlanId(
@@ -97,6 +127,88 @@ async function fetchDiscordFromWhop(
   return extractDiscord(json as Record<string, unknown>);
 }
 
+function unwrapWhopWebhook(
+  bodyText: string,
+  headers: Record<string, string>
+): WhopWebhookData {
+  const configs = [
+    {
+      label: "default",
+      apiKey: process.env.WHOP_API_KEY,
+      secret: process.env.WHOP_WEBHOOK_SECRET,
+    },
+    {
+      label: "aso",
+      apiKey: process.env.WHOP_ASO_API_KEY,
+      secret: process.env.WHOP_ASO_WEBHOOK_SECRET,
+    },
+    {
+      label: "community",
+      apiKey: process.env.WHOP_COMMUNITY_API_KEY,
+      secret: process.env.WHOP_COMMUNITY_WEBHOOK_SECRET,
+    },
+  ];
+  const seen = new Set<string>();
+  let lastError: unknown;
+
+  for (const config of configs) {
+    if (!config.apiKey || !config.secret) continue;
+    const key = `${config.apiKey}:${config.secret}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    try {
+      const whop =
+        config.label === "default"
+          ? getWhop()
+          : new Whop({
+              apiKey: config.apiKey,
+              webhookKey: btoa(config.secret),
+            });
+      return whop.webhooks.unwrap(bodyText, { headers });
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError ?? new Error("No Whop webhook secret configured");
+}
+
+async function ensureStandaloneAsoLicense({
+  email,
+  membershipId,
+  plan,
+  manageUrl,
+}: {
+  email: string | undefined;
+  membershipId: string;
+  plan: AsoPlan;
+  manageUrl?: string;
+}): Promise<void> {
+  if (!email) {
+    console.warn(
+      `[whop] ASO license not generated — missing email. membership=${membershipId}`
+    );
+    return;
+  }
+
+  const { key: licenseKey, isNew: isNewLicense } =
+    await generateAsoLicenseWhop(email, membershipId, plan, manageUrl);
+  if (isNewLicense) {
+    const emailSent = await sendLicenseKeyEmail(
+      email,
+      licenseKey,
+      "aso",
+      manageUrl
+    );
+    if (!emailSent) {
+      console.warn(
+        `[whop] ASO license generated but email failed. membership=${membershipId} email=${email}`
+      );
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   const bodyText = await request.text();
   const headers: Record<string, string> = {};
@@ -104,11 +216,10 @@ export async function POST(request: NextRequest) {
     headers[key] = value;
   });
 
-  const whop = getWhop();
-  let webhookData: ReturnType<typeof whop.webhooks.unwrap>;
+  let webhookData: WhopWebhookData;
 
   try {
-    webhookData = whop.webhooks.unwrap(bodyText, { headers });
+    webhookData = unwrapWhopWebhook(bodyText, headers);
   } catch (err) {
     console.error("[whop] Webhook signature verification failed:", err);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -145,6 +256,12 @@ export async function POST(request: NextRequest) {
     const planIdFromPayload =
       extractPlanId(data) ??
       (membershipForMeta ? extractPlanId(membershipForMeta) : undefined);
+    const productIdFromPayload =
+      extractProductId(data) ??
+      (membershipForMeta ? extractProductId(membershipForMeta) : undefined);
+    const standaloneAsoPlan = asoPlanFromWhopPlanId(planIdFromPayload);
+    const isStandaloneAsoPurchase =
+      productIdFromPayload === WHOP_ASO_PRODUCT_ID || standaloneAsoPlan !== null;
     const tier: "full" | "starter" =
       extractMetadataTier(data) ??
       (membershipForMeta ? extractMetadataTier(membershipForMeta) : null) ??
@@ -153,26 +270,31 @@ export async function POST(request: NextRequest) {
     const asoPlan = tier === "starter" ? "solo" : "pro";
     const emailSource = tier === "starter" ? "community-starter" : "community";
 
-    // Fallback 1: check metadata.discordId (set during our checkout flow)
-    if (!discord) {
-      discord = extractDiscordFromMetadata(data);
-    }
-
-    // For payment events, the metadata lives on the nested membership object
-    if (!discord) {
-      const membership = data.membership as Record<string, unknown> | undefined;
-      if (membership) {
-        discord = extractDiscord(membership) ?? extractDiscordFromMetadata(membership);
+    if (!isStandaloneAsoPurchase) {
+      // Fallback 1: check metadata.discordId (set during our checkout flow)
+      if (!discord) {
+        discord = extractDiscordFromMetadata(data);
       }
-    }
 
-    // Fallback 2: fetch from Whop API when webhook payload lacks discord data
-    if (!discord) {
-      const membershipIdForLookup =
-        (data.id as string | undefined) ??
-        ((data.membership as Record<string, unknown> | undefined)?.id as string | undefined);
-      if (membershipIdForLookup) {
-        discord = await fetchDiscordFromWhop(membershipIdForLookup);
+      // For payment events, the metadata lives on the nested membership object
+      if (!discord) {
+        const membership = data.membership as Record<string, unknown> | undefined;
+        if (membership) {
+          discord =
+            extractDiscord(membership) ?? extractDiscordFromMetadata(membership);
+        }
+      }
+
+      // Fallback 2: fetch from Whop API when webhook payload lacks discord data
+      if (!discord) {
+        const membershipIdForLookup =
+          (data.id as string | undefined) ??
+          ((data.membership as Record<string, unknown> | undefined)?.id as
+            | string
+            | undefined);
+        if (membershipIdForLookup) {
+          discord = await fetchDiscordFromWhop(membershipIdForLookup);
+        }
       }
     }
 
@@ -180,7 +302,20 @@ export async function POST(request: NextRequest) {
       case "membership.activated": {
         const membershipId = String(data.id);
         const email = extractEmail(data);
-        const manageUrl = data.manage_url as string | undefined;
+        const manageUrl = extractManageUrl(data) ?? WHOP_MEMBERSHIPS_URL;
+
+        if (isStandaloneAsoPurchase) {
+          await ensureStandaloneAsoLicense({
+            email,
+            membershipId,
+            plan: standaloneAsoPlan ?? "pro",
+            manageUrl,
+          });
+          console.log(
+            `[whop] ASO membership.activated — membership=${membershipId} plan=${standaloneAsoPlan ?? "pro"} email=${email ?? "(none)"}`
+          );
+          break;
+        }
 
         if (discord) {
           await grantAccess({
@@ -257,6 +392,14 @@ export async function POST(request: NextRequest) {
       case "membership.deactivated": {
         const membershipId = String(data.id);
 
+        if (isStandaloneAsoPurchase) {
+          await deactivateAsoLicensesByWhop(membershipId);
+          console.log(
+            `[whop] ASO membership.deactivated — membership=${membershipId}`
+          );
+          break;
+        }
+
         // Defensive check: if this deactivation references a different plan
         // than what the user currently has, it's almost certainly a stale
         // "old plan deactivated during plan change" event — skip it so we
@@ -315,6 +458,27 @@ export async function POST(request: NextRequest) {
         const membershipId = (data.membership as Record<string, unknown> | undefined)?.id as string | undefined;
         if (membershipId) {
           await reactivateAsoLicensesByWhop(membershipId);
+
+          if (isStandaloneAsoPurchase) {
+            const membership = data.membership as Record<string, unknown> | undefined;
+            const email =
+              extractEmail(data) ??
+              (membership ? extractEmail(membership) : undefined);
+            const manageUrl =
+              extractManageUrl(data) ??
+              (membership ? extractManageUrl(membership) : undefined) ??
+              WHOP_MEMBERSHIPS_URL;
+            await ensureStandaloneAsoLicense({
+              email,
+              membershipId,
+              plan: standaloneAsoPlan ?? "pro",
+              manageUrl,
+            });
+            console.log(
+              `[whop] ASO payment.succeeded — membership=${membershipId} plan=${standaloneAsoPlan ?? "pro"}`
+            );
+            break;
+          }
 
           // Resolve the tier the customer is currently paying for, from the payload.
           // Whop doesn't fire a dedicated plan-change event, so payment.succeeded
@@ -380,6 +544,11 @@ export async function POST(request: NextRequest) {
         const membershipId = (data.membership as Record<string, unknown> | undefined)?.id as string | undefined;
         if (membershipId) {
           await deactivateAsoLicensesByWhop(membershipId);
+
+          if (isStandaloneAsoPurchase) {
+            console.log(`[whop] ASO payment.failed — membership=${membershipId}`);
+            break;
+          }
 
           // Remove Discord role
           if (discord) {

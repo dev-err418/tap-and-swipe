@@ -55,12 +55,10 @@ export async function sendLicenseKeyEmail(
   licenseKey: string,
   source: LicenseEmailSource = "aso",
   manageUrl?: string
-): Promise<void> {
+): Promise<boolean> {
   const config = SOURCE_CONFIG[source];
   try {
-    const resolvedManageUrl =
-      manageUrl ??
-      (source.startsWith("community") ? WHOP_MEMBERSHIPS_URL : undefined);
+    const resolvedManageUrl = manageUrl ?? WHOP_MEMBERSHIPS_URL;
     const variables: Record<string, string> = {
       LICENCE_KEY: licenseKey,
     };
@@ -68,19 +66,24 @@ export async function sendLicenseKeyEmail(
       variables.MANAGE_URL = resolvedManageUrl;
     }
 
-    await sendPlunkEmail({
-      from: config.from,
-      to,
-      subject: config.subject,
-      template: config.templateId,
-      data: Object.fromEntries(
-        Object.entries(variables).map(([key, value]) => [
-          key,
-          { value, persistent: false },
-        ]),
-      ),
-    }, getAppSprintPlunkConfig());
+    await sendPlunkEmail(
+      {
+        from: config.from,
+        to,
+        subject: config.subject,
+        template: config.templateId,
+        data: Object.fromEntries(
+          Object.entries(variables).map(([key, value]) => [
+            key,
+            { value, persistent: false },
+          ]),
+        ),
+      },
+      getAppSprintPlunkConfig(),
+    );
+    return true;
   } catch (err) {
     console.error(`[${config.label}] Failed to send license email:`, err);
+    return false;
   }
 }
