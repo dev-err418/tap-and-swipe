@@ -19,6 +19,7 @@ import { sendLicenseKeyEmail } from "@/lib/aso-email";
 import { grantAccess } from "@/lib/grant-access";
 
 type WhopWebhookData = ReturnType<ReturnType<typeof getWhop>["webhooks"]["unwrap"]>;
+type WhopWebhookSource = "default" | "aso" | "community";
 
 const WHOP_MEMBERSHIPS_URL = "https://whop.com/@me/settings/memberships/";
 
@@ -99,6 +100,18 @@ function extractManageUrl(data: Record<string, unknown>): string | undefined {
     : undefined;
 }
 
+function extractMembershipId(
+  data: Record<string, unknown>,
+  eventType: string
+): string | undefined {
+  if (eventType.startsWith("membership.")) {
+    return extractStringId(data.id);
+  }
+
+  const membership = data.membership as Record<string, unknown> | undefined;
+  return extractStringId(membership) ?? extractStringId(membership?.id);
+}
+
 function tierFromPlanId(
   planId: string | undefined
 ): "full" | "starter" | null {
@@ -130,8 +143,12 @@ async function fetchDiscordFromWhop(
 function unwrapWhopWebhook(
   bodyText: string,
   headers: Record<string, string>
-): WhopWebhookData {
-  const configs = [
+): { webhookData: WhopWebhookData; source: WhopWebhookSource } {
+  const configs: Array<{
+    label: WhopWebhookSource;
+    apiKey?: string;
+    secret?: string;
+  }> = [
     {
       label: "default",
       apiKey: process.env.WHOP_API_KEY,
@@ -165,13 +182,75 @@ function unwrapWhopWebhook(
               apiKey: config.apiKey,
               webhookKey: btoa(config.secret),
             });
-      return whop.webhooks.unwrap(bodyText, { headers });
+      return {
+        webhookData: whop.webhooks.unwrap(bodyText, { headers }),
+        source: config.label,
+      };
     } catch (err) {
       lastError = err;
     }
   }
 
   throw lastError ?? new Error("No Whop webhook secret configured");
+}
+
+async function fetchWhopMembership(
+  membershipId: string,
+  webhookSource: WhopWebhookSource
+): Promise<{
+  data: Record<string, unknown> | null;
+  source: WhopWebhookSource | null;
+}> {
+  const configs: Array<{ label: WhopWebhookSource; apiKey?: string }> = [
+    {
+      label: "aso",
+      apiKey: process.env.WHOP_ASO_API_KEY,
+    },
+    {
+      label: "community",
+      apiKey: process.env.WHOP_COMMUNITY_API_KEY,
+    },
+    {
+      label: "default",
+      apiKey: process.env.WHOP_API_KEY,
+    },
+  ];
+  configs.sort((a, b) => {
+    if (a.label === webhookSource) return -1;
+    if (b.label === webhookSource) return 1;
+    return 0;
+  });
+
+  const seen = new Set<string>();
+  for (const config of configs) {
+    if (!config.apiKey || seen.has(config.apiKey)) continue;
+    seen.add(config.apiKey);
+
+    const res = await fetch(
+      `https://api.whop.com/api/v2/memberships/${membershipId}`,
+      {
+        headers: { Authorization: `Bearer ${config.apiKey}` },
+      }
+    );
+    if (res.status === 404) continue;
+    if (!res.ok) {
+      console.warn(
+        `[whop] membership lookup failed — source=${config.label} status=${res.status} membership=${membershipId}`
+      );
+      continue;
+    }
+
+    const json = (await res.json()) as Record<string, unknown>;
+    return {
+      data:
+        json.data && typeof json.data === "object"
+          ? (json.data as Record<string, unknown>)
+          : json,
+      source: config.label,
+    };
+  }
+
+  return { data: null, source: null };
 }
 
 async function ensureStandaloneAsoLicense({
@@ -217,9 +296,12 @@ export async function POST(request: NextRequest) {
   });
 
   let webhookData: WhopWebhookData;
+  let webhookSource: WhopWebhookSource;
 
   try {
-    webhookData = unwrapWhopWebhook(bodyText, headers);
+    const unwrapped = unwrapWhopWebhook(bodyText, headers);
+    webhookData = unwrapped.webhookData;
+    webhookSource = unwrapped.source;
   } catch (err) {
     console.error("[whop] Webhook signature verification failed:", err);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -246,6 +328,11 @@ export async function POST(request: NextRequest) {
       return null;
     }
     const membershipForMeta = data.membership as Record<string, unknown> | undefined;
+    const membershipIdForLookup = extractMembershipId(data, webhookData.type);
+    const resolvedMembership = membershipIdForLookup
+      ? await fetchWhopMembership(membershipIdForLookup, webhookSource)
+      : { data: null, source: null };
+    const membershipFromApi = resolvedMembership.data;
     const visitorId =
       extractVisitorId(data) ??
       (membershipForMeta ? extractVisitorId(membershipForMeta) : null);
@@ -255,13 +342,18 @@ export async function POST(request: NextRequest) {
     //   3. fallback to "full"
     const planIdFromPayload =
       extractPlanId(data) ??
-      (membershipForMeta ? extractPlanId(membershipForMeta) : undefined);
+      (membershipForMeta ? extractPlanId(membershipForMeta) : undefined) ??
+      (membershipFromApi ? extractPlanId(membershipFromApi) : undefined);
     const productIdFromPayload =
       extractProductId(data) ??
-      (membershipForMeta ? extractProductId(membershipForMeta) : undefined);
+      (membershipForMeta ? extractProductId(membershipForMeta) : undefined) ??
+      (membershipFromApi ? extractProductId(membershipFromApi) : undefined);
     const standaloneAsoPlan = asoPlanFromWhopPlanId(planIdFromPayload);
     const isStandaloneAsoPurchase =
-      productIdFromPayload === WHOP_ASO_PRODUCT_ID || standaloneAsoPlan !== null;
+      webhookSource === "aso" ||
+      resolvedMembership.source === "aso" ||
+      productIdFromPayload === WHOP_ASO_PRODUCT_ID ||
+      standaloneAsoPlan !== null;
     const tier: "full" | "starter" =
       extractMetadataTier(data) ??
       (membershipForMeta ? extractMetadataTier(membershipForMeta) : null) ??
@@ -301,8 +393,13 @@ export async function POST(request: NextRequest) {
     switch (webhookData.type) {
       case "membership.activated": {
         const membershipId = String(data.id);
-        const email = extractEmail(data);
-        const manageUrl = extractManageUrl(data) ?? WHOP_MEMBERSHIPS_URL;
+        const email =
+          extractEmail(data) ??
+          (membershipFromApi ? extractEmail(membershipFromApi) : undefined);
+        const manageUrl =
+          extractManageUrl(data) ??
+          (membershipFromApi ? extractManageUrl(membershipFromApi) : undefined) ??
+          WHOP_MEMBERSHIPS_URL;
 
         if (isStandaloneAsoPurchase) {
           await ensureStandaloneAsoLicense({
@@ -411,7 +508,7 @@ export async function POST(request: NextRequest) {
           });
           const storedTier =
             existingUser?.tier === "starter" ? "starter" : "full";
-          const eventTier = tierFromPlanId(extractPlanId(data));
+          const eventTier = tierFromPlanId(planIdFromPayload);
           if (eventTier && eventTier !== storedTier) {
             console.log(
               `[whop] membership.deactivated ignored — event tier=${eventTier} but user is on tier=${storedTier} (likely plan change). membership=${membershipId}`
@@ -455,7 +552,7 @@ export async function POST(request: NextRequest) {
       }
 
       case "payment.succeeded": {
-        const membershipId = (data.membership as Record<string, unknown> | undefined)?.id as string | undefined;
+        const membershipId = membershipIdForLookup;
         if (membershipId) {
           await reactivateAsoLicensesByWhop(membershipId);
 
@@ -463,10 +560,12 @@ export async function POST(request: NextRequest) {
             const membership = data.membership as Record<string, unknown> | undefined;
             const email =
               extractEmail(data) ??
-              (membership ? extractEmail(membership) : undefined);
+              (membership ? extractEmail(membership) : undefined) ??
+              (membershipFromApi ? extractEmail(membershipFromApi) : undefined);
             const manageUrl =
               extractManageUrl(data) ??
               (membership ? extractManageUrl(membership) : undefined) ??
+              (membershipFromApi ? extractManageUrl(membershipFromApi) : undefined) ??
               WHOP_MEMBERSHIPS_URL;
             await ensureStandaloneAsoLicense({
               email,
@@ -483,7 +582,7 @@ export async function POST(request: NextRequest) {
           // Resolve the tier the customer is currently paying for, from the payload.
           // Whop doesn't fire a dedicated plan-change event, so payment.succeeded
           // is the most reliable signal that a plan update happened.
-          const payloadTier = tierFromPlanId(extractPlanId(data));
+          const payloadTier = tierFromPlanId(planIdFromPayload);
 
           // Re-grant Discord role and self-heal stored tier on plan change.
           if (discord) {
@@ -523,11 +622,15 @@ export async function POST(request: NextRequest) {
           // payment.succeeded (no fresh membership.activated). generateAsoLicenseWhop
           // is idempotent on (membership_id, email) so this is safe to call repeatedly.
           if (payloadTier === "full") {
-            const email = extractEmail(data);
             const membership = data.membership as Record<string, unknown> | undefined;
+            const email =
+              extractEmail(data) ??
+              (membership ? extractEmail(membership) : undefined) ??
+              (membershipFromApi ? extractEmail(membershipFromApi) : undefined);
             const manageUrl =
               (typeof data.manage_url === "string" ? data.manage_url : undefined) ??
-              (typeof membership?.manage_url === "string" ? membership.manage_url : undefined);
+              (typeof membership?.manage_url === "string" ? membership.manage_url : undefined) ??
+              (membershipFromApi ? extractManageUrl(membershipFromApi) : undefined);
             if (email) {
               const { key: licenseKey, isNew: isNewLicense } =
                 await generateAsoLicenseWhop(email, membershipId, "pro", manageUrl);
