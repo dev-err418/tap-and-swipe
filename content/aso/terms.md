@@ -49,18 +49,18 @@ You agree NOT to:
 
 The App is available via recurring subscription. The following plans are offered:
 
-- **Solo**: 9€/month or 90€/year — limited to 1 app
-- **Pro**: 19€/month or 190€/year — unlimited apps
+- **Solo**: $24/month or $96/year — limited to 1 app
+- **Pro**: $49/month or $196/year — unlimited apps
 
-All payments are processed through Stripe.
+All payments are processed through Whop.
 
 ### 5.2 Billing
 
-Payment is charged on a recurring basis (monthly or yearly depending on your chosen plan). Your subscription automatically renews at the end of each billing period unless cancelled. You may cancel at any time from your Stripe billing portal.
+Payment is charged on a recurring basis (monthly or yearly depending on your chosen plan). Your subscription automatically renews at the end of each billing period unless cancelled. You may cancel at any time from your Whop account.
 
 ### 5.3 Community Membership
 
-ASO Pro is included at no additional cost with an active App Sprint Community membership (137€/month). If your Community membership is cancelled, your ASO Pro license will be deactivated.
+ASO Pro is included at no additional cost with an active App Sprint Community membership. If your Community membership is cancelled, your ASO Pro license will be deactivated.
 
 ### 5.4 Price Changes
 
@@ -70,7 +70,7 @@ We reserve the right to change pricing at any time. Price changes do not affect 
 
 ### 6.1 Free Trial
 
-All new subscriptions include a 7-day free trial. During the trial, you have full access to the App's features at no charge. Your payment method is collected at sign-up but will not be charged until the trial period ends. You may cancel at any time during the trial without being charged.
+All new subscriptions include a 3-day free trial. During the trial, you have full access to the App's features at no charge. Your payment method is collected at sign-up but will not be charged until the trial period ends. You may cancel at any time during the trial without being charged.
 
 ### 6.2 Refunds
 

@@ -46,7 +46,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                                 animate={{ opacity: [1, 0.4, 1] }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                             >
-                                Save 3 months
+                                Save 8 months
                             </motion.span>
                         </button>
                     </div>
@@ -60,7 +60,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-1 mb-1">
                                 <span className="text-5xl font-extrabold text-[#f1ebe2]">
-                                    &euro;<RollingPrice value={interval === "month" ? "14" : "126"} />
+                                    $<RollingPrice value={interval === "month" ? "24" : "96"} />
                                 </span>
                                 <span className="text-lg text-[#c9c4bc]">
                                     /{interval === "month" ? "mo" : "yr"}
@@ -75,7 +75,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                                 }`}
                             >
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
-                                <span className="text-sm font-bold text-[#f4cf8f]">Save 42&euro;</span>
+                                <span className="text-sm font-bold text-[#f4cf8f]">Save $192</span>
                             </li>
                             {[
                                 "1 app",
@@ -101,7 +101,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
 
                         <div className="text-center mt-8">
                             <SubscribeButton plan="solo" interval={interval} />
-                            <p className="text-xs font-semibold text-[#f1ebe2] mb-1">&euro;0.00 due today.</p>
+                            <p className="text-xs font-semibold text-[#f1ebe2] mb-1">$0.00 due today.</p>
                             <p className="text-xs text-[#c9c4bc]/60">
                                 Single computer license &middot; macOS 14.6+
                             </p>
@@ -115,7 +115,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-1 mb-1">
                                 <span className="text-5xl font-extrabold text-[#f1ebe2]">
-                                    &euro;<RollingPrice value={interval === "month" ? "24" : "216"} />
+                                    $<RollingPrice value={interval === "month" ? "49" : "196"} />
                                 </span>
                                 <span className="text-lg text-[#c9c4bc]">
                                     /{interval === "month" ? "mo" : "yr"}
@@ -136,7 +136,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
                                 }`}
                             >
                                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-[#f4cf8f]" />
-                                <span className="text-sm font-bold text-[#f4cf8f]">Save 72&euro;</span>
+                                <span className="text-sm font-bold text-[#f4cf8f]">Save $392</span>
                             </li>
                             {[
                                 "Everything in Solo",
@@ -153,7 +153,7 @@ export default function PricingSection({ lastUpdate }: { lastUpdate?: ReactNode 
 
                         <div className="text-center mt-8">
                             <SubscribeButton plan="pro" interval={interval} />
-                            <p className="text-xs font-semibold text-[#f1ebe2] mb-1">&euro;0.00 due today.</p>
+                            <p className="text-xs font-semibold text-[#f1ebe2] mb-1">$0.00 due today.</p>
                             <p className="text-xs text-[#c9c4bc]/60">
                                 Single computer license &middot; macOS 14.6+
                             </p>

@@ -24,9 +24,9 @@ const softwareApplicationJsonLd = {
         "The all-in-one macOS app for App Store Optimization. Keywords, metadata, and Apple Ads in one place.",
     offers: {
         "@type": "AggregateOffer",
-        priceCurrency: "EUR",
-        lowPrice: "14",
-        highPrice: "24",
+        priceCurrency: "USD",
+        lowPrice: "24",
+        highPrice: "49",
         offerCount: 2,
     },
     aggregateRating: {

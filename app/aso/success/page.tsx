@@ -23,7 +23,7 @@ function AsoSuccessContent() {
 
     const [licenseKey, setLicenseKey] = useState("");
     const [loading, setLoading] = useState(Boolean(sessionId));
-    const [error, setError] = useState(sessionId ? "" : "Invalid session");
+    const [error, setError] = useState("");
     const [copied, setCopied] = useState(false);
     const [isYearlyPro, setIsYearlyPro] = useState(false);
 
@@ -79,6 +79,55 @@ function AsoSuccessContent() {
                     >
                         <div className="mx-auto h-12 w-12 rounded-full border-2 border-[#f4cf8f]/30 border-t-[#f4cf8f] animate-spin" />
                         <p className="text-[#c9c4bc]">Getting your license key...</p>
+                    </motion.div>
+                ) : !sessionId ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="space-y-8"
+                    >
+                        <div>
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{
+                                    type: "spring",
+                                    stiffness: 200,
+                                    delay: 0.2,
+                                }}
+                                className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#f4cf8f]/20"
+                            >
+                                <Check className="h-8 w-8 text-[#f4cf8f]" />
+                            </motion.div>
+                            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                                You&apos;re in!
+                            </h1>
+                            <p className="mt-3 text-lg text-[#c9c4bc]">
+                                Your license key is on its way to your email.
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <a
+                                href={DOWNLOAD_URL}
+                                className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#f4cf8f] text-sm font-bold text-[#2a2725] hover:bg-[#f4cf8f]/90 transition-all hover:ring-4 hover:ring-[#f4cf8f]/20"
+                            >
+                                <Download className="h-4 w-4" />
+                                Download AppSprint ASO
+                            </a>
+                            <a
+                                href={WHOP_MEMBERSHIPS_URL}
+                                className="group flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/10 text-sm font-bold text-[#f1ebe2] hover:bg-white/5 transition-all"
+                            >
+                                <CreditCard className="h-4 w-4" />
+                                Manage subscription
+                            </a>
+                        </div>
+
+                        <p className="text-sm text-[#c9c4bc]/70">
+                            Didn&apos;t get the email? Send me a message and I&apos;ll fix it.
+                        </p>
                     </motion.div>
                 ) : error ? (
                     <motion.div

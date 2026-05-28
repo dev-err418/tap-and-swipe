@@ -13,7 +13,7 @@ export default function SubscribeButton({
 }) {
     const [loading, setLoading] = useState(false);
 
-    const label = "Start 7-day free trial";
+    const label = "Start 3-day free trial";
 
     async function handleSubscribe() {
         setLoading(true);

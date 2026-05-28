@@ -6,7 +6,7 @@ const WHOP_MEMBERSHIPS_URL = "https://whop.com/@me/settings/memberships/";
 
 function getAppSprintPlunkConfig() {
   const apiUrl = process.env.APPSPRINT_PLUNK_API_URL ?? process.env.PLUNK_API_URL;
-  const apiKey = process.env.APPSPRINT_PLUNK_API_KEY;
+  const apiKey = process.env.APPSPRINT_PLUNK_API_KEY ?? process.env.PLUNK_API_KEY;
 
   if (!apiUrl || !apiKey) {
     throw new Error("APPSPRINT_PLUNK_API_URL and APPSPRINT_PLUNK_API_KEY must be set");
@@ -29,6 +29,7 @@ const SOURCE_CONFIG: Record<
     subject: "Your license key is ready! Let's get you more downloads :)",
     templateId:
       process.env.APPSPRINT_PLUNK_ASO_LICENSE_TEMPLATE_ID ||
+      process.env.PLUNK_ASO_LICENSE_TEMPLATE_ID ||
       "onboarding-email",
     label: "ASO",
   },
@@ -37,6 +38,7 @@ const SOURCE_CONFIG: Record<
     subject: "Your free ASO Pro license is ready!",
     templateId:
       process.env.APPSPRINT_PLUNK_COMMUNITY_PRO_TEMPLATE_ID ||
+      process.env.PLUNK_APPSPRINT_FIRST_EVENT_TEMPLATE_ID ||
       "community-email",
     label: "Community",
   },
@@ -45,6 +47,7 @@ const SOURCE_CONFIG: Record<
     subject: "Your free ASO Solo license is ready!",
     templateId:
       process.env.APPSPRINT_PLUNK_COMMUNITY_STARTER_TEMPLATE_ID ||
+      process.env.PLUNK_APPSPRINT_FIRST_EVENT_TEMPLATE_ID ||
       "community-email-starter",
     label: "Community-Starter",
   },

@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import {
+  getAsoWhop,
+  WHOP_ASO_PRO_MONTHLY_PLAN_ID,
+  WHOP_ASO_PRO_YEARLY_PLAN_ID,
+  WHOP_ASO_SOLO_MONTHLY_PLAN_ID,
+  WHOP_ASO_SOLO_YEARLY_PLAN_ID,
+} from "@/lib/whop";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ??
+  process.env.WEB_APP_URL ??
+  "https://tap-and-swipe.com";
 
-const PRICE_MAP: Record<string, string> = {
-  "solo-month": process.env.ASO_SOLO_MONTHLY_PRICE_ID!,
-  "solo-year": process.env.ASO_SOLO_YEARLY_PRICE_ID!,
-  "pro-month": process.env.ASO_PRO_MONTHLY_PRICE_ID!,
-  "pro-year": process.env.ASO_PRO_YEARLY_PRICE_ID!,
+const PLAN_MAP: Record<string, string> = {
+  "solo-month": WHOP_ASO_SOLO_MONTHLY_PLAN_ID,
+  "solo-year": WHOP_ASO_SOLO_YEARLY_PLAN_ID,
+  "pro-month": WHOP_ASO_PRO_MONTHLY_PLAN_ID,
+  "pro-year": WHOP_ASO_PRO_YEARLY_PLAN_ID,
 };
 
 export async function POST(request: NextRequest) {
@@ -19,50 +28,60 @@ export async function POST(request: NextRequest) {
       interval: string;
     };
 
-    const priceId = PRICE_MAP[`${plan}-${interval}`];
-    if (!priceId) {
-      return NextResponse.json({ error: "Invalid plan or interval" }, { status: 400 });
+    const planId = PLAN_MAP[`${plan}-${interval}`];
+    if (!planId) {
+      return NextResponse.json(
+        { error: "Invalid plan or interval" },
+        { status: 400 },
+      );
     }
 
     const product = plan === "solo" ? "aso-solo" : "aso-pro";
-
     const cookieStore = await cookies();
     const visitorId = cookieStore.get("visitor_id")?.value || "";
     const country = request.headers.get("cf-ipcountry") || "";
 
-    const checkoutSession = await stripe.checkout.sessions.create(
-      {
-        mode: "subscription",
-        line_items: [{ price: priceId, quantity: 1 }],
-        subscription_data: {
-          trial_period_days: 7,
-          metadata: { product, interval, visitorId, country },
-        },
-        payment_method_collection: "always",
-        managed_payments: { enabled: true },
-        success_url: `${APP_URL}/aso/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${APP_URL}/aso?status=canceled`,
-      } as any,
-      {
-        apiVersion: "2026-03-04.preview" as any,
-      }
-    );
+    const whop = getAsoWhop();
+    const checkout = await whop.checkoutConfigurations.create({
+      plan_id: planId,
+      redirect_url: `${APP_URL}/aso/success`,
+      metadata: {
+        product,
+        interval,
+        visitorId,
+        country,
+      },
+    });
 
-    // Track stripe_shown event (unified under "aso" for funnel analytics)
     if (visitorId) {
-      await prisma.pageEvent.upsert({
-        where: { sessionId_type_product: { sessionId: visitorId, type: "stripe_shown", product: "aso" } },
-        create: { product: "aso", type: "stripe_shown", visitorId, sessionId: visitorId, country: country || null },
-        update: {},
-      }).catch(() => {});
+      await prisma.pageEvent
+        .upsert({
+          where: {
+            sessionId_type_product: {
+              sessionId: visitorId,
+              type: "checkout_shown",
+              product: "aso",
+            },
+          },
+          create: {
+            product: "aso",
+            type: "checkout_shown",
+            visitorId,
+            sessionId: visitorId,
+            country: country || null,
+          },
+          update: {},
+        })
+        .catch(() => {});
     }
 
-    return NextResponse.json({ url: checkoutSession.url });
+    const checkoutUrl = checkout.purchase_url.startsWith("http")
+      ? checkout.purchase_url
+      : `https://whop.com${checkout.purchase_url}`;
+
+    return NextResponse.json({ url: checkoutUrl });
   } catch (err) {
     console.error("[ASO Checkout] Error:", err);
-    return NextResponse.json(
-      { error: "Checkout failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Checkout failed" }, { status: 500 });
   }
 }

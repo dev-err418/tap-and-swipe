@@ -14,13 +14,13 @@ When you purchase and activate the App, we collect:
 
 - **License key**: Your unique license identifier, used for activation and access control
 - **Machine identifier**: A device-specific identifier bound to your computer upon first activation
-- **Email address**: Collected by Stripe during purchase for billing and communication
+- **Email address**: Collected by Whop during purchase for billing and communication
 
 ### 2.2 Payment & Subscription Information
 
-Payment is processed entirely by Stripe. We do not store or have access to your credit card number or full payment details. Stripe may collect billing name, address, and payment method information in accordance with their privacy policy.
+Payment is processed entirely by Whop. We do not store or have access to your credit card number or full payment details. Whop may collect billing name, address, and payment method information in accordance with their privacy policy.
 
-We store your Stripe customer ID and subscription status to manage your recurring billing and license activation. Subscription data includes your plan type (Solo or Pro), billing interval (monthly or yearly), and payment status.
+We store your Whop membership ID and subscription status to manage your recurring billing and license activation. Subscription data includes your plan type (Solo or Pro), billing interval (monthly or yearly), and payment status.
 
 ### 2.3 Crash Reports
 
@@ -51,7 +51,7 @@ We use the collected data for the following purposes:
 1. **License validation**: To verify your license key and device binding upon activation
 2. **Subscription management**: To manage your recurring billing, activate/deactivate your license based on payment status, and process plan changes
 3. **Crash reporting**: To identify and fix bugs and improve App stability
-4. **Billing**: To process payments via Stripe
+4. **Billing**: To process payments via Whop
 5. **Communication**: To send important updates about your subscription or the App (only to your billing email)
 
 We do not use your data for advertising, profiling, or any purpose not listed above.
@@ -60,10 +60,10 @@ We do not use your data for advertising, profiling, or any purpose not listed ab
 
 We use the following third-party services:
 
-### Stripe
+### Whop
 - **Purpose**: Payment processing and subscription management
 - **Data shared**: Email, billing information, payment method
-- **Privacy policy**: [https://stripe.com/privacy](https://stripe.com/privacy)
+- **Privacy policy**: [https://whop.com/privacy](https://whop.com/privacy)
 
 ### Sentry
 - **Purpose**: Crash reporting and error tracking
@@ -124,7 +124,7 @@ No method of transmission over the internet is 100% secure, and we cannot guaran
 
 Your data may be processed in the United States by our third-party service providers:
 
-- **Stripe** (United States): Payment processing
+- **Whop** (United States): Payment processing
 - **Sentry** (United States): Crash reporting
 - **Railway** (United States): Server hosting
 

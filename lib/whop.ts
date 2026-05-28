@@ -1,6 +1,7 @@
 import { Whop } from "@whop/sdk";
 
 let _whop: Whop | null = null;
+let _asoWhop: Whop | null = null;
 
 export function getWhop(): Whop {
   if (!_whop) {
@@ -10,6 +11,20 @@ export function getWhop(): Whop {
     });
   }
   return _whop;
+}
+
+export function getAsoWhop(): Whop {
+  if (!_asoWhop) {
+    _asoWhop = new Whop({
+      apiKey: process.env.WHOP_ASO_API_KEY,
+      webhookKey: btoa(
+        process.env.WHOP_ASO_WEBHOOK_SECRET ??
+          process.env.WHOP_WEBHOOK_SECRET ??
+          "",
+      ),
+    });
+  }
+  return _asoWhop;
 }
 
 export const WHOP_COMMUNITY_PLAN_ID =
@@ -22,25 +37,29 @@ export const WHOP_ASO_PRODUCT_ID =
   process.env.WHOP_ASO_PRODUCT_ID ?? "prod_abrmSHV7CFEx9";
 
 export const WHOP_ASO_SOLO_MONTHLY_PLAN_ID =
-  process.env.WHOP_ASO_SOLO_MONTHLY_PLAN_ID ?? "plan_fK1oF70OvsVrX";
+  process.env.WHOP_ASO_SOLO_MONTHLY_PLAN_ID ?? "plan_BF7kly9eWXJQ7";
 
 export const WHOP_ASO_PRO_MONTHLY_PLAN_ID =
-  process.env.WHOP_ASO_PRO_MONTHLY_PLAN_ID ?? "plan_RQHfHA6tQgBih";
+  process.env.WHOP_ASO_PRO_MONTHLY_PLAN_ID ?? "plan_qz2pxGxUywEVk";
 
 export const WHOP_ASO_SOLO_YEARLY_PLAN_ID =
-  process.env.WHOP_ASO_SOLO_YEARLY_PLAN_ID ?? "plan_tYVsXnoZiUwWb";
+  process.env.WHOP_ASO_SOLO_YEARLY_PLAN_ID ?? "plan_4mQ4gJbuCcPH9";
 
 export const WHOP_ASO_PRO_YEARLY_PLAN_ID =
-  process.env.WHOP_ASO_PRO_YEARLY_PLAN_ID ?? "plan_9Etf61vjiXNg6";
+  process.env.WHOP_ASO_PRO_YEARLY_PLAN_ID ?? "plan_wxULP9aKmyK1j";
 
 const WHOP_ASO_SOLO_PLAN_IDS = new Set([
   WHOP_ASO_SOLO_MONTHLY_PLAN_ID,
   WHOP_ASO_SOLO_YEARLY_PLAN_ID,
+  "plan_fK1oF70OvsVrX",
+  "plan_tYVsXnoZiUwWb",
 ]);
 
 const WHOP_ASO_PRO_PLAN_IDS = new Set([
   WHOP_ASO_PRO_MONTHLY_PLAN_ID,
   WHOP_ASO_PRO_YEARLY_PLAN_ID,
+  "plan_RQHfHA6tQgBih",
+  "plan_9Etf61vjiXNg6",
 ]);
 
 export interface WhopMembershipMatch {
