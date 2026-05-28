@@ -10,6 +10,7 @@ interface License {
   stripe_customer_id: string | null;
   whop_membership_id: string | null;
   active: boolean;
+  status: string | null;
   plan: string | null;
   created_at: string;
   last_used_at: string | null;
@@ -111,6 +112,23 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
   };
 
   const cancelEdit = () => setEditing(null);
+
+  const statusLabel = (l: License) => {
+    if (l.status && l.status !== "active") {
+      return l.status.replace("_", " ");
+    }
+    return l.active ? "Active" : "Inactive";
+  };
+
+  const isEffectivelyActive = (l: License) =>
+    l.active && (!l.status || l.status === "active");
+
+  const statusClass = (l: License) => {
+    if (l.status === "revoked") return "bg-red-500/10 text-red-400";
+    if (l.status === "warned") return "bg-yellow-500/10 text-yellow-300";
+    if (l.status === "appeal_pending") return "bg-blue-500/10 text-blue-300";
+    return l.active ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400";
+  };
 
   const renderCell = (l: License, field: string, displayValue: string | null, truncate?: number) => {
     if (editing?.key === l.key && editing?.field === field) {
@@ -288,18 +306,14 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => updateField(l.key, "active", !l.active)}
+                      onClick={() => updateField(l.key, "active", !isEffectivelyActive(l))}
                       className="hover:opacity-80 transition-opacity"
                       title="Click to toggle"
                     >
                       <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          l.active
-                            ? "bg-green-500/10 text-green-400"
-                            : "bg-red-500/10 text-red-400"
-                        }`}
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusClass(l)}`}
                       >
-                        {l.active ? "Active" : "Inactive"}
+                        {statusLabel(l)}
                       </span>
                     </button>
                   </td>
@@ -334,14 +348,14 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => updateField(l.key, "active", !l.active)}
+                        onClick={() => updateField(l.key, "active", !isEffectivelyActive(l))}
                         className={`rounded-lg border px-3 py-1 text-xs font-medium transition-colors ${
-                          l.active
+                          isEffectivelyActive(l)
                             ? "border-red-500/20 text-red-400 hover:bg-red-500/10"
                             : "border-green-500/20 text-green-400 hover:bg-green-500/10"
                         }`}
                       >
-                        {l.active ? "Deactivate" : "Activate"}
+                        {isEffectivelyActive(l) ? "Deactivate" : "Activate"}
                       </button>
                       <button
                         onClick={() => deleteLicense(l.key)}

@@ -85,11 +85,16 @@ export async function PATCH(req: Request) {
 
   const sets: string[] = [];
   const params: unknown[] = [];
+  const shouldClearAbuseState = updates.active === true;
 
   for (const [col, val] of Object.entries(updates)) {
     if (!EDITABLE_COLUMNS.has(col)) continue;
     params.push(val === "" ? null : val);
     sets.push(`${col} = $${params.length}`);
+  }
+
+  if (shouldClearAbuseState) {
+    sets.push("status = 'active'", "warned_at = NULL", "appeal_token = NULL");
   }
 
   if (sets.length === 0) {
