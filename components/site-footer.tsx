@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Youtube, Linkedin, Instagram } from "lucide-react";
+import { Youtube, Linkedin } from "lucide-react";
 import { SiX } from "@icons-pack/react-simple-icons";
 import { FooterLegalLinks } from "./FooterLegalLinks";
 
@@ -19,15 +19,6 @@ export function SiteFooter() {
               aria-label="YouTube"
             >
               <Youtube size={16} />
-            </a>
-            <a
-              href="https://www.instagram.com/arthurspalanzani"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-foreground/50 transition-colors hover:text-foreground/80"
-              aria-label="Instagram"
-            >
-              <Instagram size={16} />
             </a>
             <a
               href="https://www.linkedin.com/in/arthur-spalanzani/"
@@ -51,7 +42,7 @@ export function SiteFooter() {
           <p className="mt-3">
             &copy; {new Date().getFullYear()} &middot; TAP &amp; SWIPE SAS
           </p>
-          <p className="mt-1">SIREN: 100454206 &middot; TVA: FR23100454206</p>
+          <p className="mt-1">SIREN: 100454206 &middot; VAT: FR23100454206</p>
         </div>
         <div>
           <p className="font-medium text-foreground/80">Products</p>

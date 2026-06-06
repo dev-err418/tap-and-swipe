@@ -1,5 +1,5 @@
 import { Linkedin } from "lucide-react";
-import { SiYoutube, SiInstagram } from "@icons-pack/react-simple-icons";
+import { SiYoutube, SiX } from "@icons-pack/react-simple-icons";
 import PageTracker from "./PageTracker";
 import { SubscribeForm } from "./SubscribeForm";
 import { HeroMobileMarquee } from "./hero-mobile-icons";
@@ -12,10 +12,10 @@ const SOCIAL_BADGES = [
     color: "#FF0000",
   },
   {
-    label: "@arthurspalanzani",
-    href: "https://www.instagram.com/arthurspalanzani",
-    Icon: SiInstagram,
-    color: "#FF0069",
+    label: "@arthursbuilds",
+    href: "https://x.com/arthursbuilds",
+    Icon: SiX,
+    color: "#000000",
   },
   {
     label: "@arthurspalanzani",
