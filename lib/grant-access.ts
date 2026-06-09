@@ -279,7 +279,7 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
         asoPlan,
         manageUrl
       );
-      if (isNewLicense || shouldCreateWelcomeChannel) {
+      if (isNewLicense) {
         await sendLicenseKeyEmail(email, key, emailSource, manageUrl);
         asoLicenseSent = true;
       }
