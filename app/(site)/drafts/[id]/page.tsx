@@ -14,7 +14,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const draft = getDraftById(id);
+  const draft = await getDraftById(id);
   return {
     title: draft ? `[Draft] ${draft.data.title}` : "Draft",
     robots: { index: false, follow: false, nocache: true },
@@ -27,7 +27,7 @@ export default async function DraftPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const draft = getDraftById(id);
+  const draft = await getDraftById(id);
   if (!draft) notFound();
 
   return (

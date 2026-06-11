@@ -4,6 +4,7 @@ import matter from "gray-matter";
 import type { Episode } from "./episodes";
 import type { CaseStudy } from "./case-studies";
 import { calculateReadingTime } from "./content";
+import { getDraftCaseStudyImportBySlug } from "./case-study-imports";
 
 const DRAFTS_DIR = path.join(process.cwd(), "content", "drafts");
 
@@ -14,11 +15,14 @@ export type Draft =
   | { kind: "case-study"; data: CaseStudy }
   | { kind: "episode"; data: Episode };
 
-export function getDraftById(id: string): Draft | null {
+export async function getDraftById(id: string): Promise<Draft | null> {
   if (!/^[a-z0-9_-]+$/i.test(id)) return null;
 
   const filePath = path.join(DRAFTS_DIR, `${id}.mdx`);
-  if (!fs.existsSync(filePath)) return null;
+  if (!fs.existsSync(filePath)) {
+    const importedDraft = await getDraftCaseStudyImportBySlug(id);
+    return importedDraft ? { kind: "case-study", data: importedDraft } : null;
+  }
 
   const raw = fs.readFileSync(filePath, "utf-8");
   const { data, content } = matter(raw);
@@ -55,6 +59,7 @@ export function getDraftById(id: string): Draft | null {
     updatedDate: data.updatedDate,
     image: data.image,
     imageAlt: data.imageAlt,
+    author: data.author,
     guest: data.guest,
     guestInfo: data.guestInfo,
     tags: data.tags,

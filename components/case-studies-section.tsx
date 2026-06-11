@@ -46,8 +46,8 @@ function CaseStudyThumbnail({
   );
 }
 
-export function CaseStudiesSection() {
-  const caseStudies = getAllCaseStudies();
+export async function CaseStudiesSection() {
+  const caseStudies = await getAllCaseStudies();
   if (caseStudies.length === 0) return null;
 
   const [latest, ...older] = caseStudies;

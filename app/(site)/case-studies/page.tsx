@@ -33,8 +33,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function CaseStudiesPage() {
-  const caseStudies = getAllCaseStudies();
+export const dynamic = "force-dynamic";
+
+export default async function CaseStudiesPage() {
+  const caseStudies = await getAllCaseStudies();
 
   const itemListJsonLd = {
     "@context": "https://schema.org",
