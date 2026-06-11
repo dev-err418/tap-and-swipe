@@ -21,10 +21,8 @@ interface FeedItem {
   tags?: string[];
 }
 
-export const dynamic = "force-dynamic";
-
-export async function GET() {
-  const caseStudies = await getAllCaseStudies();
+export function GET() {
+  const caseStudies = getAllCaseStudies();
   const episodes = getAllEpisodes();
 
   const feedItems: FeedItem[] = [

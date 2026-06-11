@@ -2,9 +2,6 @@ import fs from "fs";
 import path from "path";
 import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
-import ReactMarkdown, {
-  type Components as MarkdownComponents,
-} from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { CaseStudy, CaseStudyMeta } from "@/lib/case-studies";
 import type { GuestInfo } from "@/lib/content";
@@ -37,21 +34,6 @@ function slugify(text: string): string {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .trim();
-}
-
-function childrenToText(children: React.ReactNode): string {
-  if (typeof children === "string") return children;
-  if (typeof children === "number") return String(children);
-  if (Array.isArray(children)) return children.map(childrenToText).join("");
-  return "";
-}
-
-function withoutMarkdownNode<T extends { node?: unknown }>(
-  props: T
-): Omit<T, "node"> {
-  const clean = { ...props };
-  delete clean.node;
-  return clean as Omit<T, "node">;
 }
 
 function FounderCard({ guest }: { guest: GuestInfo }) {
@@ -294,155 +276,6 @@ function createMdxComponents(
   };
 }
 
-function createMarkdownComponents(
-  slugifyFn: (text: string) => string,
-  appData?: AppData | null,
-  revenueAtRecording?: string,
-  recordedAt?: string
-): MarkdownComponents {
-  return {
-    h2: ({ children, ...props }) => {
-      const text = childrenToText(children);
-      const isAppSection =
-        /^what is\b/i.test(text) ||
-        text.toLowerCase().replace(/^the\s+/, "") === "app";
-      const cleanProps = withoutMarkdownNode(props);
-      return (
-        <>
-          <h2
-            id={slugifyFn(text)}
-            className="mt-12 mb-4 text-2xl font-semibold tracking-tight scroll-mt-24"
-            {...cleanProps}
-          >
-            {children}
-          </h2>
-          {isAppSection && appData && (
-            <AppShowcase
-              data={appData}
-              revenueAtRecording={revenueAtRecording}
-              recordedAt={recordedAt}
-            />
-          )}
-        </>
-      );
-    },
-    h3: ({ children, ...props }) => {
-      const text = childrenToText(children);
-      const cleanProps = withoutMarkdownNode(props);
-      return (
-        <h3
-          id={slugifyFn(text)}
-          className="mt-8 mb-3 text-xl font-semibold tracking-tight scroll-mt-24"
-          {...cleanProps}
-        >
-          {children}
-        </h3>
-      );
-    },
-    p: (props) => (
-      <p
-        className="mb-5 leading-relaxed text-foreground/70"
-        {...withoutMarkdownNode(props)}
-      />
-    ),
-    a: ({ href, ...props }) => {
-      const isExternal = href?.startsWith("http");
-      return (
-        <a
-          href={href}
-          className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60"
-          {...(isExternal && { target: "_blank", rel: "noopener noreferrer" })}
-          {...withoutMarkdownNode(props)}
-        />
-      );
-    },
-    ul: (props) => (
-      <ul
-        className="mb-5 ml-5 list-disc space-y-1.5 text-foreground/70"
-        {...withoutMarkdownNode(props)}
-      />
-    ),
-    ol: (props) => (
-      <ol
-        className="mb-5 ml-5 list-decimal space-y-1.5 text-foreground/70"
-        {...withoutMarkdownNode(props)}
-      />
-    ),
-    li: (props) => (
-      <li className="leading-relaxed" {...withoutMarkdownNode(props)} />
-    ),
-    blockquote: (props) => (
-      <blockquote
-        className="my-6 border-l-2 border-border pl-5 italic text-foreground/60"
-        {...withoutMarkdownNode(props)}
-      />
-    ),
-    strong: (props) => (
-      <strong
-        className="font-semibold text-foreground"
-        {...withoutMarkdownNode(props)}
-      />
-    ),
-    table: (props) => (
-      <div className="my-6 overflow-x-auto">
-        <table className="w-full text-sm" {...withoutMarkdownNode(props)} />
-      </div>
-    ),
-    thead: (props) => (
-      <thead
-        className="border-b border-border"
-        {...withoutMarkdownNode(props)}
-      />
-    ),
-    th: (props) => (
-      <th
-        className="px-3 py-2 text-left font-semibold text-foreground"
-        {...withoutMarkdownNode(props)}
-      />
-    ),
-    td: (props) => (
-      <td
-        className="border-t border-border px-3 py-2 text-foreground/70"
-        {...withoutMarkdownNode(props)}
-      />
-    ),
-    hr: () => <hr className="my-10 border-border" />,
-    em: (props) => (
-      <em className="text-muted-foreground" {...withoutMarkdownNode(props)} />
-    ),
-    img: ({ src, alt }) => {
-      if (!src) return null;
-      return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
-          alt={alt || ""}
-          loading="lazy"
-          className="my-6 h-auto max-w-full rounded-xl border border-border"
-        />
-      );
-    },
-    code: ({ className, children, ...props }) => (
-      <code
-        className={
-          className
-            ? `${className} font-mono text-sm`
-            : "rounded bg-accent px-1.5 py-0.5 font-mono text-sm"
-        }
-        {...withoutMarkdownNode(props)}
-      >
-        {children}
-      </code>
-    ),
-    pre: (props) => (
-      <pre
-        className="mb-5 overflow-x-auto rounded-xl bg-accent p-4 text-sm text-foreground/80"
-        {...withoutMarkdownNode(props)}
-      />
-    ),
-  };
-}
-
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
     year: "numeric",
@@ -464,12 +297,6 @@ export function CaseStudyContent({
   const mdxComponents = createMdxComponents(
     slugify,
     cs.guestInfo,
-    appData,
-    cs.revenueAtRecording,
-    cs.recordedAt
-  );
-  const markdownComponents = createMarkdownComponents(
-    slugify,
     appData,
     cs.revenueAtRecording,
     cs.recordedAt
@@ -526,20 +353,11 @@ export function CaseStudyContent({
 
         {/* MDX content */}
         <div className="mt-12">
-          {cs.contentFormat === "markdown" ? (
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={markdownComponents}
-            >
-              {cs.content}
-            </ReactMarkdown>
-          ) : (
-            <MDXRemote
-              source={cs.content}
-              components={mdxComponents}
-              options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
-            />
-          )}
+          <MDXRemote
+            source={cs.content}
+            components={mdxComponents}
+            options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+          />
         </div>
 
         {/* You might also like */}

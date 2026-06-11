@@ -2,10 +2,8 @@ import type { MetadataRoute } from "next";
 import { getAllCaseStudies } from "@/lib/case-studies";
 import { getAllEpisodes } from "@/lib/episodes";
 
-export const dynamic = "force-dynamic";
-
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const caseStudies = await getAllCaseStudies();
+export default function sitemap(): MetadataRoute.Sitemap {
+  const caseStudies = getAllCaseStudies();
   const episodes = getAllEpisodes();
 
   const allDates = [

@@ -48,9 +48,9 @@ export const metadata: Metadata = {
 
 const BASE_URL = "https://tap-and-swipe.com";
 
-async function buildJsonLd() {
+function buildJsonLd() {
   const episodes = getAllEpisodes();
-  const caseStudies = await getAllCaseStudies();
+  const caseStudies = getAllCaseStudies();
 
   const videoSeries = {
     "@context": "https://schema.org",
@@ -127,7 +127,7 @@ export default async function Home({
   const sp = await searchParams;
   const country = sp.country || h.get("cf-ipcountry") || "";
   const showSubscribe = !BLOCKED_COUNTRIES.has(country);
-  const jsonLd = await buildJsonLd();
+  const jsonLd = buildJsonLd();
 
   return (
     <>
