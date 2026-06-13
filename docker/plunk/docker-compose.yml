@@ -107,6 +107,7 @@ services:
       AWS_SES_SECRET_ACCESS_KEY: ${AWS_SES_SECRET_ACCESS_KEY}
       SES_CONFIGURATION_SET: ${SES_CONFIGURATION_SET:-plunk-tracking}
       SES_CONFIGURATION_SET_NO_TRACKING: ${SES_CONFIGURATION_SET_NO_TRACKING:-plunk-no-tracking}
+      MAIL_FROM_SUBDOMAIN: ${MAIL_FROM_SUBDOMAIN:-mail}
 
       # S3-compatible storage (the bundled minio above)
       S3_ENDPOINT: http://minio:9000
