@@ -29,7 +29,7 @@ interface BurnHistoryEntry {
   last_burned: string;
 }
 
-interface HealthData {
+interface LegacyHealthData {
   status: string;
   upstream: {
     cache: {
@@ -49,6 +49,23 @@ interface HealthData {
   };
   burnHistory?: BurnHistoryEntry[];
   routes?: Record<string, { active: number; maxActive: number; rejected: number; peakActive: number }>;
+}
+
+interface EdgeHealthData {
+  ok?: boolean;
+  service?: string;
+  environment?: string;
+  timestamp?: number;
+  status?: string;
+  [key: string]: unknown;
+}
+
+type HealthData = LegacyHealthData | EdgeHealthData;
+
+function isLegacyHealthData(data: HealthData): data is LegacyHealthData {
+  const maybeLegacy = data as Partial<LegacyHealthData>;
+  const upstream = maybeLegacy.upstream;
+  return Boolean(upstream?.cache) && Array.isArray(upstream?.proxyStats);
 }
 
 function StatusBadge({ status }: { status: "healthy" | "cooling" | "burned" }) {
@@ -114,6 +131,41 @@ export default function ProxyHealthPanel() {
 
   if (error) return <p className="text-sm text-red-400">Health fetch error: {error}</p>;
   if (!data) return <p className="text-sm text-[#c9c4bc]/60">Loading live health...</p>;
+
+  if (!isLegacyHealthData(data)) {
+    const ok = data.ok === true || data.status === "ok" || data.status === "healthy";
+    const checkedAt =
+      typeof data.timestamp === "number"
+        ? new Date(data.timestamp).toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+        : "just now";
+
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className={`rounded-xl border p-4 ${ok ? "border-emerald-400/20 bg-emerald-400/5" : "border-red-400/20 bg-red-400/5"}`}>
+          <p className={`text-[10px] font-semibold uppercase tracking-wider ${ok ? "text-emerald-400/80" : "text-red-400/80"}`}>
+            Edge status
+          </p>
+          <p className={`mt-1 text-xl font-bold ${ok ? "text-emerald-400" : "text-red-400"}`}>
+            {ok ? "Healthy" : "Check failed"}
+          </p>
+        </div>
+        <div className="rounded-xl border border-white/5 bg-white/5 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Service</p>
+          <p className="mt-1 text-xl font-bold text-[#f4cf8f]">{data.service ?? "appsprint-aso-edge"}</p>
+          <p className="mt-0.5 text-[10px] text-[#c9c4bc]/40">{data.environment ?? "unknown"}</p>
+        </div>
+        <div className="rounded-xl border border-white/5 bg-white/5 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Last check</p>
+          <p className="mt-1 text-xl font-bold text-[#f4cf8f]">{checkedAt}</p>
+          <p className="mt-0.5 text-[10px] text-[#c9c4bc]/40">Cloudflare edge liveness</p>
+        </div>
+      </div>
+    );
+  }
 
   const { upstream: u, routes, burnHistory } = data;
   const burnedCount = u.proxyStats.filter((p) => p.burned).length;

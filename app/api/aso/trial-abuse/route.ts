@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import { Pool } from "pg";
+import { asoPool as pool } from "@/lib/aso-db";
 import { getSession } from "@/lib/session";
 import { stripe } from "@/lib/stripe";
-
-const pool = new Pool({
-  connectionString: process.env.ASO_DATABASE_URL,
-});
 
 async function cancelStripeSubscription(key: string) {
   try {

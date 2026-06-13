@@ -85,12 +85,20 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
   const [period, setPeriod] = useState<Period>("24h");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/aso/analytics?period=${period}`);
-    if (res.ok) setData(await res.json());
-    setLoading(false);
+    try {
+      const res = await fetch(`/api/aso/analytics?period=${period}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setData(await res.json());
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
   }, [period]);
 
   useEffect(() => {
@@ -102,6 +110,7 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
   const periods: Period[] = ["1h", "6h", "24h", "7d", "30d"];
 
   if (loading && !data) return <p className="text-sm text-[#c9c4bc]/60">Loading proxy analytics...</p>;
+  if (error && !data) return <p className="text-sm text-red-400">Proxy analytics fetch error: {error}</p>;
   if (!data) return <p className="text-sm text-[#c9c4bc]/60">No proxy analytics data yet.</p>;
 
   const { summary: s, timeseries } = data;

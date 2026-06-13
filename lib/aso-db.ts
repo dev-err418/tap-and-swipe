@@ -1,8 +1,14 @@
 import { Pool } from "pg";
 import crypto from "crypto";
 
+const primaryAsoDatabaseUrl =
+  process.env.ASO_DATABASE_URL_SECONDARY ??
+  process.env.ASO_NEON_DATABASE_URL ??
+  process.env.ASO_DATABASE_URL;
+
 export const asoPool = new Pool({
-  connectionString: process.env.ASO_DATABASE_URL,
+  connectionString: primaryAsoDatabaseUrl,
+  connectionTimeoutMillis: 8_000,
 });
 
 let asoSecondaryPool: Pool | null = null;
@@ -27,11 +33,11 @@ function getAsoSecondaryPool(): Pool | null {
   const connectionString =
     process.env.ASO_DATABASE_URL_SECONDARY ??
     process.env.ASO_NEON_DATABASE_URL;
-  if (!connectionString || connectionString === process.env.ASO_DATABASE_URL) {
+  if (!connectionString || connectionString === primaryAsoDatabaseUrl) {
     return null;
   }
   if (!asoSecondaryPool) {
-    asoSecondaryPool = new Pool({ connectionString });
+    asoSecondaryPool = new Pool({ connectionString, connectionTimeoutMillis: 8_000 });
   }
   return asoSecondaryPool;
 }
