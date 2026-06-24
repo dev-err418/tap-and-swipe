@@ -45,10 +45,10 @@ const FROM_NAME = process.env.PLUNK_NEWSLETTER_FROM_NAME ?? "Arthur from Tap & S
 const REPLY_TO = process.env.PLUNK_NEWSLETTER_REPLY_TO ?? FROM_EMAIL;
 
 const CAMPAIGN = {
-  name: "Newsletter 002 - Bryl Lim / Tarsi",
-  description: "Second Tap & Swipe newsletter: Bryl Lim's Tarsi case study and YouTube episode.",
-  subject: "He built a paid app in a weekend. It made $20K in month one.",
-  htmlPath: resolve("plunk-campaigns/2026-05-25-bryl-tarsi.html"),
+  name: "Newsletter 003 - Alberto Perez / TikTok Slideshows",
+  description: "Third Tap & Swipe newsletter: Alberto Pérez's Flowfy TikTok slideshow episode.",
+  subject: "100,000 app downloads from TikTok slideshows",
+  htmlPath: resolve("plunk-campaigns/2026-06-24-alberto-tiktok-slideshows.html"),
 };
 
 const command = process.argv[2] ?? "preview";
