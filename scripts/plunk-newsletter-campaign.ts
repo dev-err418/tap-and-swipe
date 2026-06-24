@@ -45,10 +45,10 @@ const FROM_NAME = process.env.PLUNK_NEWSLETTER_FROM_NAME ?? "Arthur from Tap & S
 const REPLY_TO = process.env.PLUNK_NEWSLETTER_REPLY_TO ?? FROM_EMAIL;
 
 const CAMPAIGN = {
-  name: "Newsletter 003 - Alberto Perez / TikTok Slideshows",
-  description: "Third Tap & Swipe newsletter: Alberto Pérez's Flowfy TikTok slideshow episode.",
-  subject: "100,000 app downloads from TikTok slideshows",
-  htmlPath: resolve("plunk-campaigns/2026-06-24-alberto-tiktok-slideshows.html"),
+  name: "Newsletter 004 - Apple Ads Soft Paywall",
+  description: "Tap & Swipe newsletter about Apple Search Ads, soft paywalls, and testing no-trial subscriptions.",
+  subject: "soft paywall + no trial is working",
+  htmlPath: resolve("plunk-campaigns/2026-06-24-apple-ads-soft-paywall.html"),
 };
 
 const command = process.argv[2] ?? "preview";
