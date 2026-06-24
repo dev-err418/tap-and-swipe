@@ -1,0 +1,28 @@
+{
+  "lastUpdated": "2026-06-24T13:33:11.617Z",
+  "ios": {
+    "title": "Flowfy: Budget & Expenses",
+    "subtitle": "Manage Personal Budgets",
+    "icon": "/apps/flowfy/icon-ios.webp",
+    "screenshots": [
+      "/apps/flowfy/ios-1.webp",
+      "/apps/flowfy/ios-2.webp",
+      "/apps/flowfy/ios-3.webp",
+      "/apps/flowfy/ios-4.webp",
+      "/apps/flowfy/ios-5.webp"
+    ],
+    "rating": 4.77142,
+    "ratingCount": 114,
+    "price": "Free",
+    "storeUrl": "https://apps.apple.com/us/app/flowfy-budget-expenses/id6754984723?uo=4",
+    "topCountries": [
+      "ES",
+      "US",
+      "CA"
+    ],
+    "genres": [
+      "Finance",
+      "Productivity"
+    ]
+  }
+}

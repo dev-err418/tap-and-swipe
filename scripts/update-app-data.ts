@@ -3,6 +3,7 @@
  *
  * Usage:
  *   npx tsx scripts/update-app-data.ts
+ *   npx tsx scripts/update-app-data.ts flowfy
  *
  * - Reads MDX frontmatter from content/episodes/ and content/case-studies/
  * - Deduplicates by appSlug — fetches once per unique app
@@ -482,6 +483,14 @@ async function fetchSensorTowerBatch(
 
 async function main() {
   console.log("Scanning content directories for appSlug + store IDs...\n");
+  const requestedSlugs = new Set(
+    process.argv
+      .slice(2)
+      .filter((arg) => !arg.startsWith("-"))
+      .flatMap((arg) => arg.split(","))
+      .map((arg) => arg.trim())
+      .filter(Boolean)
+  );
 
   // Scan all three content dirs (drafts included so app cards render in review)
   const episodeEntries = scanDir(EPISODES_DIR);
@@ -502,10 +511,16 @@ async function main() {
     }
   }
 
-  const apps = Array.from(appMap.values());
+  const apps = Array.from(appMap.values()).filter(
+    (app) => requestedSlugs.size === 0 || requestedSlugs.has(app.appSlug)
+  );
 
   if (apps.length === 0) {
-    console.log("No content with appSlug + store IDs found.");
+    const suffix =
+      requestedSlugs.size > 0
+        ? ` matching ${Array.from(requestedSlugs).join(", ")}`
+        : "";
+    console.log(`No content with appSlug + store IDs found${suffix}.`);
     return;
   }
 

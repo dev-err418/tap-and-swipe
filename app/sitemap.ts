@@ -1,26 +1,14 @@
 import type { MetadataRoute } from "next";
-import { getAllCaseStudies } from "@/lib/case-studies";
 import { getAllEpisodes } from "@/lib/episodes";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const caseStudies = getAllCaseStudies();
   const episodes = getAllEpisodes();
 
-  const allDates = [
-    ...caseStudies.map((cs) => new Date(cs.date)),
-    ...episodes.map((s) => new Date(s.date)),
-  ];
+  const allDates = episodes.map((s) => new Date(s.date));
   const latestDate =
     allDates.length > 0
       ? new Date(Math.max(...allDates.map((d) => d.getTime())))
       : new Date();
-
-  const caseStudyEntries: MetadataRoute.Sitemap = caseStudies.map((cs) => ({
-    url: `https://tap-and-swipe.com/case-studies/${cs.slug}`,
-    lastModified: new Date(cs.updatedDate || cs.date),
-    changeFrequency: "monthly",
-    priority: 0.8,
-  }));
 
   const episodeEntries: MetadataRoute.Sitemap = episodes.map((s) => ({
     url: `https://tap-and-swipe.com/episodes/${s.slug}`,
@@ -44,12 +32,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: "https://tap-and-swipe.com/episodes",
-      lastModified: latestDate,
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: "https://tap-and-swipe.com/case-studies",
       lastModified: latestDate,
       changeFrequency: "weekly",
       priority: 0.9,
@@ -121,6 +103,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.2,
     },
     ...episodeEntries,
-    ...caseStudyEntries,
   ];
 }

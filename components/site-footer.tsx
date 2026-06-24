@@ -67,12 +67,13 @@ export function SiteFooter() {
             </li>
             <li>
               <a
-                href="https://appsprint.app/aso"
+                href="https://appsprint.app/attribution"
                 target="_blank"
                 rel="noopener"
+                referrerPolicy="origin-when-cross-origin"
                 className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
               >
-                AppSprint ASO
+                Boost ads ROAS
               </a>
             </li>
           </ul>

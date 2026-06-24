@@ -36,6 +36,29 @@ function slugify(text: string): string {
     .trim();
 }
 
+function getAppHeadingNames(appData?: AppData | null): string[] {
+  const title = appData?.ios?.title ?? appData?.android?.title ?? "";
+  return Array.from(
+    new Set(
+      [title, ...title.split(/\s+-\s+|:/)]
+        .map((name) => name.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function isPrimaryAppSection(text: string, appData?: AppData | null): boolean {
+  const normalizedText = slugify(text);
+  const appNames = getAppHeadingNames(appData);
+
+  if (normalizedText === "app" || normalizedText === "the-app") return true;
+  if (appNames.length === 0) return false;
+
+  return appNames.some(
+    (appName) => normalizedText === `what-is-${slugify(appName)}`
+  );
+}
+
 function FounderCard({ guest }: { guest: GuestInfo }) {
   const isPlaceholder =
     !guest.photo || guest.photo === "/guests/placeholder.webp";
@@ -180,9 +203,7 @@ function createMdxComponents(
     h2: (props: React.ComponentProps<"h2">) => {
       const text =
         typeof props.children === "string" ? props.children : "";
-      const isAppSection =
-        /^what is\b/i.test(text) ||
-        text.toLowerCase().replace(/^the\s+/, "") === "app";
+      const isAppSection = isPrimaryAppSection(text, appData);
       return (
         <>
           <h2

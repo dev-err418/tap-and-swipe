@@ -2,19 +2,17 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Hero } from "@/components/hero";
 import { EpisodesSection } from "@/components/episodes-section";
-import { CaseStudiesSection } from "@/components/case-studies-section";
 import { getAllEpisodes } from "@/lib/episodes";
-import { getAllCaseStudies } from "@/lib/case-studies";
 import { BLOCKED_COUNTRIES } from "@/lib/blocked-countries";
 
 export const metadata: Metadata = {
   title: "Real Stories From People Building Mobile Apps",
   description:
-    "Every week, Arthur interviews a mobile app builder about their product, growth, revenue, and mistakes. Case studies with real numbers from indie devs and app founders.",
+    "Every week, Arthur interviews a mobile app builder about their product, growth, revenue, and mistakes. Watch episodes with real numbers from indie devs and app founders.",
   keywords: [
     "mobile app builder stories",
     "indie app developer",
-    "app revenue case study",
+    "app founder interviews",
     "mobile app growth",
     "react native",
     "expo",
@@ -26,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Tap & Swipe: Real Stories From People Building Mobile Apps",
     description:
-      "Every week, Arthur interviews a mobile app builder about their product, growth, revenue, and mistakes. Case studies with real numbers from indie devs and app founders.",
+      "Every week, Arthur interviews a mobile app builder about their product, growth, revenue, and mistakes. Watch episodes with real numbers from indie devs and app founders.",
     url: "https://tap-and-swipe.com",
     type: "website",
     locale: "en_US",
@@ -50,7 +48,6 @@ const BASE_URL = "https://tap-and-swipe.com";
 
 function buildJsonLd() {
   const episodes = getAllEpisodes();
-  const caseStudies = getAllCaseStudies();
 
   const videoSeries = {
     "@context": "https://schema.org",
@@ -71,15 +68,6 @@ function buildJsonLd() {
         datePublished: new Date(s.date).toISOString(),
         url: `${BASE_URL}/episodes/${s.slug}`,
         embedUrl: `https://www.youtube-nocookie.com/embed/${s.youtubeId}`,
-      })),
-    }),
-    ...(caseStudies.length > 0 && {
-      hasPart: caseStudies.map((cs) => ({
-        "@type": "BlogPosting",
-        name: cs.title,
-        description: cs.description,
-        datePublished: new Date(cs.date).toISOString(),
-        url: `${BASE_URL}/case-studies/${cs.slug}`,
       })),
     }),
   };
@@ -137,7 +125,6 @@ export default async function Home({
       />
       <Hero showSubscribe={showSubscribe} />
       <EpisodesSection />
-      <CaseStudiesSection />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   getAllCaseStudies,
   getAllCaseStudySlugs,
@@ -66,6 +66,10 @@ export default async function CaseStudyPage({
   const { slug } = await params;
   const cs = getCaseStudyBySlug(slug);
   if (!cs) notFound();
+
+  if (cs.episodeSlug) {
+    redirect(`/episodes/${cs.episodeSlug}`);
+  }
 
   const otherCaseStudies = getAllCaseStudies()
     .filter((other) => other.slug !== slug)

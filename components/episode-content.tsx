@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
 import type { Episode, EpisodeMeta, GuestInfo } from "@/lib/episodes";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { getAppData } from "@/lib/app-data";
+import { getAppData, type AppData } from "@/lib/app-data";
+import { getCaseStudyBySlug } from "@/lib/case-studies";
 import { AppShowcase } from "@/components/app-showcase";
 import { SiX, SiThreads, SiMastodon } from "@icons-pack/react-simple-icons";
-import { Globe, Linkedin, FileText, Github } from "lucide-react";
+import { Globe, Linkedin, Github } from "lucide-react";
 
 function GuestCard({ guest }: { guest: GuestInfo }) {
   const isPlaceholder =
@@ -114,21 +116,165 @@ function formatDate(dateStr: string) {
   });
 }
 
-const mdxComponents = {
-  FounderCard: () => null,
-  p: (props: React.ComponentProps<"p">) => (
-    <p className="mb-5 leading-relaxed text-foreground/70" {...props} />
-  ),
-  a: (props: React.ComponentProps<"a">) => (
-    <a
-      className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60"
-      {...props}
-    />
-  ),
-  strong: (props: React.ComponentProps<"strong">) => (
-    <strong className="font-semibold text-foreground" {...props} />
-  ),
-};
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
+}
+
+function getAppHeadingNames(appData?: AppData | null): string[] {
+  const title = appData?.ios?.title ?? appData?.android?.title ?? "";
+  return Array.from(
+    new Set(
+      [title, ...title.split(/\s+-\s+|:/)]
+        .map((name) => name.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function isPrimaryAppSection(text: string, appData?: AppData | null): boolean {
+  const normalizedText = slugify(text);
+  const appNames = getAppHeadingNames(appData);
+
+  if (normalizedText === "app" || normalizedText === "the-app") return true;
+  if (appNames.length === 0) return false;
+
+  return appNames.some(
+    (appName) => normalizedText === `what-is-${slugify(appName)}`
+  );
+}
+
+function stripEpisodeCta(content: string): string {
+  return content.replace(
+    /\n---\n\n## Where can I (?:watch|hear) the full episode\?[\s\S]*$/m,
+    ""
+  );
+}
+
+function createMdxComponents(
+  appData?: AppData | null,
+  revenueAtRecording?: string,
+  recordedAt?: string
+) {
+  return {
+    FounderCard: () => null,
+    AppShowcase: ({
+      appSlug,
+      revenueAtRecording: rar,
+      recordedAt: ra,
+    }: {
+      appSlug: string;
+      revenueAtRecording?: string;
+      recordedAt?: string;
+    }) => {
+      const inlineData = getAppData(appSlug);
+      if (!inlineData) return null;
+      return (
+        <AppShowcase
+          data={inlineData}
+          revenueAtRecording={rar}
+          recordedAt={ra}
+        />
+      );
+    },
+    h2: (props: React.ComponentProps<"h2">) => {
+      const text = typeof props.children === "string" ? props.children : "";
+      const isAppSection = isPrimaryAppSection(text, appData);
+      return (
+        <>
+          <h2
+            id={slugify(text)}
+            className="mt-12 mb-4 text-2xl font-semibold tracking-tight scroll-mt-24"
+            {...props}
+          />
+          {isAppSection && appData && (
+            <AppShowcase
+              data={appData}
+              revenueAtRecording={revenueAtRecording}
+              recordedAt={recordedAt}
+            />
+          )}
+        </>
+      );
+    },
+    h3: (props: React.ComponentProps<"h3">) => {
+      const text = typeof props.children === "string" ? props.children : "";
+      return (
+        <h3
+          id={slugify(text)}
+          className="mt-8 mb-3 text-xl font-semibold tracking-tight scroll-mt-24"
+          {...props}
+        />
+      );
+    },
+    p: (props: React.ComponentProps<"p">) => (
+      <p className="mb-5 leading-relaxed text-foreground/70" {...props} />
+    ),
+    a: ({ href, ...props }: React.ComponentProps<"a">) => {
+      const isExternal = href?.startsWith("http");
+      return (
+        <a
+          href={href}
+          className="underline decoration-foreground/30 underline-offset-2 transition-colors hover:decoration-foreground/60"
+          {...(isExternal && { target: "_blank", rel: "noopener noreferrer" })}
+          {...props}
+        />
+      );
+    },
+    ul: (props: React.ComponentProps<"ul">) => (
+      <ul
+        className="mb-5 ml-5 list-disc space-y-1.5 text-foreground/70"
+        {...props}
+      />
+    ),
+    ol: (props: React.ComponentProps<"ol">) => (
+      <ol
+        className="mb-5 ml-5 list-decimal space-y-1.5 text-foreground/70"
+        {...props}
+      />
+    ),
+    li: (props: React.ComponentProps<"li">) => (
+      <li className="leading-relaxed" {...props} />
+    ),
+    blockquote: (props: React.ComponentProps<"blockquote">) => (
+      <blockquote
+        className="my-6 border-l-2 border-border pl-5 italic text-foreground/60"
+        {...props}
+      />
+    ),
+    strong: (props: React.ComponentProps<"strong">) => (
+      <strong className="font-semibold text-foreground" {...props} />
+    ),
+    table: (props: React.ComponentProps<"table">) => (
+      <div className="my-6 overflow-x-auto">
+        <table className="w-full text-sm" {...props} />
+      </div>
+    ),
+    thead: (props: React.ComponentProps<"thead">) => (
+      <thead className="border-b border-border" {...props} />
+    ),
+    th: (props: React.ComponentProps<"th">) => (
+      <th
+        className="px-3 py-2 text-left font-semibold text-foreground"
+        {...props}
+      />
+    ),
+    td: (props: React.ComponentProps<"td">) => (
+      <td
+        className="border-t border-border px-3 py-2 text-foreground/70"
+        {...props}
+      />
+    ),
+    hr: () => <hr className="my-10 border-border" />,
+    em: (props: React.ComponentProps<"em">) => (
+      <em className="text-muted-foreground" {...props} />
+    ),
+  };
+}
 
 export function EpisodeContent({
   episode,
@@ -137,7 +283,19 @@ export function EpisodeContent({
   episode: Episode;
   otherEpisodes: EpisodeMeta[];
 }) {
-  const appData = episode.appSlug ? getAppData(episode.appSlug) : null;
+  const pairedCaseStudy = episode.caseStudySlug
+    ? getCaseStudyBySlug(episode.caseStudySlug)
+    : null;
+  const article = pairedCaseStudy ?? episode;
+  const articleContent = pairedCaseStudy
+    ? stripEpisodeCta(pairedCaseStudy.content)
+    : episode.content;
+  const appData = article.appSlug ? getAppData(article.appSlug) : null;
+  const mdxComponents = createMdxComponents(
+    appData,
+    article.revenueAtRecording,
+    article.recordedAt
+  );
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-10">
@@ -180,14 +338,18 @@ export function EpisodeContent({
       )}
 
       {/* Body */}
-      {episode.content && (
+      {articleContent && (
         <div className="mt-8">
-          <MDXRemote source={episode.content} components={mdxComponents} />
+          <MDXRemote
+            source={articleContent}
+            components={mdxComponents}
+            options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+          />
         </div>
       )}
 
       {/* App showcase */}
-      {appData && (
+      {!pairedCaseStudy && appData && (
         <div className="mt-10">
           <AppShowcase
             data={appData}
@@ -195,17 +357,6 @@ export function EpisodeContent({
             recordedAt={episode.recordedAt}
           />
         </div>
-      )}
-
-      {/* Cross-link to case study */}
-      {episode.caseStudySlug && (
-        <Link
-          href={`/case-studies/${episode.caseStudySlug}`}
-          className="mt-8 flex items-center gap-2 rounded-lg border border-border px-4 py-3 text-sm transition-colors hover:bg-accent"
-        >
-          <FileText size={16} className="shrink-0 text-muted-foreground" />
-          <span>Read the full case study &rarr;</span>
-        </Link>
       )}
 
       {/* More episodes */}

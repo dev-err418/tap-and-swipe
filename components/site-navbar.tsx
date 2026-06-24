@@ -37,12 +37,6 @@ export async function SiteNavbar() {
           >
             Episodes
           </Link>
-          <Link
-            href="/case-studies"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground/70"
-          >
-            Case Studies
-          </Link>
           {isLoggedIn && (
             <Link
               href="/learn"
