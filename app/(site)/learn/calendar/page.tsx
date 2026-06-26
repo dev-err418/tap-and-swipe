@@ -1,10 +1,9 @@
 import MonthCalendar, { type CalendarEvent } from "@/components/roadmap/MonthCalendar";
 
-// Generate recurring weekly calls for Mondays, Wednesdays, and Saturdays
+// Generate recurring weekly calls for Mondays and Wednesdays
 const WEEKLY_SLOTS: Record<number, string> = {
   1: "9:00 PM CET", // Monday
   3: "9:00 PM CET", // Wednesday
-  6: "8:00 PM CET", // Saturday
 };
 
 function generateRecurringEvents(): CalendarEvent[] {
