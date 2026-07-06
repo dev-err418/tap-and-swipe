@@ -10,6 +10,8 @@ interface AppLegalPageProps {
   appSlug: string;
   contentPath: string;
   showSupportLink?: boolean;
+  supportHref?: string;
+  supportLabel?: string;
 }
 
 const components: Components = {
@@ -120,6 +122,8 @@ export default function AppLegalPage({
   appSlug,
   contentPath,
   showSupportLink = true,
+  supportHref = `/${appSlug}/support`,
+  supportLabel = "Support",
 }: AppLegalPageProps) {
   const filePath = join(process.cwd(), contentPath);
   const content = readFileSync(filePath, "utf-8");
@@ -153,7 +157,7 @@ export default function AppLegalPage({
           {showSupportLink && (
             <>
               {" · "}
-              <a href={`/${appSlug}/support`} className="underline hover:opacity-70">Support</a>
+              <a href={supportHref} className="underline hover:opacity-70">{supportLabel}</a>
             </>
           )}
         </p>

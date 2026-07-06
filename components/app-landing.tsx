@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 const ALL_APPS = [
+  { slug: "glp-1", name: "GLP-1", tagline: "Shot Tracker & Weight Journey", icon: "/community-icons/glp-1.png" },
   { slug: "divvy", name: "Divvy", tagline: "Bill Splitter & Tip Calculator", icon: "/community-icons/divvy.jpg" },
   { slug: "netpay", name: "NetPay", tagline: "Salary & Tax Calculator", icon: "/community-icons/netpay.jpg" },
   { slug: "versy", name: "Versy", tagline: "Verse of the Day", icon: "/community-icons/versy.jpg" },
@@ -16,7 +17,7 @@ type AppLandingProps = {
   tagline: string;
   description: string;
   iconUrl: string;
-  appStoreUrl: string;
+  appStoreUrl?: string;
   playStoreUrl?: string;
   rating?: number;
   ratingCount?: number;
@@ -32,6 +33,7 @@ type AppLandingProps = {
     privacyUrl: string;
     termsUrl: string;
     supportUrl: string;
+    supportLabel?: string;
   };
 };
 
@@ -125,39 +127,43 @@ export default function AppLandingPage({
         )}
 
         {/* Download buttons */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-          <a
-            href={appStoreUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-14 items-center justify-center rounded-full px-8 text-base font-semibold text-white transition-all hover:opacity-90 hover:ring-4"
-            style={{
-              backgroundColor: tint.buttonBg,
-              // @ts-expect-error custom hover ring
-              "--tw-ring-color": tint.buttonRing,
-            }}
-          >
-            <Image src="/apple.svg" alt="" width={18} height={18} className="mr-2.5 brightness-0 invert" />
-            App Store
-          </a>
+        {(appStoreUrl || playStoreUrl) && (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+            {appStoreUrl && (
+              <a
+                href={appStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-14 items-center justify-center rounded-full px-8 text-base font-semibold text-white transition-all hover:opacity-90 hover:ring-4"
+                style={{
+                  backgroundColor: tint.buttonBg,
+                  // @ts-expect-error custom hover ring
+                  "--tw-ring-color": tint.buttonRing,
+                }}
+              >
+                <Image src="/apple.svg" alt="" width={18} height={18} className="mr-2.5 brightness-0 invert" />
+                App Store
+              </a>
+            )}
 
-          {playStoreUrl && (
-            <a
-              href={playStoreUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-14 items-center justify-center rounded-full px-8 text-base font-semibold text-white transition-all hover:opacity-90 hover:ring-4"
-              style={{
-                backgroundColor: tint.buttonBg,
-                // @ts-expect-error custom hover ring
-                "--tw-ring-color": tint.buttonRing,
-              }}
-            >
-              <Image src="/android.svg" alt="" width={18} height={18} className="mr-2.5 brightness-0 invert" />
-              Google Play
-            </a>
-          )}
-        </div>
+            {playStoreUrl && (
+              <a
+                href={playStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-14 items-center justify-center rounded-full px-8 text-base font-semibold text-white transition-all hover:opacity-90 hover:ring-4"
+                style={{
+                  backgroundColor: tint.buttonBg,
+                  // @ts-expect-error custom hover ring
+                  "--tw-ring-color": tint.buttonRing,
+                }}
+              >
+                <Image src="/android.svg" alt="" width={18} height={18} className="mr-2.5 brightness-0 invert" />
+                Google Play
+              </a>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Description */}
@@ -295,7 +301,7 @@ export default function AppLandingPage({
           </a>
           {" · "}
           <a href={legal.supportUrl} className="underline hover:opacity-70">
-            Support
+            {legal.supportLabel ?? "Support"}
           </a>
         </p>
       </footer>
