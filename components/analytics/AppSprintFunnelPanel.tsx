@@ -1,9 +1,6 @@
 import { ArrowDownRight } from "lucide-react";
 import type { AppSprintFunnelAnalytics, AppSprintFunnelBreakdownRow } from "@/lib/appsprint-funnel";
-import {
-  PaidConversionRateChart,
-  VisitorsRevenueChart,
-} from "@/components/analytics/AppSprintFunnelCharts";
+import { VisitorsRevenueChart } from "@/components/analytics/AppSprintFunnelCharts";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 
 const PREVIEW_ROWS = 10;
@@ -36,21 +33,10 @@ export default function AppSprintFunnelPanel({ analytics }: { analytics: AppSpri
         revenue: row.revenue,
         trialStarts: row.asoTrials,
       }));
-  const paidConversion = daily.map((row) => ({
-    date: row.date,
-    maturedTrials: row.asoMaturedTrials,
-    paidConversions: row.asoMaturedPaid,
-    paidConversionRate: row.asoMaturedTrials > 0 ? row.asoMaturedPaid / row.asoMaturedTrials : null,
-  }));
-
   return (
     <section className="space-y-4">
       <DashboardCard title="Visitors and revenue" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 px-3 py-4">
         <VisitorsRevenueChart data={trend} />
-      </DashboardCard>
-
-      <DashboardCard title="Paid conversion rate" action={<span className="text-xs text-muted-foreground">{windowLabel}, 14-day cohorts</span>} contentClassName="min-w-0 px-3 py-4">
-        <PaidConversionRateChart data={paidConversion} />
       </DashboardCard>
 
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -77,7 +63,7 @@ export default function AppSprintFunnelPanel({ analytics }: { analytics: AppSpri
       </DashboardCard>
 
       <DashboardCard title="Source performance" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} className="overflow-visible" bodyWrapClassName="overflow-visible" contentClassName="min-w-0 overflow-visible p-0">
-        <BreakdownTable rows={sources} label="Source" getLabel={(row) => row.channelLabel ?? row.channel ?? "Unknown"} />
+        <BreakdownTable rows={sources.slice(0, PREVIEW_ROWS)} label="Source" getLabel={(row) => row.channelLabel ?? row.channel ?? "Unknown"} />
       </DashboardCard>
 
       <div className="grid min-w-0 gap-4 xl:grid-cols-2">
@@ -121,7 +107,7 @@ function BreakdownTable({ rows, label, getLabel, getPrefix, expandable = false }
   const maxVisits = Math.max(0, ...rows.map((row) => row.visits));
   const maxRevenue = Math.max(0, ...rows.map((row) => row.revenue));
   return (
-    <div className="overflow-x-auto">
+    <div className="min-w-0 overflow-visible">
       <table className="w-full min-w-96 text-sm">
         <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>{label}</Th><Th right>Visits</Th></tr></thead>
         <tbody>{visible.length ? visible.map((row, index) => <BreakdownRow key={`${getLabel(row)}-${index}`} row={row} label={getLabel(row)} prefix={getPrefix?.(row)} maxVisits={maxVisits} maxRevenue={maxRevenue} />) : <tr><td colSpan={2} className="h-24 text-center text-sm text-black/45">No {label.toLowerCase()} data yet.</td></tr>}</tbody>
@@ -137,9 +123,14 @@ function BreakdownRow({ row, label, prefix, maxVisits, maxRevenue }: { row: AppS
   const revenueWidth = barPercent(row.revenue, maxRevenue, REVENUE_BAR_SHARE);
   const barWidth = Math.min(100, visitWidth + revenueWidth);
   const rowPrefix = prefix ?? <ArrowDownRight className="size-4" />;
+  const tooltipMetrics = [
+    { label: "Checkout", value: row.asoCheckouts, color: "oklch(0.62 0.14 250)" },
+    { label: "Trial", value: row.asoTrials, color: "oklch(0.769 0.188 70.08)" },
+    { label: "Paid", value: row.asoPaid, color: "oklch(0.627 0.194 149.214)" },
+  ];
   return (
-    <tr className="group relative h-9 border-0" title={`Checkout ${formatInt(row.asoCheckouts)} · Trial ${formatInt(row.asoTrials)} · Paid ${formatInt(row.asoPaid)} · Revenue ${formatCurrency(row.revenue)}`}>
-      <td colSpan={2} className="p-0">
+    <tr className="group/row relative h-9 border-0 outline-none" tabIndex={0}>
+      <td colSpan={2} className="relative overflow-visible p-0">
         <div className="mx-0.5 grid h-8 grid-cols-[minmax(0,1fr)_4rem] items-center">
           <div className="relative h-full min-w-0 overflow-hidden rounded-r-md">
             <span
@@ -177,6 +168,22 @@ function BreakdownRow({ row, label, prefix, maxVisits, maxRevenue }: { row: AppS
             </div>
           </div>
           <span className="pr-2 text-right font-mono text-xs font-medium tabular-nums text-black/70">{formatInt(row.visits)}</span>
+        </div>
+        <div className="pointer-events-none absolute right-2 top-1/2 z-50 hidden min-w-48 -translate-y-1/2 gap-2 rounded-lg border border-black/20 bg-white px-2.5 py-2 text-xs shadow-xl group-hover/row:grid group-focus/row:grid">
+          <div className="font-medium text-black">Details</div>
+          <div className="grid gap-1.5">
+            {tooltipMetrics.map((metric) => (
+              <div key={metric.label} className="flex items-center justify-between gap-6 text-black/55">
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: metric.color }} />
+                  <span>{metric.label}</span>
+                </span>
+                <span className="font-mono font-medium tabular-nums text-black">
+                  {formatInt(metric.value)} / {formatPercent(ratio(metric.value, row.visits))}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </td>
     </tr>

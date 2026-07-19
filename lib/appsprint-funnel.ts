@@ -51,8 +51,6 @@ export type AppSprintFunnelAnalytics = {
     bookCallStarted: number;
     asoTrials: number;
     asoPaid: number;
-    asoMaturedTrials: number;
-    asoMaturedPaid: number;
   }[];
   interval?: {
     surface: AppSprintFunnelSurface;
