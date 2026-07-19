@@ -4,10 +4,12 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
-type Period = "day" | "week" | "month" | "all";
+type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
 const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: "day", label: "Today" },
+  { value: "yesterday", label: "Yesterday" },
+  { value: "3days", label: "Last 3 days" },
   { value: "week", label: "This week" },
   { value: "month", label: "This month" },
   { value: "all", label: "All time" },

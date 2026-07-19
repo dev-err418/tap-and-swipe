@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 
 const isDev = process.env.NODE_ENV === "development";
 
-type Period = "day" | "week" | "month" | "all";
+type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 type Tab = "analytics" | "appsprint";
 
 const TAB_LABELS: Record<Tab, string> = {
@@ -32,6 +32,8 @@ const TAB_LABELS: Record<Tab, string> = {
 
 const PERIOD_SUMMARY_LABELS: Record<Period, string> = {
   day: "today",
+  yesterday: "yesterday",
+  "3days": "in the last 3 days",
   week: "this week",
   month: "this month",
   all: "across all time",
@@ -119,19 +121,37 @@ type WebsiteTrendPoint = {
   conversions: number;
 };
 
-function getDateFilter(period: Period) {
-  if (period === "all") return new Date("2000-01-01");
-
+function getDateRange(period: Period) {
   const now = new Date();
+  if (period === "all") {
+    return { since: new Date("2000-01-01"), before: now };
+  }
   if (period === "day") {
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return {
+      since: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+      before: now,
+    };
+  }
+  if (period === "yesterday") {
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return { since: yesterday, before: today };
+  }
+  if (period === "3days") {
+    const since = new Date(now);
+    since.setDate(since.getDate() - 3);
+    return { since, before: now };
   }
   if (period === "week") {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     date.setDate(date.getDate() - date.getDay());
-    return date;
+    return { since: date, before: now };
   }
-  return new Date(now.getFullYear(), now.getMonth(), 1);
+  return {
+    since: new Date(now.getFullYear(), now.getMonth(), 1),
+    before: now,
+  };
 }
 
 function normalizeTab(value: string | undefined): Tab {
@@ -140,7 +160,13 @@ function normalizeTab(value: string | undefined): Tab {
 }
 
 function normalizePeriod(value: string | undefined): Period {
-  return value === "day" || value === "month" || value === "all" ? value : "week";
+  return value === "day" ||
+    value === "yesterday" ||
+    value === "3days" ||
+    value === "month" ||
+    value === "all"
+    ? value
+    : "week";
 }
 
 export default async function AnalyticsPage({
@@ -164,7 +190,7 @@ export default async function AnalyticsPage({
   }
 
   const period = normalizePeriod(params.period);
-  const since = getDateFilter(period);
+  const { since, before } = getDateRange(period);
   const isAppSprintDetail = params.site === "appsprint";
 
   return (
@@ -175,9 +201,9 @@ export default async function AnalyticsPage({
         </div>
 
         {isAppSprintDetail ? (
-          <AppSprintWebsiteDetail period={period} since={since} />
+          <AppSprintWebsiteDetail period={period} since={since} before={before} />
         ) : (
-          <WebsiteDirectory period={period} since={since} />
+          <WebsiteDirectory period={period} since={since} before={before} />
         )}
       </div>
     </main>
@@ -226,10 +252,18 @@ function AnalyticsTabs({
   );
 }
 
-async function WebsiteDirectory({ period, since }: { period: Period; since: Date }) {
+async function WebsiteDirectory({
+  period,
+  since,
+  before,
+}: {
+  period: Period;
+  since: Date;
+  before: Date;
+}) {
   const [metrics, trend] = await Promise.all([
-    fetchWebsiteMetrics(since),
-    fetchWebsiteTrend(period, since),
+    fetchWebsiteMetrics(since, before),
+    fetchWebsiteTrend(period, since, before),
   ]);
 
   return (
@@ -380,17 +414,25 @@ function AppSprintMark() {
   );
 }
 
-async function AppSprintWebsiteDetail({ period, since }: { period: Period; since: Date }) {
+async function AppSprintWebsiteDetail({
+  period,
+  since,
+  before,
+}: {
+  period: Period;
+  since: Date;
+  before: Date;
+}) {
   const [metrics, funnelCounts, countries, sources, recentEvents, inviteLinks] =
     await Promise.all([
-      fetchWebsiteMetrics(since),
-      fetchFunnelCounts(since),
-      fetchCountries(since),
-      fetchSources(since),
+      fetchWebsiteMetrics(since, before),
+      fetchFunnelCounts(since, before),
+      fetchCountries(since, before),
+      fetchSources(since, before),
       prisma.pageEvent.findMany({
         where: {
           product: { in: [...APPSPRINT_PRODUCTS] },
-          createdAt: { gte: since },
+          createdAt: { gte: since, lt: before },
         },
         orderBy: { createdAt: "desc" },
         take: 30,
@@ -814,7 +856,7 @@ function AppSprintOperations() {
   );
 }
 
-async function fetchWebsiteMetrics(since: Date) {
+async function fetchWebsiteMetrics(since: Date, before: Date) {
   const [row] = await prisma.$queryRaw<[WebsiteMetricsRow]>`
     SELECT
       COUNT(*)::int AS events,
@@ -826,6 +868,7 @@ async function fetchWebsiteMetrics(since: Date) {
     FROM "PageEvent"
     WHERE product IN ('home', 'quiz', 'coaching', 'community', 'starter', 'aso', 'aso-solo', 'aso-pro', 'bundle-aso', 'bundle-community')
       AND "createdAt" >= ${since}
+      AND "createdAt" < ${before}
   `;
 
   return row ?? {
@@ -838,8 +881,8 @@ async function fetchWebsiteMetrics(since: Date) {
   };
 }
 
-async function fetchWebsiteTrend(period: Period, since: Date) {
-  const bucket = period === "day" ? "hour" : period === "all" ? "month" : "day";
+async function fetchWebsiteTrend(period: Period, since: Date, before: Date) {
+  const bucket = period === "day" || period === "yesterday" ? "hour" : period === "all" ? "month" : "day";
 
   return prisma.$queryRaw<WebsiteTrendPoint[]>`
     SELECT
@@ -849,12 +892,13 @@ async function fetchWebsiteTrend(period: Period, since: Date) {
     FROM "PageEvent"
     WHERE product IN ('home', 'quiz', 'coaching', 'community', 'starter', 'aso', 'aso-solo', 'aso-pro', 'bundle-aso', 'bundle-community')
       AND "createdAt" >= ${since}
+      AND "createdAt" < ${before}
     GROUP BY bucket
     ORDER BY bucket
   `;
 }
 
-async function fetchFunnelCounts(since: Date) {
+async function fetchFunnelCounts(since: Date, before: Date) {
   const [row] = await prisma.$queryRaw<[FunnelCountsRow]>`
     SELECT
       COUNT(*) FILTER (WHERE product = 'home' AND type = 'page_view')::int AS home_views,
@@ -872,6 +916,7 @@ async function fetchFunnelCounts(since: Date) {
       COUNT(*) FILTER (WHERE product IN ('aso', 'aso-solo', 'aso-pro', 'bundle-aso') AND type = 'trial_started')::int AS aso_trials
     FROM "PageEvent"
     WHERE "createdAt" >= ${since}
+      AND "createdAt" < ${before}
   `;
 
   return row ?? {
@@ -891,7 +936,7 @@ async function fetchFunnelCounts(since: Date) {
   };
 }
 
-async function fetchCountries(since: Date) {
+async function fetchCountries(since: Date, before: Date) {
   return prisma.$queryRaw<CountryRow[]>`
     SELECT
       country,
@@ -900,13 +945,14 @@ async function fetchCountries(since: Date) {
     FROM "PageEvent"
     WHERE product IN ('home', 'quiz', 'coaching', 'community', 'starter', 'aso', 'aso-solo', 'aso-pro', 'bundle-aso', 'bundle-community')
       AND "createdAt" >= ${since}
+      AND "createdAt" < ${before}
     GROUP BY country
     ORDER BY visitors DESC, events DESC
     LIMIT 12
   `;
 }
 
-async function fetchSources(since: Date) {
+async function fetchSources(since: Date, before: Date) {
   return prisma.$queryRaw<SourceRow[]>`
     SELECT
       referrer,
@@ -916,6 +962,7 @@ async function fetchSources(since: Date) {
     WHERE product IN ('home', 'quiz', 'coaching', 'community', 'starter', 'aso', 'aso-solo', 'aso-pro', 'bundle-aso', 'bundle-community')
       AND type = 'page_view'
       AND "createdAt" >= ${since}
+      AND "createdAt" < ${before}
     GROUP BY referrer
     ORDER BY visitors DESC, views DESC
     LIMIT 12
