@@ -78,9 +78,7 @@ export type AppSprintFunnelAnalytics = {
 export async function getAppSprintFunnelAnalytics(period?: string) {
   const baseUrl = (
     process.env.APPSPRINT_ANALYTICS_URL ??
-    (process.env.NODE_ENV === "development"
-      ? "http://localhost:3001"
-      : "https://appsprint.app")
+    "https://appsprint.app"
   ).replace(/\/$/, "");
   const secret = process.env.APPSPRINT_ANALYTICS_SECRET?.trim();
   const query = period ? `?period=${encodeURIComponent(period)}` : "";

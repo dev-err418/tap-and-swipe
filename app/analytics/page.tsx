@@ -30,8 +30,8 @@ const PERIOD_SUMMARY_LABELS: Record<Period, string> = {
   day: "today",
   yesterday: "yesterday",
   "3days": "in the last 3 days",
-  week: "this week",
-  month: "this month",
+  week: "last week",
+  month: "last month",
   all: "across all time",
 };
 
@@ -321,7 +321,7 @@ async function AppSprintWebsiteDetail({
 }: {
   period: Period;
 }) {
-  const analytics = await getAppSprintFunnelAnalytics();
+  const analytics = await getAppSprintFunnelAnalytics(period);
 
   return (
     <div className="space-y-10">
@@ -354,7 +354,7 @@ async function AppSprintWebsiteDetail({
         <div className="rounded-lg border border-black/10 bg-white px-6 py-16 text-center">
           <p className="font-medium">AppSprint analytics could not be loaded.</p>
           <p className="mt-1 text-sm text-black/50">
-            Start appsprint-web on port 3001 in development, or configure the AppSprint analytics URL and shared secret in production.
+            Check the AppSprint analytics endpoint and shared-secret configuration.
           </p>
         </div>
       )}

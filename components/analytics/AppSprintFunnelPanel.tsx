@@ -7,6 +7,7 @@ import {
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 
 const PREVIEW_ROWS = 10;
+const POSTBACK_TINT_ORANGE = "#f97316";
 
 export default function AppSprintFunnelPanel({ analytics }: { analytics: AppSprintFunnelAnalytics }) {
   const daily = analytics.daily.filter((row) => row.surface === "aso");
@@ -122,10 +123,28 @@ function BreakdownTable({ rows, label, getLabel, getPrefix, expandable = false }
 function BreakdownRow({ row, label, prefix, maxVisits, maxRevenue }: { row: AppSprintFunnelBreakdownRow; label: string; prefix?: string; maxVisits: number; maxRevenue: number }) {
   const visitWidth = maxVisits > 0 ? (row.visits / maxVisits) * 62 : 0;
   const revenueWidth = maxRevenue > 0 ? (row.revenue / maxRevenue) * 38 : 0;
-  const background = `linear-gradient(to right, color-mix(in srgb, oklch(0.852 0.199 91.936) 34%, transparent) 0 ${visitWidth}%, color-mix(in srgb, oklch(0.852 0.199 91.936) 64%, transparent) ${visitWidth}% ${visitWidth + revenueWidth}%, transparent ${visitWidth + revenueWidth}% 100%)`;
+  const barWidth = Math.min(100, visitWidth + revenueWidth);
   return (
     <tr className="group relative h-9 border-0" title={`Checkout ${formatInt(row.asoCheckouts)} · Trial ${formatInt(row.asoTrials)} · Paid ${formatInt(row.asoPaid)} · Revenue ${formatCurrency(row.revenue)}`}>
-      <td colSpan={2} className="p-0"><div className="mx-0.5 grid h-8 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-r-md px-2" style={{ background }}><div className="flex min-w-0 items-center gap-2 font-medium"><span className="flex size-5 shrink-0 items-center justify-center">{prefix ?? <ArrowDownRight className="size-4" />}</span><span className="truncate">{label}</span></div><span className="font-mono text-xs font-medium tabular-nums text-black/70">{formatInt(row.visits)}</span></div></td>
+      <td colSpan={2} className="p-0">
+        <div className="relative mx-0.5 grid h-8 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-r-md px-2">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 rounded-r-md"
+            style={{
+              width: `${barWidth}%`,
+              backgroundColor: `color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, white 30%)`,
+              backgroundImage: `linear-gradient(to bottom, color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, white 15%), ${POSTBACK_TINT_ORANGE})`,
+              boxShadow: `inset 0 1px 0 0 color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, white 30%), 0 0 0 1px color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, black 10%), 0 1px 2px rgb(0 0 0 / 5%)`,
+            }}
+          />
+          <div className="relative z-10 flex min-w-0 items-center gap-2 font-medium text-white">
+            <span className="flex size-5 shrink-0 items-center justify-center">{prefix ?? <ArrowDownRight className="size-4" />}</span>
+            <span className="truncate">{label}</span>
+          </div>
+          <span className="relative z-10 font-mono text-xs font-medium tabular-nums text-black/70">{formatInt(row.visits)}</span>
+        </div>
+      </td>
     </tr>
   );
 }

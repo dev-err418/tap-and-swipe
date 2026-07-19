@@ -10,8 +10,8 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: "day", label: "Today" },
   { value: "yesterday", label: "Yesterday" },
   { value: "3days", label: "Last 3 days" },
-  { value: "week", label: "This week" },
-  { value: "month", label: "This month" },
+  { value: "week", label: "Last week" },
+  { value: "month", label: "Last month" },
   { value: "all", label: "All time" },
 ];
 
