@@ -35,7 +35,8 @@ export async function getMobileAppAnalytics(period: Period) {
 
   return results.flatMap((result) => {
     if (result.status === "fulfilled") return [result.value];
-    console.error("tap_and_swipe.mobile_app_analytics_failed", {
+    const log = process.env.NODE_ENV === "development" ? console.warn : console.error;
+    log("tap_and_swipe.mobile_app_analytics_failed", {
       error: result.reason instanceof Error ? result.reason.message : String(result.reason),
     });
     return [];

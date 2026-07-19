@@ -100,7 +100,8 @@ export async function getAppSprintFunnelAnalytics(period?: string) {
 
     return (await response.json()) as AppSprintFunnelAnalytics;
   } catch (error) {
-    console.error("tap_and_swipe.appsprint_funnel_failed", {
+    const log = process.env.NODE_ENV === "development" ? console.warn : console.error;
+    log("tap_and_swipe.appsprint_funnel_failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return null;
