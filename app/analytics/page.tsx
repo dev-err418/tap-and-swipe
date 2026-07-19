@@ -572,7 +572,7 @@ function WebsiteFavicon({
           alt=""
           width={imageSize}
           height={imageSize}
-          className="size-3/4 invert"
+          className="size-full invert"
         />
       </span>
     );
