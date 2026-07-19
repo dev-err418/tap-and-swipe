@@ -9,6 +9,7 @@ import {
   type AppSprintFunnelAnalytics,
 } from "@/lib/appsprint-funnel";
 import { getPostbackFunnelAnalytics } from "@/lib/postback-funnel";
+import { getCommunityFunnelAnalytics } from "@/lib/community-funnel";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
 import AppSprintFunnelPanel from "@/components/analytics/AppSprintFunnelPanel";
 import LicensesModal from "@/components/aso-debug/LicensesModal";
@@ -24,7 +25,7 @@ const isDev = process.env.NODE_ENV === "development";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 type Tab = "analytics" | "appsprint";
-type WebsiteSite = "appsprint" | "postback";
+type WebsiteSite = "appsprint" | "postback" | "community";
 
 const TAB_LABELS: Record<Tab, string> = {
   analytics: "Analytics",
@@ -87,7 +88,7 @@ export default async function AnalyticsPage({
   }
 
   const period = normalizePeriod(params.period);
-  const detailSite = params.site === "appsprint" || params.site === "postback"
+  const detailSite = params.site === "appsprint" || params.site === "postback" || params.site === "community"
     ? params.site
     : null;
 
@@ -155,9 +156,10 @@ async function WebsiteDirectory({
 }: {
   period: Period;
 }) {
-  const [appSprintAnalytics, postbackAnalytics] = await Promise.all([
+  const [appSprintAnalytics, postbackAnalytics, communityAnalytics] = await Promise.all([
     getAppSprintFunnelAnalytics(period),
     getPostbackFunnelAnalytics(period),
+    getCommunityFunnelAnalytics(period),
   ]);
   const websites = [
     appSprintAnalytics
@@ -166,6 +168,7 @@ async function WebsiteDirectory({
     postbackAnalytics
       ? websiteData("postback", "postback.sh", postbackAnalytics)
       : null,
+    websiteData("community", "community", communityAnalytics),
   ].filter((website) => website !== null);
 
   if (websites.length === 0) {
@@ -176,7 +179,7 @@ async function WebsiteDirectory({
           <AnalyticsPeriodSelect period={period} />
         </div>
         <div className="rounded-[24px] border border-black/[0.07] bg-white px-6 py-14 text-center text-sm text-black/45 shadow-sm">
-          Check the AppSprint and Postback analytics endpoints and shared-secret configuration.
+          Check the AppSprint and Postback analytics endpoints and database configuration.
         </div>
       </div>
     );
@@ -380,8 +383,14 @@ async function WebsiteDetail({
 }) {
   const analytics = site === "appsprint"
     ? await getAppSprintFunnelAnalytics(period)
-    : await getPostbackFunnelAnalytics(period);
-  const domain = site === "appsprint" ? "appsprint.app" : "postback.sh";
+    : site === "postback"
+      ? await getPostbackFunnelAnalytics(period)
+      : await getCommunityFunnelAnalytics(period);
+  const domain = site === "appsprint"
+    ? "appsprint.app"
+    : site === "postback"
+      ? "postback.sh"
+      : "community";
   const daily = analytics?.daily.filter((row) => row.surface === "aso") ?? [];
   const visitors = analytics?.totals.asoVisits ?? 0;
   const revenueCents = daily.reduce((sum, row) => sum + row.revenue, 0) * 100;
@@ -480,9 +489,9 @@ function formatNumber(value: number | bigint) {
 }
 
 function websiteFaviconUrl(domain: string) {
-  return domain === "appsprint.app"
-    ? "https://appsprint.app/app-icon.png"
-    : "https://postback.sh/icon.png";
+  if (domain === "appsprint.app") return "https://appsprint.app/app-icon.png";
+  if (domain === "postback.sh") return "https://postback.sh/icon.png";
+  return "/icon.png";
 }
 
 function WebsiteFavicon({
@@ -499,7 +508,7 @@ function WebsiteFavicon({
   if (isPostback) {
     return (
       <span
-        className={`flex shrink-0 items-center justify-center bg-black ${sizeClass}`}
+        className={`flex shrink-0 items-center justify-center bg-black shadow-[0_4px_10px_rgba(0,0,0,0.16)] ${sizeClass}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -513,6 +522,23 @@ function WebsiteFavicon({
     );
   }
 
+  if (domain === "community") {
+    return (
+      <span
+        className={`block shrink-0 overflow-hidden shadow-[0_4px_10px_rgba(0,0,0,0.16)] ${sizeClass}`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={websiteFaviconUrl(domain)}
+          alt=""
+          width={imageSize}
+          height={imageSize}
+          className="size-full invert"
+        />
+      </span>
+    );
+  }
+
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -520,7 +546,7 @@ function WebsiteFavicon({
       alt=""
       width={imageSize}
       height={imageSize}
-      className={`shrink-0 ${sizeClass}`}
+      className={`shrink-0 shadow-[0_4px_10px_rgba(0,0,0,0.16)] ${sizeClass}`}
     />
   );
 }

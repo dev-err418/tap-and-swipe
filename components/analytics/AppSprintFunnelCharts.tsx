@@ -71,7 +71,7 @@ function TrendTooltip({ active, payload, label }: TooltipProps) {
     <TooltipShell label={formatLongDate(String(label))}>
       <TooltipRow color={VISIT_COLOR} label="Visitors" value={formatInteger(row.visits)} />
       <TooltipRow color={REVENUE_COLOR} label="Revenue" value={formatCurrency(row.revenue)} />
-      <TooltipRow color="oklch(0.828 0.189 84.429)" label="Trial starts" value={formatInteger(row.trialStarts)} />
+      {row.trialStarts > 0 ? <TooltipRow color="oklch(0.828 0.189 84.429)" label="Trial starts" value={formatInteger(row.trialStarts)} /> : null}
     </TooltipShell>
   );
 }

@@ -1,9 +1,8 @@
 import { headers, cookies } from "next/headers";
-import { permanentRedirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
-
-const WHOP_URL = "https://whop.com/appsprint-community/app-sprint-access/";
+import { getWhop, WHOP_COMMUNITY_PLAN_ID } from "@/lib/whop";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +12,15 @@ export default async function CommunityRedirect({
   searchParams: Promise<{ ref?: string; utm_code?: string }>;
 }) {
   const [h, c, params] = await Promise.all([headers(), cookies(), searchParams]);
+  const existingVisitorId = c.get("visitor_id")?.value;
+  const visitorId = existingVisitorId ?? randomUUID();
+  const sessionId = randomUUID();
+  const country = h.get("cf-ipcountry") || null;
+  const ref = params.utm_code ?? params.ref ?? null;
+  const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const checkoutRedirectBase = configuredAppUrl.startsWith("https://")
+    ? configuredAppUrl.replace(/\/$/, "")
+    : "https://tap-and-swipe.com";
 
   let referrer: string | null = null;
   const referer = h.get("referer");
@@ -22,19 +30,53 @@ export default async function CommunityRedirect({
     } catch {}
   }
 
-  await prisma.pageEvent
-    .create({
+  const checkout = await getWhop().checkoutConfigurations.create({
+    plan_id: WHOP_COMMUNITY_PLAN_ID,
+    redirect_url: `${checkoutRedirectBase}/join-discord`,
+    metadata: {
+      visitorId,
+      country: country ?? "",
+      tier: "full",
+      ...(ref && { ref }),
+      ...(referrer && { referrer }),
+    },
+  });
+  const checkoutUrl = checkout.purchase_url.startsWith("http")
+    ? checkout.purchase_url
+    : `https://whop.com${checkout.purchase_url}`;
+
+  await Promise.all([
+    prisma.pageEvent.create({
       data: {
         product: "community",
         type: "page_view",
-        visitorId: c.get("visitor_id")?.value ?? randomUUID(),
-        sessionId: randomUUID(),
-        country: h.get("cf-ipcountry") || null,
+        visitorId,
+        sessionId,
+        country,
         referrer,
-        ref: params.utm_code ?? params.ref ?? null,
+        ref,
       },
-    })
-    .catch(() => {});
+    }),
+    prisma.pageEvent.upsert({
+      where: {
+        sessionId_type_product: {
+          sessionId: checkout.id,
+          type: "checkout_shown",
+          product: "community",
+        },
+      },
+      create: {
+        product: "community",
+        type: "checkout_shown",
+        visitorId,
+        sessionId: checkout.id,
+        country,
+        referrer,
+        ref,
+      },
+      update: {},
+    }),
+  ]).catch((error) => console.error("[community] analytics event failed", error));
 
-  permanentRedirect(WHOP_URL);
+  redirect(checkoutUrl);
 }

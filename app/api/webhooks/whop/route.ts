@@ -14,6 +14,7 @@ import {
 } from "@/lib/aso-db";
 import { sendLicenseKeyEmail } from "@/lib/aso-email";
 import { grantAccess } from "@/lib/grant-access";
+import { recordCommunityWhopPayment } from "@/lib/community-payment-analytics";
 
 type WhopWebhookData = ReturnType<ReturnType<typeof getWhop>["webhooks"]["unwrap"]>;
 type WhopWebhookSource = "default" | "community";
@@ -74,6 +75,54 @@ function extractStringId(value: unknown): string | undefined {
     return (value as Record<string, string>).id;
   }
   return undefined;
+}
+
+function extractNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function paymentAmount(data: Record<string, unknown>) {
+  const payment = data.payment as Record<string, unknown> | undefined;
+  for (const value of [
+    data.usd_total,
+    data.total,
+    data.final_amount,
+    data.subtotal,
+    payment?.usd_total,
+    payment?.total,
+  ]) {
+    const amount = extractNumber(value);
+    if (amount !== null) return amount;
+  }
+  return null;
+}
+
+function paymentCurrency(data: Record<string, unknown>) {
+  const payment = data.payment as Record<string, unknown> | undefined;
+  if (extractNumber(data.usd_total) !== null || extractNumber(payment?.usd_total) !== null) {
+    return "usd";
+  }
+  return typeof data.currency === "string"
+    ? data.currency
+    : typeof data.currency_code === "string"
+      ? data.currency_code
+      : typeof payment?.currency === "string"
+        ? payment.currency
+        : "usd";
+}
+
+function paymentOccurredAt(data: Record<string, unknown>) {
+  for (const value of [data.paid_at, data.created_at, data.updated_at]) {
+    if (typeof value !== "string") continue;
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  return new Date();
 }
 
 function extractPlanId(d: Record<string, unknown>): string | undefined {
@@ -279,7 +328,8 @@ export async function POST(request: NextRequest) {
     const membershipFromApi = resolvedMembership.data;
     const visitorId =
       extractVisitorId(data) ??
-      (membershipForMeta ? extractVisitorId(membershipForMeta) : null);
+      (membershipForMeta ? extractVisitorId(membershipForMeta) : null) ??
+      (membershipFromApi ? extractVisitorId(membershipFromApi) : null);
     // Resolve tier in priority order:
     //   1. metadata.tier from our /api/checkout flow (top-level or nested under membership)
     //   2. plan.id from the webhook payload (covers direct-on-Whop signups)
@@ -464,6 +514,20 @@ export async function POST(request: NextRequest) {
 
       case "payment.succeeded": {
         const membershipId = membershipIdForLookup;
+        const paymentId = extractStringId(data.id);
+        const amount = paymentAmount(data);
+        if (paymentId && amount !== null && amount > 0) {
+          await recordCommunityWhopPayment({
+            paymentId,
+            membershipId,
+            visitorId,
+            amountUsd: amount,
+            currency: paymentCurrency(data),
+            billingReason:
+              typeof data.billing_reason === "string" ? data.billing_reason : null,
+            occurredAt: paymentOccurredAt(data),
+          });
+        }
         if (membershipId) {
           await reactivateAsoLicensesByWhop(membershipId);
 
