@@ -20,8 +20,9 @@ export default function InviteModal({ initialInvites }: { initialInvites: Invite
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="px-4 py-2 rounded-xl bg-[#f4cf8f] text-[#2a2725] text-sm font-medium hover:bg-[#e8c27f] transition-colors"
+        className="inline-flex h-10 items-center justify-center rounded-[13px] border border-black/10 bg-white px-3 text-sm font-medium text-black shadow-sm transition-all hover:bg-black/[0.04] active:translate-y-px"
       >
         Invite links
       </button>
