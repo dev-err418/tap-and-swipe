@@ -10,6 +10,10 @@ import {
 } from "@/lib/appsprint-funnel";
 import { getPostbackFunnelAnalytics } from "@/lib/postback-funnel";
 import { getCommunityFunnelAnalytics } from "@/lib/community-funnel";
+import {
+  getMobileAppAnalytics,
+  type MobileAppAnalytics,
+} from "@/lib/mobile-app-analytics";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
 import AppSprintFunnelPanel from "@/components/analytics/AppSprintFunnelPanel";
 import LicensesModal from "@/components/aso-debug/LicensesModal";
@@ -156,10 +160,11 @@ async function WebsiteDirectory({
 }: {
   period: Period;
 }) {
-  const [appSprintAnalytics, postbackAnalytics, communityAnalytics] = await Promise.all([
+  const [appSprintAnalytics, postbackAnalytics, communityAnalytics, mobileApps] = await Promise.all([
     getAppSprintFunnelAnalytics(period),
     getPostbackFunnelAnalytics(period),
     getCommunityFunnelAnalytics(period),
+    getMobileAppAnalytics(period),
   ]);
   const websites = [
     appSprintAnalytics
@@ -187,15 +192,23 @@ async function WebsiteDirectory({
 
   const metrics: WebsiteMetricsRow = {
     visitors: websites.reduce((sum, website) => sum + website.metrics.visitors, 0),
-    revenue_cents: websites.reduce((sum, website) => sum + website.metrics.revenue_cents, 0),
+    revenue_cents:
+      websites.reduce((sum, website) => sum + website.metrics.revenue_cents, 0) +
+      mobileApps.reduce((sum, app) => sum + app.revenueCents, 0),
   };
+  const downloads = mobileApps.reduce((sum, app) => sum + app.downloads, 0);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <p className="min-w-0 text-lg text-black/55 sm:text-xl">
           Hey Arthur, you got{" "}
-          <strong className="font-semibold text-black">{formatNumber(metrics.visitors)} visitors</strong>{" "}
+          <strong className="font-semibold text-black">{formatNumber(metrics.visitors)} visitors</strong>
+          {mobileApps.length > 0 ? (
+            <>
+              , <strong className="font-semibold text-black">{formatNumber(downloads)} downloads</strong>,{" "}
+            </>
+          ) : " "}
           and made{" "}
           <strong className="font-semibold text-black">{formatRevenue(metrics.revenue_cents)}</strong>{" "}
           {PERIOD_SUMMARY_LABELS[period]}.
@@ -206,6 +219,9 @@ async function WebsiteDirectory({
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {websites.map((website) => (
           <WebsiteCard key={website.site} period={period} {...website} />
+        ))}
+        {mobileApps.map((app) => (
+          <MobileAppCard key={app.id} app={app} />
         ))}
       </div>
     </div>
@@ -277,10 +293,50 @@ function WebsiteCard({
   );
 }
 
+function MobileAppCard({ app }: { app: MobileAppAnalytics }) {
+  const points: WebsiteTrendPoint[] = app.trend.map((point) => ({
+    bucket: point.bucket,
+    visitors: point.downloads,
+    revenue: point.revenue,
+  }));
+
+  return (
+    <div className="overflow-hidden rounded-[24px] border border-black/[0.07] bg-white p-6 shadow-sm">
+      <div className="flex items-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={app.iconUrl}
+          alt=""
+          width={32}
+          height={32}
+          className="size-8 shrink-0 rounded-[8px] shadow-[0_4px_10px_rgba(0,0,0,0.16)]"
+        />
+        <h2 className="truncate text-xl font-semibold tracking-tight">{app.name}</h2>
+      </div>
+
+      <WebsiteMiniChart points={points} ariaLabel="New user trend line and net revenue bars" />
+
+      <p className="text-base text-black/55">
+        <strong className="font-bold text-black">{formatCompactNumber(app.downloads)}</strong>{" "}
+        downloads
+        <span className="mx-2 text-black/35">•</span>
+        <strong className="font-bold text-black">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
+        net revenue
+      </p>
+    </div>
+  );
+}
+
 const VISITOR_CHART_COLOR = "oklch(0.62 0.14 250)";
 const POSTBACK_ORANGE = "#f97316";
 
-function WebsiteMiniChart({ points }: { points: WebsiteTrendPoint[] }) {
+function WebsiteMiniChart({
+  points,
+  ariaLabel = "Visitor trend line and revenue bars",
+}: {
+  points: WebsiteTrendPoint[];
+  ariaLabel?: string;
+}) {
   const width = 520;
   const height = 150;
   const left = 8;
@@ -308,7 +364,7 @@ function WebsiteMiniChart({ points }: { points: WebsiteTrendPoint[] }) {
       viewBox={`0 0 ${width} ${height}`}
       className="pointer-events-none my-3 h-32 w-full overflow-visible"
       role="img"
-      aria-label="Visitor trend line and revenue bars"
+      aria-label={ariaLabel}
     >
       <defs>
         <linearGradient id="postback-orange-glass" x1="0" y1="0" x2="0" y2="1">
