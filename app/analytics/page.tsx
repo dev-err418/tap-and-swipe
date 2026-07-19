@@ -307,9 +307,9 @@ function MobileAppCard({ app }: { app: MobileAppAnalytics }) {
         <img
           src={app.iconUrl}
           alt=""
-          width={32}
-          height={32}
-          className="size-8 shrink-0 rounded-[8px] shadow-[0_4px_10px_rgba(0,0,0,0.16)]"
+          width={24}
+          height={24}
+          className="size-6 shrink-0 rounded-md shadow-[0_4px_10px_rgba(0,0,0,0.16)]"
         />
         <h2 className="truncate text-xl font-semibold tracking-tight">{app.name}</h2>
       </div>
