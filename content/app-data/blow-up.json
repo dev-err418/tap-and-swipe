@@ -4,7 +4,13 @@
     "title": "Blow Up: Go Viral With AI",
     "subtitle": "AI video ideas & analysis",
     "icon": "/apps/blow-up/icon-ios.webp",
-    "screenshots": [],
+    "screenshots": [
+      "/apps/blow-up/ios-1.webp",
+      "/apps/blow-up/ios-2.webp",
+      "/apps/blow-up/ios-3.webp",
+      "/apps/blow-up/ios-4.webp",
+      "/apps/blow-up/ios-5.webp"
+    ],
     "rating": 4.40697,
     "ratingCount": 34958,
     "price": "Free",
