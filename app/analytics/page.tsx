@@ -262,7 +262,7 @@ function WebsiteCard({
             alt=""
             width="24"
             height="24"
-            className="size-6 shrink-0 rounded-md"
+            className={`size-6 shrink-0 rounded-md ${domain === "postback.sh" ? "invert" : ""}`}
           />
           <h2 className="truncate text-xl font-semibold tracking-tight">{domain}</h2>
         </div>
@@ -412,7 +412,7 @@ async function WebsiteDetail({
               alt=""
               width="40"
               height="40"
-              className="size-10 shrink-0 rounded-[10px]"
+              className={`size-10 shrink-0 rounded-[10px] ${domain === "postback.sh" ? "invert" : ""}`}
             />
             <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
               <strong className="font-semibold text-black">{domain}</strong> got{" "}
