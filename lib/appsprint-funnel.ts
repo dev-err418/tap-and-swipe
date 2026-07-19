@@ -54,6 +54,13 @@ export type AppSprintFunnelAnalytics = {
     asoMaturedTrials: number;
     asoMaturedPaid: number;
   }[];
+  interval?: {
+    surface: AppSprintFunnelSurface;
+    bucket: string;
+    visits: number;
+    revenue: number;
+    asoTrials: number;
+  }[];
   recentConversions: {
     id: string;
     occurredAt: string;

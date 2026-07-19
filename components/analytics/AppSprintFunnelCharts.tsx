@@ -12,7 +12,7 @@ import {
 } from "recharts";
 
 const VISIT_COLOR = "oklch(0.62 0.14 250)";
-const REVENUE_COLOR = "oklch(0.852 0.199 91.936)";
+const REVENUE_COLOR = "#f97316";
 const RATE_COLOR = "oklch(0.769 0.188 70.08)";
 
 export type FunnelTrendPoint = {
@@ -38,12 +38,31 @@ export function VisitorsRevenueChart({ data }: { data: FunnelTrendPoint[] }) {
       <div className="h-72 w-full text-xs">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 10, bottom: 4, left: 0 }}>
+            <defs>
+              <linearGradient id="postback-revenue-glass" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor={`color-mix(in oklch, ${REVENUE_COLOR}, white 15%)`} />
+                <stop offset="1" stopColor={REVENUE_COLOR} />
+              </linearGradient>
+              <filter id="postback-revenue-shadow" x="-10%" y="-8%" width="120%" height="125%">
+                <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity="0.08" />
+              </filter>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,.12)" />
             <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tickFormatter={formatChartDate} />
             <YAxis yAxisId="visits" tickLine={false} axisLine={false} width={44} tickFormatter={formatCompactNumber} />
             <YAxis yAxisId="revenue" orientation="right" tickLine={false} axisLine={false} width={50} tickFormatter={formatCompactCurrency} />
             <Tooltip content={<TrendTooltip />} cursor={{ stroke: "rgba(0,0,0,.18)", strokeDasharray: "3 3" }} />
-            <Bar yAxisId="revenue" dataKey="revenue" name="Revenue" fill={REVENUE_COLOR} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+            <Bar
+              yAxisId="revenue"
+              dataKey="revenue"
+              name="Revenue"
+              fill="url(#postback-revenue-glass)"
+              stroke={`color-mix(in oklch, ${REVENUE_COLOR}, black 10%)`}
+              strokeWidth={1}
+              radius={[4, 4, 0, 0]}
+              filter="url(#postback-revenue-shadow)"
+              isAnimationActive={false}
+            />
             <Line yAxisId="visits" type="monotone" dataKey="visits" name="Visitors" stroke={VISIT_COLOR} strokeWidth={1.9} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
@@ -118,12 +137,21 @@ function ChartEmpty({ children, small = false }: { children: React.ReactNode; sm
 }
 
 function formatChartDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${value}T00:00:00Z`));
+  const includesTime = value.includes("T");
+  return new Intl.DateTimeFormat("en-US", includesTime
+    ? { month: "short", day: "numeric", hour: "numeric", timeZone: "UTC" }
+    : { month: "short", day: "numeric", timeZone: "UTC" }
+  ).format(parseChartDate(value));
 }
 
 function formatLongDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(`${value}T00:00:00Z`));
+  return new Intl.DateTimeFormat("en-US", value.includes("T")
+    ? { month: "short", day: "numeric", year: "numeric", hour: "numeric", timeZone: "UTC" }
+    : { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }
+  ).format(parseChartDate(value));
 }
+
+function parseChartDate(value: string) { return new Date(value.includes("T") ? value : `${value}T00:00:00Z`); }
 
 function formatInteger(value: number) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);

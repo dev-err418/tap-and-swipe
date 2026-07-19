@@ -4,14 +4,14 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const DASHBOARD_CARD_ROOT_CLASS =
   "min-w-0 overflow-hidden rounded-lg border bg-transparent pt-4 pb-0 shadow-none ring-0";
-export const DASHBOARD_CARD_CONTENT_CLASS = "min-w-0 px-4";
+export const DASHBOARD_CARD_CONTENT_CLASS = "flex min-w-0 flex-1 flex-col px-4";
 export const DASHBOARD_CARD_HEADER_CLASS =
   "-mx-4 -mt-4 rounded-t-lg bg-muted/50 px-4 pt-3 pb-2.5";
 export const DASHBOARD_CARD_TITLE_CLASS =
   "text-sm font-medium text-muted-foreground";
-const DASHBOARD_CARD_BODY_WRAP_CLASS = "-mx-4 min-w-0 bg-muted/50";
+const DASHBOARD_CARD_BODY_WRAP_CLASS = "-mx-4 flex min-w-0 flex-1 flex-col bg-muted/50";
 const DASHBOARD_CARD_BODY_CLASS =
-  "min-w-0 overflow-hidden rounded-t-lg border-t border-border/60 bg-background p-4";
+  "min-w-0 flex-1 overflow-hidden rounded-t-lg border-t border-border/60 bg-background p-4";
 
 interface DashboardCardProps extends Omit<ComponentProps<typeof Card>, "title"> {
   title: ReactNode;

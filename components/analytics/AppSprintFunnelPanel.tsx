@@ -8,23 +8,34 @@ import { DashboardCard } from "@/components/analytics/DashboardCard";
 
 const PREVIEW_ROWS = 10;
 const POSTBACK_TINT_ORANGE = "#f97316";
+const VISITOR_BLUE = "oklch(0.62 0.14 250)";
+const VISITOR_BAR_SHARE = 62;
+const REVENUE_BAR_SHARE = 100 - VISITOR_BAR_SHARE;
 
 export default function AppSprintFunnelPanel({ analytics }: { analytics: AppSprintFunnelAnalytics }) {
   const daily = analytics.daily.filter((row) => row.surface === "aso");
+  const interval = analytics.interval?.filter((row) => row.surface === "aso") ?? [];
   const sources = sortRows(analytics.byChannel.filter((row) => row.surface === "aso"));
   const countries = sortRows(analytics.byCountry.filter((row) => row.surface === "aso"));
   const referrers = sortRows(analytics.byReferrer.filter((row) => row.surface === "aso"));
   const recent = analytics.recentConversions.filter((row) => row.surface === "aso").slice(0, 10);
   const visits = analytics.totals.asoVisits;
   const revenue = daily.reduce((sum, row) => sum + row.revenue, 0);
-  const windowLabel = `Last ${analytics.windowDays} days`;
+  const windowLabel = `Last ${analytics.windowDays} ${analytics.windowDays === 1 ? "day" : "days"}`;
 
-  const trend = daily.map((row) => ({
-    date: row.date,
-    visits: row.visits,
-    revenue: row.revenue,
-    trialStarts: row.asoTrials,
-  }));
+  const trend = interval.length > 0
+    ? interval.map((row) => ({
+        date: row.bucket,
+        visits: row.visits,
+        revenue: row.revenue,
+        trialStarts: row.asoTrials,
+      }))
+    : daily.map((row) => ({
+        date: row.date,
+        visits: row.visits,
+        revenue: row.revenue,
+        trialStarts: row.asoTrials,
+      }));
   const paidConversion = daily.map((row) => ({
     date: row.date,
     maturedTrials: row.asoMaturedTrials,
@@ -121,28 +132,51 @@ function BreakdownTable({ rows, label, getLabel, getPrefix, expandable = false }
 }
 
 function BreakdownRow({ row, label, prefix, maxVisits, maxRevenue }: { row: AppSprintFunnelBreakdownRow; label: string; prefix?: string; maxVisits: number; maxRevenue: number }) {
-  const visitWidth = maxVisits > 0 ? (row.visits / maxVisits) * 62 : 0;
-  const revenueWidth = maxRevenue > 0 ? (row.revenue / maxRevenue) * 38 : 0;
+  const hasRevenueScale = maxRevenue > 0;
+  const visitWidth = barPercent(row.visits, maxVisits, hasRevenueScale ? VISITOR_BAR_SHARE : 100);
+  const revenueWidth = barPercent(row.revenue, maxRevenue, REVENUE_BAR_SHARE);
   const barWidth = Math.min(100, visitWidth + revenueWidth);
+  const rowPrefix = prefix ?? <ArrowDownRight className="size-4" />;
   return (
     <tr className="group relative h-9 border-0" title={`Checkout ${formatInt(row.asoCheckouts)} · Trial ${formatInt(row.asoTrials)} · Paid ${formatInt(row.asoPaid)} · Revenue ${formatCurrency(row.revenue)}`}>
       <td colSpan={2} className="p-0">
-        <div className="relative mx-0.5 grid h-8 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-r-md px-2">
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 rounded-r-md"
-            style={{
-              width: `${barWidth}%`,
-              backgroundColor: `color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, white 30%)`,
-              backgroundImage: `linear-gradient(to bottom, color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, white 15%), ${POSTBACK_TINT_ORANGE})`,
-              boxShadow: `inset 0 1px 0 0 color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, white 30%), 0 0 0 1px color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, black 10%), 0 1px 2px rgb(0 0 0 / 5%)`,
-            }}
-          />
-          <div className="relative z-10 flex min-w-0 items-center gap-2 font-medium text-white">
-            <span className="flex size-5 shrink-0 items-center justify-center">{prefix ?? <ArrowDownRight className="size-4" />}</span>
-            <span className="truncate">{label}</span>
+        <div className="mx-0.5 grid h-8 grid-cols-[minmax(0,1fr)_4rem] items-center">
+          <div className="relative h-full min-w-0 overflow-hidden rounded-r-md">
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-y-0 left-0 ${revenueWidth > 0 ? "" : "rounded-r-md"}`}
+              style={{
+                width: `${visitWidth}%`,
+                backgroundColor: `color-mix(in oklch, ${VISITOR_BLUE}, white 30%)`,
+                backgroundImage: `linear-gradient(to bottom, color-mix(in oklch, ${VISITOR_BLUE}, white 15%), ${VISITOR_BLUE})`,
+                boxShadow: `inset 0 1px 0 0 color-mix(in oklch, ${VISITOR_BLUE}, white 30%), 0 0 0 1px color-mix(in oklch, ${VISITOR_BLUE}, black 10%), 0 1px 2px rgb(0 0 0 / 5%)`,
+              }}
+            />
+            {revenueWidth > 0 ? (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 rounded-r-md"
+                style={{
+                  left: `${visitWidth}%`,
+                  width: `${revenueWidth}%`,
+                  backgroundColor: `color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, white 30%)`,
+                  backgroundImage: `linear-gradient(to bottom, color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, white 15%), ${POSTBACK_TINT_ORANGE})`,
+                  boxShadow: `inset 0 1px 0 0 color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, white 30%), 0 0 0 1px color-mix(in oklch, ${POSTBACK_TINT_ORANGE}, black 10%), 0 1px 2px rgb(0 0 0 / 5%)`,
+                }}
+              />
+            ) : null}
+            <div className="relative z-10 flex h-full min-w-0 items-center gap-2 px-2 font-medium text-black">
+              <span className="flex size-5 shrink-0 items-center justify-center">{rowPrefix}</span>
+              <span className="truncate">{label}</span>
+            </div>
+            <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 z-20 overflow-hidden" style={{ width: `${barWidth}%` }}>
+              <div className="flex h-full w-max items-center gap-2 px-2 font-medium text-white">
+                <span className="flex size-5 shrink-0 items-center justify-center">{rowPrefix}</span>
+                <span>{label}</span>
+              </div>
+            </div>
           </div>
-          <span className="relative z-10 font-mono text-xs font-medium tabular-nums text-black/70">{formatInt(row.visits)}</span>
+          <span className="pr-2 text-right font-mono text-xs font-medium tabular-nums text-black/70">{formatInt(row.visits)}</span>
         </div>
       </td>
     </tr>
@@ -156,6 +190,7 @@ function Badge({ children }: { children: React.ReactNode }) { return <span class
 
 function sortRows<T extends AppSprintFunnelBreakdownRow>(rows: T[]) { return [...rows].sort((a, b) => b.visits - a.visits || b.revenue - a.revenue || totalConversions(b) - totalConversions(a)); }
 function totalConversions(row: AppSprintFunnelBreakdownRow) { return row.bookCallClicks + row.bookCallStarted + row.asoCheckouts + row.asoTrials + row.asoPaid; }
+function barPercent(value: number, maxValue: number, maxWidth: number) { if (value <= 0 || maxValue <= 0 || maxWidth <= 0) return 0; return Math.min(maxWidth, Math.max(Math.min(2, maxWidth), (value / maxValue) * maxWidth)); }
 function ratio(part: number, total: number) { return total > 0 ? part / total : 0; }
 function formatInt(value: number) { return finite(value).toLocaleString("en", { maximumFractionDigits: 0 }); }
 function formatPercent(value: number) { return `${(finite(value) * 100).toLocaleString("en", { maximumFractionDigits: 1 })}%`; }

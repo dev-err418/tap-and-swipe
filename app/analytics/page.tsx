@@ -164,15 +164,22 @@ async function WebsiteDirectory({
   }
 
   const daily = analytics.daily.filter((row) => row.surface === "aso");
+  const interval = analytics.interval?.filter((row) => row.surface === "aso") ?? [];
   const metrics: WebsiteMetricsRow = {
     visitors: analytics.totals.asoVisits,
     revenue_cents: daily.reduce((sum, row) => sum + row.revenue, 0) * 100,
   };
-  const trend: WebsiteTrendPoint[] = daily.map((row) => ({
-    bucket: new Date(`${row.date}T00:00:00Z`),
-    visitors: row.visits,
-    revenue: row.revenue,
-  }));
+  const trend: WebsiteTrendPoint[] = interval.length > 0
+    ? interval.map((row) => ({
+        bucket: new Date(row.bucket),
+        visitors: row.visits,
+        revenue: row.revenue,
+      }))
+    : daily.map((row) => ({
+        bucket: new Date(`${row.date}T00:00:00Z`),
+        visitors: row.visits,
+        revenue: row.revenue,
+      }));
 
   return (
     <div className="space-y-6">
@@ -238,7 +245,7 @@ function WebsiteCard({
 }
 
 const VISITOR_CHART_COLOR = "oklch(0.62 0.14 250)";
-const REVENUE_CHART_COLOR = "oklch(0.852 0.199 91.936)";
+const POSTBACK_ORANGE = "#f97316";
 
 function WebsiteMiniChart({ points }: { points: WebsiteTrendPoint[] }) {
   const width = 520;
@@ -261,7 +268,7 @@ function WebsiteMiniChart({ points }: { points: WebsiteTrendPoint[] }) {
         : top + ((maxVisitors - point.visitors) / (maxVisitors - minVisitors)) * chartHeight * 0.72,
   }));
   const linePath = buildSmoothLinePath(coordinates, left, right);
-  const barWidth = Math.min(18, Math.max(6, spacing * 0.34));
+  const barWidth = Math.min(22, Math.max(6, spacing * 0.78));
 
   return (
     <svg
@@ -270,21 +277,39 @@ function WebsiteMiniChart({ points }: { points: WebsiteTrendPoint[] }) {
       role="img"
       aria-label="Visitor trend line and revenue bars"
     >
+      <defs>
+        <linearGradient id="postback-orange-glass" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={`color-mix(in oklch, ${POSTBACK_ORANGE}, white 15%)`} />
+          <stop offset="1" stopColor={POSTBACK_ORANGE} />
+        </linearGradient>
+        <filter id="postback-orange-shadow" x="-30%" y="-15%" width="160%" height="140%">
+          <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity="0.08" />
+        </filter>
+      </defs>
       {values.map((point, index) => {
         if (point.revenue <= 0) return null;
         const barHeight = Math.max(7, (point.revenue / maxRevenue) * chartHeight * 0.62);
         const x = values.length > 1 ? left + index * spacing : width / 2;
         return (
-          <rect
-            key={`${point.bucket.toISOString()}-conversion`}
-            x={x - barWidth / 2}
-            y={bottom - barHeight}
-            width={barWidth}
-            height={barHeight}
-            rx="4"
-            fill={REVENUE_CHART_COLOR}
-            fillOpacity="0.82"
-          />
+          <g key={`${point.bucket.toISOString()}-conversion`} filter="url(#postback-orange-shadow)">
+            <rect
+              x={x - barWidth / 2}
+              y={bottom - barHeight}
+              width={barWidth}
+              height={barHeight}
+              rx="4"
+              fill="url(#postback-orange-glass)"
+              stroke={`color-mix(in oklch, ${POSTBACK_ORANGE}, black 10%)`}
+              strokeWidth="1"
+            />
+            <path
+              d={`M ${x - barWidth / 2 + 4} ${bottom - barHeight + 1.5} H ${x + barWidth / 2 - 4}`}
+              fill="none"
+              stroke={`color-mix(in oklch, ${POSTBACK_ORANGE}, white 30%)`}
+              strokeWidth="1"
+              strokeLinecap="round"
+            />
+          </g>
         );
       })}
       <path
@@ -322,6 +347,9 @@ async function AppSprintWebsiteDetail({
   period: Period;
 }) {
   const analytics = await getAppSprintFunnelAnalytics(period);
+  const daily = analytics?.daily.filter((row) => row.surface === "aso") ?? [];
+  const visitors = analytics?.totals.asoVisits ?? 0;
+  const revenueCents = daily.reduce((sum, row) => sum + row.revenue, 0) * 100;
 
   return (
     <div className="space-y-10">
@@ -344,8 +372,15 @@ async function AppSprintWebsiteDetail({
               height="40"
               className="size-10 shrink-0 rounded-[10px]"
             />
-            <h1 className="truncate text-2xl font-bold tracking-tight">appsprint.app</h1>
+            <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
+              <strong className="font-semibold text-black">appsprint.app</strong> got{" "}
+              <strong className="font-semibold text-black">{formatNumber(visitors)} visitors</strong>{" "}
+              and{" "}
+              <strong className="font-semibold text-black">{formatRevenue(revenueCents)} revenue</strong>{" "}
+              {PERIOD_SUMMARY_LABELS[period]}.
+            </h1>
           </div>
+          <AnalyticsPeriodSelect period={period} site="appsprint" />
         </div>
       </div>
       {analytics ? (
