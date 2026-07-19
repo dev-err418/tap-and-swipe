@@ -256,14 +256,7 @@ function WebsiteCard({
     >
       <div className="pointer-events-none select-none">
         <div className="flex items-center gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={websiteFaviconUrl(domain)}
-            alt=""
-            width="24"
-            height="24"
-            className={`size-6 shrink-0 rounded-md ${domain === "postback.sh" ? "invert" : ""}`}
-          />
+          <WebsiteFavicon domain={domain} size="small" />
           <h2 className="truncate text-xl font-semibold tracking-tight">{domain}</h2>
         </div>
 
@@ -406,14 +399,7 @@ async function WebsiteDetail({
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={websiteFaviconUrl(domain)}
-              alt=""
-              width="40"
-              height="40"
-              className={`size-10 shrink-0 rounded-[10px] ${domain === "postback.sh" ? "invert" : ""}`}
-            />
+            <WebsiteFavicon domain={domain} size="large" />
             <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
               <strong className="font-semibold text-black">{domain}</strong> got{" "}
               <strong className="font-semibold text-black">{formatNumber(visitors)} visitors</strong>{" "}
@@ -497,6 +483,46 @@ function websiteFaviconUrl(domain: string) {
   return domain === "appsprint.app"
     ? "https://appsprint.app/app-icon.png"
     : "https://postback.sh/icon.png";
+}
+
+function WebsiteFavicon({
+  domain,
+  size,
+}: {
+  domain: string;
+  size: "small" | "large";
+}) {
+  const isPostback = domain === "postback.sh";
+  const sizeClass = size === "small" ? "size-6 rounded-md" : "size-10 rounded-[10px]";
+  const imageSize = size === "small" ? 24 : 40;
+
+  if (isPostback) {
+    return (
+      <span
+        className={`flex shrink-0 items-center justify-center bg-black ${sizeClass}`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={websiteFaviconUrl(domain)}
+          alt=""
+          width={imageSize}
+          height={imageSize}
+          className="size-[85%] invert"
+        />
+      </span>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={websiteFaviconUrl(domain)}
+      alt=""
+      width={imageSize}
+      height={imageSize}
+      className={`shrink-0 ${sizeClass}`}
+    />
+  );
 }
 
 function formatRevenue(cents: number) {
