@@ -314,14 +314,14 @@ function MobileAppCard({ app }: { app: MobileAppAnalytics }) {
         <h2 className="truncate text-xl font-semibold tracking-tight">{app.name}</h2>
       </div>
 
-      <WebsiteMiniChart points={points} ariaLabel="New user trend line and net revenue bars" />
+      <WebsiteMiniChart points={points} ariaLabel="New user trend line and revenue bars" />
 
       <p className="text-base text-black/55">
         <strong className="font-bold text-black">{formatCompactNumber(app.downloads)}</strong>{" "}
         downloads
         <span className="mx-2 text-black/35">•</span>
         <strong className="font-bold text-black">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
-        net revenue
+        revenue
       </p>
     </div>
   );
