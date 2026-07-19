@@ -10,7 +10,12 @@ import { extractToc } from "@/lib/toc";
 import { DocsToc } from "@/components/docs-toc";
 import { getAppData, type AppData } from "@/lib/app-data";
 import { AppShowcase } from "@/components/app-showcase";
-import { SiX, SiThreads, SiMastodon } from "@icons-pack/react-simple-icons";
+import {
+  SiInstagram,
+  SiMastodon,
+  SiThreads,
+  SiX,
+} from "@icons-pack/react-simple-icons";
 import { Globe, Linkedin, Play, Github, ImageIcon } from "lucide-react";
 
 const PLACEHOLDER_IMAGE = "/episodes/placeholder.webp";
@@ -96,6 +101,17 @@ function FounderCard({ guest }: { guest: GuestInfo }) {
             aria-label="X/Twitter"
           >
             <SiX size={16} color="currentColor" />
+          </a>
+        )}
+        {guest.instagram && (
+          <a
+            href={guest.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Instagram"
+          >
+            <SiInstagram size={16} color="currentColor" />
           </a>
         )}
         {guest.linkedin && (

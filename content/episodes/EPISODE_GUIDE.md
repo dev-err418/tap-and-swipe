@@ -19,6 +19,7 @@ guestInfo:
   photo: "/guests/slug.webp"
   role: "Title or descriptor"
   twitter: "https://x.com/handle"
+  instagram: "https://www.instagram.com/handle"
   linkedin: "https://www.linkedin.com/in/handle"
   threads: "https://www.threads.com/@handle"    # optional
   mastodon: "https://mastodon.social/@handle"   # optional

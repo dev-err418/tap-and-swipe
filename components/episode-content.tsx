@@ -6,7 +6,12 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { getAppData, type AppData } from "@/lib/app-data";
 import { getCaseStudyBySlug } from "@/lib/case-studies";
 import { AppShowcase } from "@/components/app-showcase";
-import { SiX, SiThreads, SiMastodon } from "@icons-pack/react-simple-icons";
+import {
+  SiInstagram,
+  SiMastodon,
+  SiThreads,
+  SiX,
+} from "@icons-pack/react-simple-icons";
 import { Globe, Linkedin, Github } from "lucide-react";
 
 function GuestCard({ guest }: { guest: GuestInfo }) {
@@ -46,6 +51,17 @@ function GuestCard({ guest }: { guest: GuestInfo }) {
             aria-label="X/Twitter"
           >
             <SiX size={16} color="currentColor" />
+          </a>
+        )}
+        {guest.instagram && (
+          <a
+            href={guest.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Instagram"
+          >
+            <SiInstagram size={16} color="currentColor" />
           </a>
         )}
         {guest.linkedin && (

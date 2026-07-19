@@ -3,6 +3,7 @@ export interface GuestInfo {
   photo?: string;
   role?: string;
   twitter?: string;
+  instagram?: string;
   linkedin?: string;
   threads?: string;
   mastodon?: string;
