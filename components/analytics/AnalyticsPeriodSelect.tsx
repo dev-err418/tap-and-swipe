@@ -20,7 +20,7 @@ export default function AnalyticsPeriodSelect({
   site,
 }: {
   period: Period;
-  site?: "appsprint";
+  site?: "appsprint" | "postback";
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();

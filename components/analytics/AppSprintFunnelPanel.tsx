@@ -9,7 +9,13 @@ const VISITOR_BLUE = "oklch(0.62 0.14 250)";
 const VISITOR_BAR_SHARE = 62;
 const REVENUE_BAR_SHARE = 100 - VISITOR_BAR_SHARE;
 
-export default function AppSprintFunnelPanel({ analytics }: { analytics: AppSprintFunnelAnalytics }) {
+export default function AppSprintFunnelPanel({
+  analytics,
+  showHeroExperiment = true,
+}: {
+  analytics: AppSprintFunnelAnalytics;
+  showHeroExperiment?: boolean;
+}) {
   const daily = analytics.daily.filter((row) => row.surface === "aso");
   const interval = analytics.interval?.filter((row) => row.surface === "aso") ?? [];
   const sources = sortRows(analytics.byChannel.filter((row) => row.surface === "aso"));
@@ -46,7 +52,7 @@ export default function AppSprintFunnelPanel({ analytics }: { analytics: AppSpri
         <Metric title="Revenue / visitor" value={formatPreciseCurrency(ratio(revenue, visits))} detail="Paid revenue / visitors" />
       </div>
 
-      <DashboardCard title="Hero preview A/B test" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
+      {showHeroExperiment ? <DashboardCard title="Hero preview A/B test" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[48rem] text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
@@ -60,7 +66,7 @@ export default function AppSprintFunnelPanel({ analytics }: { analytics: AppSpri
             </tbody>
           </table>
         </div>
-      </DashboardCard>
+      </DashboardCard> : null}
 
       <DashboardCard title="Source performance" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} className="overflow-visible" bodyWrapClassName="overflow-visible" contentClassName="min-w-0 overflow-visible p-0">
         <BreakdownTable rows={sources.slice(0, PREVIEW_ROWS)} label="Source" getLabel={(row) => row.channelLabel ?? row.channel ?? "Unknown"} />
@@ -218,5 +224,5 @@ function formatPreciseCurrency(value: number) { return new Intl.NumberFormat("en
 function finite(value: number) { return Number.isFinite(value) ? value : 0; }
 function countryFlag(code: string) { return code.toUpperCase().replace(/./g, (character) => String.fromCodePoint(127397 + character.charCodeAt(0))); }
 function countryName(code: string | null | undefined) { if (!code) return "Unknown"; try { return new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase()) ?? code; } catch { return code; } }
-function eventLabel(type: string) { return ({ book_call_started: "Booked call", aso_checkout_started: "ASO checkout", aso_trial_started: "ASO trial", aso_paid: "ASO paid" } as Record<string, string>)[type] ?? "Visit"; }
+function eventLabel(type: string) { return ({ book_call_started: "Booked call", aso_checkout_started: "ASO checkout", aso_trial_started: "ASO trial", aso_paid: "ASO paid", postback_checkout_started: "Postback checkout", postback_trial_started: "Postback trial", postback_paid: "Postback paid" } as Record<string, string>)[type] ?? "Visit"; }
 function relativeTime(value: string) { const seconds = Math.round((Date.parse(value) - Date.now()) / 1000); const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" }); if (Math.abs(seconds) < 60) return formatter.format(seconds, "second"); const minutes = Math.round(seconds / 60); if (Math.abs(minutes) < 60) return formatter.format(minutes, "minute"); const hours = Math.round(minutes / 60); if (Math.abs(hours) < 24) return formatter.format(hours, "hour"); return formatter.format(Math.round(hours / 24), "day"); }

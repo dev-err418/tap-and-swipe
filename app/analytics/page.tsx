@@ -4,7 +4,11 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { getSession } from "@/lib/session";
-import { getAppSprintFunnelAnalytics } from "@/lib/appsprint-funnel";
+import {
+  getAppSprintFunnelAnalytics,
+  type AppSprintFunnelAnalytics,
+} from "@/lib/appsprint-funnel";
+import { getPostbackFunnelAnalytics } from "@/lib/postback-funnel";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
 import AppSprintFunnelPanel from "@/components/analytics/AppSprintFunnelPanel";
 import LicensesModal from "@/components/aso-debug/LicensesModal";
@@ -20,6 +24,7 @@ const isDev = process.env.NODE_ENV === "development";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 type Tab = "analytics" | "appsprint";
+type WebsiteSite = "appsprint" | "postback";
 
 const TAB_LABELS: Record<Tab, string> = {
   analytics: "Analytics",
@@ -82,17 +87,19 @@ export default async function AnalyticsPage({
   }
 
   const period = normalizePeriod(params.period);
-  const isAppSprintDetail = params.site === "appsprint";
+  const detailSite = params.site === "appsprint" || params.site === "postback"
+    ? params.site
+    : null;
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] px-4 py-6 text-black sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-6xl">
         <div className="mb-10 flex justify-center">
           <AnalyticsTabs activeTab="analytics" />
         </div>
 
-        {isAppSprintDetail ? (
-          <AppSprintWebsiteDetail period={period} />
+        {detailSite ? (
+          <WebsiteDetail period={period} site={detailSite} />
         ) : (
           <WebsiteDirectory period={period} />
         )}
@@ -148,21 +155,65 @@ async function WebsiteDirectory({
 }: {
   period: Period;
 }) {
-  const analytics = await getAppSprintFunnelAnalytics(period);
-  if (!analytics) {
+  const [appSprintAnalytics, postbackAnalytics] = await Promise.all([
+    getAppSprintFunnelAnalytics(period),
+    getPostbackFunnelAnalytics(period),
+  ]);
+  const websites = [
+    appSprintAnalytics
+      ? websiteData("appsprint", "appsprint.app", appSprintAnalytics)
+      : null,
+    postbackAnalytics
+      ? websiteData("postback", "postback.sh", postbackAnalytics)
+      : null,
+  ].filter((website) => website !== null);
+
+  if (websites.length === 0) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-lg text-black/55 sm:text-xl">AppSprint analytics could not be loaded.</p>
+          <p className="text-lg text-black/55 sm:text-xl">Website analytics could not be loaded.</p>
           <AnalyticsPeriodSelect period={period} />
         </div>
         <div className="rounded-[24px] border border-black/[0.07] bg-white px-6 py-14 text-center text-sm text-black/45 shadow-sm">
-          Check the AppSprint analytics endpoint and shared-secret configuration.
+          Check the AppSprint and Postback analytics endpoints and shared-secret configuration.
         </div>
       </div>
     );
   }
 
+  const metrics: WebsiteMetricsRow = {
+    visitors: websites.reduce((sum, website) => sum + website.metrics.visitors, 0),
+    revenue_cents: websites.reduce((sum, website) => sum + website.metrics.revenue_cents, 0),
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+          Hey Arthur, you got{" "}
+          <strong className="font-semibold text-black">{formatNumber(metrics.visitors)} visitors</strong>{" "}
+          and made{" "}
+          <strong className="font-semibold text-black">{formatRevenue(metrics.revenue_cents)}</strong>{" "}
+          {PERIOD_SUMMARY_LABELS[period]}.
+        </p>
+        <AnalyticsPeriodSelect period={period} />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {websites.map((website) => (
+          <WebsiteCard key={website.site} period={period} {...website} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function websiteData(
+  site: WebsiteSite,
+  domain: string,
+  analytics: AppSprintFunnelAnalytics,
+) {
   const daily = analytics.daily.filter((row) => row.surface === "aso");
   const interval = analytics.interval?.filter((row) => row.surface === "aso") ?? [];
   const metrics: WebsiteMetricsRow = {
@@ -180,37 +231,23 @@ async function WebsiteDirectory({
         visitors: row.visits,
         revenue: row.revenue,
       }));
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <p className="min-w-0 text-lg text-black/55 sm:text-xl">
-          Hey Arthur, you got{" "}
-          <strong className="font-semibold text-black">{formatNumber(metrics.visitors)} visitors</strong>{" "}
-          and made{" "}
-          <strong className="font-semibold text-black">{formatRevenue(metrics.revenue_cents)}</strong>{" "}
-          {PERIOD_SUMMARY_LABELS[period]}.
-        </p>
-        <AnalyticsPeriodSelect period={period} />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <WebsiteCard period={period} metrics={metrics} trend={trend} />
-      </div>
-    </div>
-  );
+  return { site, domain, metrics, trend };
 }
 
 function WebsiteCard({
   period,
+  site,
+  domain,
   metrics,
   trend,
 }: {
   period: Period;
+  site: WebsiteSite;
+  domain: string;
   metrics: WebsiteMetricsRow;
   trend: WebsiteTrendPoint[];
 }) {
-  const href = buildAnalyticsUrl({ period, site: "appsprint" });
+  const href = buildAnalyticsUrl({ period, site });
 
   return (
     <Link
@@ -221,13 +258,13 @@ function WebsiteCard({
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://www.google.com/s2/favicons?domain=appsprint.app&sz=64"
+            src={websiteFaviconUrl(domain)}
             alt=""
             width="24"
             height="24"
             className="size-6 shrink-0 rounded-md"
           />
-          <h2 className="truncate text-xl font-semibold tracking-tight">appsprint.app</h2>
+          <h2 className="truncate text-xl font-semibold tracking-tight">{domain}</h2>
         </div>
 
         <WebsiteMiniChart points={trend} />
@@ -341,12 +378,17 @@ function buildSmoothLinePath(
   return path;
 }
 
-async function AppSprintWebsiteDetail({
+async function WebsiteDetail({
   period,
+  site,
 }: {
   period: Period;
+  site: WebsiteSite;
 }) {
-  const analytics = await getAppSprintFunnelAnalytics(period);
+  const analytics = site === "appsprint"
+    ? await getAppSprintFunnelAnalytics(period)
+    : await getPostbackFunnelAnalytics(period);
+  const domain = site === "appsprint" ? "appsprint.app" : "postback.sh";
   const daily = analytics?.daily.filter((row) => row.surface === "aso") ?? [];
   const visitors = analytics?.totals.asoVisits ?? 0;
   const revenueCents = daily.reduce((sum, row) => sum + row.revenue, 0) * 100;
@@ -366,30 +408,33 @@ async function AppSprintWebsiteDetail({
           <div className="flex min-w-0 items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="https://www.google.com/s2/favicons?domain=appsprint.app&sz=64"
+              src={websiteFaviconUrl(domain)}
               alt=""
               width="40"
               height="40"
               className="size-10 shrink-0 rounded-[10px]"
             />
             <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
-              <strong className="font-semibold text-black">appsprint.app</strong> got{" "}
+              <strong className="font-semibold text-black">{domain}</strong> got{" "}
               <strong className="font-semibold text-black">{formatNumber(visitors)} visitors</strong>{" "}
               and{" "}
               <strong className="font-semibold text-black">{formatRevenue(revenueCents)} revenue</strong>{" "}
               {PERIOD_SUMMARY_LABELS[period]}.
             </h1>
           </div>
-          <AnalyticsPeriodSelect period={period} site="appsprint" />
+          <AnalyticsPeriodSelect period={period} site={site} />
         </div>
       </div>
       {analytics ? (
-        <AppSprintFunnelPanel analytics={analytics} />
+        <AppSprintFunnelPanel
+          analytics={analytics}
+          showHeroExperiment={site === "appsprint"}
+        />
       ) : (
         <div className="rounded-lg border border-black/10 bg-white px-6 py-16 text-center">
-          <p className="font-medium">AppSprint analytics could not be loaded.</p>
+          <p className="font-medium">{domain} analytics could not be loaded.</p>
           <p className="mt-1 text-sm text-black/50">
-            Check the AppSprint analytics endpoint and shared-secret configuration.
+            Check the analytics endpoint and shared-secret configuration.
           </p>
         </div>
       )}
@@ -435,7 +480,7 @@ function buildAnalyticsUrl({
   site,
 }: {
   period: Period;
-  site?: "appsprint";
+  site?: WebsiteSite;
 }) {
   const params = new URLSearchParams();
   if (period !== "week") params.set("period", period);
@@ -446,6 +491,12 @@ function buildAnalyticsUrl({
 
 function formatNumber(value: number | bigint) {
   return Number(value).toLocaleString("en-US");
+}
+
+function websiteFaviconUrl(domain: string) {
+  return domain === "appsprint.app"
+    ? "https://appsprint.app/app-icon.png"
+    : "https://postback.sh/icon.png";
 }
 
 function formatRevenue(cents: number) {
