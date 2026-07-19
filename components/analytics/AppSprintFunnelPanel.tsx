@@ -42,7 +42,7 @@ export default function AppSprintFunnelPanel({ analytics }: { analytics: AppSpri
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric title="Visitors" value={formatInt(visits)} detail={windowLabel} />
         <Metric title="Revenue" value={formatCurrency(revenue)} detail={`${formatInt(analytics.totals.asoPaid)} paid (${formatPercent(ratio(analytics.totals.asoPaid, visits))})`} />
-        <Metric title="Trial start rate" value={formatPercent(ratio(analytics.totals.asoTrials, visits))} detail={`${formatInt(analytics.totals.asoTrials)} trials / ${formatInt(visits)} visitors`} />
+        <Metric title="Paid rate" value={formatPercent(ratio(analytics.totals.asoPaid, visits))} detail={`${formatInt(analytics.totals.asoPaid)} paid / ${formatInt(visits)} visitors`} />
         <Metric title="Revenue / visitor" value={formatPreciseCurrency(ratio(revenue, visits))} detail="Paid revenue / visitors" />
       </div>
 
@@ -124,9 +124,21 @@ function BreakdownRow({ row, label, prefix, maxVisits, maxRevenue }: { row: AppS
   const barWidth = Math.min(100, visitWidth + revenueWidth);
   const rowPrefix = prefix ?? <ArrowDownRight className="size-4" />;
   const tooltipMetrics = [
-    { label: "Checkout", value: row.asoCheckouts, color: "oklch(0.62 0.14 250)" },
-    { label: "Trial", value: row.asoTrials, color: "oklch(0.769 0.188 70.08)" },
-    { label: "Paid", value: row.asoPaid, color: "oklch(0.627 0.194 149.214)" },
+    {
+      label: "Visitors",
+      value: formatInt(row.visits),
+      color: VISITOR_BLUE,
+    },
+    {
+      label: "Checkout",
+      value: `${formatInt(row.asoCheckouts)} (${formatPercent(ratio(row.asoCheckouts, row.visits))})`,
+      color: "oklch(0.55 0.02 250)",
+    },
+    {
+      label: "Paid",
+      value: `${formatCurrency(row.revenue)} (${formatPercent(ratio(row.asoPaid, row.visits))})`,
+      color: POSTBACK_TINT_ORANGE,
+    },
   ];
   return (
     <tr className="group/row relative h-9 border-0 outline-none" tabIndex={0}>
@@ -169,7 +181,7 @@ function BreakdownRow({ row, label, prefix, maxVisits, maxRevenue }: { row: AppS
           </div>
           <span className="pr-2 text-right font-mono text-xs font-medium tabular-nums text-black/70">{formatInt(row.visits)}</span>
         </div>
-        <div className="pointer-events-none absolute right-2 top-1/2 z-50 hidden min-w-48 -translate-y-1/2 gap-2 rounded-lg border border-black/20 bg-white px-2.5 py-2 text-xs shadow-xl group-hover/row:grid group-focus/row:grid">
+        <div className="pointer-events-none absolute bottom-[calc(100%-2px)] left-1/2 z-50 hidden min-w-48 -translate-x-1/2 gap-2 rounded-lg border border-black/20 bg-white px-2.5 py-2 text-xs shadow-xl group-hover/row:grid group-focus/row:grid">
           <div className="font-medium text-black">Details</div>
           <div className="grid gap-1.5">
             {tooltipMetrics.map((metric) => (
@@ -179,7 +191,7 @@ function BreakdownRow({ row, label, prefix, maxVisits, maxRevenue }: { row: AppS
                   <span>{metric.label}</span>
                 </span>
                 <span className="font-mono font-medium tabular-nums text-black">
-                  {formatInt(metric.value)} / {formatPercent(ratio(metric.value, row.visits))}
+                  {metric.value}
                 </span>
               </div>
             ))}

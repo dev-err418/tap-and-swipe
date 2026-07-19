@@ -86,7 +86,7 @@ export default async function AnalyticsPage({
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] px-4 py-6 text-black sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-5xl">
         <div className="mb-10 flex justify-center">
           <AnalyticsTabs activeTab="analytics" />
         </div>
