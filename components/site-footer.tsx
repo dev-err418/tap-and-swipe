@@ -58,23 +58,20 @@ export function SiteFooter() {
               </a>
             </li>
             <li>
+              <a
+                href="https://postback.sh"
+                className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
+              >
+                Postback
+              </a>
+            </li>
+            <li>
               <Link
                 href="/community"
                 className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
               >
                 Community
               </Link>
-            </li>
-            <li>
-              <a
-                href="https://appsprint.app/attribution"
-                target="_blank"
-                rel="noopener"
-                referrerPolicy="origin-when-cross-origin"
-                className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
-              >
-                Boost ads ROAS
-              </a>
             </li>
           </ul>
         </div>
