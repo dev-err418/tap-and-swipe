@@ -97,6 +97,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.2,
     },
     {
+      url: "https://tap-and-swipe.com/piko",
+      lastModified: new Date("2026-07-30"),
+      changeFrequency: "yearly",
+      priority: 0.1,
+    },
+    {
+      url: "https://tap-and-swipe.com/piko/privacy",
+      lastModified: new Date("2026-07-30"),
+      changeFrequency: "yearly",
+      priority: 0.1,
+    },
+    {
+      url: "https://tap-and-swipe.com/piko/terms",
+      lastModified: new Date("2026-07-30"),
+      changeFrequency: "yearly",
+      priority: 0.1,
+    },
+    {
       url: "https://tap-and-swipe.com/privacy",
       lastModified: new Date("2026-04-15"),
       changeFrequency: "yearly",

@@ -20,6 +20,7 @@ Tap & Swipe covers interviews with indie app developers, mobile app building and
 - [Glow](https://tap-and-swipe.com/glow): App landing page
 - [Divvy](https://tap-and-swipe.com/divvy): App landing page
 - [NetPay](https://tap-and-swipe.com/netpay): App landing page
+- [Piko](https://tap-and-swipe.com/piko): Privacy Policy and Terms of Use for the local-first hydration companion
 
 ## Social
 
