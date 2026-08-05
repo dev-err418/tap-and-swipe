@@ -105,12 +105,6 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      {
-        source: "/community",
-        destination:
-          "https://whop.com/joined/appsprint-community/products/app-sprint-access/",
-        permanent: true,
-      },
       // Old community URL → new /community
       {
         source: "/app-sprint-community",

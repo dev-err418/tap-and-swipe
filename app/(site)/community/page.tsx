@@ -45,38 +45,17 @@ export default async function CommunityRedirect({
     ? checkout.purchase_url
     : `https://whop.com${checkout.purchase_url}`;
 
-  await Promise.all([
-    prisma.pageEvent.create({
-      data: {
-        product: "community",
-        type: "page_view",
-        visitorId,
-        sessionId,
-        country,
-        referrer,
-        ref,
-      },
-    }),
-    prisma.pageEvent.upsert({
-      where: {
-        sessionId_type_product: {
-          sessionId: checkout.id,
-          type: "checkout_shown",
-          product: "community",
-        },
-      },
-      create: {
-        product: "community",
-        type: "checkout_shown",
-        visitorId,
-        sessionId: checkout.id,
-        country,
-        referrer,
-        ref,
-      },
-      update: {},
-    }),
-  ]).catch((error) => console.error("[community] analytics event failed", error));
+  await prisma.pageEvent.create({
+    data: {
+      product: "community",
+      type: "page_view",
+      visitorId,
+      sessionId,
+      country,
+      referrer,
+      ref,
+    },
+  }).catch((error) => console.error("[community] analytics event failed", error));
 
   redirect(checkoutUrl);
 }
