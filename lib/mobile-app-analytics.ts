@@ -45,8 +45,8 @@ export async function getMobileAppAnalytics(period: Period) {
 }
 
 async function getPokyAnalytics(period: Period): Promise<MobileAppAnalytics> {
-  const apiKey = process.env.SUPERWALL_API_KEY?.trim();
-  if (!apiKey) throw new Error("SUPERWALL_API_KEY is not configured");
+  const apiKey = process.env.SUPERWALL_POKY_API_KEY?.trim();
+  if (!apiKey) throw new Error("SUPERWALL_POKY_API_KEY is not configured");
 
   return getSuperwallAppAnalytics(period, {
     id: "poky",
