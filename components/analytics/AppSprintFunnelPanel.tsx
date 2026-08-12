@@ -12,9 +12,11 @@ const REVENUE_BAR_SHARE = 100 - VISITOR_BAR_SHARE;
 export default function AppSprintFunnelPanel({
   analytics,
   showHeroExperiment = true,
+  showTrialExperiment = false,
 }: {
   analytics: AppSprintFunnelAnalytics;
   showHeroExperiment?: boolean;
+  showTrialExperiment?: boolean;
 }) {
   const daily = analytics.daily.filter((row) => row.surface === "aso");
   const interval = analytics.interval?.filter((row) => row.surface === "aso") ?? [];
@@ -59,8 +61,24 @@ export default function AppSprintFunnelPanel({
             <tbody>
               {analytics.heroPreviewExperiment.map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
-                  <Td><div className="flex items-center gap-2"><Badge>Variant {index === 0 ? "A" : "B"}</Badge><span className="font-medium">{row.label}</span></div></Td>
+                  <Td><div className="flex items-center gap-2"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DashboardCard> : null}
+
+      {showTrialExperiment ? <DashboardCard title="Trial length A/B/C test" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[64rem] text-sm">
+            <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Trial</Th><Th right>Trial rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
+            <tbody>
+              {(analytics.trialExperiment ?? []).map((row, index) => (
+                <tr key={row.variant} className="border-b border-black/[0.07]">
+                  <Td><div className="flex items-center gap-2"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
+                  <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatPercent(ratio(row.trials, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
                 </tr>
               ))}
             </tbody>
@@ -218,7 +236,8 @@ function totalConversions(row: AppSprintFunnelBreakdownRow) { return row.bookCal
 function barPercent(value: number, maxValue: number, maxWidth: number) { if (value <= 0 || maxValue <= 0 || maxWidth <= 0) return 0; return Math.min(maxWidth, Math.max(Math.min(2, maxWidth), (value / maxValue) * maxWidth)); }
 function ratio(part: number, total: number) { return total > 0 ? part / total : 0; }
 function formatInt(value: number) { return finite(value).toLocaleString("en", { maximumFractionDigits: 0 }); }
-function formatPercent(value: number) { return `${(finite(value) * 100).toLocaleString("en", { maximumFractionDigits: 1 })}%`; }
+function formatPercent(value: number) { return `${(finite(value) * 100).toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`; }
+function variantLetter(index: number) { return String.fromCharCode(65 + Math.max(0, index)); }
 function formatCurrency(value: number) { return new Intl.NumberFormat("en", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(finite(value)); }
 function formatPreciseCurrency(value: number) { return new Intl.NumberFormat("en", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(finite(value)); }
 function finite(value: number) { return Number.isFinite(value) ? value : 0; }

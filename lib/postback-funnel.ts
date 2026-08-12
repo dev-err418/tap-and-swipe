@@ -28,6 +28,15 @@ type PostbackAnalytics = {
   byReferrer: PostbackBreakdownRow[];
   daily: (PostbackMetricRow & { bucket: string })[];
   interval?: (PostbackMetricRow & { bucket: string })[];
+  trialExperiment?: {
+    variant: string;
+    label: string;
+    visitors: number;
+    paymentPageViews: number;
+    trials: number;
+    paid: number;
+    revenue: number;
+  }[];
   recentConversions: {
     id: string;
     occurredAt: string;
@@ -127,5 +136,6 @@ function adaptPostbackAnalytics(
       surface: "aso",
     })),
     heroPreviewExperiment: [],
+    trialExperiment: analytics.trialExperiment ?? [],
   };
 }

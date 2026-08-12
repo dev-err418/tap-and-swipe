@@ -480,6 +480,7 @@ async function WebsiteDetail({
         <AppSprintFunnelPanel
           analytics={analytics}
           showHeroExperiment={site === "appsprint"}
+          showTrialExperiment={site === "postback"}
         />
       ) : (
         <div className="rounded-lg border border-black/10 bg-white px-6 py-16 text-center">

@@ -78,6 +78,15 @@ export type AppSprintFunnelAnalytics = {
     paid: number;
     revenue: number;
   }[];
+  trialExperiment?: {
+    variant: string;
+    label: string;
+    visitors: number;
+    paymentPageViews: number;
+    trials: number;
+    paid: number;
+    revenue: number;
+  }[];
 };
 
 export async function getAppSprintFunnelAnalytics(period?: string) {
