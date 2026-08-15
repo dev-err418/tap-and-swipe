@@ -37,6 +37,16 @@ type PostbackAnalytics = {
     paid: number;
     revenue: number;
   }[];
+  onboardingExperiment?: {
+    variant: string;
+    label: string;
+    visitors: number;
+    completed: number;
+    paymentPageViews: number;
+    trials: number;
+    paid: number;
+    revenue: number;
+  }[];
   recentConversions: {
     id: string;
     occurredAt: string;
@@ -137,5 +147,6 @@ function adaptPostbackAnalytics(
     })),
     heroPreviewExperiment: [],
     trialExperiment: analytics.trialExperiment ?? [],
+    onboardingExperiment: analytics.onboardingExperiment ?? [],
   };
 }

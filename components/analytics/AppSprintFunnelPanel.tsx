@@ -13,10 +13,12 @@ export default function AppSprintFunnelPanel({
   analytics,
   showHeroExperiment = true,
   showTrialExperiment = false,
+  showOnboardingExperiment = false,
 }: {
   analytics: AppSprintFunnelAnalytics;
   showHeroExperiment?: boolean;
   showTrialExperiment?: boolean;
+  showOnboardingExperiment?: boolean;
 }) {
   const daily = analytics.daily.filter((row) => row.surface === "aso");
   const interval = analytics.interval?.filter((row) => row.surface === "aso") ?? [];
@@ -79,6 +81,22 @@ export default function AppSprintFunnelPanel({
                 <tr key={row.variant} className="border-b border-black/[0.07]">
                   <Td><div className="flex items-center gap-2"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatPercent(ratio(row.trials, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DashboardCard> : null}
+
+      {showOnboardingExperiment ? <DashboardCard title="Onboarding A/B test" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[64rem] text-sm">
+            <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Started</Th><Th right>Completed</Th><Th right>Completion rate</Th><Th right>Payment page</Th><Th right>Trial</Th><Th right>Paid</Th><Th right>Revenue</Th></tr></thead>
+            <tbody>
+              {(analytics.onboardingExperiment ?? []).map((row, index) => (
+                <tr key={row.variant} className="border-b border-black/[0.07]">
+                  <Td><div className="flex items-center gap-2"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
+                  <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.completed)}</NumberTd><NumberTd>{formatPercent(ratio(row.completed, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
                 </tr>
               ))}
             </tbody>

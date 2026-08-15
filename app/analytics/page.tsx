@@ -481,6 +481,7 @@ async function WebsiteDetail({
           analytics={analytics}
           showHeroExperiment={site === "appsprint"}
           showTrialExperiment={site === "postback"}
+          showOnboardingExperiment={site === "postback"}
         />
       ) : (
         <div className="rounded-lg border border-black/10 bg-white px-6 py-16 text-center">
