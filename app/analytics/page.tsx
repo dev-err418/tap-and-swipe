@@ -562,7 +562,7 @@ function formatNumber(value: number | bigint) {
 function websiteFaviconUrl(domain: string) {
   if (domain === "appsprint.app") return "https://appsprint.app/app-icon.png";
   if (domain === "postback.sh") return "https://postback.sh/icon.png";
-  if (domain === "grewit.app") return "https://grewit.app/logo-mark.png";
+  if (domain === "grewit.app") return "/icons/grewit.png";
   return "/icon.png";
 }
 
