@@ -20,7 +20,7 @@ export default function AnalyticsPeriodSelect({
   site,
 }: {
   period: Period;
-  site?: "appsprint" | "postback" | "community";
+  site?: "appsprint" | "postback" | "grewit" | "community";
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();

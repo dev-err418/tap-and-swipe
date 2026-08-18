@@ -9,6 +9,7 @@ import {
   type AppSprintFunnelAnalytics,
 } from "@/lib/appsprint-funnel";
 import { getPostbackFunnelAnalytics } from "@/lib/postback-funnel";
+import { getGrewItFunnelAnalytics } from "@/lib/grew-it-funnel";
 import { getCommunityFunnelAnalytics } from "@/lib/community-funnel";
 import {
   getMobileAppAnalytics,
@@ -29,7 +30,7 @@ const isDev = process.env.NODE_ENV === "development";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 type Tab = "analytics" | "appsprint";
-type WebsiteSite = "appsprint" | "postback" | "community";
+type WebsiteSite = "appsprint" | "postback" | "grewit" | "community";
 
 const TAB_LABELS: Record<Tab, string> = {
   analytics: "Analytics",
@@ -92,9 +93,13 @@ export default async function AnalyticsPage({
   }
 
   const period = normalizePeriod(params.period);
-  const detailSite = params.site === "appsprint" || params.site === "postback" || params.site === "community"
-    ? params.site
-    : null;
+  const detailSite =
+    params.site === "appsprint" ||
+    params.site === "postback" ||
+    params.site === "grewit" ||
+    params.site === "community"
+      ? params.site
+      : null;
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] px-4 py-6 text-black sm:px-6 sm:py-8">
@@ -160,9 +165,10 @@ async function WebsiteDirectory({
 }: {
   period: Period;
 }) {
-  const [appSprintAnalytics, postbackAnalytics, communityAnalytics, mobileApps] = await Promise.all([
+  const [appSprintAnalytics, postbackAnalytics, grewItAnalytics, communityAnalytics, mobileApps] = await Promise.all([
     getAppSprintFunnelAnalytics(period),
     getPostbackFunnelAnalytics(period),
+    getGrewItFunnelAnalytics(period),
     getCommunityFunnelAnalytics(period),
     getMobileAppAnalytics(period),
   ]);
@@ -172,6 +178,9 @@ async function WebsiteDirectory({
       : null,
     postbackAnalytics
       ? websiteData("postback", "postback.sh", postbackAnalytics)
+      : null,
+    grewItAnalytics
+      ? websiteData("grewit", "grewit.app", grewItAnalytics)
       : null,
     websiteData("community", "community", communityAnalytics),
   ].filter((website) => website !== null);
@@ -184,7 +193,7 @@ async function WebsiteDirectory({
           <AnalyticsPeriodSelect period={period} />
         </div>
         <div className="rounded-[24px] border border-black/[0.07] bg-white px-6 py-14 text-center text-sm text-black/45 shadow-sm">
-          Check the AppSprint and Postback analytics endpoints and database configuration.
+          Check the AppSprint, Postback, and Grew It analytics endpoints and database configuration.
         </div>
       </div>
     );
@@ -441,12 +450,16 @@ async function WebsiteDetail({
     ? await getAppSprintFunnelAnalytics(period)
     : site === "postback"
       ? await getPostbackFunnelAnalytics(period)
-      : await getCommunityFunnelAnalytics(period);
+      : site === "grewit"
+        ? await getGrewItFunnelAnalytics(period)
+        : await getCommunityFunnelAnalytics(period);
   const domain = site === "appsprint"
     ? "appsprint.app"
     : site === "postback"
       ? "postback.sh"
-      : "community";
+      : site === "grewit"
+        ? "grewit.app"
+        : "community";
   const daily = analytics?.daily.filter((row) => row.surface === "aso") ?? [];
   const visitors = analytics?.totals.asoVisits ?? 0;
   const revenueCents = daily.reduce((sum, row) => sum + row.revenue, 0) * 100;
@@ -549,6 +562,7 @@ function formatNumber(value: number | bigint) {
 function websiteFaviconUrl(domain: string) {
   if (domain === "appsprint.app") return "https://appsprint.app/app-icon.png";
   if (domain === "postback.sh") return "https://postback.sh/icon.png";
+  if (domain === "grewit.app") return "https://grewit.app/logo-mark.png";
   return "/icon.png";
 }
 
