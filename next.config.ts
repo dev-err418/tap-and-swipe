@@ -105,6 +105,27 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Poky replaced the legacy GLP-1 product pages.
+      {
+        source: "/glp-1",
+        destination: "https://trypoky.app",
+        permanent: true,
+      },
+      {
+        source: "/glp-1/privacy",
+        destination: "https://trypoky.app/privacy",
+        permanent: true,
+      },
+      {
+        source: "/glp-1/terms",
+        destination: "https://trypoky.app/terms",
+        permanent: true,
+      },
+      {
+        source: "/glp-1/contact",
+        destination: "https://trypoky.app/support",
+        permanent: true,
+      },
       // Old community URL → new /community
       {
         source: "/app-sprint-community",
