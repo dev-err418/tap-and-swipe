@@ -73,7 +73,7 @@ export default function AppSprintFunnelPanel({
             </tbody>
           </table>
         </div>
-        <p className="px-4 py-3 text-xs text-muted-foreground">A: 3-day trial. B: pay immediately, no trial. USD, excluding tax. First payment per visitor; renewals excluded. Allow 3 days for A’s trials to convert.</p>
+        <p className="px-4 py-3 text-xs text-muted-foreground">Both offers charge immediately, with no free trial. USD, excluding tax. First payment per visitor; renewals excluded.</p>
       </DashboardCard> : null}
 
       {showHeroExperiment ? <DashboardCard title="Hero preview A/B test" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
