@@ -45,10 +45,11 @@ const FROM_NAME = process.env.PLUNK_NEWSLETTER_FROM_NAME ?? "Arthur from Tap & S
 const REPLY_TO = process.env.PLUNK_NEWSLETTER_REPLY_TO ?? FROM_EMAIL;
 
 const CAMPAIGN = {
-  name: "Newsletter 005 - Enzo / Blow Up UGC",
-  description: "Tap & Swipe episode about Enzo's $300K/month app business and the UGC system behind 250M monthly views.",
-  subject: "the UGC system behind 250M views/month",
-  htmlPath: resolve("plunk-campaigns/2026-07-19-enzo-blow-up-ugc.html"),
+  name: "Newsletter 006 - Gabriel Zeitoun / BPM",
+  description: "Tap & Swipe episode about how Gabriel built BPM to EUR 1M in annualized revenue with a run club, premium features, and Meta ads.",
+  subject: "a run club became a \u20ac1M/year dating app",
+  htmlPath: resolve("plunk-campaigns/2026-08-30-gabriel-zeitoun-bpm.html"),
+  audienceType: "ALL" as "ALL" | "FILTERED",
 };
 
 const command = process.argv[2] ?? "preview";
@@ -63,21 +64,23 @@ function campaignPayload(body: string) {
     fromName: FROM_NAME,
     replyTo: REPLY_TO,
     type: "HEADLESS",
-    audienceType: "FILTERED",
-    audienceCondition: {
-      logic: "AND",
-      groups: [
-        {
-          filters: [
-            {
-              field: "data.onboarded",
-              operator: "equals",
-              value: "true",
-            },
-          ],
-        },
-      ],
-    },
+    audienceType: CAMPAIGN.audienceType,
+    ...(CAMPAIGN.audienceType === "FILTERED" && {
+      audienceCondition: {
+        logic: "AND",
+        groups: [
+          {
+            filters: [
+              {
+                field: "data.onboarded",
+                operator: "equals",
+                value: "true",
+              },
+            ],
+          },
+        ],
+      },
+    }),
   };
 }
 
@@ -167,9 +170,14 @@ async function getContacts(): Promise<Contact[]> {
   return contacts;
 }
 
-async function getOnboardedRecipients(): Promise<Contact[]> {
+function isCampaignRecipient(contact: Contact): boolean {
+  return contact.subscribed &&
+    (CAMPAIGN.audienceType === "ALL" || isOnboarded(contact.data));
+}
+
+async function getCampaignRecipients(): Promise<Contact[]> {
   const contacts = await getContacts();
-  return contacts.filter((contact) => contact.subscribed && isOnboarded(contact.data));
+  return contacts.filter(isCampaignRecipient);
 }
 
 async function createCampaign(recipients: string[]) {
@@ -228,13 +236,14 @@ async function sendCampaign(id: string, scheduledFor?: string) {
 async function preview() {
   const contacts = await getContacts();
   const onboarded = contacts.filter((contact) => isOnboarded(contact.data));
-  const recipients = contacts.filter((contact) => contact.subscribed && isOnboarded(contact.data));
+  const recipients = contacts.filter(isCampaignRecipient);
 
   console.log(`Subject: ${CAMPAIGN.subject}`);
   console.log(`HTML: ${CAMPAIGN.htmlPath}`);
   console.log(`Contacts total: ${contacts.length}`);
   console.log(`Onboarded true: ${onboarded.length}`);
-  console.log(`Subscribed + onboarded true recipients: ${recipients.length}`);
+  console.log(`Audience: ${CAMPAIGN.audienceType === "ALL" ? "All subscribers" : "Onboarded subscribers"}`);
+  console.log(`Recipients: ${recipients.length}`);
 }
 
 async function test(email = DEFAULT_TEST_EMAIL) {
@@ -272,10 +281,10 @@ async function updateExisting(id: string | undefined) {
 }
 
 async function createDraft() {
-  const recipients = await getOnboardedRecipients();
+  const recipients = await getCampaignRecipients();
 
   if (recipients.length === 0) {
-    throw new Error("No subscribed + onboarded recipients found.");
+    throw new Error("No subscribers match the campaign audience.");
   }
 
   const campaign = await createCampaign(recipients.map((contact) => contact.id));

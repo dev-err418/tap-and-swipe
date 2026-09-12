@@ -12,11 +12,13 @@ const REVENUE_BAR_SHARE = 100 - VISITOR_BAR_SHARE;
 export default function AppSprintFunnelPanel({
   analytics,
   showHeroExperiment = true,
+  showPricingExperiment = false,
   showTrialExperiment = false,
   showOnboardingExperiment = false,
 }: {
   analytics: AppSprintFunnelAnalytics;
   showHeroExperiment?: boolean;
+  showPricingExperiment?: boolean;
   showTrialExperiment?: boolean;
   showOnboardingExperiment?: boolean;
 }) {
@@ -55,6 +57,24 @@ export default function AppSprintFunnelPanel({
         <Metric title="Paid rate" value={formatPercent(ratio(analytics.totals.asoPaid, visits))} detail={`${formatInt(analytics.totals.asoPaid)} paid / ${formatInt(visits)} visitors`} />
         <Metric title="Revenue / visitor" value={formatPreciseCurrency(ratio(revenue, visits))} detail="Paid revenue / visitors" />
       </div>
+
+      {showPricingExperiment ? <DashboardCard title="Pricing A/B test" action={<span className="text-xs text-muted-foreground">50/50 · {windowLabel}</span>} contentClassName="min-w-0 p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[70rem] text-sm">
+            <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right>Revenue / visitor</Th></tr></thead>
+            <tbody>
+              {(analytics.pricingExperiment ?? []).map((row) => (
+                <tr key={row.variant} className="border-b border-black/[0.07]">
+                  <Td><div className="flex items-center gap-2"><Badge>Variant {row.variant === "legacy_usd" ? "A" : "B"}</Badge><span className="font-medium">{row.label}</span></div></Td>
+                  <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatPreciseCurrency(row.revenue)}</NumberTd><NumberTd>{formatPreciseCurrency(ratio(row.revenue, row.visitors))}</NumberTd>
+                </tr>
+              ))}
+              {!analytics.pricingExperiment?.length ? <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Pricing experiment data is not available yet.</td></tr> : null}
+            </tbody>
+          </table>
+        </div>
+        <p className="px-4 py-3 text-xs text-muted-foreground">A: 3-day trial. B: pay immediately, no trial. USD, excluding tax. First payment per visitor; renewals excluded. Allow 3 days for A’s trials to convert.</p>
+      </DashboardCard> : null}
 
       {showHeroExperiment ? <DashboardCard title="Hero preview A/B test" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
         <div className="overflow-x-auto">

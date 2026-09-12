@@ -1,130 +1,182 @@
-# Privacy policy for GLP-1
+# Privacy policy for Poky
 
-**Last Updated:** July 6, 2026
+**Last Updated:** August 20, 2026
 
 ## Introduction
 
-This Privacy Policy explains how Tap & Swipe handles information when you use GLP-1 (the "App") and the GLP-1 pages on tap-and-swipe.com.
+This Privacy Policy explains how Arthur Spalanzani / Tap & Swipe ("we", "us", or "Developer") handles information when you use Poky (the "App") and the Poky pages on tap-and-swipe.com.
 
-GLP-1 is designed to help you track your medication routine and weight journey without creating an account or sending your health entries to Tap & Swipe servers.
+Poky is designed to help you track a medication routine and weight journey without creating a Tap & Swipe account or sending your health journal to a Tap & Swipe server database.
 
 ## The short version
 
 - **No account.** You do not need to create a Tap & Swipe account to use the App.
-- **No server database for your health entries.** We do not operate a Tap & Swipe backend that stores your shot logs, dosage details, weight entries, notes, or onboarding answers.
-- **No sale of personal data.** We do not sell your personal information or health information.
-- **No targeted advertising based on health data.** We do not use your health entries for advertising.
-- **Subscriptions are handled by Apple and RevenueCat.** If the App offers paid features, purchase status may be processed by Apple and RevenueCat so the App can unlock those features.
+- **Your health journal stays on your device.** We do not operate a Tap & Swipe backend that stores your medication, dose, injection, weight, photo, side-effect, note, reminder, or onboarding entries.
+- **Optional health-platform access stays on device.** Apple Health and Health Connect data is read only after permission and is used on your device to fill your Poky summary.
+- **Limited service data.** We use service providers for subscriptions, product analytics, and crash diagnostics. They may process an app-generated identifier, purchase status, app interaction events, coarse location, and technical device or crash information. We do not send your health journal to those providers.
+- **No sale or targeted advertising.** We do not sell personal or health information, show third-party ads, or use health information for advertising.
 
 ## Information you may enter in the App
 
-Depending on which features you use, the App may let you enter information such as:
+Depending on the features you use, the App may let you enter:
 
-- Medication name and dose
-- Injection date, time, frequency, and site
-- Current weight, goal weight, and weight progress
+- Medication name, route, and dose
+- Injection or pill date, time, frequency, and site
+- Current weight, goal weight, progress photos, calories, and protein
 - Notes, side effects, preferences, and onboarding answers
-- Notification and reminder preferences
+- Notification, reminder, widget, and schedule preferences
 
-This information is used to provide the App's tracking features. We do not save this health information to a Tap & Swipe server.
+This information is used to provide Poky's tracking features. It is stored locally on your device and is not uploaded to a Tap & Swipe health-data server.
 
-## Local storage
+## Local storage, photos, reminders, and widgets
 
-The App may store your information locally on your device so the App can remember your settings and show your tracking history. If you delete the App or clear its data, local information may be deleted from your device.
+Poky stores your journal and preferences locally so it can remember settings and show your history. Progress photos you select are copied into the App's private local storage. Reminders are scheduled locally through your device's notification system. Widgets receive the local information needed to display the widget you choose.
 
-Your device operating system may offer backups or sync features, such as iCloud device backups. Those platform features are controlled by Apple and your device settings, not by Tap & Swipe.
+If you delete entries, reset App data, clear App storage, or uninstall the App, local information may be deleted. Your operating system may include device backup or sync features controlled by Apple, Google, or your device settings rather than Tap & Swipe.
 
-## App Store purchases and subscriptions
+## Apple Health and Health Connect
 
-If GLP-1 includes paid features, purchases are processed through the Apple App Store. We do not receive your full payment card details.
+If you choose to connect a supported health platform, Poky may request read access to:
 
-We may use RevenueCat to manage subscription status. RevenueCat may process an app-generated user identifier, purchase metadata, product identifiers, renewal status, and similar information needed to unlock paid features and troubleshoot purchases.
+- Steps
+- Active calories burned
+- Dietary calories
+- Protein or nutrition information
 
-## Information from contact requests
+Poky reads only the categories for which you grant permission. This information is processed on your device to populate summaries and charts. We do not send Apple Health or Health Connect data to Tap & Swipe, Superwall, Mixpanel, or Sentry. You can review or revoke access in Apple Health, Health Connect, or your device settings.
 
-If you email us, we receive the information you choose to send, such as your email address, message, screenshots, and any details you include. Please avoid sending sensitive health details unless they are necessary for your request.
+## Purchases and subscriptions
 
-We use contact messages only to respond to you, handle support, and keep reasonable records of the conversation.
+Purchases are processed by the Apple App Store or Google Play. We do not receive your full payment-card details.
+
+We use Superwall to present paywalls, process or restore in-app purchases, and determine subscription access. Superwall may process an app-generated user identifier, device and app details, product identifiers, transaction or purchase status, renewal or entitlement information, country, and paywall interaction events. We use this information for App functionality, subscription support, and analytics, not advertising.
+
+## Product analytics
+
+We use Mixpanel to understand whether Poky's screens and features work as expected. Mixpanel may process:
+
+- App interaction events, such as a screen being viewed or a setup step being completed
+- An app-generated identifier
+- App version, operating system, device model, language, and similar technical properties
+- Coarse location such as country, region, or city derived from network information
+
+We do not send medication names, dose values, weight values, injection sites, notes, side-effect text, progress photos, names, email addresses, phone numbers, or Apple Health / Health Connect records to Mixpanel.
+
+## Crash diagnostics
+
+We use Sentry to detect crashes and operational errors. Sentry may process crash logs, stack traces, app and operating-system versions, device model, session status, timestamps, network information, and similar diagnostic details. Poky configures Sentry not to attach screenshots or view hierarchies and not to send default personal information. We do not intentionally add health-journal values to Sentry reports.
+
+## Contact requests
+
+If you email us, we receive the information you choose to send, such as your email address, message, screenshots, and any details you include. Please avoid sending sensitive health details unless they are necessary for your request. We use contact messages only to respond, provide support, and keep reasonable records.
 
 ## Website information
 
-The GLP-1 pages on tap-and-swipe.com are informational pages. They are not designed to collect health data. Standard server logs may include technical details such as IP address, browser, device type, requested URL, and timestamp for security, debugging, and reliability.
+The Poky pages on tap-and-swipe.com are informational pages and are not designed to collect health data. Standard server logs may include an IP address, browser or device type, requested URL, and timestamp for security, debugging, and reliability.
 
 ## Third-party services
 
-### Apple App Store
+Poky may use the following service providers:
 
-- **Purpose:** App distribution, purchase processing, subscription management, refunds, and platform services.
-- **Data handled:** Apple handles payment and App Store account information under Apple's own terms and privacy policy.
+### Apple App Store and Apple Health
 
-### RevenueCat
+- **Purpose:** App distribution, purchases, subscriptions, refunds, platform services, and optional on-device health access.
+- **Provider terms:** Apple processes information under its own terms and privacy policy.
 
-- **Purpose:** Subscription entitlement and purchase status management.
-- **Data handled:** App-generated identifiers, purchase status, product IDs, renewal state, and related purchase metadata.
+### Google Play, Google Play Billing, and Health Connect
 
-We do not authorize these services to use your GLP-1 health entries for targeted advertising.
+- **Purpose:** App distribution, purchases, subscriptions, refunds, platform services, and optional on-device health access.
+- **Provider terms:** Google processes information under its own terms and privacy policy.
+
+### Superwall
+
+- **Purpose:** Paywalls, purchase and restore flows, entitlement management, subscription support, and paywall analytics.
+- **Data handled:** App-generated identifiers, purchase and entitlement details, paywall interactions, country, and technical app or device information.
+
+### Mixpanel
+
+- **Purpose:** Product analytics and reliability insights.
+- **Data handled:** App interaction events, app-generated identifiers, coarse location, and technical app or device information.
+
+### Sentry
+
+- **Purpose:** Crash reporting, operational diagnostics, and reliability.
+- **Data handled:** Crash, error, session, network, app, operating-system, and device diagnostics.
+
+We treat these companies as service providers and do not authorize them to use your Poky health journal for targeted advertising.
 
 ## Information we do not collect
 
-Unless you contact us directly, we do not collect:
+Unless you contact us directly, we do not intentionally collect:
 
-- Your name
-- Your email address
-- Your phone number
+- Your name, email address, or phone number
 - Your precise location
-- Your Apple ID
-- Your medication logs or weight entries on Tap & Swipe servers
+- Your Apple ID, Google Account credentials, or payment-card number
+- Your medication logs, dose values, weight entries, progress photos, notes, or side-effect text on Tap & Swipe servers
+- Your Apple Health or Health Connect records on Tap & Swipe servers
 
 ## How we use information
 
 We use information only as needed to:
 
-- Provide and maintain the App
+- Provide, maintain, and improve the App
 - Remember local settings and preferences
-- Manage subscriptions and paid features
+- Manage subscriptions and paid access
+- Understand product usage without analyzing health-journal content
+- Diagnose crashes and operational failures
 - Respond to support, privacy, or legal requests
-- Keep the website and App reliable and secure
 - Comply with legal obligations
 
-## Health data
+## Data sharing and advertising
 
-Information about medications, injections, symptoms, weight, and related notes can be sensitive health information. We design GLP-1 so this information is not stored in a Tap & Swipe server database.
-
-If you choose to include health details in a support email, we treat that information as sensitive and use it only to respond to your request.
+We do not sell your personal information or health information. We do not show third-party ads, use advertising identifiers, combine Poky data with third-party advertising profiles, or share health-journal data for targeted advertising. Service providers process limited data on our behalf for the purposes described above.
 
 ## Data retention
 
-- **Device-local App data:** Retained on your device until you delete it in the App, clear App data, or uninstall the App.
-- **Subscription data:** Retained by Apple and RevenueCat according to their policies and as needed to manage purchases.
-- **Support emails:** Retained for as long as reasonably necessary to respond, maintain records, and comply with legal obligations.
+- **Device-local App data:** Retained on your device until you delete it, reset App data, clear App storage, or uninstall the App, subject to device backup settings.
+- **Subscription and entitlement data:** Retained by Apple, Google, and Superwall according to their policies and as needed to manage purchases, entitlements, fraud prevention, accounting, and legal obligations.
+- **Analytics and diagnostics:** Retained according to our configured Mixpanel and Sentry retention settings and their applicable policies.
+- **Support emails:** Retained as reasonably necessary to respond, maintain records, and comply with legal obligations.
 - **Website logs:** Retained for a limited period for security, debugging, and reliability.
+
+## Delete your data
+
+Poky does not create a Tap & Swipe account, so there is no account profile to close. You can delete Poky data in either of these ways:
+
+1. **Delete data stored on your device.** Delete individual entries or use Poky's reset option where available. On Android, you can also open **Settings > Apps > Poky > Storage & cache > Clear storage**. Uninstalling Poky removes its App-controlled local storage. Device backups are controlled by Apple, Google, or your device settings and may need to be deleted separately.
+2. **Request deletion of service-linked data.** Email **support@tap-and-swipe.com** with the subject **Poky data deletion request**. Include whether you use iOS or Android and, if available, the Superwall user ID shown in Poky's Settings. Do not include medication, dose, weight, note, photo, or other health-journal details. We will use the information you provide only to locate the relevant analytics, diagnostic, subscription-support, or contact records, request deletion from our service providers where applicable, and confirm the outcome.
+
+We may ask for limited additional information to prevent unauthorized deletion. We normally respond within 30 days, subject to any extension allowed by applicable law. A deletion request does not automatically cancel an Apple App Store or Google Play subscription, and Apple or Google may retain purchase, fraud-prevention, accounting, tax, or legal records under their own policies. Manage or cancel the subscription through your platform account.
 
 ## Your choices and rights
 
 Depending on where you live, you may have rights to access, correct, delete, export, restrict, or object to processing of personal information.
 
-Because GLP-1 does not store your health entries on Tap & Swipe servers, many choices are handled directly on your device:
+You can:
 
-- Delete entries in the App where available.
-- Delete the App to remove local App data from your device.
-- Manage App Store subscriptions in your Apple account settings.
-- Contact us for privacy requests related to support messages or other information you sent to us.
+- Delete entries or reset local information in the App where available.
+- Clear App data or uninstall the App to remove local information from the device.
+- Review or revoke Apple Health, Health Connect, photo, and notification permissions in device settings.
+- Manage Apple App Store or Google Play subscriptions in your platform account.
+- Contact us to request access to or deletion of support, analytics, diagnostic, or subscription-support information associated with you. Including the Superwall user ID shown in Poky's Settings can help us locate an anonymous record.
+
+We may need to retain limited information when required for security, fraud prevention, accounting, dispute resolution, or legal compliance.
 
 ## Security
 
-We use reasonable technical and organizational safeguards for information we process, including HTTPS for the website and limited access to support communications. No method of storage or transmission is completely secure, but we work to protect information we handle.
+We use reasonable technical and organizational safeguards, including encrypted network connections and limited access to service data. Your health journal is designed to remain in App-controlled storage on your device. No method of storage or transmission is completely secure.
 
 ## Children's privacy
 
-The App is not intended for children under 13, or the minimum age required in your country or region if higher. We do not knowingly collect personal information from children.
+Poky is intended for adults and is not directed to people under 18. We do not knowingly collect personal information from children.
 
 ## International users
 
-Tap & Swipe operates from France. Information you send to us may be processed in France, the European Union, the United States, or other locations where our service providers operate.
+Tap & Swipe operates from France. Limited service information may be processed in France, the European Union, the United States, or other locations where our service providers operate, subject to applicable safeguards.
 
 ## European users
 
-For users in the European Economic Area, United Kingdom, or similar regions, our legal bases may include performance of a contract, legitimate interests, consent where required, and compliance with legal obligations.
+For users in the European Economic Area, United Kingdom, or similar regions, our legal bases may include performance of a contract, legitimate interests in operating and securing the App, consent where required, and compliance with legal obligations.
 
 For users in France, the supervisory authority is:
 
@@ -143,8 +195,7 @@ For privacy questions or requests, contact:
 
 - **Email:** support@tap-and-swipe.com
 - **Developer:** Arthur Spalanzani
-- **App:** GLP-1
+- **App:** Poky
 - **Location:** France
 
-Please include "Privacy Request" in the subject line if you are exercising a legal privacy right.
-
+Please include "Privacy Request" in the subject line if you are exercising a privacy right.

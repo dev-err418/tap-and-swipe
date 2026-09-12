@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+
+# Local agent state
+/.claude/scheduled_tasks.lock
+/.codex/config.toml

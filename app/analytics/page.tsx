@@ -492,7 +492,8 @@ async function WebsiteDetail({
       {analytics ? (
         <AppSprintFunnelPanel
           analytics={analytics}
-          showHeroExperiment={site === "appsprint"}
+          showHeroExperiment={false}
+          showPricingExperiment={site === "appsprint"}
           showTrialExperiment={site === "postback"}
           showOnboardingExperiment={site === "postback"}
         />
