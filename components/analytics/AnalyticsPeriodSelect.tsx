@@ -2,7 +2,18 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DASHBOARD_PICKER_TRIGGER_CLASS,
+  DASHBOARD_POPOVER_CLASS,
+  DASHBOARD_POPOVER_ITEM_CLASS,
+} from "@/components/analytics/dashboard-surface";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -26,31 +37,42 @@ export default function AnalyticsPeriodSelect({
   const [isPending, startTransition] = useTransition();
 
   return (
-    <label className="relative inline-flex">
-      <span className="sr-only">Analytics period</span>
-      <select
-        value={period}
-        disabled={isPending}
-        onChange={(event) => {
-          const nextPeriod = event.target.value as Period;
-          const params = new URLSearchParams();
-          if (nextPeriod !== "week") params.set("period", nextPeriod);
-          if (site) params.set("site", site);
-          const query = params.toString();
-
-          startTransition(() => {
-            router.push(`/analytics${query ? `?${query}` : ""}`);
-          });
-        }}
-        className="h-10 min-w-40 appearance-none rounded-[13px] border border-black/10 bg-white py-0 pl-3 pr-9 text-sm font-medium text-black shadow-sm outline-none transition-all hover:bg-black/[0.025] focus:border-black/25 focus:ring-3 focus:ring-black/5 disabled:cursor-wait disabled:opacity-60"
+    <Select
+      value={period}
+      disabled={isPending}
+      onValueChange={(value) => {
+        const nextPeriod = value as Period;
+        if (nextPeriod === period) return;
+        const params = new URLSearchParams();
+        if (nextPeriod !== "week") params.set("period", nextPeriod);
+        if (site) params.set("site", site);
+        const query = params.toString();
+        startTransition(() => {
+          router.push(`/analytics${query ? `?${query}` : ""}`);
+        });
+      }}
+    >
+      <SelectTrigger
+        aria-label="Analytics period"
+        className={`${DASHBOARD_PICKER_TRIGGER_CLASS} w-full sm:w-[160px]`}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent
+        position="popper"
+        align="end"
+        className={DASHBOARD_POPOVER_CLASS}
       >
         {PERIOD_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
+          <SelectItem
+            key={option.value}
+            value={option.value}
+            className={DASHBOARD_POPOVER_ITEM_CLASS}
+          >
             {option.label}
-          </option>
+          </SelectItem>
         ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-black/45" />
-    </label>
+      </SelectContent>
+    </Select>
   );
 }

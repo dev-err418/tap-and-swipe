@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
   ArrowLeft,
+  Command,
 } from "lucide-react";
 import { getSession } from "@/lib/session";
 import {
@@ -17,6 +18,7 @@ import {
 } from "@/lib/mobile-app-analytics";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
 import DeadProjectsDisclosure from "@/components/analytics/DeadProjectsDisclosure";
+import { DASHBOARD_SURFACE_CLASS } from "@/components/analytics/dashboard-surface";
 import AppSprintFunnelPanel from "@/components/analytics/AppSprintFunnelPanel";
 import LicensesModal from "@/components/aso-debug/LicensesModal";
 import ProxyAnalyticsPanel from "@/components/aso-debug/ProxyAnalyticsPanel";
@@ -32,11 +34,6 @@ const isDev = process.env.NODE_ENV === "development";
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 type Tab = "analytics" | "appsprint";
 type WebsiteSite = "appsprint" | "postback" | "grewit" | "community";
-
-const TAB_LABELS: Record<Tab, string> = {
-  analytics: "Analytics",
-  appsprint: "AppSprint",
-};
 
 const PERIOD_SUMMARY_LABELS: Record<Period, string> = {
   day: "today",
@@ -103,61 +100,23 @@ export default async function AnalyticsPage({
       : null;
 
   return (
-    <main className="min-h-screen bg-[#f7f7f5] px-4 py-6 text-black sm:px-6 sm:py-8">
+    <main className="min-h-screen px-4 py-6 text-black sm:px-6 sm:py-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 flex justify-center">
-          <AnalyticsTabs activeTab="analytics" />
-        </div>
-
         {detailSite ? (
           <WebsiteDetail period={period} site={detailSite} />
         ) : (
           <WebsiteDirectory period={period} />
         )}
       </div>
+      <Link
+        href="/analytics?tab=appsprint"
+        aria-label="AppSprint"
+        title="AppSprint"
+        className="fixed right-4 bottom-4 z-50 inline-flex size-10 items-center justify-center rounded-full bg-white text-black/60 transition-colors hover:text-black"
+      >
+        <Command className="size-4" />
+      </Link>
     </main>
-  );
-}
-
-function AnalyticsTabs({
-  activeTab,
-  tone = "light",
-}: {
-  activeTab: Tab;
-  tone?: "light" | "dark";
-}) {
-  const shellClass =
-    tone === "dark"
-      ? "border-white/10 bg-white/5"
-      : "border-black/10 bg-white shadow-sm";
-
-  return (
-    <nav
-      aria-label="Analytics sections"
-      className={`flex w-fit rounded-xl border p-1 ${shellClass}`}
-    >
-      {(Object.keys(TAB_LABELS) as Tab[]).map((tab) => {
-        const active = activeTab === tab;
-        const href = tab === "analytics" ? "/analytics" : "/analytics?tab=appsprint";
-        const stateClass = active
-          ? tone === "dark"
-            ? "bg-white/10 text-white shadow-sm"
-            : "bg-black/[0.06] text-black shadow-sm"
-          : tone === "dark"
-            ? "text-white/55 hover:bg-white/[0.06] hover:text-white"
-            : "text-black/50 hover:bg-black/[0.04] hover:text-black";
-
-        return (
-          <Link
-            key={tab}
-            href={href}
-            className={`inline-flex h-9 min-w-28 items-center justify-center rounded-[10px] px-4 text-sm font-medium transition-all active:translate-y-px ${stateClass}`}
-          >
-            {TAB_LABELS[tab]}
-          </Link>
-        );
-      })}
-    </nav>
   );
 }
 
@@ -240,7 +199,7 @@ async function WebsiteDirectory({
             ))}
           </div>
         ) : (
-          <div className="rounded-[24px] border border-black/[0.07] bg-white px-6 py-14 text-center text-sm text-black/45 shadow-sm">
+          <div className={`px-6 py-14 text-center text-sm text-black/45 ${DASHBOARD_SURFACE_CLASS}`}>
             Check the AppSprint, Postback, and Grew It analytics endpoints and database configuration.
           </div>
         )}
@@ -304,7 +263,7 @@ function WebsiteCard({
   return (
     <Link
       href={href}
-      className="block cursor-pointer overflow-hidden rounded-[24px] border border-black/[0.07] bg-white p-6 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
+      className={`block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${DASHBOARD_SURFACE_CLASS}`}
     >
       <div className="pointer-events-none select-none">
         <div className="flex items-center gap-3">
@@ -334,7 +293,7 @@ function MobileAppCard({ app }: { app: MobileAppAnalytics }) {
   }));
 
   return (
-    <div className="overflow-hidden rounded-[24px] border border-black/[0.07] bg-white p-6 shadow-sm">
+    <div className={`overflow-hidden p-6 ${DASHBOARD_SURFACE_CLASS}`}>
       <div className="flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -342,7 +301,7 @@ function MobileAppCard({ app }: { app: MobileAppAnalytics }) {
           alt=""
           width={24}
           height={24}
-          className="size-6 shrink-0 rounded-md shadow-[0_4px_10px_rgba(0,0,0,0.16)]"
+          className="size-6 shrink-0 rounded-md"
         />
         <h2 className="truncate text-xl font-semibold tracking-tight">{app.name}</h2>
       </div>
@@ -350,17 +309,17 @@ function MobileAppCard({ app }: { app: MobileAppAnalytics }) {
       <WebsiteMiniChart points={points} ariaLabel="New user trend line and proceeds bars" />
 
       <p className="text-base text-black/55">
-        <strong className="font-bold text-black">{formatCompactNumber(app.downloads)}</strong>{" "}
-        downloads
-        <span className="mx-2 text-black/35">•</span>
         <strong className="font-bold text-black">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
         proceeds
+        <span className="mx-2 text-black/35">•</span>
+        <strong className="font-bold text-black">{formatAppu(app.revenueCents, app.downloads)}</strong>{" "}
+        APPU
       </p>
     </div>
   );
 }
 
-const VISITOR_CHART_COLOR = "oklch(0.62 0.14 250)";
+const VISITOR_CHART_COLOR = "#1d4ed8";
 const POSTBACK_ORANGE = "#f97316";
 
 function WebsiteMiniChart({
@@ -493,7 +452,7 @@ async function WebsiteDetail({
       <div className="space-y-5">
         <Link
           href={buildAnalyticsUrl({ period })}
-          className="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-black/10 bg-white px-2.5 text-sm font-medium text-black/60 shadow-sm transition-all hover:bg-black/[0.04] hover:text-black active:translate-y-px"
+          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-medium text-black/60 shadow-none ring-0 transition-all hover:text-black active:translate-y-px"
         >
           <ArrowLeft className="size-4" />
           All websites
@@ -522,7 +481,7 @@ async function WebsiteDetail({
           showOnboardingExperiment={site === "postback"}
         />
       ) : (
-        <div className="rounded-lg border border-black/10 bg-white px-6 py-16 text-center">
+        <div className={`px-6 py-16 text-center ${DASHBOARD_SURFACE_CLASS}`}>
           <p className="font-medium">{domain} analytics could not be loaded.</p>
           <p className="mt-1 text-sm text-black/50">
             Check the analytics endpoint and shared-secret configuration.
@@ -537,12 +496,15 @@ function AppSprintOperations() {
   return (
     <main className="min-h-screen bg-[#2a2725] px-4 py-6 text-[#f1ebe2] sm:px-8 sm:py-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-8 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <span />
-          <AnalyticsTabs activeTab="appsprint" tone="dark" />
-          <div className="justify-self-end">
-            <LicensesModal />
-          </div>
+        <div className="mb-8 flex items-center justify-between gap-3">
+          <Link
+            href="/analytics"
+            className="inline-flex h-7 items-center gap-1 rounded-full bg-white/10 px-2.5 text-xs font-medium text-[#f1ebe2]/70 transition-colors hover:bg-white/15 hover:text-[#f1ebe2]"
+          >
+            <ArrowLeft className="size-3" />
+            Analytics
+          </Link>
+          <LicensesModal />
         </div>
 
         <h1 className="mb-8 text-2xl font-bold tracking-tight">AppSprint ASO operations</h1>
@@ -605,7 +567,7 @@ function WebsiteFavicon({
   if (isPostback) {
     return (
       <span
-        className={`flex shrink-0 items-center justify-center bg-black shadow-[0_4px_10px_rgba(0,0,0,0.16)] ${sizeClass}`}
+        className={`flex shrink-0 items-center justify-center bg-black ${sizeClass}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -622,7 +584,7 @@ function WebsiteFavicon({
   if (domain === "community") {
     return (
       <span
-        className={`block shrink-0 overflow-hidden shadow-[0_4px_10px_rgba(0,0,0,0.16)] ${sizeClass}`}
+        className={`block shrink-0 overflow-hidden ${sizeClass}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -643,7 +605,7 @@ function WebsiteFavicon({
       alt=""
       width={imageSize}
       height={imageSize}
-      className={`shrink-0 shadow-[0_4px_10px_rgba(0,0,0,0.16)] ${sizeClass}`}
+      className={`shrink-0 ${sizeClass}`}
     />
   );
 }
@@ -667,4 +629,14 @@ function formatCompactNumber(value: number | bigint) {
 
 function formatCompactRevenue(cents: number) {
   return `$${formatCompactNumber(cents / 100)}`;
+}
+
+function formatAppu(revenueCents: number, users: number) {
+  if (users <= 0) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(revenueCents / 100 / users);
 }
