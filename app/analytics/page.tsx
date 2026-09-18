@@ -85,7 +85,7 @@ function normalizePeriod(value: string | undefined): Period {
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; tab?: string; site?: string }>;
+  searchParams: Promise<{ period?: string; tab?: string; site?: string; app?: string }>;
 }) {
   const session = await getSession();
   if (!isDev && !session) {
