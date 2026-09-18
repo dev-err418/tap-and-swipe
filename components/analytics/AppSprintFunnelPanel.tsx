@@ -6,6 +6,8 @@ import { ArrowDownRight, Maximize2 } from "lucide-react";
 import type { AppSprintFunnelAnalytics, AppSprintFunnelBreakdownRow } from "@/lib/appsprint-funnel";
 import { VisitorsRevenueChart } from "@/components/analytics/AppSprintFunnelCharts";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
+import ExperimentStats from "@/components/analytics/ExperimentStats";
+import { analyzeExperiment, type ExperimentArm } from "@/lib/experiment-stats";
 import {
   DASHBOARD_POPOVER_CLASS,
   DASHBOARD_POPOVER_ITEM_CLASS,
@@ -87,6 +89,7 @@ export default function AppSprintFunnelPanel({
       </div>
 
       {showPricingExperiment ? <DashboardCard title="Pricing A/B test" action={<span className="text-xs text-muted-foreground">50/50 · {windowLabel}</span>} contentClassName="min-w-0 p-0">
+        <ExperimentStats analysis={analyzeExperiment(toRevenueArms(analytics.pricingExperiment ?? []), "revenue_per_visitor", "Revenue / visitor")} />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[70rem] text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right>Revenue / visitor</Th></tr></thead>
@@ -104,6 +107,7 @@ export default function AppSprintFunnelPanel({
       </DashboardCard> : null}
 
       {showHeroExperiment ? <DashboardCard title="Hero preview A/B test" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
+        <ExperimentStats analysis={analyzeExperiment(toRevenueArms(analytics.heroPreviewExperiment), "revenue_per_visitor", "Revenue / visitor")} />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[48rem] text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
@@ -120,6 +124,7 @@ export default function AppSprintFunnelPanel({
       </DashboardCard> : null}
 
       {showTrialExperiment ? <DashboardCard title="Trial length A/B/C test" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
+        <ExperimentStats analysis={analyzeExperiment(toRevenueArms(analytics.trialExperiment ?? []), "revenue_per_visitor", "Revenue / visitor")} />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[64rem] text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Trial</Th><Th right>Trial rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
@@ -136,6 +141,7 @@ export default function AppSprintFunnelPanel({
       </DashboardCard> : null}
 
       {showOnboardingExperiment ? <DashboardCard title="Onboarding A/B test" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
+        <ExperimentStats analysis={analyzeExperiment((analytics.onboardingExperiment ?? []).map((row) => ({ key: row.variant, label: row.label, exposures: row.visitors, conversions: row.completed, revenue: row.revenue })), "conversion_rate", "Completion rate")} />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[64rem] text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Started</Th><Th right>Completed</Th><Th right>Completion rate</Th><Th right>Payment page</Th><Th right>Trial</Th><Th right>Paid</Th><Th right>Revenue</Th></tr></thead>
@@ -543,6 +549,16 @@ function BreakdownTooltip({ tooltip }: { tooltip: BreakdownTooltipState }) {
       </div>
     </div>
   );
+}
+
+function toRevenueArms(rows: { variant: string; label: string; visitors: number; paid: number; revenue: number }[]): ExperimentArm[] {
+  return rows.map((row) => ({
+    key: row.variant,
+    label: row.label,
+    exposures: row.visitors,
+    conversions: row.paid,
+    revenue: row.revenue,
+  }));
 }
 
 function Th({ children, right = false }: { children: React.ReactNode; right?: boolean }) { return <th className={`px-4 py-3 font-medium ${right ? "text-right" : ""}`}>{children}</th>; }
