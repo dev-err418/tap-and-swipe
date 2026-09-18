@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import type { MobileAppExperiment, MobileAppExperimentVariant } from "@/lib/mobile-app-analytics";
+import type {
+  MobileAppExperiment,
+  MobileAppExperimentScoreMetric,
+  MobileAppExperimentVariant,
+} from "@/lib/mobile-app-analytics";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import ExperimentStats, { ExperimentWarningBadge } from "@/components/analytics/ExperimentStats";
 import {
@@ -29,18 +33,26 @@ export default function AppExperimentCard({
   const [country, setCountry] = useState(ALL_COUNTRIES);
   const variants = variantsForCountry(experiment.variants, country);
   const scoreMetrics = experiment.scoreMetrics ?? ["appu", "download_paid"];
-  const scored = scoreMetrics.map((metric) => scoredAnalysis(metric, variants));
+  const sessionDays = experiment.sessionDays && experiment.sessionDays > 0 ? experiment.sessionDays : 1;
+  const scored = scoreMetrics.map((metric) => scoredAnalysis(metric, variants, sessionDays));
   const warningAnalysis = firstInsufficient(scored.map((item) => item.analysis)) ?? scored[0]?.analysis;
   const bestDownloadPaidKey = bestVariantKey(variants, (row) => ratio(row.paid, row.installs));
   const bestAppuKey = bestVariantKey(variants, (row) => ratio(row.proceeds, row.installs));
   const bestAppuD7Key = bestVariantKey(variants, (row) => ratio(row.proceedsD7, row.installsD7));
   const bestAppuD14Key = bestVariantKey(variants, (row) => ratio(row.proceedsD14, row.installsD14));
   const bestAppuD30Key = bestVariantKey(variants, (row) => ratio(row.proceedsD30, row.installsD30));
+  const bestSessionsKey = bestVariantKey(variants, (row) => ratio(row.sessions, row.users * sessionDays));
   const showTrials = experiment.showTrials === true;
   const showRetention = experiment.showRetention === true;
+  const showUsers = experiment.showUsers === true;
+  const showSessions = experiment.showSessions === true;
+  const showInstalls = experiment.showInstalls !== false;
+  const showPaid = experiment.showPaid !== false;
+  const showDownloadPaid = experiment.showDownloadPaid !== false;
   const showCohortAppu = scoreMetrics.some((metric) => metric === "appu_d7" || metric === "appu_d14" || metric === "appu_d30");
   const scoreDownloadPaid = scoreMetrics.includes("download_paid");
   const scoreAppu = scoreMetrics.includes("appu");
+  const scoreSessions = scoreMetrics.includes("sessions_per_day");
 
   return (
     <DashboardCard
@@ -65,9 +77,15 @@ export default function AppExperimentCard({
           <thead>
             <tr className="border-b border-black/10 text-left text-xs text-black/50">
               <Th>Variant</Th>
-              <Th right>Installs</Th>
-              <Th right>Paid</Th>
+              {showUsers ? <Th right>Users</Th> : null}
+              {showInstalls ? <Th right>Installs</Th> : null}
+              {showPaid ? <Th right>Paid</Th> : null}
               <Th right>Proceeds</Th>
+              {showSessions ? (
+                <Th right className={scoreSessions ? "font-bold text-black" : undefined}>
+                  Avg sessions / day
+                </Th>
+              ) : null}
               {experiment.showCompletion ? <Th right>Onboarding completion</Th> : null}
               {showTrials ? <Th right>Download → trial</Th> : null}
               {showTrials ? <Th right>Trial → paid</Th> : null}
@@ -89,9 +107,11 @@ export default function AppExperimentCard({
               {showRetention ? <Th right>D7 subscribed</Th> : null}
               {showRetention ? <Th right>D14 subscribed</Th> : null}
               {showRetention ? <Th right>D30 subscribed</Th> : null}
-              <Th right className={scoreDownloadPaid ? "font-bold text-black" : undefined}>
-                Download → paid
-              </Th>
+              {showDownloadPaid ? (
+                <Th right className={scoreDownloadPaid ? "font-bold text-black" : undefined}>
+                  Download → paid
+                </Th>
+              ) : null}
               {scoreAppu ? (
                 <Th right className="font-bold text-black">
                   APPU
@@ -108,9 +128,15 @@ export default function AppExperimentCard({
                     <span className="font-medium">{row.label}</span>
                   </div>
                 </Td>
-                <NumberTd>{formatInt(row.installs)}</NumberTd>
-                <NumberTd>{formatInt(row.paid)}</NumberTd>
+                {showUsers ? <NumberTd>{formatInt(row.users)}</NumberTd> : null}
+                {showInstalls ? <NumberTd>{formatInt(row.installs)}</NumberTd> : null}
+                {showPaid ? <NumberTd>{formatInt(row.paid)}</NumberTd> : null}
                 <NumberTd>{formatPreciseCurrency(row.proceeds)}</NumberTd>
+                {showSessions ? (
+                  <NumberTd className={scoreSessions && row.key === bestSessionsKey ? "font-bold" : undefined}>
+                    {formatAvg(ratio(row.sessions, row.users * sessionDays))}
+                  </NumberTd>
+                ) : null}
                 {experiment.showCompletion ? (
                   <NumberTd>{formatPercent(ratio(row.completed, row.installs))}</NumberTd>
                 ) : null}
@@ -134,9 +160,11 @@ export default function AppExperimentCard({
                 {showRetention ? <NumberTd>{formatPercent(ratio(row.retainedD7, row.eligibleD7))}</NumberTd> : null}
                 {showRetention ? <NumberTd>{formatPercent(ratio(row.retainedD14, row.eligibleD14))}</NumberTd> : null}
                 {showRetention ? <NumberTd>{formatPercent(ratio(row.retainedD30, row.eligibleD30))}</NumberTd> : null}
-                <NumberTd className={scoreDownloadPaid && row.key === bestDownloadPaidKey ? "font-bold" : undefined}>
-                  {formatPercent(ratio(row.paid, row.installs))}
-                </NumberTd>
+                {showDownloadPaid ? (
+                  <NumberTd className={scoreDownloadPaid && row.key === bestDownloadPaidKey ? "font-bold" : undefined}>
+                    {formatPercent(ratio(row.paid, row.installs))}
+                  </NumberTd>
+                ) : null}
                 {scoreAppu ? (
                   <NumberTd className={row.key === bestAppuKey ? "font-bold" : undefined}>
                     {formatPreciseCurrency(ratio(row.proceeds, row.installs))}
@@ -201,6 +229,8 @@ function variantsForCountry(variants: MobileAppExperimentVariant[], country: str
   return variants.map((variant) => ({
     ...variant,
     ...(variant.countries[country] ?? {
+      users: 0,
+      sessions: 0,
       installs: 0,
       completed: 0,
       trials: 0,
@@ -224,9 +254,17 @@ function variantsForCountry(variants: MobileAppExperimentVariant[], country: str
 }
 
 function scoredAnalysis(
-  metric: "appu" | "download_paid" | "appu_d7" | "appu_d14" | "appu_d30",
+  metric: MobileAppExperimentScoreMetric,
   variants: MobileAppExperimentVariant[],
+  sessionDays = 1,
 ) {
+  if (metric === "sessions_per_day") {
+    return {
+      key: metric,
+      title: "Avg sessions / day",
+      analysis: analyzeExperiment(toSessionsArms(variants, sessionDays), "revenue_per_visitor", "Avg sessions / day"),
+    };
+  }
   if (metric === "appu") {
     return { key: metric, title: "APPU", analysis: analyzeExperiment(toAppuArms(variants), "revenue_per_visitor", "APPU") };
   }
@@ -288,6 +326,17 @@ function toCohortAppuArms(variants: MobileAppExperimentVariant[], days: 7 | 14 |
   }));
 }
 
+function toSessionsArms(variants: MobileAppExperimentVariant[], sessionDays: number): ExperimentArm[] {
+  const days = sessionDays > 0 ? sessionDays : 1;
+  return variants.map((row) => ({
+    key: row.key,
+    label: row.label,
+    exposures: row.users,
+    conversions: Math.min(row.users, row.sessions),
+    revenue: row.sessions / days,
+  }));
+}
+
 function firstInsufficient(analyses: ExperimentAnalysis[]) {
   return analyses.find((analysis) => !analysis.sufficientData) ?? null;
 }
@@ -312,6 +361,9 @@ function ratio(part: number, total: number) {
 }
 function formatInt(value: number) {
   return finite(value).toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+function formatAvg(value: number) {
+  return finite(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function formatPercent(value: number) {
   return `${(finite(value) * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;

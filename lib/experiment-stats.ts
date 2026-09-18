@@ -186,6 +186,7 @@ function sampleNouns(metric: ExperimentMetricKind, metricLabel: string) {
   if (metricLabel === "APPU D7") return { exposureNoun: "D7 install", conversionNoun: "paid" };
   if (metricLabel === "APPU D14") return { exposureNoun: "D14 install", conversionNoun: "paid" };
   if (metricLabel === "APPU D30") return { exposureNoun: "D30 install", conversionNoun: "paid" };
+  if (metricLabel === "Avg sessions / day") return { exposureNoun: "user", conversionNoun: "session" };
   if (metricLabel === "Completion rate") return { exposureNoun: "visitor", conversionNoun: "completion" };
   if (metricLabel === "Revenue / visitor") return { exposureNoun: "visitor", conversionNoun: "paid" };
   if (metric === "conversion_rate") return { exposureNoun: "install", conversionNoun: "paid" };
