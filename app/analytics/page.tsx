@@ -650,6 +650,8 @@ async function AppDetail({
         windowLabel={windowLabel}
         trend={trend}
         countries={app.countries}
+        plans={app.plans}
+        retention={app.retention}
       />
     </div>
   );

@@ -5,7 +5,7 @@ export const DASHBOARD_PICKER_TRIGGER_CLASS =
   "h-10 cursor-pointer gap-1.5 rounded-full border-0 bg-white px-3 text-sm font-medium text-foreground shadow-none transition-[background-color,box-shadow] hover:bg-white focus-visible:ring-2 focus-visible:ring-ring/40 data-[size=default]:h-10 data-open:bg-white data-popup-open:bg-white disabled:cursor-not-allowed";
 
 export const DASHBOARD_POPOVER_CLASS =
-  "rounded-3xl border-0 bg-popover p-1.5 shadow-lg ring-0";
+  "z-[80] min-w-[12rem] rounded-3xl border-0 bg-popover p-1.5 shadow-lg ring-0";
 
 export const DASHBOARD_POPOVER_ITEM_CLASS =
   "cursor-pointer rounded-2xl py-2 font-medium hover:bg-foreground/[0.05] hover:text-foreground focus:bg-foreground/[0.05] focus:text-foreground data-highlighted:bg-foreground/[0.05] data-highlighted:text-foreground";

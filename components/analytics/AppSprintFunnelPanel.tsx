@@ -9,20 +9,13 @@ import { DashboardCard } from "@/components/analytics/DashboardCard";
 import ExperimentStats, { ExperimentWarningBadge } from "@/components/analytics/ExperimentStats";
 import { analyzeExperiment, type ExperimentArm } from "@/lib/experiment-stats";
 import {
-  DASHBOARD_POPOVER_CLASS,
-  DASHBOARD_POPOVER_ITEM_CLASS,
   DASHBOARD_TAB_ACTIVE_CLASS,
   DASHBOARD_TAB_CLASS,
   DASHBOARD_TAB_INACTIVE_CLASS,
   DASHBOARD_TAB_LIST_CLASS,
 } from "@/components/analytics/dashboard-surface";
+import { DashboardCardMetricPicker } from "@/components/analytics/DashboardCardMetricPicker";
 import { cn } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -246,9 +239,11 @@ function BreakdownCard({
     <DashboardCard
       title={title}
       titleAccessory={
-        <BreakdownMetricPicker
+        <DashboardCardMetricPicker
           ariaLabel={ariaLabel}
           value={metric}
+          options={["visitors", "revenue"] as const}
+          labels={{ visitors: "Visitors", revenue: "Revenue" }}
           onValueChange={setMetric}
         />
       }
@@ -301,37 +296,6 @@ function BreakdownCard({
         />
       ) : null}
     </DashboardCard>
-  );
-}
-
-function BreakdownMetricPicker({
-  ariaLabel,
-  value,
-  onValueChange,
-}: {
-  ariaLabel: string;
-  value: BreakdownMetric;
-  onValueChange: (value: BreakdownMetric) => void;
-}) {
-  return (
-    <Select
-      value={value}
-      onValueChange={(nextValue) => {
-        if (nextValue === "visitors" || nextValue === "revenue") onValueChange(nextValue);
-      }}
-    >
-      <SelectTrigger
-        size="sm"
-        aria-label={ariaLabel}
-        className="size-5 min-w-5 cursor-pointer justify-center gap-0 rounded-full border-0 bg-transparent p-0 text-muted-foreground shadow-none hover:bg-foreground/[0.05] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 data-[size=sm]:h-5 [&_svg]:!size-3.5"
-      >
-        <span className="sr-only">{value === "revenue" ? "Revenue" : "Visitors"}</span>
-      </SelectTrigger>
-      <SelectContent side="bottom" align="start" className={DASHBOARD_POPOVER_CLASS}>
-        <SelectItem value="visitors" className={DASHBOARD_POPOVER_ITEM_CLASS}>Visitors</SelectItem>
-        <SelectItem value="revenue" className={DASHBOARD_POPOVER_ITEM_CLASS}>Revenue</SelectItem>
-      </SelectContent>
-    </Select>
   );
 }
 

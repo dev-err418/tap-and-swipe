@@ -14,6 +14,29 @@ export type MobileAppCountryRow = {
   proceeds: number;
   trials: number;
   converted: number;
+  paid: number;
+};
+
+export type MobileAppPlanCountryRow = {
+  country: string;
+  installs: number;
+  yearlySubs: number;
+  weeklySubs: number;
+  yearlyProceeds: number;
+  weeklyProceeds: number;
+};
+
+export type RetentionSlice = {
+  eligible: number;
+  retained: number;
+};
+
+export type MobileAppRetentionCountryRow = {
+  country: string;
+  installs: number;
+  overall: { d1: RetentionSlice; d7: RetentionSlice; d30: RetentionSlice };
+  yearly: { d1: RetentionSlice; d7: RetentionSlice; d30: RetentionSlice };
+  weekly: { d1: RetentionSlice; d7: RetentionSlice; d30: RetentionSlice };
 };
 
 export type MobileAppAnalytics = {
@@ -25,6 +48,8 @@ export type MobileAppAnalytics = {
   paid: number;
   trend: MobileAppTrendPoint[];
   countries: MobileAppCountryRow[];
+  plans: MobileAppPlanCountryRow[];
+  retention: MobileAppRetentionCountryRow[];
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -187,9 +212,11 @@ async function getSuperwallAppAnalytics(
   );
 
   const countries = includeCountries ? await getSuperwallCountryBreakdown(app, start, end) : [];
+  const plans = includeCountries ? await getSuperwallPlanBreakdown(app, start, end).catch(() => []) : [];
+  const retention = includeCountries ? await getSuperwallRetentionBreakdown(app, start, end).catch(() => []) : [];
   const paid = includeCountries
     ? await getSuperwallPaidCount(app, start, end).catch(() =>
-        countries.reduce((sum, row) => sum + row.converted, 0),
+        countries.reduce((sum, row) => sum + row.paid, 0),
       )
     : 0;
 
@@ -202,34 +229,27 @@ async function getSuperwallAppAnalytics(
     paid,
     trend,
     countries,
+    plans,
+    retention,
   };
 }
 
 async function getSuperwallPaidCount(app: SuperwallAppConfig, start: string, end: string) {
   const rows = await querySuperwall<{ paid: string | number }>(
     `
-SELECT
-  uniqIf(originalTransactionId, name = 'renewal' AND isTrialConversion = 1)
-  + uniqIf(originalTransactionId, name = 'initial_purchase' AND lower(ifNull(periodType, '')) != 'trial')
-  AS paid
-FROM (
-  SELECT
-    originalTransactionId,
-    transactionId,
-    argMax(name, attributionTs) AS name,
-    argMax(periodType, attributionTs) AS periodType,
-    argMax(isTrialConversion, attributionTs) AS isTrialConversion
-  FROM open_revenue.attributed_events_by_ts_rep FINAL
-  WHERE applicationId = ${app.applicationId}
-    AND isSandbox = 0
-    AND source = 'integration'
-    AND name IN ('initial_purchase', 'renewal')
-    AND isFamilyShare = 0
-    AND ts >= toDateTime64('${start}', 6, 'UTC')
-    AND ts < toDateTime64('${end}', 6, 'UTC')
-    AND ts < now()
-  GROUP BY originalTransactionId, transactionId
-)
+SELECT uniq(originalTransactionId) AS paid
+FROM open_revenue.attributed_events_by_ts_rep FINAL
+WHERE applicationId = ${app.applicationId}
+  AND isSandbox = 0
+  AND source = 'integration'
+  AND isFamilyShare = 0
+  AND ts >= toDateTime64('${start}', 6, 'UTC')
+  AND ts < toDateTime64('${end}', 6, 'UTC')
+  AND ts < now()
+  AND (
+    (name = 'initial_purchase' AND lower(ifNull(periodType, '')) != 'trial')
+    OR (name = 'renewal' AND isTrialConversion = 1)
+  )
 FORMAT JSON
 `.trim(),
     app.organizationId,
@@ -332,9 +352,26 @@ async function getSuperwallCountryBreakdown(
     GROUP BY countryCode
     FORMAT JSON
   `;
+  const paidQuery = `
+    SELECT ifNull(nullIf(countryCode, ''), 'unknown') AS country, uniq(originalTransactionId) AS paid
+    FROM open_revenue.attributed_events_by_ts_rep FINAL
+    WHERE applicationId = ${app.applicationId}
+      AND isSandbox = 0
+      AND source = 'integration'
+      AND isFamilyShare = 0
+      AND ts >= toDateTime64('${start}', 6, 'UTC')
+      AND ts < toDateTime64('${end}', 6, 'UTC')
+      AND ts < now()
+      AND (
+        (name = 'initial_purchase' AND lower(ifNull(periodType, '')) != 'trial')
+        OR (name = 'renewal' AND isTrialConversion = 1)
+      )
+    GROUP BY country
+    FORMAT JSON
+  `;
 
   try {
-    const [installResult, proceedResult, trialResult, convertedResult] = await Promise.allSettled([
+    const [installResult, proceedResult, trialResult, convertedResult, paidResult] = await Promise.allSettled([
       querySuperwall<{ country: string; installs: string | number }>(
         installsQuery,
         app.organizationId,
@@ -355,8 +392,13 @@ async function getSuperwallCountryBreakdown(
         app.organizationId,
         app.apiKey,
       ),
+      querySuperwall<{ country: string; paid: string | number }>(
+        paidQuery,
+        app.organizationId,
+        app.apiKey,
+      ),
     ]);
-    const failed = [installResult, proceedResult, trialResult, convertedResult].find(
+    const failed = [installResult, proceedResult, trialResult, convertedResult, paidResult].find(
       (result) => result.status === "rejected",
     );
     if (failed && failed.status === "rejected") {
@@ -378,6 +420,9 @@ async function getSuperwallCountryBreakdown(
         : [],
       convertedResult.status === "fulfilled"
         ? convertedResult.value.map((row) => ({ country: row.country, converted: Number(row.converted) }))
+        : [],
+      paidResult.status === "fulfilled"
+        ? paidResult.value.map((row) => ({ country: row.country, paid: Number(row.paid) }))
         : [],
     );
   } catch (error) {
@@ -429,16 +474,181 @@ async function querySuperwall<T>(
   throw lastError ?? new Error("Superwall query failed");
 }
 
+async function getSuperwallRetentionBreakdown(
+  app: SuperwallAppConfig,
+  start: string,
+  end: string,
+): Promise<MobileAppRetentionCountryRow[]> {
+  const rows = await querySuperwall<{
+    country: string;
+    productId: string | null;
+    startedAt: string;
+    expiresAt: string | null;
+  }>(
+    `
+SELECT
+  ifNull(nullIf(any(countryCode), ''), 'unknown') AS country,
+  any(productId) AS productId,
+  minIf(ts, name = 'initial_purchase') AS startedAt,
+  max(expirationAt) AS expiresAt
+FROM open_revenue.attributed_events_by_ts_rep FINAL
+WHERE applicationId = ${app.applicationId}
+  AND isSandbox = 0
+  AND source = 'integration'
+  AND isFamilyShare = 0
+  AND name IN ('initial_purchase', 'renewal', 'cancellation')
+  AND ts >= toDateTime64('${start}', 6, 'UTC')
+  AND ts < now()
+GROUP BY originalTransactionId
+HAVING startedAt >= toDateTime64('${start}', 6, 'UTC')
+  AND startedAt < toDateTime64('${end}', 6, 'UTC')
+LIMIT 20000
+FORMAT JSON
+`.trim(),
+    app.organizationId,
+    app.apiKey,
+  );
+
+  const now = Date.now();
+  const points = new Map<string, MobileAppRetentionCountryRow>();
+  for (const row of rows) {
+    const startedAt = Date.parse(row.startedAt);
+    if (!Number.isFinite(startedAt)) continue;
+    const expiresAt = row.expiresAt ? Date.parse(row.expiresAt) : Number.NaN;
+    const country = normalizeCountry(row.country);
+    const plan = planFromProductId(row.productId);
+    const point = points.get(country) ?? emptyRetentionRow(country);
+    addRetention(point.overall, startedAt, expiresAt, now);
+    if (plan === "yearly") addRetention(point.yearly, startedAt, expiresAt, now);
+    if (plan === "weekly") addRetention(point.weekly, startedAt, expiresAt, now);
+    points.set(country, point);
+  }
+  return [...points.values()].sort((a, b) => b.overall.d1.eligible - a.overall.d1.eligible);
+}
+
+function emptyRetentionRow(country: string): MobileAppRetentionCountryRow {
+  const slice = (): RetentionSlice => ({ eligible: 0, retained: 0 });
+  return {
+    country,
+    installs: 0,
+    overall: { d1: slice(), d7: slice(), d30: slice() },
+    yearly: { d1: slice(), d7: slice(), d30: slice() },
+    weekly: { d1: slice(), d7: slice(), d30: slice() },
+  };
+}
+
+function addRetention(
+  group: MobileAppRetentionCountryRow["overall"],
+  startedAt: number,
+  expiresAt: number,
+  now: number,
+) {
+  for (const [key, days] of [["d1", 1], ["d7", 7], ["d30", 30]] as const) {
+    const checkpoint = startedAt + days * 86_400_000;
+    if (checkpoint > now) continue;
+    group[key].eligible += 1;
+    if (Number.isFinite(expiresAt) && expiresAt > checkpoint) group[key].retained += 1;
+  }
+}
+
+function planFromProductId(productId: string | null) {
+  const value = (productId ?? "").toLowerCase();
+  if (value.includes("week")) return "weekly";
+  if (value.includes("year") || value.includes("annual")) return "yearly";
+  return "other";
+}
+
+async function getSuperwallPlanBreakdown(
+  app: SuperwallAppConfig,
+  start: string,
+  end: string,
+): Promise<MobileAppPlanCountryRow[]> {
+  const rows = await querySuperwall<{
+    country: string;
+    plan: string;
+    subs: string | number;
+    proceeds: string | number | null;
+  }>(
+    `
+SELECT country, plan, uniq(originalTransactionId) AS subs, round(sum(net_proceeds), 2) AS proceeds
+FROM (
+  SELECT
+    ifNull(nullIf(countryCode, ''), 'unknown') AS country,
+    multiIf(
+      positionCaseInsensitive(ifNull(productId, ''), 'week') > 0, 'weekly',
+      positionCaseInsensitive(ifNull(productId, ''), 'year') > 0
+        OR positionCaseInsensitive(ifNull(productId, ''), 'annual') > 0,
+      'yearly',
+      'other'
+    ) AS plan,
+    originalTransactionId,
+    transactionId,
+    name,
+    if(
+      argMax(isRefund, attributionTs) = 1,
+      -abs(toFloat64(argMax(proceeds, attributionTs))),
+      toFloat64(argMax(proceeds, attributionTs))
+    ) AS net_proceeds
+  FROM open_revenue.attributed_events_by_ts_rep FINAL
+  WHERE applicationId = ${app.applicationId}
+    AND isSandbox = 0
+    AND source = 'integration'
+    AND isFamilyShare = 0
+    AND proceeds IS NOT NULL
+    AND ts >= toDateTime64('${start}', 6, 'UTC')
+    AND ts < toDateTime64('${end}', 6, 'UTC')
+    AND ts < now()
+    AND (
+      (name = 'initial_purchase' AND lower(ifNull(periodType, '')) != 'trial')
+      OR name = 'renewal'
+    )
+  GROUP BY country, plan, originalTransactionId, transactionId, name
+)
+GROUP BY country, plan
+FORMAT JSON
+`.trim(),
+    app.organizationId,
+    app.apiKey,
+  );
+
+  const points = new Map<string, MobileAppPlanCountryRow>();
+  for (const row of rows) {
+    const country = normalizeCountry(row.country);
+    const point = points.get(country) ?? {
+      country,
+      installs: 0,
+      yearlySubs: 0,
+      weeklySubs: 0,
+      yearlyProceeds: 0,
+      weeklyProceeds: 0,
+    };
+    const subs = Number(row.subs);
+    const proceeds = Number(row.proceeds ?? 0);
+    if (row.plan === "yearly") {
+      point.yearlySubs += subs;
+      point.yearlyProceeds += proceeds;
+    } else if (row.plan === "weekly") {
+      point.weeklySubs += subs;
+      point.weeklyProceeds += proceeds;
+    }
+    points.set(country, point);
+  }
+  return [...points.values()].sort(
+    (a, b) => b.yearlySubs + b.weeklySubs - (a.yearlySubs + a.weeklySubs),
+  );
+}
+
 function mergeCountries(
   installs: { country: string; installs: number }[],
   proceeds: { country: string; proceeds: number }[],
   trials: { country: string; trials: number }[] = [],
   converted: { country: string; converted: number }[] = [],
+  paid: { country: string; paid: number }[] = [],
 ): MobileAppCountryRow[] {
   const points = new Map<string, MobileAppCountryRow>();
   const bump = (countryValue: string) => {
     const country = normalizeCountry(countryValue);
-    const point = points.get(country) ?? { country, installs: 0, proceeds: 0, trials: 0, converted: 0 };
+    const point = points.get(country) ?? { country, installs: 0, proceeds: 0, trials: 0, converted: 0, paid: 0 };
     points.set(country, point);
     return point;
   };
@@ -446,6 +656,7 @@ function mergeCountries(
   for (const row of proceeds) bump(row.country).proceeds += row.proceeds;
   for (const row of trials) bump(row.country).trials += row.trials;
   for (const row of converted) bump(row.country).converted += row.converted;
+  for (const row of paid) bump(row.country).paid += row.paid;
   return [...points.values()].sort((a, b) => b.installs - a.installs || b.proceeds - a.proceeds);
 }
 
