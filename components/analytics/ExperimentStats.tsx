@@ -1,28 +1,31 @@
 import type { ExperimentAnalysis, VariantExperimentResult } from "@/lib/experiment-stats";
 
-const WIN_COLOR = "#129484";
-const LOSE_COLOR = "#e24732";
-const WIN_SOFT = "color-mix(in oklch, #129484 14%, white)";
-const LOSE_SOFT = "color-mix(in oklch, #e24732 14%, white)";
+const WIN_COLOR = "#1d4ed8";
+const LOSE_COLOR = "#f97316";
+const WIN_SOFT = "color-mix(in oklch, #1d4ed8 12%, white)";
+const LOSE_SOFT = "color-mix(in oklch, #f97316 14%, white)";
+
+export function ExperimentWarningBadge({ analysis }: { analysis: ExperimentAnalysis }) {
+  if (analysis.sufficientData) return null;
+  return (
+    <span
+      className="inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-medium"
+      style={{ color: LOSE_COLOR, backgroundColor: LOSE_SOFT }}
+    >
+      {analysis.reason ?? "Not enough data yet."}
+    </span>
+  );
+}
 
 export default function ExperimentStats({ analysis }: { analysis: ExperimentAnalysis }) {
+  if (analysis.variants.length === 0) return null;
   return (
     <div className="border-b border-black/[0.08] px-4 py-4">
-      <p className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <span>Primary metric · {analysis.metricLabel}</span>
-        {!analysis.sufficientData ? (
-          <span className="inline-flex rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">
-            {analysis.reason ?? "Not enough data yet."}
-          </span>
-        ) : null}
-      </p>
-      {analysis.variants.length > 0 ? (
-        <div className="mt-4 grid gap-6 sm:grid-cols-2">
-          {analysis.variants.map((variant) => (
-            <VariantChance key={variant.key} variant={variant} />
-          ))}
-        </div>
-      ) : null}
+      <div className="grid gap-6 sm:grid-cols-2">
+        {analysis.variants.map((variant) => (
+          <VariantChance key={variant.key} variant={variant} />
+        ))}
+      </div>
     </div>
   );
 }
