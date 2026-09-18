@@ -28,20 +28,24 @@ export default function AppExperimentCard({
 }) {
   const [country, setCountry] = useState(ALL_COUNTRIES);
   const variants = variantsForCountry(experiment.variants, country);
-  const appuAnalysis = analyzeExperiment(toAppuArms(variants), "revenue_per_visitor", "APPU");
-  const downloadPaidAnalysis = analyzeExperiment(
-    toDownloadPaidArms(variants),
-    "conversion_rate",
-    "Download → paid",
-  );
-  const warningAnalysis = firstInsufficient([appuAnalysis, downloadPaidAnalysis]) ?? appuAnalysis;
+  const scoreMetrics = experiment.scoreMetrics ?? ["appu", "download_paid"];
+  const scored = scoreMetrics.map((metric) => scoredAnalysis(metric, variants));
+  const warningAnalysis = firstInsufficient(scored.map((item) => item.analysis)) ?? scored[0]?.analysis;
   const bestDownloadPaidKey = bestVariantKey(variants, (row) => ratio(row.paid, row.installs));
   const bestAppuKey = bestVariantKey(variants, (row) => ratio(row.proceeds, row.installs));
+  const bestAppuD7Key = bestVariantKey(variants, (row) => ratio(row.proceedsD7, row.installsD7));
+  const bestAppuD14Key = bestVariantKey(variants, (row) => ratio(row.proceedsD14, row.installsD14));
+  const bestAppuD30Key = bestVariantKey(variants, (row) => ratio(row.proceedsD30, row.installsD30));
+  const showTrials = experiment.showTrials === true;
+  const showRetention = experiment.showRetention === true;
+  const showCohortAppu = scoreMetrics.some((metric) => metric === "appu_d7" || metric === "appu_d14" || metric === "appu_d30");
+  const scoreDownloadPaid = scoreMetrics.includes("download_paid");
+  const scoreAppu = scoreMetrics.includes("appu");
 
   return (
     <DashboardCard
       title={experiment.title}
-      titleAccessory={<ExperimentWarningBadge analysis={warningAnalysis} />}
+      titleAccessory={warningAnalysis ? <ExperimentWarningBadge analysis={warningAnalysis} /> : null}
       titleClassName="flex items-center gap-1.5"
       action={
         <div className="flex items-center gap-2">
@@ -53,10 +57,11 @@ export default function AppExperimentCard({
       }
       contentClassName="min-w-0 p-0"
     >
-      <ExperimentStats analysis={appuAnalysis} title="APPU" titleClassName="font-bold" />
-      <ExperimentStats analysis={downloadPaidAnalysis} title="Download → paid" titleClassName="font-bold" />
+      {scored.map((item) => (
+        <ExperimentStats key={item.key} analysis={item.analysis} title={item.title} titleClassName="font-bold" />
+      ))}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[56rem] text-sm">
+        <table className="w-max min-w-full text-sm">
           <thead>
             <tr className="border-b border-black/10 text-left text-xs text-black/50">
               <Th>Variant</Th>
@@ -64,21 +69,41 @@ export default function AppExperimentCard({
               <Th right>Paid</Th>
               <Th right>Proceeds</Th>
               {experiment.showCompletion ? <Th right>Onboarding completion</Th> : null}
-              <Th right>Download → trial</Th>
-              <Th right>Trial → paid</Th>
-              <Th right className="font-bold text-black">
+              {showTrials ? <Th right>Download → trial</Th> : null}
+              {showTrials ? <Th right>Trial → paid</Th> : null}
+              {showCohortAppu ? (
+                <Th right className="font-bold text-black">
+                  APPU D7
+                </Th>
+              ) : null}
+              {showCohortAppu ? (
+                <Th right className="font-bold text-black">
+                  APPU D14
+                </Th>
+              ) : null}
+              {showCohortAppu ? (
+                <Th right className="font-bold text-black">
+                  APPU D30
+                </Th>
+              ) : null}
+              {showRetention ? <Th right>D7 subscribed</Th> : null}
+              {showRetention ? <Th right>D14 subscribed</Th> : null}
+              {showRetention ? <Th right>D30 subscribed</Th> : null}
+              <Th right className={scoreDownloadPaid ? "font-bold text-black" : undefined}>
                 Download → paid
               </Th>
-              <Th right className="font-bold text-black">
-                APPU
-              </Th>
+              {scoreAppu ? (
+                <Th right className="font-bold text-black">
+                  APPU
+                </Th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
             {variants.map((row, index) => (
               <tr key={row.key} className="border-b border-black/[0.07]">
                 <Td>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 whitespace-nowrap">
                     <Badge>Variant {variantLetter(index)}</Badge>
                     <span className="font-medium">{row.label}</span>
                   </div>
@@ -89,14 +114,34 @@ export default function AppExperimentCard({
                 {experiment.showCompletion ? (
                   <NumberTd>{formatPercent(ratio(row.completed, row.installs))}</NumberTd>
                 ) : null}
-                <NumberTd>{formatPercent(ratio(row.trials, row.installs))}</NumberTd>
-                <NumberTd>{formatPercent(ratio(row.converted, row.trials))}</NumberTd>
-                <NumberTd className={row.key === bestDownloadPaidKey ? "font-bold" : undefined}>
+                {showTrials ? <NumberTd>{formatPercent(ratio(row.trials, row.installs))}</NumberTd> : null}
+                {showTrials ? <NumberTd>{formatPercent(ratio(row.converted, row.trials))}</NumberTd> : null}
+                {showCohortAppu ? (
+                  <NumberTd className={row.key === bestAppuD7Key ? "font-bold" : undefined}>
+                    {formatPreciseCurrency(ratio(row.proceedsD7, row.installsD7))}
+                  </NumberTd>
+                ) : null}
+                {showCohortAppu ? (
+                  <NumberTd className={row.key === bestAppuD14Key ? "font-bold" : undefined}>
+                    {formatPreciseCurrency(ratio(row.proceedsD14, row.installsD14))}
+                  </NumberTd>
+                ) : null}
+                {showCohortAppu ? (
+                  <NumberTd className={row.key === bestAppuD30Key ? "font-bold" : undefined}>
+                    {formatPreciseCurrency(ratio(row.proceedsD30, row.installsD30))}
+                  </NumberTd>
+                ) : null}
+                {showRetention ? <NumberTd>{formatPercent(ratio(row.retainedD7, row.eligibleD7))}</NumberTd> : null}
+                {showRetention ? <NumberTd>{formatPercent(ratio(row.retainedD14, row.eligibleD14))}</NumberTd> : null}
+                {showRetention ? <NumberTd>{formatPercent(ratio(row.retainedD30, row.eligibleD30))}</NumberTd> : null}
+                <NumberTd className={scoreDownloadPaid && row.key === bestDownloadPaidKey ? "font-bold" : undefined}>
                   {formatPercent(ratio(row.paid, row.installs))}
                 </NumberTd>
-                <NumberTd className={row.key === bestAppuKey ? "font-bold" : undefined}>
-                  {formatPreciseCurrency(ratio(row.proceeds, row.installs))}
-                </NumberTd>
+                {scoreAppu ? (
+                  <NumberTd className={row.key === bestAppuKey ? "font-bold" : undefined}>
+                    {formatPreciseCurrency(ratio(row.proceeds, row.installs))}
+                  </NumberTd>
+                ) : null}
               </tr>
             ))}
           </tbody>
@@ -162,8 +207,55 @@ function variantsForCountry(variants: MobileAppExperimentVariant[], country: str
       converted: 0,
       paid: 0,
       proceeds: 0,
+      installsD7: 0,
+      proceedsD7: 0,
+      eligibleD7: 0,
+      retainedD7: 0,
+      installsD14: 0,
+      proceedsD14: 0,
+      eligibleD14: 0,
+      retainedD14: 0,
+      installsD30: 0,
+      proceedsD30: 0,
+      eligibleD30: 0,
+      retainedD30: 0,
     }),
   }));
+}
+
+function scoredAnalysis(
+  metric: "appu" | "download_paid" | "appu_d7" | "appu_d14" | "appu_d30",
+  variants: MobileAppExperimentVariant[],
+) {
+  if (metric === "appu") {
+    return { key: metric, title: "APPU", analysis: analyzeExperiment(toAppuArms(variants), "revenue_per_visitor", "APPU") };
+  }
+  if (metric === "download_paid") {
+    return {
+      key: metric,
+      title: "Download → paid",
+      analysis: analyzeExperiment(toDownloadPaidArms(variants), "conversion_rate", "Download → paid"),
+    };
+  }
+  if (metric === "appu_d7") {
+    return {
+      key: metric,
+      title: "APPU D7",
+      analysis: analyzeExperiment(toCohortAppuArms(variants, 7), "revenue_per_visitor", "APPU D7"),
+    };
+  }
+  if (metric === "appu_d14") {
+    return {
+      key: metric,
+      title: "APPU D14",
+      analysis: analyzeExperiment(toCohortAppuArms(variants, 14), "revenue_per_visitor", "APPU D14"),
+    };
+  }
+  return {
+    key: metric,
+    title: "APPU D30",
+    analysis: analyzeExperiment(toCohortAppuArms(variants, 30), "revenue_per_visitor", "APPU D30"),
+  };
 }
 
 function toAppuArms(variants: MobileAppExperimentVariant[]): ExperimentArm[] {
@@ -186,18 +278,28 @@ function toDownloadPaidArms(variants: MobileAppExperimentVariant[]): ExperimentA
   }));
 }
 
+function toCohortAppuArms(variants: MobileAppExperimentVariant[], days: 7 | 14 | 30): ExperimentArm[] {
+  return variants.map((row) => ({
+    key: row.key,
+    label: row.label,
+    exposures: days === 7 ? row.installsD7 : days === 14 ? row.installsD14 : row.installsD30,
+    conversions: row.paid,
+    revenue: days === 7 ? row.proceedsD7 : days === 14 ? row.proceedsD14 : row.proceedsD30,
+  }));
+}
+
 function firstInsufficient(analyses: ExperimentAnalysis[]) {
   return analyses.find((analysis) => !analysis.sufficientData) ?? null;
 }
 
 function Th({ children, right = false, className }: { children: ReactNode; right?: boolean; className?: string }) {
-  return <th className={cn("px-4 py-3 font-medium", right && "text-right", className)}>{children}</th>;
+  return <th className={cn("whitespace-nowrap px-4 py-3 font-medium", right && "text-right", className)}>{children}</th>;
 }
 function Td({ children }: { children: ReactNode }) {
-  return <td className="px-4 py-3">{children}</td>;
+  return <td className="whitespace-nowrap px-4 py-3">{children}</td>;
 }
 function NumberTd({ children, className }: { children: ReactNode; className?: string }) {
-  return <td className={cn("px-4 py-3 text-right font-mono tabular-nums", className)}>{children}</td>;
+  return <td className={cn("whitespace-nowrap px-4 py-3 text-right font-mono tabular-nums", className)}>{children}</td>;
 }
 function Badge({ children }: { children: ReactNode }) {
   return <span className="inline-flex rounded-md bg-black/[0.055] px-2 py-0.5 text-xs font-medium">{children}</span>;

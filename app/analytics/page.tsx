@@ -653,6 +653,7 @@ async function AppDetail({
         plans={app.plans}
         retention={app.retention}
         experiments={app.experiments}
+        trialCancelTiming={app.trialCancelTiming}
       />
     </div>
   );

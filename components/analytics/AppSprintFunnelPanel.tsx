@@ -88,12 +88,12 @@ export default function AppSprintFunnelPanel({
       {showPricingExperiment ? <DashboardCard title="Pricing A/B test" titleAccessory={<ExperimentWarningBadge analysis={pricingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">50/50 · {windowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={pricingAnalysis} />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[70rem] text-sm">
+          <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-black">Revenue / visitor</Th></tr></thead>
             <tbody>
               {(analytics.pricingExperiment ?? []).map((row) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
-                  <Td><div className="flex items-center gap-2"><Badge>Variant {row.variant === "legacy_usd" ? "A" : "B"}</Badge><span className="font-medium">{row.label}</span></div></Td>
+                  <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {row.variant === "legacy_usd" ? "A" : "B"}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatPreciseCurrency(row.revenue)}</NumberTd><NumberTd className="font-bold">{formatPreciseCurrency(ratio(row.revenue, row.visitors))}</NumberTd>
                 </tr>
               ))}
@@ -106,12 +106,12 @@ export default function AppSprintFunnelPanel({
       {showHeroExperiment ? <DashboardCard title="Hero preview A/B test" titleAccessory={<ExperimentWarningBadge analysis={heroAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={heroAnalysis} />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[48rem] text-sm">
+          <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
             <tbody>
               {analytics.heroPreviewExperiment.map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
-                  <Td><div className="flex items-center gap-2"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
+                  <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
                 </tr>
               ))}
@@ -123,12 +123,12 @@ export default function AppSprintFunnelPanel({
       {showTrialExperiment ? <DashboardCard title="Trial length A/B/C test" titleAccessory={<ExperimentWarningBadge analysis={trialAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={trialAnalysis} />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[64rem] text-sm">
+          <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Trial</Th><Th right>Trial rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
             <tbody>
               {(analytics.trialExperiment ?? []).map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
-                  <Td><div className="flex items-center gap-2"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
+                  <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatPercent(ratio(row.trials, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
                 </tr>
               ))}
@@ -140,12 +140,12 @@ export default function AppSprintFunnelPanel({
       {showOnboardingExperiment ? <DashboardCard title="Onboarding A/B test" titleAccessory={<ExperimentWarningBadge analysis={onboardingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={onboardingAnalysis} />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[64rem] text-sm">
+          <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Started</Th><Th right>Completed</Th><Th right>Completion rate</Th><Th right>Payment page</Th><Th right>Trial</Th><Th right>Paid</Th><Th right>Revenue</Th></tr></thead>
             <tbody>
               {(analytics.onboardingExperiment ?? []).map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
-                  <Td><div className="flex items-center gap-2"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
+                  <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.completed)}</NumberTd><NumberTd>{formatPercent(ratio(row.completed, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
                 </tr>
               ))}
@@ -529,9 +529,9 @@ function toRevenueArms(rows: { variant: string; label: string; visitors: number;
   }));
 }
 
-function Th({ children, right = false, className }: { children: React.ReactNode; right?: boolean; className?: string }) { return <th className={cn("px-4 py-3 font-medium", right && "text-right", className)}>{children}</th>; }
-function Td({ children }: { children: React.ReactNode }) { return <td className="px-4 py-3">{children}</td>; }
-function NumberTd({ children, className }: { children: React.ReactNode; className?: string }) { return <td className={cn("px-4 py-3 text-right font-mono tabular-nums", className)}>{children}</td>; }
+function Th({ children, right = false, className }: { children: React.ReactNode; right?: boolean; className?: string }) { return <th className={cn("whitespace-nowrap px-4 py-3 font-medium", right && "text-right", className)}>{children}</th>; }
+function Td({ children }: { children: React.ReactNode }) { return <td className="whitespace-nowrap px-4 py-3">{children}</td>; }
+function NumberTd({ children, className }: { children: React.ReactNode; className?: string }) { return <td className={cn("whitespace-nowrap px-4 py-3 text-right font-mono tabular-nums", className)}>{children}</td>; }
 function Badge({ children }: { children: React.ReactNode }) { return <span className="inline-flex rounded-md bg-black/[0.055] px-2 py-0.5 text-xs font-medium">{children}</span>; }
 
 function sortRows<T extends AppSprintFunnelBreakdownRow>(rows: T[], metric: BreakdownMetric) {

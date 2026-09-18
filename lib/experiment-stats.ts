@@ -27,11 +27,19 @@ export type VariantExperimentResult = {
   status: "control" | "winning" | "losing" | "inconclusive" | "insufficient_data";
 };
 
+export type ExperimentSampleNeed = {
+  exposures: number;
+  conversions: number;
+  exposureNoun: string;
+  conversionNoun: string;
+};
+
 export type ExperimentAnalysis = {
   metric: ExperimentMetricKind;
   metricLabel: string;
   sufficientData: boolean;
   reason: string | null;
+  needed: ExperimentSampleNeed | null;
   variants: VariantExperimentResult[];
 };
 
@@ -40,13 +48,15 @@ export function analyzeExperiment(
   metric: ExperimentMetricKind,
   metricLabel: string,
 ): ExperimentAnalysis {
+  const needed = sampleNeed(arms, metric, metricLabel);
+  const needReason = formatSampleNeed(needed);
   if (arms.length === 0) {
-    return { metric, metricLabel, sufficientData: false, reason: "Not enough data yet.", variants: [] };
+    return { metric, metricLabel, sufficientData: false, reason: needReason ?? "Not enough data yet.", needed, variants: [] };
   }
 
   const stats = arms.map((arm) => summarizeArm(arm, metric));
   const control = stats[0];
-  const warning = stats.find((arm) => arm.warning)?.warning ?? (control && control.mean === 0 ? "Not enough data yet." : null);
+  const warning = stats.find((arm) => arm.warning)?.warning ?? (control && control.mean === 0 ? needReason ?? "Not enough data yet." : null);
   const computable = stats.every((arm) => arm.ok);
 
   if (!control || !computable) {
@@ -54,7 +64,8 @@ export function analyzeExperiment(
       metric,
       metricLabel,
       sufficientData: false,
-      reason: warning ?? "Not enough data yet.",
+      reason: needReason ?? warning ?? "Not enough data yet.",
+      needed,
       variants: stats.map((arm) => variantResult(arm, arm.key === control?.key, null, null, null, null)),
     };
   }
@@ -84,11 +95,13 @@ export function analyzeExperiment(
     );
   });
 
+  const sufficientData = stats.every((arm) => !arm.warning) && control.mean !== 0;
   return {
     metric,
     metricLabel,
-    sufficientData: stats.every((arm) => !arm.warning) && control.mean !== 0,
-    reason: warning,
+    sufficientData,
+    reason: sufficientData ? null : needReason ?? warning,
+    needed: sufficientData ? null : needed,
     variants,
   };
 }
@@ -133,6 +146,70 @@ function summarizeArm(arm: ExperimentArm, metric: ExperimentMetricKind): ArmStat
 
 function fallbackSe(mean: number, n: number) {
   return Math.max(Math.abs(mean), 1) / Math.sqrt(Math.max(n, 1));
+}
+
+function sampleNeed(
+  arms: ExperimentArm[],
+  metric: ExperimentMetricKind,
+  metricLabel: string,
+): ExperimentSampleNeed {
+  const nouns = sampleNouns(metric, metricLabel);
+  if (arms.length === 0) {
+    return { exposures: MIN_SAMPLES, conversions: MIN_CONVERSIONS, ...nouns };
+  }
+  return arms.reduce(
+    (need, arm) => {
+      const remaining = remainingForArm(arm, metric);
+      return {
+        exposures: Math.max(need.exposures, remaining.exposures),
+        conversions: Math.max(need.conversions, remaining.conversions),
+        ...nouns,
+      };
+    },
+    { exposures: 0, conversions: 0, ...nouns },
+  );
+}
+
+function remainingForArm(arm: ExperimentArm, metric: ExperimentMetricKind) {
+  const n = Math.max(0, arm.exposures);
+  const conversions = Math.max(0, arm.conversions);
+  const moreExposures = Math.max(0, MIN_SAMPLES - n);
+  const moreConversions = Math.max(0, MIN_CONVERSIONS - conversions);
+  if (metric === "conversion_rate") {
+    const moreFailures = Math.max(0, MIN_CONVERSIONS - Math.max(0, n - conversions));
+    return { exposures: Math.max(moreExposures, moreFailures), conversions: moreConversions };
+  }
+  return { exposures: moreExposures, conversions: moreConversions };
+}
+
+function sampleNouns(metric: ExperimentMetricKind, metricLabel: string) {
+  if (metricLabel === "APPU D7") return { exposureNoun: "D7 install", conversionNoun: "paid" };
+  if (metricLabel === "APPU D14") return { exposureNoun: "D14 install", conversionNoun: "paid" };
+  if (metricLabel === "APPU D30") return { exposureNoun: "D30 install", conversionNoun: "paid" };
+  if (metricLabel === "Completion rate") return { exposureNoun: "visitor", conversionNoun: "completion" };
+  if (metricLabel === "Revenue / visitor") return { exposureNoun: "visitor", conversionNoun: "paid" };
+  if (metric === "conversion_rate") return { exposureNoun: "install", conversionNoun: "paid" };
+  return { exposureNoun: "install", conversionNoun: "paid" };
+}
+
+function formatSampleNeed(needed: ExperimentSampleNeed | null) {
+  if (!needed) return null;
+  const parts = [
+    needed.exposures > 0 ? `${formatCount(needed.exposures)} more ${pluralNoun(needed.exposureNoun, needed.exposures)}` : null,
+    needed.conversions > 0 ? `${formatCount(needed.conversions)} more ${pluralNoun(needed.conversionNoun, needed.conversions)}` : null,
+  ].filter((part): part is string => part != null);
+  return parts.length > 0 ? `Need ${parts.join(", ")}` : null;
+}
+
+function formatCount(value: number) {
+  return value.toLocaleString("en-US");
+}
+
+function pluralNoun(noun: string, count: number) {
+  if (count === 1) return noun;
+  if (noun === "paid" || noun === "retained") return noun;
+  if (noun.endsWith("s")) return noun;
+  return `${noun}s`;
 }
 
 function variantResult(

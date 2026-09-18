@@ -46,6 +46,18 @@ export type MobileAppExperimentSlice = {
   converted: number;
   paid: number;
   proceeds: number;
+  installsD7: number;
+  proceedsD7: number;
+  eligibleD7: number;
+  retainedD7: number;
+  installsD14: number;
+  proceedsD14: number;
+  eligibleD14: number;
+  retainedD14: number;
+  installsD30: number;
+  proceedsD30: number;
+  eligibleD30: number;
+  retainedD30: number;
 };
 
 export type MobileAppExperimentVariant = MobileAppExperimentSlice & {
@@ -54,12 +66,31 @@ export type MobileAppExperimentVariant = MobileAppExperimentSlice & {
   countries: Record<string, MobileAppExperimentSlice>;
 };
 
+export type MobileAppExperimentScoreMetric = "appu" | "download_paid" | "appu_d7" | "appu_d14" | "appu_d30";
+
 export type MobileAppExperiment = {
   id: string;
   title: string;
   subtitle: string;
   variants: MobileAppExperimentVariant[];
+  scoreMetrics?: MobileAppExperimentScoreMetric[];
   showCompletion?: boolean;
+  showTrials?: boolean;
+  showRetention?: boolean;
+};
+
+export type TrialCancelBucket = {
+  key: string;
+  label: string;
+  cancels: number;
+  highlight?: boolean;
+};
+
+export type TrialCancelTiming = {
+  trials: number;
+  cancelled: number;
+  cancelledBeforeQualified: number;
+  buckets: TrialCancelBucket[];
 };
 
 export type MobileAppAnalytics = {
@@ -74,6 +105,7 @@ export type MobileAppAnalytics = {
   plans: MobileAppPlanCountryRow[];
   retention: MobileAppRetentionCountryRow[];
   experiments: MobileAppExperiment[];
+  trialCancelTiming?: TrialCancelTiming | null;
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -84,6 +116,9 @@ const GLOW_SUPERWALL_ORGANIZATION_ID = 27020;
 const GLOW_SUPERWALL_APPLICATION_ID = 54736;
 const ALL_TIME_START = new Date("2024-01-01T00:00:00.000Z");
 const GLOW_NATIVE_PAYWALL_MIN_VERSION = [1, 7, 0] as const;
+const POKY_RECOVERY_STARTED_AT = "2026-09-18T16:04:58.000Z";
+const POKY_RECOVERY_TREATMENT_VARIANTS = new Set(["611637", "611646", "611649", "611652"]);
+const POKY_RECOVERY_HOLDOUT_VARIANTS = new Set(["635510", "635511", "635512", "635513"]);
 
 const POKY_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/5e/46/3f/5e463fde-45e6-7fdc-ce5a-bb5b73af405d/AppIcon-0-0-1x_U007ephone-0-1-sRGB-85-220.png/512x512bb.jpg";
@@ -240,15 +275,23 @@ async function getSuperwallAppAnalytics(
   const includePlanCards = includeCountries && app.id !== "glow";
   const plans = includePlanCards ? await getSuperwallPlanBreakdown(app, start, end).catch(() => []) : [];
   const retention = includePlanCards ? await getSuperwallRetentionBreakdown(app, start, end).catch(() => []) : [];
-  const experiments =
-    includeCountries && app.id === "glow"
+  const experiments = includeCountries
+    ? app.id === "glow"
       ? (
           await Promise.all([
             getGlowPaywallExperiment(app, start, end).catch(() => []),
+            getGlowYearlyPriceExperiment(app, start, end).catch(() => []),
             getGlowOnboardingExperiment(app, start, end).catch(() => []),
           ])
         ).flat()
-      : [];
+      : app.id === "poky"
+        ? await getPokyExperiments(app, start, end).catch(() => [])
+        : []
+    : [];
+  const trialCancelTiming =
+    includeCountries && app.id === "glow"
+      ? await getGlowTrialCancelTiming(app, start, end).catch(() => null)
+      : null;
   const paid = includeCountries
     ? await getSuperwallPaidCount(app, start, end).catch(() =>
         countries.reduce((sum, row) => sum + row.paid, 0),
@@ -267,6 +310,7 @@ async function getSuperwallAppAnalytics(
     plans,
     retention,
     experiments,
+    trialCancelTiming,
   };
 }
 
@@ -442,6 +486,8 @@ function mergePaywallExperiment(
     id: "glow-native-paywall",
     title: "Paywall A/B test",
     subtitle: "1.7.0+ vs earlier",
+    scoreMetrics: ["appu", "download_paid"],
+    showTrials: true,
     variants: [legacy, native],
   };
 }
@@ -720,9 +766,719 @@ function mergeOnboardingExperiment(
     id: "glow-onboarding-copy",
     title: "Onboarding A/B test",
     subtitle: "IAM vs Copy",
+    scoreMetrics: ["appu", "download_paid"],
     showCompletion: true,
+    showTrials: true,
     variants: [iam, copy],
   };
+}
+
+async function getGlowYearlyPriceExperiment(
+  app: SuperwallAppConfig,
+  start: string,
+  end: string,
+): Promise<MobileAppExperiment[]> {
+  return [
+    await getAttributeExperiment(app, start, end, {
+      id: "glow-yearly-price",
+      title: "Yearly price A/B test",
+      subtitle: "$49.99 vs $59.99",
+      attributeKeys: ["yearly_product"],
+      variants: [
+        {
+          key: "annual",
+          label: "$49.99",
+          attributes: { yearly_product: "com.arthurbuildsstuff.glow.annual" },
+        },
+        {
+          key: "pro_yearly",
+          label: "$59.99",
+          attributes: { yearly_product: "com.arthurbuildsstuff.glow.pro.yearly" },
+        },
+      ],
+      scoreMetrics: ["appu", "download_paid"],
+      showTrials: true,
+    }),
+  ];
+}
+
+const TRIAL_CANCEL_BUCKETS: { key: string; label: string; maxMinutes: number; highlight?: boolean }[] = [
+  { key: "0-5m", label: "0–5m", maxMinutes: 5 },
+  { key: "5-10m", label: "5–10m", maxMinutes: 10 },
+  { key: "10-15m", label: "10–15m", maxMinutes: 15, highlight: true },
+  { key: "15-30m", label: "15–30m", maxMinutes: 30 },
+  { key: "30-60m", label: "30–60m", maxMinutes: 60 },
+  { key: "60-120m", label: "60–120m", maxMinutes: 120 },
+  { key: "2-6h", label: "2–6h", maxMinutes: 6 * 60 },
+  { key: "6-12h", label: "6–12h", maxMinutes: 12 * 60 },
+  { key: "12-24h", label: "12–24h", maxMinutes: 24 * 60 },
+  { key: "1-2d", label: "1–2d", maxMinutes: 48 * 60 },
+  { key: "2-3d", label: "2–3d", maxMinutes: 72 * 60 },
+];
+
+async function getGlowTrialCancelTiming(
+  app: SuperwallAppConfig,
+  start: string,
+  end: string,
+): Promise<TrialCancelTiming> {
+  const rows = await querySuperwall<{
+    orig: string;
+    trialStart: string;
+    trialCancel: string | null;
+  }>(
+    `
+SELECT orig, trialStart, trialCancel
+FROM (
+  SELECT
+    originalTransactionId AS orig,
+    minIf(ts, name = 'initial_purchase' AND lower(ifNull(periodType, '')) = 'trial') AS trialStart,
+    minIf(ts, name = 'cancellation' AND lower(ifNull(periodType, '')) = 'trial') AS trialCancel
+  FROM open_revenue.attributed_events_by_ts_rep FINAL
+  WHERE applicationId = ${app.applicationId}
+    AND isSandbox = 0
+    AND source = 'integration'
+    AND isFamilyShare = 0
+    AND name IN ('initial_purchase', 'cancellation')
+    AND ts >= toDateTime64('${start}', 6, 'UTC')
+    AND ts < now()
+  GROUP BY originalTransactionId
+)
+WHERE trialStart >= toDateTime64('${start}', 6, 'UTC')
+  AND trialStart < toDateTime64('${end}', 6, 'UTC')
+LIMIT 20000
+FORMAT JSON
+`.trim(),
+    app.organizationId,
+    app.apiKey,
+  );
+
+  const buckets = TRIAL_CANCEL_BUCKETS.map((bucket) => ({
+    key: bucket.key,
+    label: bucket.label,
+    cancels: 0,
+    highlight: bucket.highlight,
+  }));
+  let trials = 0;
+  let cancelled = 0;
+  let cancelledBeforeQualified = 0;
+  for (const row of rows) {
+    const startedAt = Date.parse(row.trialStart);
+    if (!Number.isFinite(startedAt)) continue;
+    trials += 1;
+    const cancelledAt = row.trialCancel ? Date.parse(row.trialCancel) : Number.NaN;
+    if (!Number.isFinite(cancelledAt) || cancelledAt <= startedAt) continue;
+    const minutes = (cancelledAt - startedAt) / 60_000;
+    if (minutes >= 72 * 60) continue;
+    cancelled += 1;
+    if (minutes <= 15) cancelledBeforeQualified += 1;
+    const index = TRIAL_CANCEL_BUCKETS.findIndex((bucket) => minutes < bucket.maxMinutes);
+    if (index >= 0) buckets[index].cancels += 1;
+  }
+
+  return { trials, cancelled, cancelledBeforeQualified, buckets };
+}
+
+async function getPokyExperiments(
+  app: SuperwallAppConfig,
+  start: string,
+  end: string,
+): Promise<MobileAppExperiment[]> {
+  const results = await Promise.all([
+    getPokyRecoveryExperiment(app, start, end).catch(() => null),
+    getAttributeExperiment(app, start, end, {
+      id: "poky-animated-plan",
+      title: "Animated plan A/B test",
+      subtitle: "Control vs Animated plan",
+      attributeKeys: ["onboarding_plan_variant"],
+      variants: [
+        { key: "control", label: "Control", attributes: { onboarding_plan_variant: "control" } },
+        { key: "animated_plan", label: "Animated plan", attributes: { onboarding_plan_variant: "animated_plan" } },
+      ],
+      scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"],
+      showRetention: true,
+    }).catch(() => null),
+    getAttributeExperiment(app, start, end, {
+      id: "poky-app-experience",
+      title: "App experience A/B test",
+      subtitle: "Original vs AI Chat",
+      attributeKeys: ["home_experience_variant"],
+      variants: [
+        { key: "control", label: "Original", attributes: { home_experience_variant: "control" } },
+        { key: "new_experience", label: "AI Chat", attributes: { home_experience_variant: "new_experience" } },
+      ],
+      scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"],
+      showRetention: true,
+    }).catch(() => null),
+    getAttributeExperiment(app, start, end, {
+      id: "poky-onboarding-abcd",
+      title: "Onboarding A/B/C/D test",
+      subtitle: "Extra animation × AI Chat",
+      attributeKeys: ["onboarding_plan_variant", "home_experience_variant"],
+      variants: [
+        {
+          key: "extra_original",
+          label: "Extra animation + original",
+          attributes: { onboarding_plan_variant: "control", home_experience_variant: "control" },
+        },
+        {
+          key: "extra_chat",
+          label: "Extra animation + AI chat",
+          attributes: { onboarding_plan_variant: "control", home_experience_variant: "new_experience" },
+        },
+        {
+          key: "intro_original",
+          label: "Animated intro + original",
+          attributes: { onboarding_plan_variant: "animated_plan", home_experience_variant: "control" },
+        },
+        {
+          key: "intro_chat",
+          label: "Animated intro + AI chat",
+          attributes: { onboarding_plan_variant: "animated_plan", home_experience_variant: "new_experience" },
+        },
+      ],
+      scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"],
+      showRetention: true,
+    }).catch(() => null),
+  ]);
+  return results.filter((experiment): experiment is MobileAppExperiment => experiment != null);
+}
+
+async function getPokyRecoveryExperiment(
+  app: SuperwallAppConfig,
+  start: string,
+  end: string,
+): Promise<MobileAppExperiment> {
+  const assigned = await getPokyRecoveryAssignments(app, start, end);
+  const recovery = emptyExperimentVariant("recovery", "Recovery paywall");
+  const none = emptyExperimentVariant("none", "None");
+  const byUser = new Map<string, { arm: "recovery" | "none"; country: string; assignedAt: number }>();
+  for (const row of assigned) {
+    const arm = recoveryArmForTrigger(row.variantId, row.result);
+    if (!arm) continue;
+    const assignedAt = Date.parse(row.ts);
+    if (!Number.isFinite(assignedAt)) continue;
+    const current = byUser.get(row.appUserId);
+    if (current && current.assignedAt <= assignedAt) continue;
+    byUser.set(row.appUserId, { arm, country: normalizeCountry(row.country), assignedAt });
+  }
+
+  for (const row of byUser.values()) {
+    const target = row.arm === "none" ? none : recovery;
+    const now = Date.now();
+    addExperimentMetrics(target, {
+      country: row.country,
+      installs: 1,
+      installsD7: row.assignedAt + 7 * 86_400_000 <= now ? 1 : 0,
+      installsD14: row.assignedAt + 14 * 86_400_000 <= now ? 1 : 0,
+      installsD30: row.assignedAt + 30 * 86_400_000 <= now ? 1 : 0,
+    });
+  }
+
+  const [proceedResult, retentionResult] = await Promise.allSettled([
+    querySuperwall<{
+      appUserId: string | null;
+      country: string;
+      eventTs: string;
+      net_proceeds: string | number | null;
+    }>(pokyRecoveryProceedsQuery(app, start, end), app.organizationId, app.apiKey),
+    querySuperwall<{
+      appUserId: string | null;
+      country: string;
+      startedAt: string;
+      expiresAt: string | null;
+    }>(pokyRecoveryRetentionQuery(app, start, end), app.organizationId, app.apiKey),
+  ]);
+
+  if (proceedResult.status === "fulfilled") {
+    const paidUsers = new Set<string>();
+    for (const row of proceedResult.value) {
+      if (!row.appUserId) continue;
+      const assignment = byUser.get(row.appUserId);
+      if (!assignment) continue;
+      const eventTs = Date.parse(row.eventTs);
+      const proceeds = Number(row.net_proceeds ?? 0);
+      if (!Number.isFinite(eventTs) || eventTs < assignment.assignedAt) continue;
+      const target = assignment.arm === "none" ? none : recovery;
+      const now = Date.now();
+      const firstPaid = proceeds > 0 && !paidUsers.has(row.appUserId);
+      if (firstPaid) paidUsers.add(row.appUserId);
+      addExperimentMetrics(target, {
+        country: assignment.country,
+        proceeds,
+        paid: firstPaid ? 1 : 0,
+        proceedsD7:
+          assignment.assignedAt + 7 * 86_400_000 <= now && eventTs <= assignment.assignedAt + 7 * 86_400_000
+            ? proceeds
+            : 0,
+        proceedsD14:
+          assignment.assignedAt + 14 * 86_400_000 <= now && eventTs <= assignment.assignedAt + 14 * 86_400_000
+            ? proceeds
+            : 0,
+        proceedsD30:
+          assignment.assignedAt + 30 * 86_400_000 <= now && eventTs <= assignment.assignedAt + 30 * 86_400_000
+            ? proceeds
+            : 0,
+      });
+    }
+  }
+
+  if (retentionResult.status === "fulfilled") {
+    const now = Date.now();
+    for (const row of retentionResult.value) {
+      if (!row.appUserId) continue;
+      const assignment = byUser.get(row.appUserId);
+      if (!assignment) continue;
+      const startedAt = Date.parse(row.startedAt);
+      if (!Number.isFinite(startedAt) || startedAt < assignment.assignedAt) continue;
+      const expiresAt = row.expiresAt ? Date.parse(row.expiresAt) : Number.NaN;
+      const metrics: Partial<MobileAppExperimentSlice> = {};
+      for (const [key, days] of [
+        ["D7", 7],
+        ["D14", 14],
+        ["D30", 30],
+      ] as const) {
+        const checkpoint = startedAt + days * 86_400_000;
+        if (checkpoint > now) continue;
+        metrics[`eligible${key}`] = 1;
+        metrics[`retained${key}`] = Number.isFinite(expiresAt) && expiresAt > checkpoint ? 1 : 0;
+      }
+      addExperimentMetrics(assignment.arm === "none" ? none : recovery, {
+        country: assignment.country,
+        ...metrics,
+      });
+    }
+  }
+
+  return {
+    id: "poky-recovery-holdout",
+    title: "Recovery A/B test",
+    subtitle: "Recovery paywall vs none",
+    scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"],
+    showRetention: true,
+    variants: [none, recovery],
+  };
+}
+
+function recoveryArmForTrigger(variantId: string, result: string): "recovery" | "none" | null {
+  if (POKY_RECOVERY_HOLDOUT_VARIANTS.has(variantId) || result === "holdout") return "none";
+  if (POKY_RECOVERY_TREATMENT_VARIANTS.has(variantId) && (result === "present" || result === "")) return "recovery";
+  return null;
+}
+
+async function getPokyRecoveryAssignments(
+  app: SuperwallAppConfig,
+  start: string,
+  end: string,
+) {
+  const from = Math.max(Date.parse(start), Date.parse(POKY_RECOVERY_STARTED_AT));
+  const to = Math.min(Date.parse(end), Date.now());
+  if (!Number.isFinite(from) || !Number.isFinite(to) || from >= to) return [];
+  const windows = eventRepWindows(from, to);
+  const chunks = await Promise.allSettled(
+    windows.map(([winStart, winEnd]) =>
+      querySuperwall<{
+        appUserId: string;
+        result: string;
+        variantId: string;
+        country: string;
+        ts: string;
+      }>(
+        `
+SELECT
+  appUserId,
+  JSONExtractString(props, '$result') AS result,
+  JSONExtractString(props, '$variant_id') AS variantId,
+  upper(ifNull(nullIf(JSONExtractString(headers, 'Cf-Ipcountry'), ''), 'unknown')) AS country,
+  ts
+FROM sw.events_rep
+WHERE applicationId = ${app.applicationId}
+  AND isSandbox = 0
+  AND name = 'trigger_fire'
+  AND ts > toStartOfHour(toDateTime64('${winStart}', 6, 'UTC'))
+  AND ts < toDateTime64('${winEnd}', 6, 'UTC')
+  AND ts < now()
+  AND JSONExtractString(props, '$trigger_name') IN ('transaction_abandon', 'paywall_decline')
+LIMIT 20000
+FORMAT JSON
+`.trim(),
+        app.organizationId,
+        app.apiKey,
+      ),
+    ),
+  );
+  return chunks.flatMap((chunk) => (chunk.status === "fulfilled" ? chunk.value : []));
+}
+
+function eventRepWindows(fromMs: number, toMs: number) {
+  const windows: [string, string][] = [];
+  let cursor = fromMs;
+  while (cursor < toMs) {
+    const next = Math.min(cursor + 7 * 86_400_000, toMs);
+    windows.push([new Date(cursor).toISOString(), new Date(next).toISOString()]);
+    cursor = next;
+  }
+  return windows;
+}
+
+function pokyRecoveryProceedsQuery(app: SuperwallAppConfig, start: string, end: string) {
+  return `
+    SELECT
+      appUserId,
+      country,
+      eventTs,
+      net_proceeds
+    FROM (
+      SELECT
+        appUserId,
+        ifNull(nullIf(countryCode, ''), 'unknown') AS country,
+        name,
+        originalTransactionId,
+        transactionId,
+        argMax(ts, attributionTs) AS eventTs,
+        if(
+          argMax(isRefund, attributionTs) = 1,
+          -abs(toFloat64(argMax(proceeds, attributionTs))),
+          toFloat64(argMax(proceeds, attributionTs))
+        ) AS net_proceeds
+      FROM open_revenue.attributed_events_by_ts_rep FINAL
+      WHERE applicationId = ${app.applicationId}
+        AND isSandbox = 0
+        AND source = 'integration'
+        AND name IN ('initial_purchase', 'renewal', 'non_renewing_purchase')
+        AND isFamilyShare = 0
+        AND proceeds IS NOT NULL
+        AND ts >= toDateTime64('${POKY_RECOVERY_STARTED_AT}', 6, 'UTC')
+        AND ts < toDateTime64('${end}', 6, 'UTC')
+        AND ts < now()
+      GROUP BY appUserId, country, name, originalTransactionId, transactionId
+    )
+    FORMAT JSON
+  `;
+}
+
+function pokyRecoveryRetentionQuery(app: SuperwallAppConfig, start: string, end: string) {
+  return `
+    SELECT
+      any(appUserId) AS appUserId,
+      ifNull(nullIf(any(countryCode), ''), 'unknown') AS country,
+      minIf(ts, name = 'initial_purchase') AS startedAt,
+      max(expirationAt) AS expiresAt
+    FROM open_revenue.attributed_events_by_ts_rep FINAL
+    WHERE applicationId = ${app.applicationId}
+      AND isSandbox = 0
+      AND source = 'integration'
+      AND isFamilyShare = 0
+      AND name IN ('initial_purchase', 'renewal', 'cancellation')
+      AND ts >= toDateTime64('${POKY_RECOVERY_STARTED_AT}', 6, 'UTC')
+      AND ts < now()
+    GROUP BY originalTransactionId
+    HAVING startedAt >= toDateTime64('${POKY_RECOVERY_STARTED_AT}', 6, 'UTC')
+      AND startedAt < toDateTime64('${end}', 6, 'UTC')
+    LIMIT 20000
+    FORMAT JSON
+  `;
+}
+
+type AttributeExperimentDefinition = {
+  id: string;
+  title: string;
+  subtitle: string;
+  attributeKeys: string[];
+  variants: { key: string; label: string; attributes: Record<string, string> }[];
+  scoreMetrics: MobileAppExperimentScoreMetric[];
+  showRetention?: boolean;
+  showTrials?: boolean;
+  showCompletion?: boolean;
+};
+
+async function getAttributeExperiment(
+  app: SuperwallAppConfig,
+  start: string,
+  end: string,
+  definition: AttributeExperimentDefinition,
+): Promise<MobileAppExperiment> {
+  const attrSelect = definition.attributeKeys.map((key, index) => `${attributeAlias(index)}.value AS ${key}`).join(",\n      ");
+  const attrGroup = definition.attributeKeys.join(", ");
+  const joins = (leftAlias: string) =>
+    definition.attributeKeys
+      .map((key, index) => userAttributeJoin(app, attributeAlias(index), key, leftAlias))
+      .join("\n");
+
+  const installsQuery = `
+    SELECT
+      ${attrSelect},
+      i.country AS country,
+      uniq(i.appUserId) AS installs,
+      uniqIf(i.appUserId, i.installedAt <= now() - INTERVAL 7 DAY) AS installsD7,
+      uniqIf(i.appUserId, i.installedAt <= now() - INTERVAL 14 DAY) AS installsD14,
+      uniqIf(i.appUserId, i.installedAt <= now() - INTERVAL 30 DAY) AS installsD30
+    FROM (
+      SELECT
+        appUserId,
+        argMin(upper(ifNull(nullIf(JSONExtractString(headers, 'Cf-Ipcountry'), ''), 'unknown')), ts) AS country,
+        argMin(appInstallDate, ts) AS installedAt
+      FROM sw.demand_score_events_rep
+      WHERE applicationId = ${app.applicationId}
+        AND isSandbox = 0
+        AND name = 'device_attributes'
+        AND appInstallDate >= toDateTime64('${start}', 6, 'UTC')
+        AND appInstallDate < toDateTime64('${end}', 6, 'UTC')
+        AND ts >= toDateTime64('${start}', 6, 'UTC')
+        AND ts < now()
+      GROUP BY appUserId
+    ) i
+    ${joins("i")}
+    GROUP BY ${attrGroup}, country
+    FORMAT JSON
+  `;
+  const outcomesQuery = `
+    SELECT
+      ${attrSelect},
+      e.country AS country,
+      uniqIf(e.originalTransactionId, e.name = 'initial_purchase' AND lower(ifNull(e.periodType, '')) = 'trial') AS trials,
+      uniqIf(e.originalTransactionId, e.name = 'renewal' AND e.isTrialConversion = 1) AS converted,
+      uniqIf(
+        e.originalTransactionId,
+        (e.name = 'initial_purchase' AND lower(ifNull(e.periodType, '')) != 'trial')
+        OR (e.name = 'renewal' AND e.isTrialConversion = 1)
+      ) AS paid
+    FROM (
+      SELECT
+        appUserId,
+        name,
+        periodType,
+        isTrialConversion,
+        originalTransactionId,
+        ifNull(nullIf(countryCode, ''), 'unknown') AS country
+      FROM open_revenue.attributed_events_by_ts_rep FINAL
+      WHERE applicationId = ${app.applicationId}
+        AND isSandbox = 0
+        AND source = 'integration'
+        AND isFamilyShare = 0
+        AND installDate >= toDateTime64('${start}', 6, 'UTC')
+        AND installDate < toDateTime64('${end}', 6, 'UTC')
+        AND ts >= toDateTime64('${start}', 6, 'UTC')
+        AND ts < toDateTime64('${end}', 6, 'UTC')
+        AND ts < now()
+    ) e
+    ${joins("e")}
+    GROUP BY ${attrGroup}, country
+    FORMAT JSON
+  `;
+  const proceedsQuery = `
+    SELECT
+      ${attrGroup},
+      country,
+      round(sum(net_proceeds), 2) AS proceeds,
+      round(sumIf(net_proceeds, eventTs <= cohortStart + INTERVAL 7 DAY AND cohortStart <= now() - INTERVAL 7 DAY), 2) AS proceedsD7,
+      round(sumIf(net_proceeds, eventTs <= cohortStart + INTERVAL 14 DAY AND cohortStart <= now() - INTERVAL 14 DAY), 2) AS proceedsD14,
+      round(sumIf(net_proceeds, eventTs <= cohortStart + INTERVAL 30 DAY AND cohortStart <= now() - INTERVAL 30 DAY), 2) AS proceedsD30
+    FROM (
+      SELECT
+        ${attrSelect},
+        e.country AS country,
+        e.cohortStart AS cohortStart,
+        e.eventTs AS eventTs,
+        e.name,
+        e.originalTransactionId,
+        e.transactionId,
+        e.net_proceeds AS net_proceeds
+      FROM (
+        SELECT
+          appUserId,
+          name,
+          originalTransactionId,
+          transactionId,
+          ifNull(nullIf(countryCode, ''), 'unknown') AS country,
+          any(installDate) AS cohortStart,
+          argMax(ts, attributionTs) AS eventTs,
+          if(
+            argMax(isRefund, attributionTs) = 1,
+            -abs(toFloat64(argMax(proceeds, attributionTs))),
+            toFloat64(argMax(proceeds, attributionTs))
+          ) AS net_proceeds
+        FROM open_revenue.attributed_events_by_ts_rep FINAL
+        WHERE applicationId = ${app.applicationId}
+          AND isSandbox = 0
+          AND source = 'integration'
+          AND name IN ('initial_purchase', 'renewal', 'non_renewing_purchase')
+          AND isFamilyShare = 0
+          AND proceeds IS NOT NULL
+          AND installDate >= toDateTime64('${start}', 6, 'UTC')
+          AND installDate < toDateTime64('${end}', 6, 'UTC')
+          AND ts < now()
+        GROUP BY appUserId, name, originalTransactionId, transactionId, country
+      ) e
+      ${joins("e")}
+    )
+    GROUP BY ${attrGroup}, country
+    FORMAT JSON
+  `;
+  const retentionQuery = `
+    SELECT
+      any(appUserId) AS appUserId,
+      ifNull(nullIf(any(countryCode), ''), 'unknown') AS country,
+      minIf(ts, name = 'initial_purchase') AS startedAt,
+      max(expirationAt) AS expiresAt
+    FROM open_revenue.attributed_events_by_ts_rep FINAL
+    WHERE applicationId = ${app.applicationId}
+      AND isSandbox = 0
+      AND source = 'integration'
+      AND isFamilyShare = 0
+      AND name IN ('initial_purchase', 'renewal', 'cancellation')
+      AND ts >= toDateTime64('${start}', 6, 'UTC')
+      AND ts < now()
+    GROUP BY originalTransactionId
+    HAVING startedAt >= toDateTime64('${start}', 6, 'UTC')
+      AND startedAt < toDateTime64('${end}', 6, 'UTC')
+    LIMIT 20000
+    FORMAT JSON
+  `;
+  const assignmentQuery = `
+    SELECT appUserId, key, lower(value) AS value
+    FROM sw.user_attributes_rep FINAL
+    WHERE applicationId = ${app.applicationId}
+      AND isSandbox = 0
+      AND isDeleted = 0
+      AND ts < now()
+      AND key IN (${definition.attributeKeys.map((key) => `'${key}'`).join(", ")})
+    FORMAT JSON
+  `;
+
+  const [installResult, outcomeResult, proceedResult, retentionResult, assignmentResult] = await Promise.allSettled([
+    querySuperwall<Record<string, string | number>>(installsQuery, app.organizationId, app.apiKey),
+    querySuperwall<Record<string, string | number>>(outcomesQuery, app.organizationId, app.apiKey),
+    querySuperwall<Record<string, string | number | null>>(proceedsQuery, app.organizationId, app.apiKey),
+    querySuperwall<{ appUserId: string | null; country: string; startedAt: string; expiresAt: string | null }>(
+      retentionQuery,
+      app.organizationId,
+      app.apiKey,
+    ),
+    querySuperwall<{ appUserId: string; key: string; value: string }>(assignmentQuery, app.organizationId, app.apiKey),
+  ]);
+
+  const failed = [installResult, outcomeResult, proceedResult, retentionResult, assignmentResult].find(
+    (result) => result.status === "rejected",
+  );
+  if (failed && failed.status === "rejected") {
+    const log = process.env.NODE_ENV === "development" ? console.warn : console.error;
+    log("tap_and_swipe.attribute_experiment_partial", {
+      id: definition.id,
+      error: failed.reason instanceof Error ? failed.reason.message : String(failed.reason),
+    });
+  }
+
+  const variants = definition.variants.map((variant) => emptyExperimentVariant(variant.key, variant.label));
+  const targetFor = (row: Record<string, string | number | null | undefined>) => {
+    const matched = definition.variants.find((variant) =>
+      Object.entries(variant.attributes).every(([key, value]) => String(row[key] ?? "").trim().toLowerCase() === value),
+    );
+    return matched ? variants[definition.variants.indexOf(matched)] : null;
+  };
+
+  if (installResult.status === "fulfilled") {
+    for (const row of installResult.value) {
+      const target = targetFor(row);
+      if (target) {
+        addExperimentMetrics(target, {
+          country: String(row.country),
+          installs: Number(row.installs),
+          installsD7: Number(row.installsD7 ?? 0),
+          installsD14: Number(row.installsD14 ?? 0),
+          installsD30: Number(row.installsD30 ?? 0),
+        });
+      }
+    }
+  }
+  if (outcomeResult.status === "fulfilled") {
+    for (const row of outcomeResult.value) {
+      const target = targetFor(row);
+      if (target) {
+        addExperimentMetrics(target, {
+          country: String(row.country),
+          trials: Number(row.trials),
+          converted: Number(row.converted),
+          paid: Number(row.paid),
+        });
+      }
+    }
+  }
+  if (proceedResult.status === "fulfilled") {
+    for (const row of proceedResult.value) {
+      const target = targetFor(row);
+      if (target) {
+        addExperimentMetrics(target, {
+          country: String(row.country),
+          proceeds: Number(row.proceeds ?? 0),
+          proceedsD7: Number(row.proceedsD7 ?? 0),
+          proceedsD14: Number(row.proceedsD14 ?? 0),
+          proceedsD30: Number(row.proceedsD30 ?? 0),
+        });
+      }
+    }
+  }
+
+  if (definition.showRetention && retentionResult.status === "fulfilled" && assignmentResult.status === "fulfilled") {
+    const assignments = new Map<string, Record<string, string>>();
+    for (const row of assignmentResult.value) {
+      const current = assignments.get(row.appUserId) ?? {};
+      current[row.key] = row.value;
+      assignments.set(row.appUserId, current);
+    }
+    const now = Date.now();
+    for (const row of retentionResult.value) {
+      if (!row.appUserId) continue;
+      const attrs = assignments.get(row.appUserId);
+      if (!attrs) continue;
+      const target = targetFor(attrs);
+      if (!target) continue;
+      const startedAt = Date.parse(row.startedAt);
+      if (!Number.isFinite(startedAt)) continue;
+      const expiresAt = row.expiresAt ? Date.parse(row.expiresAt) : Number.NaN;
+      const metrics: Partial<MobileAppExperimentSlice> = {};
+      for (const [key, days] of [
+        ["D7", 7],
+        ["D14", 14],
+        ["D30", 30],
+      ] as const) {
+        const checkpoint = startedAt + days * 86_400_000;
+        if (checkpoint > now) continue;
+        const eligibleKey = `eligible${key}` as const;
+        const retainedKey = `retained${key}` as const;
+        metrics[eligibleKey] = 1;
+        metrics[retainedKey] = Number.isFinite(expiresAt) && expiresAt > checkpoint ? 1 : 0;
+      }
+      addExperimentMetrics(target, { country: row.country, ...metrics });
+    }
+  }
+
+  return {
+    id: definition.id,
+    title: definition.title,
+    subtitle: definition.subtitle,
+    scoreMetrics: definition.scoreMetrics,
+    showRetention: definition.showRetention,
+    showTrials: definition.showTrials,
+    showCompletion: definition.showCompletion,
+    variants,
+  };
+}
+
+function attributeAlias(index: number) {
+  return `a${index}`;
+}
+
+function userAttributeJoin(app: SuperwallAppConfig, alias: string, key: string, leftAlias: string) {
+  return `
+    INNER JOIN (
+      SELECT appUserId, lower(value) AS value
+      FROM sw.user_attributes_rep FINAL
+      WHERE applicationId = ${app.applicationId}
+        AND isSandbox = 0
+        AND isDeleted = 0
+        AND ts < now()
+        AND key = '${key}'
+    ) ${alias} ON ${leftAlias}.appUserId = ${alias}.appUserId`;
 }
 
 function emptyExperimentVariant(key: string, label: string): MobileAppExperimentVariant {
@@ -730,34 +1486,79 @@ function emptyExperimentVariant(key: string, label: string): MobileAppExperiment
 }
 
 function emptyExperimentSlice(): MobileAppExperimentSlice {
-  return { installs: 0, completed: 0, trials: 0, converted: 0, paid: 0, proceeds: 0 };
+  return {
+    installs: 0,
+    completed: 0,
+    trials: 0,
+    converted: 0,
+    paid: 0,
+    proceeds: 0,
+    installsD7: 0,
+    proceedsD7: 0,
+    eligibleD7: 0,
+    retainedD7: 0,
+    installsD14: 0,
+    proceedsD14: 0,
+    eligibleD14: 0,
+    retainedD14: 0,
+    installsD30: 0,
+    proceedsD30: 0,
+    eligibleD30: 0,
+    retainedD30: 0,
+  };
 }
 
 function addExperimentMetrics(
   target: MobileAppExperimentVariant,
   row: Partial<MobileAppExperimentSlice> & { country?: string },
 ) {
-  const installs = row.installs ?? 0;
-  const completed = row.completed ?? 0;
-  const trials = row.trials ?? 0;
-  const converted = row.converted ?? 0;
-  const paid = row.paid ?? 0;
-  const proceeds = row.proceeds ?? 0;
-  target.installs += installs;
-  target.completed += completed;
-  target.trials += trials;
-  target.converted += converted;
-  target.paid += paid;
-  target.proceeds = roundMoney(target.proceeds + proceeds);
+  const next = emptyExperimentSlice();
+  for (const key of Object.keys(next) as (keyof MobileAppExperimentSlice)[]) {
+    next[key] = Number(row[key] ?? 0);
+  }
+  target.installs += next.installs;
+  target.completed += next.completed;
+  target.trials += next.trials;
+  target.converted += next.converted;
+  target.paid += next.paid;
+  target.proceeds = roundMoney(target.proceeds + next.proceeds);
+  target.installsD7 += next.installsD7;
+  target.proceedsD7 = roundMoney(target.proceedsD7 + next.proceedsD7);
+  target.eligibleD7 += next.eligibleD7;
+  target.retainedD7 += next.retainedD7;
+  target.installsD14 += next.installsD14;
+  target.proceedsD14 = roundMoney(target.proceedsD14 + next.proceedsD14);
+  target.eligibleD14 += next.eligibleD14;
+  target.retainedD14 += next.retainedD14;
+  target.installsD30 += next.installsD30;
+  target.proceedsD30 = roundMoney(target.proceedsD30 + next.proceedsD30);
+  target.eligibleD30 += next.eligibleD30;
+  target.retainedD30 += next.retainedD30;
   const country = normalizeCountry(row.country ?? "unknown");
   const bucket = target.countries[country] ?? emptyExperimentSlice();
-  bucket.installs += installs;
-  bucket.completed += completed;
-  bucket.trials += trials;
-  bucket.converted += converted;
-  bucket.paid += paid;
-  bucket.proceeds = roundMoney(bucket.proceeds + proceeds);
+  addExperimentMetricsToSlice(bucket, next);
   target.countries[country] = bucket;
+}
+
+function addExperimentMetricsToSlice(target: MobileAppExperimentSlice, next: MobileAppExperimentSlice) {
+  target.installs += next.installs;
+  target.completed += next.completed;
+  target.trials += next.trials;
+  target.converted += next.converted;
+  target.paid += next.paid;
+  target.proceeds = roundMoney(target.proceeds + next.proceeds);
+  target.installsD7 += next.installsD7;
+  target.proceedsD7 = roundMoney(target.proceedsD7 + next.proceedsD7);
+  target.eligibleD7 += next.eligibleD7;
+  target.retainedD7 += next.retainedD7;
+  target.installsD14 += next.installsD14;
+  target.proceedsD14 = roundMoney(target.proceedsD14 + next.proceedsD14);
+  target.eligibleD14 += next.eligibleD14;
+  target.retainedD14 += next.retainedD14;
+  target.installsD30 += next.installsD30;
+  target.proceedsD30 = roundMoney(target.proceedsD30 + next.proceedsD30);
+  target.eligibleD30 += next.eligibleD30;
+  target.retainedD30 += next.retainedD30;
 }
 
 function paywallVariantForVersion(value: string): "native" | "legacy" | null {

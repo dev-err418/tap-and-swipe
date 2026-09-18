@@ -8,8 +8,10 @@ import type {
   MobileAppExperiment,
   MobileAppPlanCountryRow,
   MobileAppRetentionCountryRow,
+  TrialCancelTiming,
 } from "@/lib/mobile-app-analytics";
 import AppExperimentCard from "@/components/analytics/AppExperimentCard";
+import TrialCancelChart from "@/components/analytics/TrialCancelChart";
 import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
 
@@ -23,6 +25,7 @@ export default function AppOverviewPanel({
   plans,
   retention,
   experiments = [],
+  trialCancelTiming = null,
 }: {
   installs: number;
   proceeds: number;
@@ -33,6 +36,7 @@ export default function AppOverviewPanel({
   plans: MobileAppPlanCountryRow[];
   retention: MobileAppRetentionCountryRow[];
   experiments?: MobileAppExperiment[];
+  trialCancelTiming?: TrialCancelTiming | null;
 }) {
   const appu = installs > 0 ? proceeds / installs : 0;
   const installToPaid = installs > 0 ? paid / installs : 0;
@@ -67,6 +71,7 @@ export default function AppOverviewPanel({
           />
         </div>
       </div>
+      {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
       {experiments.map((experiment) => (
         <AppExperimentCard
           key={experiment.id}
