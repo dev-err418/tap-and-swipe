@@ -652,6 +652,7 @@ async function AppDetail({
         countries={app.countries}
         plans={app.plans}
         retention={app.retention}
+        experiments={app.experiments}
       />
     </div>
   );

@@ -5,9 +5,11 @@ import AppCountryBreakdown from "@/components/analytics/AppCountryBreakdown";
 import AppConversionBreakdown from "@/components/analytics/AppConversionBreakdown";
 import type {
   MobileAppCountryRow,
+  MobileAppExperiment,
   MobileAppPlanCountryRow,
   MobileAppRetentionCountryRow,
 } from "@/lib/mobile-app-analytics";
+import AppExperimentCard from "@/components/analytics/AppExperimentCard";
 import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
 
@@ -20,6 +22,7 @@ export default function AppOverviewPanel({
   countries,
   plans,
   retention,
+  experiments = [],
 }: {
   installs: number;
   proceeds: number;
@@ -29,9 +32,16 @@ export default function AppOverviewPanel({
   countries: MobileAppCountryRow[];
   plans: MobileAppPlanCountryRow[];
   retention: MobileAppRetentionCountryRow[];
+  experiments?: MobileAppExperiment[];
 }) {
   const appu = installs > 0 ? proceeds / installs : 0;
   const installToPaid = installs > 0 ? paid / installs : 0;
+  const showPlans = plans.some((row) => row.yearlySubs + row.weeklySubs > 0);
+  const showRetention = retention.length > 0;
+  const topCountries = countries
+    .map((row) => row.country)
+    .filter((country) => country !== "unknown")
+    .slice(0, 5);
 
   return (
     <section className="space-y-4">
@@ -57,28 +67,37 @@ export default function AppOverviewPanel({
           />
         </div>
       </div>
+      {experiments.map((experiment) => (
+        <AppExperimentCard
+          key={experiment.id}
+          experiment={experiment}
+          topCountries={topCountries}
+        />
+      ))}
       <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <AppCountryBreakdown countries={countries} />
         <AppConversionBreakdown countries={countries} />
       </div>
-      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-        {plans.some((row) => row.yearlySubs + row.weeklySubs > 0) ? (
-          <AppPlanBreakdown
-            plans={plans.map((plan) => ({
-              ...plan,
-              installs: countries.find((row) => row.country === plan.country)?.installs ?? plan.installs,
-            }))}
-          />
-        ) : null}
-        {retention.length > 0 ? (
-          <AppRetentionBreakdown
-            rows={retention.map((row) => ({
-              ...row,
-              installs: countries.find((country) => country.country === row.country)?.installs ?? row.installs,
-            }))}
-          />
-        ) : null}
-      </div>
+      {showPlans || showRetention ? (
+        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+          {showPlans ? (
+            <AppPlanBreakdown
+              plans={plans.map((plan) => ({
+                ...plan,
+                installs: countries.find((row) => row.country === plan.country)?.installs ?? plan.installs,
+              }))}
+            />
+          ) : null}
+          {showRetention ? (
+            <AppRetentionBreakdown
+              rows={retention.map((row) => ({
+                ...row,
+                installs: countries.find((country) => country.country === row.country)?.installs ?? row.installs,
+              }))}
+            />
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }
