@@ -24,12 +24,22 @@ export type FunnelTrendPoint = {
   trialStarts: number;
 };
 
-export function VisitorsRevenueChart({ data }: { data: FunnelTrendPoint[] }) {
+export function VisitorsRevenueChart({
+  data,
+  visitLabel = "Visitors",
+  revenueLabel = "Revenue",
+  emptyMessage = "Visitor and revenue trends appear after funnel events are tracked.",
+}: {
+  data: FunnelTrendPoint[];
+  visitLabel?: string;
+  revenueLabel?: string;
+  emptyMessage?: string;
+}) {
   const hasData = data.some((point) => point.visits > 0 || point.revenue > 0);
   if (!hasData) {
     return (
       <ChartEmpty>
-        Visitor and revenue trends appear after funnel events are tracked.
+        {emptyMessage}
       </ChartEmpty>
     );
   }
@@ -41,8 +51,8 @@ export function VisitorsRevenueChart({ data }: { data: FunnelTrendPoint[] }) {
           aria-label="Chart legend"
           className="flex min-w-0 flex-wrap items-center justify-center gap-2 text-[11px]"
         >
-          <LegendItem label="Visitors" color={VISIT_COLOR} />
-          <LegendItem label="Revenue" color={REVENUE_COLOR} />
+          <LegendItem label={visitLabel} color={VISIT_COLOR} />
+          <LegendItem label={revenueLabel} color={REVENUE_COLOR} />
         </div>
       </div>
       <div className="h-72 w-full text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50">
@@ -85,7 +95,7 @@ export function VisitorsRevenueChart({ data }: { data: FunnelTrendPoint[] }) {
               tickFormatter={formatCompactCurrency}
             />
             <Tooltip
-              content={<TrendTooltip />}
+              content={<TrendTooltip visitLabel={visitLabel} revenueLabel={revenueLabel} />}
               cursor={{ stroke: "var(--border)", strokeDasharray: "3 3" }}
             />
             <Area
@@ -102,7 +112,7 @@ export function VisitorsRevenueChart({ data }: { data: FunnelTrendPoint[] }) {
             <Bar
               yAxisId="revenue"
               dataKey="revenue"
-              name="Revenue"
+              name={revenueLabel}
               fill={REVENUE_COLOR}
               maxBarSize={34}
               shape={RoundedRevenueBar}
@@ -113,7 +123,7 @@ export function VisitorsRevenueChart({ data }: { data: FunnelTrendPoint[] }) {
               yAxisId="visits"
               type="monotone"
               dataKey="visits"
-              name="Visitors"
+              name={visitLabel}
               stroke={VISIT_COLOR}
               strokeWidth={2.25}
               dot={false}
@@ -216,10 +226,14 @@ function TrendTooltip({
   active,
   payload,
   label,
+  visitLabel = "Visitors",
+  revenueLabel = "Revenue",
 }: {
   active?: boolean;
   payload?: { payload: FunnelTrendPoint }[];
   label?: string | number;
+  visitLabel?: string;
+  revenueLabel?: string;
 }) {
   if (!active || !payload?.length) return null;
   const row = payload[0]?.payload;
@@ -230,8 +244,8 @@ function TrendTooltip({
       <div className="grid gap-2 px-2.5 py-2">
         <div className="font-medium text-foreground">{formatLongDate(String(label ?? row.date))}</div>
         <div className="grid gap-1.5">
-          <TooltipMetric label="Visitors" value={formatInteger(row.visits)} color={VISIT_COLOR} />
-          <TooltipMetric label="Revenue" value={formatCurrency(row.revenue)} color={REVENUE_COLOR} />
+          <TooltipMetric label={visitLabel} value={formatInteger(row.visits)} color={VISIT_COLOR} />
+          <TooltipMetric label={revenueLabel} value={formatCurrency(row.revenue)} color={REVENUE_COLOR} />
           {row.trialStarts > 0 ? (
             <TooltipMetric
               label="Trial starts"

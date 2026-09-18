@@ -29,9 +29,11 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
 export default function AnalyticsPeriodSelect({
   period,
   site,
+  app,
 }: {
   period: Period;
   site?: "appsprint" | "postback" | "grewit" | "community";
+  app?: "glow" | "poky" | "versy";
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -46,6 +48,7 @@ export default function AnalyticsPeriodSelect({
         const params = new URLSearchParams();
         if (nextPeriod !== "week") params.set("period", nextPeriod);
         if (site) params.set("site", site);
+        if (app) params.set("app", app);
         const query = params.toString();
         startTransition(() => {
           router.push(`/analytics${query ? `?${query}` : ""}`);

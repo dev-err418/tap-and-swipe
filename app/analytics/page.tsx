@@ -14,8 +14,10 @@ import { getGrewItFunnelAnalytics } from "@/lib/grew-it-funnel";
 import { getCommunityFunnelAnalytics } from "@/lib/community-funnel";
 import {
   getMobileAppAnalytics,
+  getMobileAppById,
   type MobileAppAnalytics,
 } from "@/lib/mobile-app-analytics";
+import AppOverviewPanel from "@/components/analytics/AppOverviewPanel";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
 import DeadProjectsDisclosure from "@/components/analytics/DeadProjectsDisclosure";
 import { DASHBOARD_SURFACE_CLASS } from "@/components/analytics/dashboard-surface";
@@ -34,6 +36,16 @@ const isDev = process.env.NODE_ENV === "development";
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 type Tab = "analytics" | "appsprint";
 type WebsiteSite = "appsprint" | "postback" | "grewit" | "community";
+type AppId = MobileAppAnalytics["id"];
+
+const APP_PERIOD_LABELS: Record<Period, string> = {
+  day: "Today",
+  yesterday: "Yesterday",
+  "3days": "Last 3 days",
+  week: "Last 7 days",
+  month: "Last 30 days",
+  all: "All time",
+};
 
 const PERIOD_SUMMARY_LABELS: Record<Period, string> = {
   day: "today",
@@ -91,6 +103,10 @@ export default async function AnalyticsPage({
   }
 
   const period = normalizePeriod(params.period);
+  const detailApp =
+    params.app === "poky" || params.app === "glow" || params.app === "versy"
+      ? params.app
+      : null;
   const detailSite =
     params.site === "appsprint" ||
     params.site === "postback" ||
@@ -102,7 +118,9 @@ export default async function AnalyticsPage({
   return (
     <main className="min-h-screen px-4 py-6 text-black sm:px-6 sm:py-8">
       <div className="mx-auto max-w-6xl">
-        {detailSite ? (
+        {detailApp ? (
+          <AppDetail period={period} appId={detailApp} />
+        ) : detailSite ? (
           <WebsiteDetail period={period} site={detailSite} />
         ) : (
           <WebsiteDirectory period={period} />
@@ -171,7 +189,7 @@ async function WebsiteDirectory({
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {liveApps.map((app) => (
-              <MobileAppCard key={app.id} app={app} />
+              <MobileAppCard key={app.id} app={app} period={period} />
             ))}
           </div>
         </section>
@@ -207,7 +225,7 @@ async function WebsiteDirectory({
           <DeadProjectsDisclosure>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {deadApps.map((app) => (
-                <MobileAppCard key={app.id} app={app} />
+                <MobileAppCard key={app.id} app={app} period={period} />
               ))}
               {deadWebsites.map((website) => (
                 <WebsiteCard key={website.site} period={period} {...website} />
@@ -285,7 +303,7 @@ function WebsiteCard({
   );
 }
 
-function MobileAppCard({ app }: { app: MobileAppAnalytics }) {
+function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Period }) {
   const points: WebsiteTrendPoint[] = app.trend.map((point) => ({
     bucket: point.bucket,
     visitors: point.downloads,
@@ -293,29 +311,34 @@ function MobileAppCard({ app }: { app: MobileAppAnalytics }) {
   }));
 
   return (
-    <div className={`overflow-hidden p-6 ${DASHBOARD_SURFACE_CLASS}`}>
-      <div className="flex items-center gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={app.iconUrl}
-          alt=""
-          width={24}
-          height={24}
-          className="size-6 shrink-0 rounded-md"
-        />
-        <h2 className="truncate text-xl font-semibold tracking-tight">{app.name}</h2>
+    <Link
+      href={buildAnalyticsUrl({ period, app: app.id })}
+      className={`block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${DASHBOARD_SURFACE_CLASS}`}
+    >
+      <div className="pointer-events-none select-none">
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={app.iconUrl}
+            alt=""
+            width={24}
+            height={24}
+            className="size-6 shrink-0 rounded-md"
+          />
+          <h2 className="truncate text-xl font-semibold tracking-tight">{app.name}</h2>
+        </div>
+
+        <WebsiteMiniChart points={points} ariaLabel="New user trend line and proceeds bars" />
+
+        <p className="text-base text-black/55">
+          <strong className="font-bold text-black">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
+          proceeds
+          <span className="mx-2 text-black/35">•</span>
+          <strong className="font-bold text-black">{formatAppu(app.revenueCents, app.downloads)}</strong>{" "}
+          APPU
+        </p>
       </div>
-
-      <WebsiteMiniChart points={points} ariaLabel="New user trend line and proceeds bars" />
-
-      <p className="text-base text-black/55">
-        <strong className="font-bold text-black">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
-        proceeds
-        <span className="mx-2 text-black/35">•</span>
-        <strong className="font-bold text-black">{formatAppu(app.revenueCents, app.downloads)}</strong>{" "}
-        APPU
-      </p>
-    </div>
+    </Link>
   );
 }
 
@@ -531,15 +554,105 @@ function AppSprintOperations() {
 function buildAnalyticsUrl({
   period,
   site,
+  app,
 }: {
   period: Period;
   site?: WebsiteSite;
+  app?: AppId;
 }) {
   const params = new URLSearchParams();
   if (period !== "week") params.set("period", period);
   if (site) params.set("site", site);
+  if (app) params.set("app", app);
   const query = params.toString();
   return `/analytics${query ? `?${query}` : ""}`;
+}
+
+async function AppDetail({
+  period,
+  appId,
+}: {
+  period: Period;
+  appId: AppId;
+}) {
+  let app: MobileAppAnalytics | null = null;
+  try {
+    app = await getMobileAppById(period, appId);
+  } catch (error) {
+    const log = process.env.NODE_ENV === "development" ? console.warn : console.error;
+    log("tap_and_swipe.mobile_app_detail_failed", {
+      appId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  if (!app) {
+    return (
+      <div className="space-y-5">
+        <Link
+          href={buildAnalyticsUrl({ period })}
+          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-medium text-black/60 shadow-none ring-0 transition-all hover:text-black active:translate-y-px"
+        >
+          <ArrowLeft className="size-4" />
+          All apps
+        </Link>
+        <p className="text-lg text-black/55">App analytics could not be loaded.</p>
+      </div>
+    );
+  }
+
+  const proceeds = app.revenueCents / 100;
+  const windowLabel = APP_PERIOD_LABELS[period];
+  const trend = app.trend.map((point) => ({
+    date: point.bucket.toISOString(),
+    visits: point.downloads,
+    revenue: point.revenue,
+    trialStarts: 0,
+  }));
+
+  return (
+    <div className="space-y-10">
+      <div className="space-y-5">
+        <Link
+          href={buildAnalyticsUrl({ period })}
+          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-medium text-black/60 shadow-none ring-0 transition-all hover:text-black active:translate-y-px"
+        >
+          <ArrowLeft className="size-4" />
+          All apps
+        </Link>
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={app.iconUrl}
+              alt=""
+              width={40}
+              height={40}
+              className="size-10 shrink-0 rounded-[10px]"
+            />
+            <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
+              <strong className="font-semibold text-black">{app.name}</strong> got{" "}
+              <strong className="font-semibold text-black">{formatNumber(app.downloads)} installs</strong>{" "}
+              and{" "}
+              <strong className="font-semibold text-black">{formatRevenue(app.revenueCents)} proceeds</strong>{" "}
+              {PERIOD_SUMMARY_LABELS[period]}.
+            </h1>
+          </div>
+          <AnalyticsPeriodSelect period={period} app={app.id} />
+        </div>
+      </div>
+
+      <AppOverviewPanel
+        installs={app.downloads}
+        proceeds={proceeds}
+        paid={app.paid}
+        windowLabel={windowLabel}
+        trend={trend}
+        countries={app.countries}
+      />
+    </div>
+  );
 }
 
 function formatNumber(value: number | bigint) {
