@@ -9,7 +9,7 @@ export type MobileAppTrendPoint = {
 };
 
 export type MobileAppAnalytics = {
-  id: "poky" | "versy";
+  id: "glow" | "poky" | "versy";
   name: string;
   iconUrl: string;
   downloads: number;
@@ -21,16 +21,21 @@ const SUPERWALL_ORGANIZATION_ID = 16256;
 const POKY_APPLICATION_ID = 49771;
 const VERSY_SUPERWALL_ORGANIZATION_ID = 25476;
 const VERSY_SUPERWALL_APPLICATION_ID = 51393;
+const GLOW_SUPERWALL_ORGANIZATION_ID = 27020;
+const GLOW_SUPERWALL_APPLICATION_ID = 54736;
 const ALL_TIME_START = new Date("2024-01-01T00:00:00.000Z");
 
 const POKY_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/5e/46/3f/5e463fde-45e6-7fdc-ce5a-bb5b73af405d/AppIcon-0-0-1x_U007ephone-0-1-sRGB-85-220.png/512x512bb.jpg";
 const VERSY_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/a6/20/46/a6204617-8071-fad1-c8b2-fb6dc8ea300b/AppIcon-0-0-1x_U007ephone-0-1-85-220.png/512x512bb.jpg";
+const GLOW_ICON_URL =
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/19/20/0e/19200e98-f11f-8ab4-850a-81a2a45122e0/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg";
 
 export async function getMobileAppAnalytics(period: Period) {
   const results = await Promise.allSettled([
     getPokyAnalytics(period),
+    getGlowAnalytics(period),
     getVersyAnalytics(period),
   ]);
 
@@ -41,6 +46,20 @@ export async function getMobileAppAnalytics(period: Period) {
       error: result.reason instanceof Error ? result.reason.message : String(result.reason),
     });
     return [];
+  });
+}
+
+async function getGlowAnalytics(period: Period): Promise<MobileAppAnalytics> {
+  const apiKey = process.env.SUPERWALL_GLOW_API_KEY?.trim();
+  if (!apiKey) throw new Error("SUPERWALL_GLOW_API_KEY is not configured");
+
+  return getSuperwallAppAnalytics(period, {
+    id: "glow",
+    name: "Glow",
+    iconUrl: GLOW_ICON_URL,
+    organizationId: GLOW_SUPERWALL_ORGANIZATION_ID,
+    applicationId: GLOW_SUPERWALL_APPLICATION_ID,
+    apiKey,
   });
 }
 

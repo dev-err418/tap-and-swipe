@@ -16,6 +16,7 @@ import {
   type MobileAppAnalytics,
 } from "@/lib/mobile-app-analytics";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
+import DeadProjectsDisclosure from "@/components/analytics/DeadProjectsDisclosure";
 import AppSprintFunnelPanel from "@/components/analytics/AppSprintFunnelPanel";
 import LicensesModal from "@/components/aso-debug/LicensesModal";
 import ProxyAnalyticsPanel from "@/components/aso-debug/ProxyAnalyticsPanel";
@@ -172,67 +173,90 @@ async function WebsiteDirectory({
     getCommunityFunnelAnalytics(period),
     getMobileAppAnalytics(period),
   ]);
-  const websites = [
+  const liveApps = mobileApps.filter((app) => app.id !== "versy");
+  const deadApps = mobileApps.filter((app) => app.id === "versy");
+  const liveWebsites = [
     appSprintAnalytics
       ? websiteData("appsprint", "appsprint.app", appSprintAnalytics)
       : null,
+    websiteData("community", "community", communityAnalytics),
+  ].filter((website) => website !== null);
+  const deadWebsites = [
     postbackAnalytics
       ? websiteData("postback", "postback.sh", postbackAnalytics)
       : null,
     grewItAnalytics
       ? websiteData("grewit", "grewit.app", grewItAnalytics)
       : null,
-    websiteData("community", "community", communityAnalytics),
   ].filter((website) => website !== null);
 
-  if (websites.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-lg text-black/55 sm:text-xl">Website analytics could not be loaded.</p>
-          <AnalyticsPeriodSelect period={period} />
-        </div>
-        <div className="rounded-[24px] border border-black/[0.07] bg-white px-6 py-14 text-center text-sm text-black/45 shadow-sm">
-          Check the AppSprint, Postback, and Grew It analytics endpoints and database configuration.
-        </div>
-      </div>
-    );
-  }
-
-  const metrics: WebsiteMetricsRow = {
-    visitors: websites.reduce((sum, website) => sum + website.metrics.visitors, 0),
-    revenue_cents:
-      websites.reduce((sum, website) => sum + website.metrics.revenue_cents, 0) +
-      mobileApps.reduce((sum, app) => sum + app.revenueCents, 0),
-  };
-  const downloads = mobileApps.reduce((sum, app) => sum + app.downloads, 0);
+  const appDownloads = liveApps.reduce((sum, app) => sum + app.downloads, 0);
+  const appRevenueCents = liveApps.reduce((sum, app) => sum + app.revenueCents, 0);
+  const websiteVisitors = liveWebsites.reduce((sum, website) => sum + website.metrics.visitors, 0);
+  const websiteRevenueCents = liveWebsites.reduce((sum, website) => sum + website.metrics.revenue_cents, 0);
+  const periodLabel = PERIOD_SUMMARY_LABELS[period];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <p className="min-w-0 text-lg text-black/55 sm:text-xl">
-          Hey Arthur, you got{" "}
-          <strong className="font-semibold text-black">{formatNumber(metrics.visitors)} visitors</strong>
-          {mobileApps.length > 0 ? (
-            <>
-              , <strong className="font-semibold text-black">{formatNumber(downloads)} downloads</strong>,{" "}
-            </>
-          ) : " "}
-          and made{" "}
-          <strong className="font-semibold text-black">{formatRevenue(metrics.revenue_cents)}</strong>{" "}
-          {PERIOD_SUMMARY_LABELS[period]}.
-        </p>
-        <AnalyticsPeriodSelect period={period} />
-      </div>
+    <div className="space-y-12">
+      {liveApps.length > 0 ? (
+        <section className="space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+              Hey Arthur, you got{" "}
+              <strong className="font-semibold text-black">{formatNumber(appDownloads)} downloads</strong>
+              {" "}and{" "}
+              <strong className="font-semibold text-black">{formatRevenue(appRevenueCents)}</strong>
+              {" "}proceeds {periodLabel}.
+            </p>
+            <AnalyticsPeriodSelect period={period} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {liveApps.map((app) => (
+              <MobileAppCard key={app.id} app={app} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {websites.map((website) => (
-          <WebsiteCard key={website.site} period={period} {...website} />
-        ))}
-        {mobileApps.map((app) => (
-          <MobileAppCard key={app.id} app={app} />
-        ))}
-      </div>
+      <section className="space-y-6">
+        <div className="flex items-center justify-between gap-4">
+          {liveWebsites.length > 0 ? (
+            <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+              Hey Arthur, you got{" "}
+              <strong className="font-semibold text-black">{formatNumber(websiteVisitors)} visitors</strong>
+              {" "}and made{" "}
+              <strong className="font-semibold text-black">{formatRevenue(websiteRevenueCents)}</strong>{" "}
+              {periodLabel}.
+            </p>
+          ) : (
+            <p className="text-lg text-black/55 sm:text-xl">Website analytics could not be loaded.</p>
+          )}
+          {liveApps.length === 0 ? <AnalyticsPeriodSelect period={period} /> : null}
+        </div>
+        {liveWebsites.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {liveWebsites.map((website) => (
+              <WebsiteCard key={website.site} period={period} {...website} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[24px] border border-black/[0.07] bg-white px-6 py-14 text-center text-sm text-black/45 shadow-sm">
+            Check the AppSprint, Postback, and Grew It analytics endpoints and database configuration.
+          </div>
+        )}
+        {deadApps.length > 0 || deadWebsites.length > 0 ? (
+          <DeadProjectsDisclosure>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {deadApps.map((app) => (
+                <MobileAppCard key={app.id} app={app} />
+              ))}
+              {deadWebsites.map((website) => (
+                <WebsiteCard key={website.site} period={period} {...website} />
+              ))}
+            </div>
+          </DeadProjectsDisclosure>
+        ) : null}
+      </section>
     </div>
   );
 }
@@ -323,14 +347,14 @@ function MobileAppCard({ app }: { app: MobileAppAnalytics }) {
         <h2 className="truncate text-xl font-semibold tracking-tight">{app.name}</h2>
       </div>
 
-      <WebsiteMiniChart points={points} ariaLabel="New user trend line and revenue bars" />
+      <WebsiteMiniChart points={points} ariaLabel="New user trend line and proceeds bars" />
 
       <p className="text-base text-black/55">
         <strong className="font-bold text-black">{formatCompactNumber(app.downloads)}</strong>{" "}
         downloads
         <span className="mx-2 text-black/35">•</span>
         <strong className="font-bold text-black">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
-        revenue
+        proceeds
       </p>
     </div>
   );
