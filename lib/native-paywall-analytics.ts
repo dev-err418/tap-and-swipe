@@ -1,4 +1,4 @@
-/** Glow's gp1 scalar-JSON attribute contract. See docs/native-paywall-analytics.md. */
+/** Native iOS gp1 scalar-JSON attribute contract. See docs/native-paywall-analytics.md. */
 export type PaywallRecord = {
   schema: 1;
   environment: string;
@@ -211,6 +211,9 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
     const previous = unique.get(key);
     if (!previous || dateMs(event.attributionTs) > dateMs(previous.attributionTs)) unique.set(key, event);
   }
+  const receivedTransactions = new Set([...unique.values()].filter((e) => Number(e.isRefund) !== 1 && Number(e.price) >= 0).map((e) => `${e.originalTransactionId}|${e.transactionId}`));
+  const awaitingMoney = parsed.purchases.filter(({ purchase: p }) => inCohort(p.context) && p.purchasedAt <= asOf
+    && !receivedTransactions.has(`${p.originalTransactionID}|${p.transactionID}`));
   let missingMoney = 0;
   for (const event of unique.values()) {
     const list = anchors.get(event.originalTransactionId);
@@ -241,6 +244,8 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
       const expected = Math.max(0, ...stats.map((s) => s.variantCount));
       const blocked = parsed.invalid > 0 ? "Some tracking records are invalid; winner estimates are unavailable."
         : missingMoney > 0 ? "Some transaction amounts are unavailable."
+        : awaitingMoney.some(({ purchase: p }) => p.context.experiment === group.experiment && (group.language === "all" || p.context.language === group.language)) ? "Waiting for Apple server revenue to reconcile verified purchases."
+        : group.experiment.startsWith("poky_native_recovery_v1_") ? "Use the Recovery A/B test for all post-assignment proceeds, including the holdout. This table shows direct paywall attribution only."
         : rows.length < 2 || rows.length !== expected ? "Waiting for all variants."
         : stats.some((s) => s.confounded) ? "Includes existing assignments or a fallback offer; not a clean randomized cohort."
         : stats.some((s) => s.n < 50 || s.paid < 5) ? `Needs 50 mature users and 5 paid users per variant at D${horizon}.` : null;
@@ -259,6 +264,7 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
   return { status: "ready", asOf, groups: output, warnings: [
     ...(parsed.invalid ? [`${parsed.invalid} malformed tracking records were excluded.`] : []),
     ...(missingMoney ? [`${missingMoney} transaction amounts are unavailable; proceeds are incomplete.`] : []),
+    ...(awaitingMoney.length ? [`${awaitingMoney.length} verified purchases are awaiting Apple server revenue; proceeds may be incomplete.`] : []),
   ] };
 }
 

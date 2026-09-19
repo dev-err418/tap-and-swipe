@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 import { NATIVE_PAYWALL_DEMO_REPORT } from "@/lib/native-paywall-demo";
 import { nativePaywallAllocation } from "@/lib/native-paywall-allocation";
 
-const languages: Record<string, string> = { en: "English", es: "Spanish", de: "German" };
-const languageFlags: Record<string, string> = { en: "🇬🇧", es: "🇪🇸", de: "🇩🇪" };
+const languages: Record<string, string> = { en: "English", es: "Spanish", de: "German", fr: "French" };
+const languageFlags: Record<string, string> = { en: "🇬🇧", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷" };
 const WIN_COLOR = "#1d4ed8";
 const LOSE_COLOR = "#f97316";
 const WIN_SOFT = "color-mix(in oklch, #1d4ed8 12%, white)";
@@ -43,8 +43,9 @@ function makeConversionDomain(rows: NativePaywallRow[]): ConversionDomain {
   return { minimum: Math.max(0, minimum - 0.005), maximum: Math.min(1, maximum + 0.005) };
 }
 
-export default function NativePaywallsPanel({ report: liveReport }: { report: NativePaywallReport | null }) {
-  const [demo, setDemo] = useState(true);
+export default function NativePaywallsPanel({ appId, report: liveReport }: { appId: "glow" | "poky" | "versy"; report: NativePaywallReport | null }) {
+  const [previewEnabled, setDemo] = useState(false);
+  const demo = appId === "glow" && previewEnabled;
   const report = demo ? NATIVE_PAYWALL_DEMO_REPORT : liveReport;
   const [language, setLanguage] = useState("en");
   const [horizon, setHorizon] = useState<PaywallHorizon>(7);
@@ -59,9 +60,9 @@ export default function NativePaywallsPanel({ report: liveReport }: { report: Na
         <span className="text-xs font-semibold text-amber-900">{demo ? "Demo data" : "Live data"}</span>
         <span className="text-xs text-amber-800">{demo ? "Fictional numbers for UI preview. Date filters don’t apply; the main chart remains live." : "Showing real Superwall analytics only."}</span>
       </div>
-      <button type="button" onClick={() => setDemo(!demo)} className="rounded-full border border-amber-300/70 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100">
+      {appId === "glow" && <button type="button" onClick={() => setDemo(!demo)} className="rounded-full border border-amber-300/70 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100">
         {demo ? "Show live data" : "Show demo data"}
-      </button>
+      </button>}
     </div>
     <section className="space-y-2 pt-2">
       <div className="flex flex-wrap items-center justify-between gap-3 px-1">
@@ -89,10 +90,10 @@ export default function NativePaywallsPanel({ report: liveReport }: { report: Na
       </div>
     </section>
     {report?.status === "unavailable" || !report ? <Empty>Paywall data could not be loaded. Refresh to retry.</Empty>
-      : !groups.length ? <Empty>No native paywall tracking yet for this cohort. Results will appear after users run the instrumented Glow release.</Empty>
+      : !groups.length ? <Empty>No native paywall tracking yet for this cohort. Results will appear after users run the instrumented app release.</Empty>
       : groups.map((group) => <div key={group.experiment} className="space-y-4">
         {groups.length > 1 ? <h2 className="px-1 pt-2 text-sm font-semibold">{group.name}</h2> : null}
-        <ResultsTable title="Paywalls" rows={group.paywalls} horizon={horizon} experiment={group.experiment} />
+        <ResultsTable title="Paywalls" rows={group.paywalls} horizon={horizon} experiment={group.experiment} language={group.language} />
         <ResultsTable title="Placements" rows={group.placements} horizon={horizon} placement />
       </div>)}
   </div>;
@@ -102,7 +103,7 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <div className={cn(DASHBOARD_SURFACE_CLASS, "flex min-h-48 items-center justify-center p-8 text-center text-sm text-muted-foreground")}>{children}</div>;
 }
 
-function ResultsTable({ title, rows, horizon, experiment, placement = false }: { title: string; rows: NativePaywallRow[]; horizon: PaywallHorizon; experiment?: string; placement?: boolean }) {
+function ResultsTable({ title, rows, horizon, experiment, language, placement = false }: { title: string; rows: NativePaywallRow[]; horizon: PaywallHorizon; experiment?: string; language?: string; placement?: boolean }) {
   const sortedRows = [...rows].sort((a, b) => {
     const appuA = a.users ? a.proceeds / a.users : Number.NEGATIVE_INFINITY;
     const appuB = b.users ? b.proceeds / b.users : Number.NEGATIVE_INFINITY;
@@ -146,12 +147,12 @@ function ResultsTable({ title, rows, horizon, experiment, placement = false }: {
           <thead><tr className="border-b border-black/[0.06] text-muted-foreground"><th className="min-w-[180px] px-5 py-3 font-medium">{placement ? "Placement" : "Paywall"}</th>{columns.map(([label, hint]) => <th key={label} className={cn(columnWidth(label), "px-3 py-3 text-right font-medium")}><abbr title={hint} className="cursor-help whitespace-nowrap no-underline">{label}</abbr></th>)}</tr></thead>
         <tbody>{sortedRows.map((row) => {
           const estimate = row.estimates[horizon];
-          const allocation = !placement && experiment ? nativePaywallAllocation(experiment, row.id, row.paywall) : null;
+          const allocation = !placement && experiment ? nativePaywallAllocation(experiment, row.id, row.paywall, language) : null;
           return <tr key={row.id} className="border-b border-black/[0.04] last:border-0">
             <td className="px-5 py-4"><div className="flex items-center gap-2 font-medium"><span>{row.label}</span>{allocation != null && <span
               className="inline-flex shrink-0 rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-[#1d4ed8]"
-              title="Hardcoded allocation for this Glow experiment, not observed traffic or confirmation of App Store rollout."
-              aria-label={`${allocation}% configured allocation in Glow`}
+              title="Hardcoded allocation in the app, not observed traffic or confirmation of App Store rollout."
+              aria-label={`${allocation}% configured allocation`}
             >{allocation}%</span>}</div>{row.paywall && <div className="mt-1 text-[10px] text-muted-foreground">{row.paywall}</div>}</td>
             <Cell>{row.users ? currency(row.proceeds / row.users) : "—"}</Cell>
             <ProbabilityBestCell

@@ -31,3 +31,15 @@ test("live composite row IDs use v2 allocations and preserve historical v1 perce
   assert.equal(nativePaywallAllocation("native_yearly_v1", "pro_yearly", "native_timeline_pro_yearly_v1"), 50);
   assert.equal(nativePaywallAllocation("native_yearly_v1", "new_paywall", "native_new_paywall_preview"), null);
 });
+
+test("Poky mirrors its language-specific main and recovery allocations", () => {
+  assert.equal(nativePaywallAllocation("poky_native_main_v1_en", "high", "high", "en"), 50);
+  assert.equal(nativePaywallAllocation("poky_native_main_v1_en", "name", "name", "en"), 50);
+  assert.equal(nativePaywallAllocation("poky_native_main_v1_de", "name", "name", "de"), 100);
+  assert.equal(nativePaywallAllocation("poky_native_main_v1_es", "name", "name", "es"), 100);
+  assert.equal(nativePaywallAllocation("poky_native_main_v1_fr", "name", "name", "fr"), 100);
+  assert.equal(nativePaywallAllocation("poky_native_recovery_v1_en", "recovery", "recovery", "en"), 50);
+  assert.equal(nativePaywallAllocation("poky_native_recovery_v1_en", "holdout", "holdout", "en"), 50);
+  assert.equal(nativePaywallAllocation("poky_context_recovery_v1_fr", "recovery", "recovery", "fr"), 100);
+  assert.equal(nativePaywallAllocation("poky_native_main_v1_en", "high", "high", "fr"), null);
+});

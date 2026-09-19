@@ -132,7 +132,7 @@ test("v2 separates the same-SKU designs and Weekly is a valid package purchase",
   // Historical data stays a separate experiment, not relabeled as v2.
   attrs.push(...fixture("historical", {}, "9999"));
   const result = report(attrs, events);
-  assert.equal(result.warnings.length, 0);
+  assert.match(result.warnings[0], /1 verified purchases are awaiting/); // Historical purchase has no money yet.
   const group = result.groups.find((g) => g.language === "all" && g.experiment === "native_paywalls_v2")!;
   assert.equal(group.paywalls.length, 3);
   for (const row of group.paywalls) {

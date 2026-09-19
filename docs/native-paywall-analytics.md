@@ -1,8 +1,8 @@
-# Native paywall analytics (Glow)
+# Native paywall analytics (Glow and Poky)
 
 ## Architecture and constraints
 
-Glow renders native SwiftUI paywalls and hardcodes its experiments/traffic splits. Superwall is used only for purchase/subscription infrastructure and custom user-attribute storage. **Do not add Superwall campaigns, placement registration, presentation-result calls, or remotely configured experiments.** No D1/PostgreSQL tables, ingestion routes, or webhook receivers are needed for this feature.
+Glow and Poky render native SwiftUI paywalls and hardcode their experiments/traffic splits. Superwall is used only for purchase/subscription infrastructure and custom user-attribute storage. **Do not add Superwall campaigns, placement registration, presentation-result calls, or remotely configured experiments.** No D1/PostgreSQL tables, ingestion routes, or webhook receivers are needed for this feature.
 
 The dashboard's existing server-side Superwall Query API connection reads these records. Never expose `SUPERWALL_GLOW_API_KEY` to the browser or the iOS app. Queries use organization 27020/application 54736, production data only. The existing 90-second analytics cache also caches this report.
 
@@ -21,13 +21,64 @@ Dashboard files:
 - `lib/native-paywall-analytics.ts`: validation, attribution, cohort aggregation and statistics (pure/testable).
 - `lib/native-paywall-allocation.ts`: mirrors the hardcoded next-release experiment `native_paywalls_v2`: `yr_49` 25%, `yr_59` 25%, `yr_wk_59` 50%. Variant and paywall identity are the same stable string. Historical `native_yearly_v1` stays Annual/Pro yearly 50/50. Supports both demo variant IDs and live composite `variant|paywall` row IDs. Unknown allocations are omitted, never inferred from user counts. Badges describe code configuration, not observed traffic, remote configuration or confirmation of an App Store rollout.
 - `components/analytics/NativePaywallsPanel.tsx`: language audience filter, all experiment groups, paywall/placement tables.
-- `lib/mobile-app-analytics.ts`: loads this report only for Glow's detail view.
+- `lib/mobile-app-analytics.ts`: loads this report for Glow and Poky's detail views.
+
+Poky uses the same contract from `peptides/Subscription/PokyNativePaywallAnalytics.swift`.
+Its stable per-language experiments use `poky_native_main_v1_<language>`
+(English/fallback High/Name 50/50; German, Spanish, and French Name 100%) and
+`poky_native_recovery_v1_<language>` (Recovery/holdout 50/50). The suffix keeps
+an app-language change from overwriting or mislabeling the earlier audience.
+Automatic recovery is once-ever and evaluated after
+a main purchase cancellation or main-paywall decline, independent of origin
+placement. `poky_context_recovery_v1_<language>` reports the separate explicit home-screen
+shortcut, which is always Recovery and does not consume automatic recovery.
+
+Poky enrols non-premium users during splash, after entitlement refresh; the actual
+production view's appearance hook records views. Debug previews do not enrol
+production users. See Poky's `docs/NATIVE-PAYWALL-TRACKING.md` for the app-side lifecycle.
+
+### Recovery and onboarding A/B reporting
+
+`lib/poky-native-recovery.ts` powers the native Recovery vs Holdout card in AB
+tests. It reads the four `gp1_a_poky_native_recovery_v1_<language>` attributes,
+deduplicates first eligibility per user across language changes, and measures
+**all** subsequent server proceeds for both arms. Later main-paywall purchases
+by a holdout count. The date filter selects eligibility, while outcomes follow
+the cohort through today; D7/D14/D30 include only fully observed users. Old
+Superwall trigger IDs remain in a separately labelled legacy recovery card.
+
+The Paywalls tab is **direct purchase attribution**, not the causal recovery
+experiment: a recovery purchase credits recovery, not the earlier main view.
+Its recovery winner probability is deliberately disabled; use the AB card.
+Never fabricate recovery views for holdouts to make their outcomes appear.
+
+Fresh onboarding/background assignments publish `onboarding_plan_allocation`
+and `home_experience_allocation` as `50_50`. Inherited assignments are `legacy`.
+The current plan/home tests require their fresh marker, and the four-way table
+requires both. Old assignments remain sticky but are excluded from these new
+cohorts; missing markers are never inferred to mean 50/50. Historical raw
+attributes remain stored. Do not lowercase attribute JSON during parsing.
+Current Poky onboarding reports also require `poky_tracking_environment=production`,
+so Debug overrides cannot contaminate them even before the SDK labels a user sandbox.
 
 ## Storage contract: gp1
 
 ### Temporary UI demo mode
 
-The Paywalls panel currently opens in **Demo data** mode for design work. `lib/native-paywall-demo.ts` supplies seeded, fictional numbers labeled with the real v2 identities `yr_49`, `yr_59`, `yr_wk_59`, a 25/25/50 user split, English/Spanish/German audiences, and six placements. Financial values and results remain fictional, not actual StoreKit prices or measured results. The banner explicitly labels the data; **Show live data** switches back to the real report without mixing sources. The main chart remains live, and date filters do not affect demo rows. No sample records are sent to Superwall or stored in a database. Before normal analytics use, change the panel's `demo` state default to `false` (or remove the preview toggle and fixture). Demo winner percentages are illustrative, not statistical results.
+Both apps open in **Live data** mode. Glow retains an explicit demo toggle for design work: `lib/native-paywall-demo.ts` supplies seeded, fictional numbers labelled with v2 identities and allocation percentages. That fixture is never offered as Poky data. Date filters do not affect demo rows, the main chart remains live, and no sample records are sent to Superwall. Demo winner percentages are illustrative, not statistical results.
+
+### Read-only live verification
+
+Run `npx tsx scripts/check-native-paywall-tracking.ts` with the existing server
+environment credentials. It exercises the report loader and checks recent Apple
+integration revenue for both apps, printing aggregate counts only. It neither
+creates transactions nor changes campaigns. Credentials and server revenue were
+verified on 2026-09-19; no Poky native gp1 records had arrived at that time. That
+does **not** prove the unreleased native purchase path end-to-end. After deploying
+the dashboard and shipping the app, verify a native transaction's immutable
+context against Apple's original transaction ID. Sandbox events remain excluded
+from production reporting. Missing server revenue is shown as a warning, and
+winner estimates for the affected experiment are suppressed until reconciled.
 
 Superwall attribute values must be scalars. Each record below is a **JSON-encoded string**, not a nested attribute object or array. Keys do not use Superwall's reserved `$` prefix.
 

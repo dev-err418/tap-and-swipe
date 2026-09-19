@@ -12,6 +12,7 @@ import type {
   TrialCancelTiming,
 } from "@/lib/mobile-app-analytics";
 import AppExperimentCard from "@/components/analytics/AppExperimentCard";
+import AppExperimentMap from "@/components/analytics/AppExperimentMap";
 import TrialCancelChart from "@/components/analytics/TrialCancelChart";
 import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
@@ -154,6 +155,7 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-experiments"
           className="space-y-4"
         >
+          <AppExperimentMap appId={appId} />
           {experiments.length > 0 ? experiments.map((experiment) => (
             <AppExperimentCard
               key={experiment.id}
@@ -171,7 +173,9 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-paywalls"
           className="min-w-0"
         >
-          {appId === "glow" ? <NativePaywallsPanel report={nativePaywalls} /> : <TabEmptyState>No paywall data yet.</TabEmptyState>}
+          {appId === "glow" || appId === "poky"
+            ? <NativePaywallsPanel appId={appId} report={nativePaywalls} />
+            : <TabEmptyState>No paywall data yet.</TabEmptyState>}
         </div>
       ) : null}
     </section>

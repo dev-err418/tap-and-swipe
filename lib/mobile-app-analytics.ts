@@ -1,6 +1,7 @@
 import "server-only";
 import { loadNativePaywalls } from "./native-paywall-queries";
 import type { NativePaywallReport } from "./native-paywall-analytics";
+import { POKY_NATIVE_RECOVERY_KEYS, pokyNativeRecoveryExperiment } from "./poky-native-recovery";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -151,7 +152,7 @@ const GLOW_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/19/20/0e/19200e98-f11f-8ab4-850a-81a2a45122e0/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg";
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen"] as const;
-const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "home_experience_variant"] as const;
+const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "onboarding_plan_allocation", "home_experience_variant", "home_experience_allocation", "poky_tracking_environment", ...POKY_NATIVE_RECOVERY_KEYS] as const;
 
 type SuperwallAppConfig = {
   id: MobileAppAnalytics["id"];
@@ -406,7 +407,7 @@ async function loadSuperwallAppAnalytics(
       app.apiKey,
     ),
     includeCountries ? loadAppFacts(app, start, end, startMs, endMs) : Promise.resolve(null),
-    includeCountries && app.id === "glow"
+    includeCountries && (app.id === "glow" || app.id === "poky")
       ? loadNativePaywalls(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
       : Promise.resolve(null),
   ]);
@@ -565,7 +566,7 @@ async function fetchUserAttributes(
 ): Promise<{ appUserId: string; key: string; value: string }[]> {
   return querySuperwall<{ appUserId: string; key: string; value: string }>(
     `
-SELECT appUserId, key, lower(value) AS value
+SELECT appUserId, key, value
 FROM sw.user_attributes_rep FINAL
 WHERE applicationId = ${app.applicationId}
   AND isSandbox = 0
@@ -727,7 +728,8 @@ function attributeMap(rows: { appUserId: string; key: string; value: string }[])
   for (const row of rows) {
     if (!row.appUserId || !row.key) continue;
     const current = attributes.get(row.appUserId) ?? {};
-    current[row.key] = (row.value ?? "").trim().toLowerCase();
+    // gp1 values are JSON: lowercasing destroys camelCase contract fields.
+    current[row.key] = (row.value ?? "").trim();
     attributes.set(row.appUserId, current);
   }
   return attributes;
@@ -931,15 +933,19 @@ function glowOnboardingExperiment(facts: AppFacts): MobileAppExperiment {
 
 function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
   return [
+    pokyNativeRecoveryExperiment(
+      [...facts.attributes].flatMap(([appUserId, attrs]) => Object.entries(attrs).map(([key, value]) => ({ appUserId, key, value }))),
+      facts.events, new Map(facts.installs.map((row) => [row.appUserId, row.country])), facts.startMs, facts.endMs,
+    ),
     pokyRecoveryExperiment(facts),
     attributeExperiment(facts, {
       id: "poky-animated-plan",
       title: "Animated plan A/B test",
-      subtitle: "Control vs Animated plan",
+      subtitle: "Control vs Animated plan · fresh 50/50 assignments",
       attributeKeys: ["onboarding_plan_variant"],
       variants: [
-        { key: "control", label: "Control", attributes: { onboarding_plan_variant: "control" } },
-        { key: "animated_plan", label: "Animated plan", attributes: { onboarding_plan_variant: "animated_plan" } },
+        { key: "control", label: "Control", attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50" } },
+        { key: "animated_plan", label: "Animated plan", attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50" } },
       ],
       scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"],
       showRetention: true,
@@ -947,11 +953,11 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
     attributeExperiment(facts, {
       id: "poky-app-experience",
       title: "App experience A/B test",
-      subtitle: "Original vs AI Chat",
+      subtitle: "Original vs AI Chat · fresh 50/50 assignments",
       attributeKeys: ["home_experience_variant"],
       variants: [
-        { key: "control", label: "Original", attributes: { home_experience_variant: "control" } },
-        { key: "new_experience", label: "AI Chat", attributes: { home_experience_variant: "new_experience" } },
+        { key: "control", label: "Original", attributes: { home_experience_variant: "control", home_experience_allocation: "50_50" } },
+        { key: "new_experience", label: "AI Chat", attributes: { home_experience_variant: "new_experience", home_experience_allocation: "50_50" } },
       ],
       scoreMetrics: ["sessions_per_day", "appu_d7", "appu_d14", "appu_d30"],
       showRetention: true,
@@ -966,28 +972,28 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
     attributeExperiment(facts, {
       id: "poky-onboarding-abcd",
       title: "Onboarding A/B/C/D test",
-      subtitle: "Extra animation × AI Chat",
+      subtitle: "Extra animation × AI Chat · fresh 25/25/25/25 assignments",
       attributeKeys: ["onboarding_plan_variant", "home_experience_variant"],
       variants: [
         {
           key: "extra_original",
           label: "Extra animation + original",
-          attributes: { onboarding_plan_variant: "control", home_experience_variant: "control" },
+          attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", home_experience_variant: "control", home_experience_allocation: "50_50" },
         },
         {
           key: "extra_chat",
           label: "Extra animation + AI chat",
-          attributes: { onboarding_plan_variant: "control", home_experience_variant: "new_experience" },
+          attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", home_experience_variant: "new_experience", home_experience_allocation: "50_50" },
         },
         {
           key: "intro_original",
           label: "Animated intro + original",
-          attributes: { onboarding_plan_variant: "animated_plan", home_experience_variant: "control" },
+          attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", home_experience_variant: "control", home_experience_allocation: "50_50" },
         },
         {
           key: "intro_chat",
           label: "Animated intro + AI chat",
-          attributes: { onboarding_plan_variant: "animated_plan", home_experience_variant: "new_experience" },
+          attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", home_experience_variant: "new_experience", home_experience_allocation: "50_50" },
         },
       ],
       scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"],
@@ -1058,8 +1064,8 @@ function pokyRecoveryExperiment(facts: AppFacts): MobileAppExperiment {
 
   return {
     id: "poky-recovery-holdout",
-    title: "Recovery A/B test",
-    subtitle: "Recovery paywall vs none",
+    title: "Recovery A/B test (legacy Superwall)",
+    subtitle: "Historical campaign · recovery paywall vs none",
     scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"],
     showRetention: true,
     variants: [none, recovery],
@@ -1070,6 +1076,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   const variants = definition.variants.map((variant) => emptyExperimentVariant(variant.key, variant.label));
   const targetFor = (attrs: Record<string, string> | undefined) => {
     if (!attrs) return null;
+    if (definition.id.startsWith("poky-") && attrs.poky_tracking_environment !== "production") return null;
     const matched = definition.variants.find((variant) =>
       Object.entries(variant.attributes).every(
         ([key, value]) => (attrs[key] ?? "").trim().toLowerCase() === value,

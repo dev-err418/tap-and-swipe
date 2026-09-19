@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, type KeyboardEvent, type ReactNode } from "react";
+import { type KeyboardEvent, type ReactNode } from "react";
+import { Plus } from "lucide-react";
+import { chartNoteAnchor, chartNoteButtonPosition } from "@/lib/chart-note-anchor";
 import {
   Area,
   Bar,
@@ -12,6 +14,10 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  ZIndexLayer,
+  useActiveTooltipLabel,
+  usePlotArea,
+  useXAxisScale,
 } from "recharts";
 
 const VISIT_COLOR = "#1d4ed8";
@@ -63,7 +69,7 @@ export function VisitorsRevenueChart({
   const chartData = data.map((point) => ({
     ...point,
     timestamp: parseChartDate(point.date).getTime(),
-  }));
+  })).filter((point) => Number.isFinite(point.timestamp));
   const timestamps = chartData.map((point) => point.timestamp).filter(Number.isFinite);
   const firstTimestamp = Math.min(...timestamps);
   const lastTimestamp = Math.max(...timestamps);
@@ -80,11 +86,23 @@ export function VisitorsRevenueChart({
     return Number.isFinite(timestamp) && timestamp >= xDomain[0] && timestamp <= xDomain[1];
   });
 
-  if (!hasData) {
+  if (timestamps.length === 0 || (!hasData && !onAddNote)) {
     return (
       <>
         {action ? <div className="mb-3 flex min-h-8 justify-end">{action}</div> : null}
         <ChartEmpty>{emptyMessage}</ChartEmpty>
+        {onAddNote ? (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              aria-label="Add chart note"
+              onClick={() => onAddNote(new Date().toISOString())}
+              className="flex size-8 items-center justify-center rounded-full border border-violet-200 text-violet-600 hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-violet-500"
+            >
+              <Plus size={16} aria-hidden />
+            </button>
+          </div>
+        ) : null}
       </>
     );
   }
@@ -187,7 +205,7 @@ export function VisitorsRevenueChart({
               name={revenueLabel}
               fill={REVENUE_COLOR}
               maxBarSize={34}
-              shape={<RoundedRevenueBar onAddNote={onAddNote} />}
+              shape={<RoundedRevenueBar />}
               isAnimationActive={false}
               legendType="none"
             />
@@ -218,10 +236,48 @@ export function VisitorsRevenueChart({
                 legendType="none"
               />
             ) : null}
+            {onAddNote ? <ChartNoteButton points={chartData} onAddNote={onAddNote} /> : null}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
     </>
+  );
+}
+
+function ChartNoteButton({
+  points,
+  onAddNote,
+}: {
+  points: readonly { date: string; timestamp: number }[];
+  onAddNote: (date: string) => void;
+}) {
+  // Axis-level hover also works over lines, gaps and zero-revenue dates.
+  const activeLabel = useActiveTooltipLabel();
+  const plot = usePlotArea();
+  const xScale = useXAxisScale();
+  const point = chartNoteAnchor(points, activeLabel);
+  const dateX = point ? xScale?.(point.timestamp) : undefined;
+  if (!point || !plot || dateX === undefined || !Number.isFinite(dateX)) return null;
+  const { x, y } = chartNoteButtonPosition(plot, dateX);
+
+  return (
+    <ZIndexLayer zIndex={600}>
+      <foreignObject x={x - 14} y={y - 14} width={28} height={28}>
+        <button
+          type="button"
+          aria-label={`Add note for ${formatLongDate(point.date)}`}
+          title={`Add note for ${formatLongDate(point.date)}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAddNote(point.date);
+          }}
+          onKeyDown={(event) => event.stopPropagation()}
+          className="flex size-7 cursor-pointer items-center justify-center rounded-full border border-violet-300 bg-white text-violet-600 shadow-sm hover:bg-violet-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-violet-600"
+        >
+          <Plus size={14} aria-hidden />
+        </button>
+      </foreignObject>
+    </ZIndexLayer>
   );
 }
 
@@ -321,53 +377,16 @@ function RoundedRevenueBar(props: {
   y?: number;
   width?: number;
   height?: number;
-  payload?: FunnelTrendPoint;
-  onAddNote?: (date: string) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   const bounds = normalizeBarBounds(props);
   if (!bounds) return <g />;
 
   const path = roundedBarPath(bounds, BAR_RADIUS, BAR_RADIUS);
-  const canAddNote = Boolean(props.onAddNote && props.payload?.date);
-  const markerX = bounds.x + bounds.width / 2;
-  const markerY = bounds.y + Math.min(13, bounds.height / 2);
-  const addNote = () => {
-    if (props.onAddNote && props.payload?.date) props.onAddNote(props.payload.date);
-  };
-  const handleKeyDown = (event: KeyboardEvent<SVGGElement>) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    addNote();
-  };
 
   return (
-    <g
-      role={canAddNote ? "button" : undefined}
-      tabIndex={canAddNote ? 0 : undefined}
-      aria-label={canAddNote ? `Add note for ${formatLongDate(props.payload!.date)}` : undefined}
-      className={canAddNote ? "cursor-pointer outline-none" : undefined}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
-      onFocus={() => setHovered(true)}
-      onBlur={() => setHovered(false)}
-      onClick={canAddNote ? addNote : undefined}
-      onKeyDown={canAddNote ? handleKeyDown : undefined}
-    >
+    <g>
       <path d={path} fill={REVENUE_COLOR} fillOpacity={0.88} />
       <path d={path} fill="none" stroke={REVENUE_STROKE} strokeWidth={0.75} />
-      {canAddNote && hovered ? (
-        <g aria-hidden="true" className="pointer-events-none">
-          <circle cx={markerX} cy={markerY} r={9} fill="white" stroke={NOTE_COLOR} strokeWidth={1.5} />
-          <path
-            d={`M ${markerX - 3.5} ${markerY} H ${markerX + 3.5} M ${markerX} ${markerY - 3.5} V ${markerY + 3.5}`}
-            fill="none"
-            stroke={NOTE_COLOR}
-            strokeLinecap="round"
-            strokeWidth={1.5}
-          />
-        </g>
-      ) : null}
     </g>
   );
 }
