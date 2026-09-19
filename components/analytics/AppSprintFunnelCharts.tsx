@@ -1,11 +1,13 @@
 "use client";
 
+import { useState, type KeyboardEvent, type ReactNode } from "react";
 import {
   Area,
   Bar,
   CartesianGrid,
   ComposedChart,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,6 +16,8 @@ import {
 
 const VISIT_COLOR = "#1d4ed8";
 const REVENUE_COLOR = "#f97316";
+const RATE_COLOR = "#16a34a";
+const NOTE_COLOR = "#7c3aed";
 const REVENUE_STROKE = "color-mix(in oklch, #f97316, black 10%)";
 const BAR_RADIUS = 8;
 
@@ -22,44 +26,89 @@ export type FunnelTrendPoint = {
   visits: number;
   revenue: number;
   trialStarts: number;
+  rate?: number;
+};
+
+export type AnalyticsChartNote = {
+  id: string;
+  notedAt: string;
+  title: string;
+  content: string;
+  appVersion: string;
 };
 
 export function VisitorsRevenueChart({
   data,
   visitLabel = "Visitors",
   revenueLabel = "Revenue",
+  rateLabel,
+  notes = [],
+  action,
+  onAddNote,
+  onNoteClick,
   emptyMessage = "Visitor and revenue trends appear after funnel events are tracked.",
 }: {
   data: FunnelTrendPoint[];
   visitLabel?: string;
   revenueLabel?: string;
+  rateLabel?: string;
+  notes?: AnalyticsChartNote[];
+  action?: ReactNode;
+  onAddNote?: (date: string) => void;
+  onNoteClick?: (note: AnalyticsChartNote) => void;
   emptyMessage?: string;
 }) {
-  const hasData = data.some((point) => point.visits > 0 || point.revenue > 0);
+  const hasRate = Boolean(rateLabel) && data.some((point) => point.rate !== undefined);
+  const hasData = data.some((point) => point.visits > 0 || point.revenue > 0 || (point.rate ?? 0) > 0);
+  const chartData = data.map((point) => ({
+    ...point,
+    timestamp: parseChartDate(point.date).getTime(),
+  }));
+  const timestamps = chartData.map((point) => point.timestamp).filter(Number.isFinite);
+  const firstTimestamp = Math.min(...timestamps);
+  const lastTimestamp = Math.max(...timestamps);
+  const bucketWidths = timestamps
+    .slice(1)
+    .map((timestamp, index) => timestamp - timestamps[index])
+    .filter((width) => width > 0);
+  const bucketWidth = bucketWidths.length > 0 ? Math.min(...bucketWidths) : 60 * 60 * 1_000;
+  const xDomain: [number, number] = firstTimestamp === lastTimestamp
+    ? [firstTimestamp - 30 * 60 * 1_000, lastTimestamp + 30 * 60 * 1_000]
+    : [firstTimestamp, lastTimestamp + bucketWidth];
+  const visibleNotes = notes.filter((note) => {
+    const timestamp = Date.parse(note.notedAt);
+    return Number.isFinite(timestamp) && timestamp >= xDomain[0] && timestamp <= xDomain[1];
+  });
+
   if (!hasData) {
     return (
-      <ChartEmpty>
-        {emptyMessage}
-      </ChartEmpty>
+      <>
+        {action ? <div className="mb-3 flex min-h-8 justify-end">{action}</div> : null}
+        <ChartEmpty>{emptyMessage}</ChartEmpty>
+      </>
     );
   }
 
   return (
     <>
-      <div className="mb-3 flex min-h-8 items-center justify-center">
+      <div className="mb-3 grid min-h-8 grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <span aria-hidden />
         <div
           aria-label="Chart legend"
           className="flex min-w-0 flex-wrap items-center justify-center gap-2 text-[11px]"
         >
           <LegendItem label={visitLabel} color={VISIT_COLOR} />
           <LegendItem label={revenueLabel} color={REVENUE_COLOR} />
+          {hasRate && rateLabel ? <LegendItem label={rateLabel} color={RATE_COLOR} /> : null}
+          {visibleNotes.length > 0 ? <LegendItem label="Notes" color={NOTE_COLOR} /> : null}
         </div>
+        <div className="flex justify-end">{action}</div>
       </div>
       <div className="h-72 w-full text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             accessibilityLayer
-            data={data}
+            data={chartData}
             margin={{ top: 8, right: 4, bottom: 4, left: 4 }}
           >
             <defs>
@@ -70,12 +119,16 @@ export function VisitorsRevenueChart({
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
-              dataKey="date"
+              dataKey="timestamp"
+              type="number"
+              scale="time"
+              domain={xDomain}
+              allowDataOverflow
               tickLine={false}
               axisLine={false}
               tickMargin={8}
               minTickGap={24}
-              tickFormatter={formatChartDate}
+              tickFormatter={(value: number) => formatChartDate(value)}
             />
             <YAxis
               yAxisId="visits"
@@ -94,10 +147,29 @@ export function VisitorsRevenueChart({
               tick={{ fontSize: 12 }}
               tickFormatter={formatCompactCurrency}
             />
+            {hasRate ? <YAxis yAxisId="rate" domain={[0, 1]} hide /> : null}
             <Tooltip
-              content={<TrendTooltip visitLabel={visitLabel} revenueLabel={revenueLabel} />}
+              content={<TrendTooltip visitLabel={visitLabel} revenueLabel={revenueLabel} rateLabel={rateLabel} />}
               cursor={{ stroke: "var(--border)", strokeDasharray: "3 3" }}
             />
+            {visibleNotes.map((note) => (
+              <ReferenceLine
+                key={note.id}
+                x={Date.parse(note.notedAt)}
+                yAxisId="visits"
+                stroke={NOTE_COLOR}
+                strokeDasharray="4 4"
+                strokeWidth={1.5}
+                ifOverflow="hidden"
+                zIndex={500}
+                label={(
+                  <NoteMarker
+                    note={note}
+                    onClick={onNoteClick}
+                  />
+                )}
+              />
+            ))}
             <Area
               yAxisId="visits"
               type="monotone"
@@ -115,7 +187,7 @@ export function VisitorsRevenueChart({
               name={revenueLabel}
               fill={REVENUE_COLOR}
               maxBarSize={34}
-              shape={RoundedRevenueBar}
+              shape={<RoundedRevenueBar onAddNote={onAddNote} />}
               isAnimationActive={false}
               legendType="none"
             />
@@ -131,11 +203,98 @@ export function VisitorsRevenueChart({
               isAnimationActive={false}
               legendType="none"
             />
+            {hasRate ? (
+              <Line
+                yAxisId="rate"
+                type="monotone"
+                dataKey="rate"
+                name={rateLabel}
+                stroke={RATE_COLOR}
+                strokeWidth={2.25}
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 0 }}
+                connectNulls
+                isAnimationActive={false}
+                legendType="none"
+              />
+            ) : null}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
     </>
   );
+}
+
+function NoteMarker({
+  note,
+  onClick,
+  viewBox,
+}: {
+  note: AnalyticsChartNote;
+  onClick?: (note: AnalyticsChartNote) => void;
+  viewBox?: { x?: number; y?: number; width?: number; height?: number };
+}) {
+  const x = (viewBox?.x ?? 0) + (viewBox?.width ?? 0) / 2;
+  const y = (viewBox?.y ?? 0) + 7;
+  const openNote = () => onClick?.(note);
+  const handleKeyDown = (event: KeyboardEvent<SVGGElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openNote();
+  };
+
+  return (
+    <g
+      role="button"
+      aria-label={`Open chart note: ${note.title}, app version ${note.appVersion}`}
+      tabIndex={0}
+      onClick={openNote}
+      onKeyDown={handleKeyDown}
+      className="cursor-pointer outline-none"
+    >
+      <rect x={x - 105} y={y - 8} width={210} height={52} fill="transparent" />
+      <NoteLabel x={x} y={y} note={note} />
+    </g>
+  );
+}
+
+function NoteLabel({ x, y, note }: { x: number; y: number; note: AnalyticsChartNote }) {
+  const title = truncateLabel(note.title, 28);
+  const version = formatAppVersion(note.appVersion);
+  const labelWidth = Math.max(88, Math.min(190, Math.max(title.length * 6.2, version.length * 5.4) + 22));
+  const labelHeight = 36;
+
+  return (
+    <g aria-hidden="true" className="pointer-events-none">
+      <rect
+        x={x - labelWidth / 2}
+        y={y - 7}
+        width={labelWidth}
+        height={labelHeight}
+        rx={9}
+        fill="white"
+        stroke={NOTE_COLOR}
+        strokeOpacity={0.32}
+      />
+      <text x={x} y={y + 7} textAnchor="middle" fill="#171717" fontSize={10.5} fontWeight={600}>
+        {title}
+      </text>
+      <text x={x} y={y + 21} textAnchor="middle" fill={NOTE_COLOR} fontSize={9.5} fontWeight={600}>
+        {version}
+      </text>
+      <circle cx={x} cy={y + labelHeight} r={5.5} fill={NOTE_COLOR} stroke="white" strokeWidth={2} />
+    </g>
+  );
+}
+
+function truncateLabel(value: string, maxLength: number) {
+  return value.length <= maxLength ? value : `${value.slice(0, maxLength - 1)}…`;
+}
+
+function formatAppVersion(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.toLowerCase() === "unknown") return "Unknown version";
+  return /^v/i.test(trimmed) ? trimmed : `v${trimmed}`;
 }
 
 function LegendItem({ label, color }: { label: string; color: string }) {
@@ -162,15 +321,53 @@ function RoundedRevenueBar(props: {
   y?: number;
   width?: number;
   height?: number;
+  payload?: FunnelTrendPoint;
+  onAddNote?: (date: string) => void;
 }) {
+  const [hovered, setHovered] = useState(false);
   const bounds = normalizeBarBounds(props);
   if (!bounds) return <g />;
 
   const path = roundedBarPath(bounds, BAR_RADIUS, BAR_RADIUS);
+  const canAddNote = Boolean(props.onAddNote && props.payload?.date);
+  const markerX = bounds.x + bounds.width / 2;
+  const markerY = bounds.y + Math.min(13, bounds.height / 2);
+  const addNote = () => {
+    if (props.onAddNote && props.payload?.date) props.onAddNote(props.payload.date);
+  };
+  const handleKeyDown = (event: KeyboardEvent<SVGGElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    addNote();
+  };
+
   return (
-    <g>
+    <g
+      role={canAddNote ? "button" : undefined}
+      tabIndex={canAddNote ? 0 : undefined}
+      aria-label={canAddNote ? `Add note for ${formatLongDate(props.payload!.date)}` : undefined}
+      className={canAddNote ? "cursor-pointer outline-none" : undefined}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
+      onClick={canAddNote ? addNote : undefined}
+      onKeyDown={canAddNote ? handleKeyDown : undefined}
+    >
       <path d={path} fill={REVENUE_COLOR} fillOpacity={0.88} />
       <path d={path} fill="none" stroke={REVENUE_STROKE} strokeWidth={0.75} />
+      {canAddNote && hovered ? (
+        <g aria-hidden="true" className="pointer-events-none">
+          <circle cx={markerX} cy={markerY} r={9} fill="white" stroke={NOTE_COLOR} strokeWidth={1.5} />
+          <path
+            d={`M ${markerX - 3.5} ${markerY} H ${markerX + 3.5} M ${markerX} ${markerY - 3.5} V ${markerY + 3.5}`}
+            fill="none"
+            stroke={NOTE_COLOR}
+            strokeLinecap="round"
+            strokeWidth={1.5}
+          />
+        </g>
+      ) : null}
     </g>
   );
 }
@@ -228,12 +425,14 @@ function TrendTooltip({
   label,
   visitLabel = "Visitors",
   revenueLabel = "Revenue",
+  rateLabel,
 }: {
   active?: boolean;
   payload?: { payload: FunnelTrendPoint }[];
   label?: string | number;
   visitLabel?: string;
   revenueLabel?: string;
+  rateLabel?: string;
 }) {
   if (!active || !payload?.length) return null;
   const row = payload[0]?.payload;
@@ -242,10 +441,13 @@ function TrendTooltip({
   return (
     <div className="dashboard-tooltip-shadow w-[16rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-popover text-xs text-popover-foreground ring-1 ring-foreground/5">
       <div className="grid gap-2 px-2.5 py-2">
-        <div className="font-medium text-foreground">{formatLongDate(String(label ?? row.date))}</div>
+        <div className="font-medium text-foreground">{formatLongDate(label ?? row.date)}</div>
         <div className="grid gap-1.5">
           <TooltipMetric label={visitLabel} value={formatInteger(row.visits)} color={VISIT_COLOR} />
           <TooltipMetric label={revenueLabel} value={formatCurrency(row.revenue)} color={REVENUE_COLOR} />
+          {rateLabel && row.rate !== undefined ? (
+            <TooltipMetric label={rateLabel} value={formatRate(row.rate)} color={RATE_COLOR} />
+          ) : null}
           {row.trialStarts > 0 ? (
             <TooltipMetric
               label="Trial starts"
@@ -287,22 +489,23 @@ function ChartEmpty({ children }: { children: React.ReactNode }) {
   );
 }
 
-function formatChartDate(value: string) {
-  const includesTime = value.includes("T");
+function formatChartDate(value: string | number) {
+  const includesTime = typeof value === "number" || value.includes("T");
   return new Intl.DateTimeFormat("en-US", includesTime
     ? { month: "short", day: "numeric", hour: "numeric", timeZone: "UTC" }
     : { month: "short", day: "numeric", timeZone: "UTC" },
   ).format(parseChartDate(value));
 }
 
-function formatLongDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", value.includes("T")
+function formatLongDate(value: string | number) {
+  return new Intl.DateTimeFormat("en-US", typeof value === "number" || value.includes("T")
     ? { month: "short", day: "numeric", year: "numeric", hour: "numeric", timeZone: "UTC" }
     : { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" },
   ).format(parseChartDate(value));
 }
 
-function parseChartDate(value: string) {
+function parseChartDate(value: string | number) {
+  if (typeof value === "number") return new Date(value);
   return new Date(value.includes("T") ? value : `${value}T00:00:00Z`);
 }
 
@@ -327,4 +530,8 @@ function formatCompactNumber(value: number) {
 
 function formatCompactCurrency(value: number) {
   return `$${formatCompactNumber(value)}`;
+}
+
+function formatRate(value: number) {
+  return `${(value * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;
 }

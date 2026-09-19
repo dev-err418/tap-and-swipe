@@ -1,6 +1,7 @@
 "use client";
 
-import { VisitorsRevenueChart, type FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
+import { useState } from "react";
+import type { FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
 import AppCountryBreakdown from "@/components/analytics/AppCountryBreakdown";
 import AppConversionBreakdown from "@/components/analytics/AppConversionBreakdown";
 import type {
@@ -14,8 +15,26 @@ import AppExperimentCard from "@/components/analytics/AppExperimentCard";
 import TrialCancelChart from "@/components/analytics/TrialCancelChart";
 import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
+import AppNotesChart from "@/components/analytics/AppNotesChart";
+import {
+  DASHBOARD_SURFACE_CLASS,
+  DASHBOARD_TAB_ACTIVE_CLASS,
+  DASHBOARD_TAB_CLASS,
+  DASHBOARD_TAB_INACTIVE_CLASS,
+  DASHBOARD_TAB_LIST_CLASS,
+} from "@/components/analytics/dashboard-surface";
+import { cn } from "@/lib/utils";
+
+type AnalyticsTab = "data" | "experiments" | "paywalls";
+
+const ANALYTICS_TABS: { id: AnalyticsTab; label: string }[] = [
+  { id: "data", label: "Data" },
+  { id: "experiments", label: "AB tests" },
+  { id: "paywalls", label: "Paywalls" },
+];
 
 export default function AppOverviewPanel({
+  appId,
   installs,
   proceeds,
   paid,
@@ -27,6 +46,7 @@ export default function AppOverviewPanel({
   experiments = [],
   trialCancelTiming = null,
 }: {
+  appId: "glow" | "poky" | "versy";
   installs: number;
   proceeds: number;
   paid: number;
@@ -38,6 +58,7 @@ export default function AppOverviewPanel({
   experiments?: MobileAppExperiment[];
   trialCancelTiming?: TrialCancelTiming | null;
 }) {
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
   const appu = installs > 0 ? proceeds / installs : 0;
   const installToPaid = installs > 0 ? paid / installs : 0;
   const showPlans = plans.some((row) => row.yearlySubs + row.weeklySubs > 0);
@@ -46,6 +67,10 @@ export default function AppOverviewPanel({
     .map((row) => row.country)
     .filter((country) => country !== "unknown")
     .slice(0, 5);
+  const plansWithInstalls = plans.map((plan) => ({
+    ...plan,
+    installs: countries.find((row) => row.country === plan.country)?.installs ?? plan.installs,
+  }));
 
   return (
     <section className="space-y-4">
@@ -63,47 +88,97 @@ export default function AppOverviewPanel({
           </div>
         </div>
         <div className="min-w-0 p-4">
-          <VisitorsRevenueChart
-            data={trend}
-            visitLabel="Installs"
-            revenueLabel="Proceeds"
-            emptyMessage="Install and proceeds trends appear after Superwall events are tracked."
-          />
+          <AppNotesChart appId={appId} data={trend} />
         </div>
       </div>
-      {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
-      {experiments.map((experiment) => (
-        <AppExperimentCard
-          key={experiment.id}
-          experiment={experiment}
-          topCountries={topCountries}
-        />
-      ))}
-      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-        <AppCountryBreakdown countries={countries} />
-        <AppConversionBreakdown countries={countries} />
+
+      <div className="flex justify-center px-4">
+        <div className={DASHBOARD_TAB_LIST_CLASS} role="tablist" aria-label="App analytics">
+          {ANALYTICS_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              id={`app-analytics-tab-${tab.id}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`app-analytics-panel-${tab.id}`}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                DASHBOARD_TAB_CLASS,
+                "px-4",
+                activeTab === tab.id ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS,
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
-      {showPlans || showRetention ? (
-        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-          {showPlans ? (
-            <AppPlanBreakdown
-              plans={plans.map((plan) => ({
-                ...plan,
-                installs: countries.find((row) => row.country === plan.country)?.installs ?? plan.installs,
-              }))}
-            />
-          ) : null}
-          {showRetention ? (
-            <AppRetentionBreakdown
-              rows={retention.map((row) => ({
-                ...row,
-                installs: countries.find((country) => country.country === row.country)?.installs ?? row.installs,
-              }))}
-            />
+
+      {activeTab === "data" ? (
+        <div
+          id="app-analytics-panel-data"
+          role="tabpanel"
+          aria-labelledby="app-analytics-tab-data"
+          className="space-y-4"
+        >
+          {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
+          <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+            <AppCountryBreakdown countries={countries} />
+            <AppConversionBreakdown countries={countries} />
+          </div>
+          {showPlans || showRetention ? (
+            <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+              {showPlans ? <AppPlanBreakdown plans={plansWithInstalls} /> : null}
+              {showRetention ? (
+                <AppRetentionBreakdown
+                  rows={retention.map((row) => ({
+                    ...row,
+                    installs: countries.find((country) => country.country === row.country)?.installs ?? row.installs,
+                  }))}
+                />
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}
+
+      {activeTab === "experiments" ? (
+        <div
+          id="app-analytics-panel-experiments"
+          role="tabpanel"
+          aria-labelledby="app-analytics-tab-experiments"
+          className="space-y-4"
+        >
+          {experiments.length > 0 ? experiments.map((experiment) => (
+            <AppExperimentCard
+              key={experiment.id}
+              experiment={experiment}
+              topCountries={topCountries}
+            />
+          )) : <TabEmptyState>No AB test data yet.</TabEmptyState>}
+        </div>
+      ) : null}
+
+      {activeTab === "paywalls" ? (
+        <div
+          id="app-analytics-panel-paywalls"
+          role="tabpanel"
+          aria-labelledby="app-analytics-tab-paywalls"
+          className="min-w-0"
+        >
+          <TabEmptyState>No paywall data yet.</TabEmptyState>
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+function TabEmptyState({ children }: { children: React.ReactNode }) {
+  return (
+    <div className={cn(DASHBOARD_SURFACE_CLASS, "flex min-h-72 items-center justify-center p-6 text-sm text-muted-foreground")}>
+      {children}
+    </div>
   );
 }
 

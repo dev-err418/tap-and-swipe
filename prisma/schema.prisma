@@ -111,6 +111,19 @@ model PageEvent {
   @@index([ref, createdAt])
 }
 
+model AnalyticsNote {
+  id        String   @id @default(cuid())
+  appId     String
+  notedAt   DateTime
+  title     String   @default("Note")
+  content   String   @map("body")
+  appVersion String  @default("Unknown")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([appId, notedAt])
+}
+
 // ── Quiz Funnel ───────────────────────────────────────────────────────
 
 model QuizLead {
@@ -215,4 +228,3 @@ model TrialDiscordMessage {
   @@unique([appName, originalTransactionId])
   @@index([appUserId])
 }
-

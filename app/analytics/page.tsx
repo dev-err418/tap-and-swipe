@@ -608,6 +608,7 @@ async function AppDetail({
     visits: point.downloads,
     revenue: point.revenue,
     trialStarts: 0,
+    rate: point.downloads > 0 ? point.paid / point.downloads : undefined,
   }));
 
   return (
@@ -644,6 +645,7 @@ async function AppDetail({
       </div>
 
       <AppOverviewPanel
+        appId={app.id}
         installs={app.downloads}
         proceeds={proceeds}
         paid={app.paid}

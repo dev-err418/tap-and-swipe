@@ -6,6 +6,7 @@ export type MobileAppTrendPoint = {
   bucket: Date;
   downloads: number;
   revenue: number;
+  paid: number;
 };
 
 export type MobileAppCountryRow = {
@@ -413,6 +414,7 @@ async function loadSuperwallAppAnalytics(
     });
   }
 
+  const facts = factsResult.status === "fulfilled" ? factsResult.value : null;
   const trend = mergeTrend(
     downloadResult.value.map((row) => ({
       bucket: parseClickhouseDate(row.bucket),
@@ -422,8 +424,8 @@ async function loadSuperwallAppAnalytics(
       bucket: parseClickhouseDate(row.bucket),
       revenue: Number(row.revenue ?? 0),
     })),
+    facts ? paidTrendFromFacts(facts, period) : [],
   );
-  const facts = factsResult.status === "fulfilled" ? factsResult.value : null;
   const countries = facts ? countriesFromFacts(facts) : [];
   const includePlanCards = Boolean(facts) && app.id !== "glow";
   const plans = includePlanCards && facts ? plansFromFacts(facts) : [];
@@ -1520,18 +1522,57 @@ function inRange(value: number, startMs: number, endMs: number) {
 function mergeTrend(
   downloads: { bucket: Date; downloads: number }[],
   revenue: { bucket: Date; revenue: number }[],
+  paid: { bucket: Date; paid: number }[],
 ): MobileAppTrendPoint[] {
   const points = new Map<number, MobileAppTrendPoint>();
   for (const row of downloads) {
-    points.set(row.bucket.getTime(), { bucket: row.bucket, downloads: row.downloads, revenue: 0 });
+    points.set(row.bucket.getTime(), { bucket: row.bucket, downloads: row.downloads, revenue: 0, paid: 0 });
   }
   for (const row of revenue) {
     const timestamp = row.bucket.getTime();
-    const point = points.get(timestamp) ?? { bucket: row.bucket, downloads: 0, revenue: 0 };
+    const point = points.get(timestamp) ?? { bucket: row.bucket, downloads: 0, revenue: 0, paid: 0 };
     point.revenue += row.revenue;
     points.set(timestamp, point);
   }
+  for (const row of paid) {
+    const timestamp = row.bucket.getTime();
+    const point = points.get(timestamp) ?? { bucket: row.bucket, downloads: 0, revenue: 0, paid: 0 };
+    point.paid += row.paid;
+    points.set(timestamp, point);
+  }
   return [...points.values()].sort((a, b) => a.bucket.getTime() - b.bucket.getTime());
+}
+
+function paidTrendFromFacts(facts: AppFacts, period: Period) {
+  const firstPaidByTransaction = new Map<string, number>();
+  for (const event of facts.events) {
+    if (event.eventTs < facts.startMs || event.eventTs >= facts.endMs || !isPaidEvent(event)) continue;
+    const id = `${event.country}|${event.originalTransactionId}`;
+    const current = firstPaidByTransaction.get(id);
+    if (current === undefined || event.eventTs < current) firstPaidByTransaction.set(id, event.eventTs);
+  }
+
+  const points = new Map<number, { bucket: Date; paid: number }>();
+  for (const timestamp of firstPaidByTransaction.values()) {
+    const bucket = trendBucket(new Date(timestamp), period);
+    const key = bucket.getTime();
+    const point = points.get(key) ?? { bucket, paid: 0 };
+    point.paid += 1;
+    points.set(key, point);
+  }
+  return [...points.values()];
+}
+
+function trendBucket(date: Date, period: Period) {
+  const bucket = new Date(date);
+  if (period === "day" || period === "yesterday" || period === "3days") {
+    bucket.setUTCMinutes(0, 0, 0);
+  } else if (period === "week") {
+    bucket.setUTCHours(Math.floor(bucket.getUTCHours() / 4) * 4, 0, 0, 0);
+  } else {
+    bucket.setUTCHours(0, 0, 0, 0);
+  }
+  return bucket;
 }
 
 function periodRange(period: Period) {
