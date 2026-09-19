@@ -88,8 +88,13 @@ test("probability uses mature per-user proceeds and is suppressed for inherited 
   const rows = report(attrs, events).groups.find((g) => g.language === "all")!.paywalls;
   assert.ok(rows[1].estimates[7].chanceBest! > 0.5);
   assert.ok(Math.abs(rows.reduce((sum, r) => sum + r.estimates[7].chanceBest!, 0) - 1) < 1e-6);
+  assert.ok(rows[1].estimates[7].relativeDelta! > 0);
+  assert.ok(rows[1].estimates[7].credibleInterval![0] < rows[1].estimates[7].relativeDelta!);
+  assert.ok(rows[1].estimates[7].credibleInterval![1] > rows[1].estimates[7].relativeDelta!);
   const a = JSON.parse(attrs[0].value); a.randomized = false; attrs[0].value = JSON.stringify(a);
-  assert.equal(report(attrs, events).groups[0].paywalls[0].estimates[7].chanceBest, null);
+  const suppressed = report(attrs, events).groups[0].paywalls[0].estimates[7];
+  assert.equal(suppressed.chanceBest, null);
+  assert.equal(suppressed.credibleInterval, null);
 });
 
 test("query failures are unavailable, never a misleading zero", async () => {

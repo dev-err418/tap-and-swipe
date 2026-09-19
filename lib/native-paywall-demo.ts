@@ -25,6 +25,8 @@ function createDemoReport(): NativePaywallReport {
         users: Math.round(users * ({ 7: 0.88, 14: 0.72, 30: 0.46 }[days])),
         appu: proceeds / users * ({ 7: 0.74, 14: 0.87, 30: 0.98 }[days]),
         chanceBest: variant ? 0.94 : 0.06,
+        relativeDelta: variant ? 0.74 : null,
+        credibleInterval: variant ? [0.58, 0.90] : [-0.12, 0.12],
         reason: null,
       }])) as NativePaywallRow["estimates"],
     };
@@ -69,7 +71,8 @@ function createDemoReport(): NativePaywallReport {
         for (const days of PAYWALL_HORIZONS) result.estimates[days] = {
           users: Math.round(users * ({ 7: 0.88, 14: 0.72, 30: 0.46 }[days])),
           appu: result.proceeds / users * ({ 7: 0.74, 14: 0.87, 30: 0.98 }[days]),
-          chanceBest: null, reason: "Placements are not randomly assigned.",
+          chanceBest: null, relativeDelta: null, credibleInterval: null,
+          reason: "Placements are not randomly assigned.",
         };
         return result;
       }),

@@ -44,7 +44,14 @@ export type PaywallRevenue = {
 
 export const PAYWALL_HORIZONS = [7, 14, 30] as const;
 export type PaywallHorizon = (typeof PAYWALL_HORIZONS)[number];
-type Estimate = { users: number; appu: number | null; chanceBest: number | null; reason: string | null };
+type Estimate = {
+  users: number;
+  appu: number | null;
+  chanceBest: number | null;
+  relativeDelta: number | null;
+  credibleInterval: [number, number] | null;
+  reason: string | null;
+};
 export type NativePaywallRow = {
   id: string;
   label: string;
@@ -234,8 +241,11 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
         : stats.some((s) => s.confounded) ? "Includes existing assignments or a fallback offer; not a clean randomized cohort."
         : stats.some((s) => s.n < 50 || s.paid < 5) ? `Needs 50 mature users and 5 paid users per variant at D${horizon}.` : null;
       const probabilities = blocked ? null : probabilityBest(stats);
+      const comparisons = blocked ? null : relativeAppuComparisons(stats);
       rows.forEach((row, i) => {
         row.estimates[horizon].chanceBest = probabilities?.[i] ?? null;
+        row.estimates[horizon].relativeDelta = comparisons?.[i].relativeDelta ?? null;
+        row.estimates[horizon].credibleInterval = comparisons?.[i].credibleInterval ?? null;
         row.estimates[horizon].reason = blocked;
       });
     }
@@ -276,7 +286,7 @@ function summarize(row: WorkingRow, asOf: number, placement: boolean): NativePay
     grossRevenue: money.reduce((sum, m) => sum + m.revenue, 0), refunds: money.reduce((sum, m) => sum + m.refund, 0),
     estimates: Object.fromEntries(PAYWALL_HORIZONS.map((days) => {
       const stats = moments(row, asOf, days);
-      return [days, { users: stats.n, appu: stats.n ? stats.mean : null, chanceBest: null,
+      return [days, { users: stats.n, appu: stats.n ? stats.mean : null, chanceBest: null, relativeDelta: null, credibleInterval: null,
         reason: placement ? "Placements are not randomly assigned; no winner probability." : null }];
     })) as Record<PaywallHorizon, Estimate> };
 }
@@ -293,4 +303,25 @@ function probabilityBest(stats: { mean: number; se: number }[]): number[] {
     for (const index of tied) wins[index] += 1 / tied.length;
   }
   return wins.map((n) => n / 8_000);
+}
+
+function relativeAppuComparisons(stats: { mean: number; se: number }[]) {
+  const control = stats[0];
+  return stats.map((stat, index) => {
+    if (index === 0) {
+      const margin = 1.96 * control.se;
+      const denominator = Math.max(Math.abs(control.mean), margin, 1e-6);
+      return { relativeDelta: null, credibleInterval: [-margin / denominator, margin / denominator] as [number, number] };
+    }
+    const difference = stat.mean - control.mean;
+    const standardError = Math.sqrt(stat.se ** 2 + control.se ** 2);
+    const margin = 1.96 * standardError;
+    const denominator = Math.abs(control.mean) > 1e-9
+      ? Math.abs(control.mean)
+      : Math.max(Math.abs(stat.mean), margin, 1e-6);
+    return {
+      relativeDelta: difference / denominator,
+      credibleInterval: [(difference - margin) / denominator, (difference + margin) / denominator] as [number, number],
+    };
+  });
 }
