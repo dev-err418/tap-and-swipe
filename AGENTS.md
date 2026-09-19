@@ -103,6 +103,8 @@ All protected by `CRON_SECRET` header.
 
 ### Analytics
 
+- **Custom native paywall analytics (Glow):** read `docs/native-paywall-analytics.md` before changing paywall/placement reporting. Experiments are hardcoded in Glow; `gp1_` scalar-JSON attributes live in Superwall and join to Apple transactions through its Query API. No new analytics database, ingestion backend, Superwall campaigns or SDK placements. App-side documentation is `native/PAYWALL-ANALYTICS.md` in the Glow repository. Views are unique users; APPU includes non-payers; refunds can be cancellation events. Preserve immutable assignment and purchase attribution records.
+
 - **PageEvent tracking** (`/api/event`): custom funnel events per product, deduplicated by visitorId (cookie, 1yr) + sessionId (per-session). Products: `aso`, `aso-solo`, `aso-pro`, `community`, `bundle-aso`, `bundle-community`. Event types: `page_view`, `cta_clicked`, `stripe_shown`, `paid`, `trial_started`.
 - **QuizEvent**: tracks quiz funnel progression (page_view, quiz_start, quiz_complete, booking_click).
 - **Daily stats** (`lib/compute-daily-stats.ts`): pulls mobile app download counts via the Google Analytics Data API (`lib/firebase-ga4.ts`), combines with RevenueCat events, and posts summaries to Discord.

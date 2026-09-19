@@ -1,4 +1,6 @@
 import "server-only";
+import { loadNativePaywalls } from "./native-paywall-queries";
+import type { NativePaywallReport } from "./native-paywall-analytics";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -121,6 +123,7 @@ export type MobileAppAnalytics = {
   retention: MobileAppRetentionCountryRow[];
   experiments: MobileAppExperiment[];
   trialCancelTiming?: TrialCancelTiming | null;
+  nativePaywalls?: NativePaywallReport | null;
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -391,7 +394,7 @@ async function loadSuperwallAppAnalytics(
     FORMAT JSON
   `;
 
-  const [downloadResult, revenueResult, factsResult] = await Promise.allSettled([
+  const [downloadResult, revenueResult, factsResult, paywallResult] = await Promise.allSettled([
     querySuperwall<{ bucket: string; downloads: string | number }>(
       downloadsQuery,
       app.organizationId,
@@ -403,6 +406,9 @@ async function loadSuperwallAppAnalytics(
       app.apiKey,
     ),
     includeCountries ? loadAppFacts(app, start, end, startMs, endMs) : Promise.resolve(null),
+    includeCountries && app.id === "glow"
+      ? loadNativePaywalls(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
+      : Promise.resolve(null),
   ]);
 
   if (downloadResult.status === "rejected") throw downloadResult.reason;
@@ -452,6 +458,9 @@ async function loadSuperwallAppAnalytics(
     retention,
     experiments,
     trialCancelTiming,
+    nativePaywalls: paywallResult.status === "fulfilled" ? paywallResult.value : {
+      status: "unavailable", asOf: Date.now(), groups: [], warnings: ["Paywall reporting is temporarily unavailable."],
+    },
   };
 }
 

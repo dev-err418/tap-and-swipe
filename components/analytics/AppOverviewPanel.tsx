@@ -16,6 +16,8 @@ import TrialCancelChart from "@/components/analytics/TrialCancelChart";
 import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
 import AppNotesChart from "@/components/analytics/AppNotesChart";
+import NativePaywallsPanel from "@/components/analytics/NativePaywallsPanel";
+import type { NativePaywallReport } from "@/lib/native-paywall-analytics";
 import {
   DASHBOARD_SURFACE_CLASS,
   DASHBOARD_TAB_ACTIVE_CLASS,
@@ -45,6 +47,7 @@ export default function AppOverviewPanel({
   retention,
   experiments = [],
   trialCancelTiming = null,
+  nativePaywalls = null,
 }: {
   appId: "glow" | "poky" | "versy";
   installs: number;
@@ -57,6 +60,7 @@ export default function AppOverviewPanel({
   retention: MobileAppRetentionCountryRow[];
   experiments?: MobileAppExperiment[];
   trialCancelTiming?: TrialCancelTiming | null;
+  nativePaywalls?: NativePaywallReport | null;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
   const appu = installs > 0 ? proceeds / installs : 0;
@@ -167,7 +171,7 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-paywalls"
           className="min-w-0"
         >
-          <TabEmptyState>No paywall data yet.</TabEmptyState>
+          {appId === "glow" ? <NativePaywallsPanel report={nativePaywalls} /> : <TabEmptyState>No paywall data yet.</TabEmptyState>}
         </div>
       ) : null}
     </section>
