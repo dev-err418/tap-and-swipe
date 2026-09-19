@@ -102,3 +102,52 @@ test("query failures are unavailable, never a misleading zero", async () => {
   assert.equal(result.status, "unavailable");
   assert.equal(result.groups.length, 0);
 });
+
+test("v2 separates the same-SKU designs and Weekly is a valid package purchase", () => {
+  const annual = "com.arthurbuildsstuff.glow.Annual";
+  const pro = "com.arthurbuildsstuff.glow.pro.yearly";
+  const weekly = "com.arthurbuildsstuff.glow.Weekly";
+  const attrs: PaywallAttribute[] = [];
+  const events: PaywallRevenue[] = [];
+  for (const [index, variant] of ["yr_49", "yr_59", "yr_wk_59"].entries()) {
+    for (let i = 0; i < 60; i++) {
+      const owner = `${variant}_${i}`;
+      const tx = String(1000 + index * 100 + i);
+      const productID = index === 0 ? annual : index === 1 ? pro : weekly;
+      const assignment = record({ experiment: "native_paywalls_v2", variant, variantName: variant, paywall: variant,
+        variantCount: 3, expectedProduct: index === 0 ? annual : pro,
+        allowedProducts: index === 0 ? [annual] : index === 1 ? [pro] : [pro, weekly],
+        viewedAt: start + DAY, displayedProduct: productID });
+      const placement = { ...assignment, placement: "themes_upgrade", reachedAt: start + DAY };
+      attrs.push(attribute(owner, "gp1_a_native_paywalls_v2", assignment),
+        attribute(owner, "gp1_p_native_paywalls_v2__themes_upgrade", placement));
+      if (i < 10) {
+        const purchase: PaywallPurchase = { context: placement, productID, transactionID: tx, originalTransactionID: tx,
+          startedAt: start + 2 * DAY, purchasedAt: start + 2 * DAY };
+        attrs.push(attribute(owner, `gp1_t_${tx}`, purchase));
+        events.push(money({ id: tx, originalTransactionId: tx, transactionId: tx }));
+      }
+    }
+  }
+  // Historical data stays a separate experiment, not relabeled as v2.
+  attrs.push(...fixture("historical", {}, "9999"));
+  const result = report(attrs, events);
+  assert.equal(result.warnings.length, 0);
+  const group = result.groups.find((g) => g.language === "all" && g.experiment === "native_paywalls_v2")!;
+  assert.equal(group.paywalls.length, 3);
+  for (const row of group.paywalls) {
+    assert.equal(row.users, 60);
+    assert.equal(row.conversions, 10);
+    assert.equal(row.proceeds, 85);
+    assert.equal(row.estimates[7].reason, null);
+    assert.notEqual(row.estimates[7].chanceBest, null);
+  }
+  assert.equal(group.placements[0].proceeds, 255);
+  assert.equal(result.groups.find((g) => g.language === "all" && g.experiment === "price_v1")!.paywalls.length, 1);
+});
+
+test("invalid product lists cannot bypass fallback checks", () => {
+  const result = report([attribute("bad", "gp1_a_price_v1", record({ allowedProducts: [] }))], []);
+  assert.equal(result.groups.length, 0);
+  assert.match(result.warnings[0], /1 malformed/);
+});

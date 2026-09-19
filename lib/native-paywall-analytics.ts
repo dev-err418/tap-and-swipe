@@ -12,6 +12,7 @@ export type PaywallRecord = {
   randomized: boolean;
   variantCount: number;
   expectedProduct: string;
+  allowedProducts?: string[];
   viewedAt?: number;
   placement?: string;
   reachedAt?: number;
@@ -97,6 +98,9 @@ function validRecord(value: unknown): value is PaywallRecord {
     && typeof r.experimentName === "string" && typeof r.variantName === "string"
     && typeof r.language === "string" && /^[a-z]{2,3}$/.test(r.language)
     && typeof r.expectedProduct === "string" && typeof r.randomized === "boolean"
+    && (r.allowedProducts == null || (Array.isArray(r.allowedProducts) && r.allowedProducts.length > 0
+      && r.allowedProducts.length <= 10 && r.allowedProducts.every((p) => typeof p === "string" && p.length > 0)
+      && r.allowedProducts.includes(r.expectedProduct)))
     && Number.isInteger(r.variantCount) && r.variantCount >= 1 && r.variantCount <= 20
     && timestamp(r.assignedAt)
     && (r.viewedAt == null || (timestamp(r.viewedAt) && r.viewedAt >= r.assignedAt))
@@ -260,7 +264,9 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
 
 function sameAssignment(a: PaywallRecord, b: PaywallRecord) {
   return a.experiment === b.experiment && a.variant === b.variant && a.paywall === b.paywall
-    && a.language === b.language && a.assignedAt === b.assignedAt;
+    && a.language === b.language && a.assignedAt === b.assignedAt
+    && a.expectedProduct === b.expectedProduct
+    && JSON.stringify(a.allowedProducts ?? [a.expectedProduct]) === JSON.stringify(b.allowedProducts ?? [b.expectedProduct]);
 }
 
 function moments(row: WorkingRow, asOf: number, days: number) {
@@ -271,7 +277,8 @@ function moments(row: WorkingRow, asOf: number, days: number) {
   const mean = n ? proceeds.reduce((a, b) => a + b, 0) / n : 0;
   const variance = n > 1 ? proceeds.reduce((sum, x) => sum + (x - mean) ** 2, 0) / (n - 1) : 0;
   return { n, mean, se: Math.sqrt(variance / Math.max(n, 1)), paid: values.filter((events) => events.some((m) => m.revenue > 0)).length,
-    confounded: [...row.people.values()].some((p) => !p.record.randomized || p.record.hadFallback === true || Boolean(p.record.displayedProduct && p.record.displayedProduct !== p.record.expectedProduct)),
+    confounded: [...row.people.values()].some((p) => !p.record.randomized || p.record.hadFallback === true
+      || Boolean(p.record.displayedProduct && !(p.record.allowedProducts ?? [p.record.expectedProduct]).includes(p.record.displayedProduct))),
     variantCount: Math.max(0, ...[...row.people.values()].map((p) => p.record.variantCount)) };
 }
 

@@ -20,13 +20,13 @@ function createDemoReport(): NativePaywallReport {
     const refunds = Math.round(paid * 0.035) * (variant ? 39.99 : 29.99);
     const proceeds = (grossRevenue - refunds) * 0.85;
     return {
-      id, label, paywall: `native_timeline_${id}_v1`, users, views, conversions, paid, grossRevenue, refunds, proceeds,
+      id, label, paywall: id, users, views, conversions, paid, grossRevenue, refunds, proceeds,
       estimates: Object.fromEntries(PAYWALL_HORIZONS.map((days) => [days, {
         users: Math.round(users * ({ 7: 0.88, 14: 0.72, 30: 0.46 }[days])),
         appu: proceeds / users * ({ 7: 0.74, 14: 0.87, 30: 0.98 }[days]),
-        chanceBest: variant ? 0.94 : 0.06,
-        relativeDelta: variant ? 0.74 : null,
-        credibleInterval: variant ? [0.58, 0.90] : [-0.12, 0.12],
+        chanceBest: [0.02, 0.14, 0.84][variant],
+        relativeDelta: [null, 0.74, 0.96][variant],
+        credibleInterval: [[-0.12, 0.12], [0.58, 0.90], [0.78, 1.14]][variant],
         reason: null,
       }])) as NativePaywallRow["estimates"],
     };
@@ -55,12 +55,16 @@ function createDemoReport(): NativePaywallReport {
   ] as const;
   const groups: NativePaywallGroup[] = (["en", "es", "de"] as const).map((language, i) => {
     const size = [8400, 3200, 1800][i];
-    const paywalls = [row("annual", "Annual", size, 0), row("pro_yearly", "Pro yearly", size + 37 - i * 19, 1)];
+    const paywalls = [
+      row("yr_49", "yr_49", size, 0),
+      row("yr_59", "yr_59", size, 1),
+      row("yr_wk_59", "yr_wk_59", size * 2, 2),
+    ];
     const totals = sum(paywalls);
     // Partition outcomes so the synthetic placement revenue matches the paywall total.
     const allocated = { conversions: 0, paid: 0, proceeds: 0, grossRevenue: 0, refunds: 0 };
     return {
-      experiment: "native_yearly_v1", name: "Native yearly offer", language, paywalls,
+      experiment: "native_paywalls_v2", name: "Native paywalls · 25/25/50", language, paywalls,
       placements: placements.map(([id, label, weight], index) => {
         const users = Math.round(totals.users * (weight + 0.045));
         const result: NativePaywallRow = { ...totals, id, label, paywall: "", users, views: Math.round(users * 0.94), estimates: { ...totals.estimates } };
@@ -79,7 +83,7 @@ function createDemoReport(): NativePaywallReport {
     };
   });
   const all: NativePaywallGroup = {
-    experiment: "native_yearly_v1", name: "Native yearly offer", language: "all",
+    experiment: "native_paywalls_v2", name: "Native paywalls · 25/25/50", language: "all",
     paywalls: groups[0].paywalls.map((_, i) => sum(groups.map((g) => g.paywalls[i]))),
     placements: groups[0].placements.map((_, i) => sum(groups.map((g) => g.placements[i]))),
   };
