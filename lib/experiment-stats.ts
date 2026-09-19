@@ -56,42 +56,32 @@ export function analyzeExperiment(
 
   const stats = arms.map((arm) => summarizeArm(arm, metric));
   const control = stats[0];
-  const warning = stats.find((arm) => arm.warning)?.warning ?? (control && control.mean === 0 ? needReason ?? "Not enough data yet." : null);
-  const computable = stats.every((arm) => arm.ok);
+  const usable = stats.filter((arm) => arm.ok);
+  const warning =
+    stats.find((arm) => arm.warning)?.warning ??
+    (usable.length < 2 || (control && control.ok && control.mean === 0) ? needReason : null);
+  const chanceToWin = usable.length > 0 ? probabilityBest(usable) : {};
 
-  if (!control || !computable) {
-    return {
-      metric,
-      metricLabel,
-      sufficientData: false,
-      reason: needReason ?? warning ?? "Not enough data yet.",
-      needed,
-      variants: stats.map((arm) => variantResult(arm, arm.key === control?.key, null, null, null, null)),
-    };
-  }
-
-  const chanceToWin = probabilityBest(stats);
   const variants = stats.map((arm) => {
-    if (arm.key === control.key) {
-      return variantResult(arm, true, chanceToWin[arm.key] ?? null, null, null, null);
+    const isControl = arm.key === control?.key;
+    if (!arm.ok || !control?.ok) {
+      return variantResult(arm, isControl, chanceToWin[arm.key] ?? null, null, null, null);
+    }
+    if (isControl) {
+      return variantResult(arm, true, chanceToWin[arm.key] ?? null, null, null, controlInterval(arm));
     }
 
     const diff = arm.mean - control.mean;
     const se = Math.sqrt(arm.se * arm.se + control.se * control.se);
     const chanceToBeatControl = se > 0 ? 1 - normalCdf(0, diff, se) : diff > 0 ? 1 : 0;
-    const relativeDelta = control.mean !== 0 ? diff / control.mean : null;
-    const margin = 1.96 * se;
-    const credibleInterval: [number, number] | null =
-      control.mean !== 0
-        ? [(diff - margin) / control.mean, (diff + margin) / control.mean]
-        : null;
+    const lift = liftVsControl(arm, control, se);
     return variantResult(
       arm,
       false,
       chanceToWin[arm.key] ?? null,
       chanceToBeatControl,
-      relativeDelta,
-      credibleInterval,
+      lift.relativeDelta,
+      lift.interval,
     );
   });
 
@@ -146,6 +136,22 @@ function summarizeArm(arm: ExperimentArm, metric: ExperimentMetricKind): ArmStat
 
 function fallbackSe(mean: number, n: number) {
   return Math.max(Math.abs(mean), 1) / Math.sqrt(Math.max(n, 1));
+}
+
+function liftVsControl(arm: ArmStats, control: ArmStats, se: number) {
+  const diff = arm.mean - control.mean;
+  const margin = 1.96 * se;
+  const denom = Math.abs(control.mean) > 1e-9 ? Math.abs(control.mean) : Math.max(Math.abs(arm.mean), margin, 1e-6);
+  return {
+    relativeDelta: diff / denom,
+    interval: [(diff - margin) / denom, (diff + margin) / denom] as [number, number],
+  };
+}
+
+function controlInterval(control: ArmStats): [number, number] {
+  const margin = 1.96 * control.se;
+  const denom = Math.max(Math.abs(control.mean), margin, 1e-6);
+  return [-margin / denom, margin / denom];
 }
 
 function sampleNeed(

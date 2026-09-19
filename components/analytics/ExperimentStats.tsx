@@ -34,6 +34,7 @@ export default function ExperimentStats({
   if (analysis.variants.length === 0) return null;
   const leaderKey = uniqueChanceKey(analysis.variants, "max");
   const trailingKey = uniqueChanceKey(analysis.variants, "min");
+  const bound = intervalBound(analysis.variants);
   return (
     <div className="border-b border-black/[0.08] px-4 py-4">
       {title ? (
@@ -44,6 +45,7 @@ export default function ExperimentStats({
           <VariantChance
             key={variant.key}
             variant={variant}
+            bound={bound}
             isLeader={variant.key === leaderKey}
             isTrailing={variant.key === trailingKey}
           />
@@ -55,10 +57,12 @@ export default function ExperimentStats({
 
 function VariantChance({
   variant,
+  bound,
   isLeader,
   isTrailing,
 }: {
   variant: VariantExperimentResult;
+  bound: number;
   isLeader: boolean;
   isTrailing: boolean;
 }) {
@@ -100,7 +104,7 @@ function VariantChance({
           </span>
         </p>
       </div>
-      <CredibleIntervalBar variant={variant} isLeader={isLeader} />
+      <CredibleIntervalBar variant={variant} bound={bound} isLeader={isLeader} />
     </div>
   );
 }
@@ -114,28 +118,35 @@ function uniqueChanceKey(variants: VariantExperimentResult[], bound: "max" | "mi
   return matches.length === 1 ? matches[0].key : null;
 }
 
+function intervalBound(variants: VariantExperimentResult[]) {
+  let bound = 0.25;
+  for (const variant of variants) {
+    if (variant.relativeDelta != null) bound = Math.max(bound, Math.abs(variant.relativeDelta));
+    const interval = variant.credibleInterval;
+    if (interval) bound = Math.max(bound, Math.abs(interval[0]), Math.abs(interval[1]));
+  }
+  return bound;
+}
+
 function CredibleIntervalBar({
   variant,
+  bound,
   isLeader,
 }: {
   variant: VariantExperimentResult;
+  bound: number;
   isLeader: boolean;
 }) {
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
-  const interval = variant.credibleInterval ?? (variant.isControl ? ([-0.015, 0.015] as [number, number]) : null);
-  if (!interval) {
-    return <div className="h-3 rounded-full bg-foreground/[0.06]" />;
-  }
-
-  const bound = Math.max(0.25, Math.abs(interval[0]), Math.abs(interval[1]), Math.abs(variant.relativeDelta ?? 0));
+  const interval = variant.credibleInterval;
   const toPercent = (value: number) => ((value + bound) / (2 * bound)) * 100;
-  const start = Math.min(interval[0], interval[1]);
-  const end = Math.max(interval[0], interval[1]);
   const zero = toPercent(0);
-  const left = toPercent(start);
-  const right = toPercent(end);
-  const redRight = Math.min(zero, right);
-  const greenLeft = Math.max(zero, left);
+  const start = interval ? Math.min(interval[0], interval[1]) : 0;
+  const end = interval ? Math.max(interval[0], interval[1]) : 0;
+  const paintStart = Math.min(start, 0);
+  const paintEnd = Math.max(end, 0);
+  const left = toPercent(paintStart);
+  const right = toPercent(paintEnd);
   const updateTooltip = (event: PointerEvent<HTMLDivElement>) => {
     setTooltip({ x: event.clientX, y: event.clientY });
   };
@@ -144,33 +155,29 @@ function CredibleIntervalBar({
     <>
       <div
         className="relative h-3 cursor-default rounded-full bg-foreground/[0.06]"
-        onPointerEnter={updateTooltip}
-        onPointerMove={updateTooltip}
-        onPointerLeave={() => setTooltip(null)}
+        onPointerEnter={interval ? updateTooltip : undefined}
+        onPointerMove={interval ? updateTooltip : undefined}
+        onPointerLeave={interval ? () => setTooltip(null) : undefined}
       >
-        {start < 0 ? (
+        {paintStart < 0 ? (
           <span
             className="absolute inset-y-0 rounded-l-full"
             style={{
               left: `${left}%`,
-              width: `${Math.max(0, redRight - left)}%`,
+              width: `${Math.max(0, zero - left)}%`,
               backgroundColor: LOSE_COLOR,
               opacity: isLeader ? 0.88 : 0.5,
-              borderTopRightRadius: end <= 0 ? 999 : 0,
-              borderBottomRightRadius: end <= 0 ? 999 : 0,
             }}
           />
         ) : null}
-        {end > 0 ? (
+        {paintEnd > 0 ? (
           <span
             className="absolute inset-y-0 rounded-r-full"
             style={{
-              left: `${greenLeft}%`,
-              width: `${Math.max(0, right - greenLeft)}%`,
+              left: `${zero}%`,
+              width: `${Math.max(0, right - zero)}%`,
               backgroundColor: WIN_COLOR,
               opacity: isLeader ? 0.88 : 0.5,
-              borderTopLeftRadius: start >= 0 ? 999 : 0,
-              borderBottomLeftRadius: start >= 0 ? 999 : 0,
             }}
           />
         ) : null}
