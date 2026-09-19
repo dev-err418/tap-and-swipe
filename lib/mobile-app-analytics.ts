@@ -1348,7 +1348,8 @@ function eventRepWindows(fromMs: number, toMs: number) {
   let cursor = fromMs;
   while (cursor < toMs) {
     const next = Math.min(cursor + 7 * DAY_MS, toMs);
-    windows.push([new Date(cursor).toISOString(), new Date(next).toISOString()]);
+    // ClickHouse toDateTime64 rejects ISO `T`/`Z` timestamps.
+    windows.push([clickhouseDate(new Date(cursor)), clickhouseDate(new Date(next))]);
     cursor = next;
   }
   return windows;
