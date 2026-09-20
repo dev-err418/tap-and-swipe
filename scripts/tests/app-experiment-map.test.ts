@@ -52,7 +52,7 @@ test("unsupported apps do not show invented experiments", () => {
 test("result cards follow the onboarding-to-paywall progression without mutating inputs", () => {
   for (const [app, expected] of Object.entries({
     glow: ["glow-onboarding-copy", "glow-native-paywall", "glow-yearly-price"],
-    poky: ["poky-app-experience", "poky-animated-plan", "poky-onboarding-abcd", "poky-native-recovery-holdout"],
+    poky: ["poky-app-experience", "poky-animated-plan", "poky-onboarding-abcd", "poky-superwall-vs-native", "poky-native-recovery-holdout"],
   })) {
     const input = [...expected].reverse().map((id) => ({ id }));
     assert.deepEqual(orderAppExperiments(app, input).map((row) => row.id), expected);

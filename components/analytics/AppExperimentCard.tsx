@@ -34,7 +34,16 @@ export default function AppExperimentCard({
   const variants = variantsForCountry(experiment.variants, country);
   const scoreMetrics = experiment.scoreMetrics ?? ["appu", "download_paid"];
   const sessionDays = experiment.sessionDays && experiment.sessionDays > 0 ? experiment.sessionDays : 1;
-  const scored = scoreMetrics.map((metric) => scoredAnalysis(metric, variants, sessionDays));
+  const languages = (experiment.languageComparisons ?? []).map((comparison) => ({
+    ...comparison, variants: variantsForCountry(comparison.variants, country),
+  }));
+  const scored = [
+    ...languages.map((comparison) => ({
+      key: `language-${comparison.language}`, title: comparison.label,
+      analysis: analyzeExperiment(toAppuArms(comparison.variants), "revenue_per_visitor", comparison.label),
+    })),
+    ...scoreMetrics.map((metric) => scoredAnalysis(metric, variants, sessionDays)),
+  ];
   const warningAnalysis = firstInsufficient(scored.map((item) => item.analysis)) ?? scored[0]?.analysis;
   const bestDownloadPaidKey = bestVariantKey(variants, (row) => ratio(row.paid, row.installs));
   const bestAppuKey = bestVariantKey(variants, (row) => ratio(row.proceeds, row.installs));
@@ -77,6 +86,7 @@ export default function AppExperimentCard({
           <thead>
             <tr className="border-b border-black/10 text-left text-xs text-black/50">
               <Th>Variant</Th>
+              {languages.map((comparison) => <Th key={comparison.language} right>{comparison.label}</Th>)}
               {showUsers ? <Th right>Users</Th> : null}
               {showInstalls ? <Th right>Installs</Th> : null}
               {showPaid ? <Th right>Paid</Th> : null}
@@ -128,6 +138,11 @@ export default function AppExperimentCard({
                     <span className="font-medium">{row.label}</span>
                   </div>
                 </Td>
+                {languages.map((comparison) => {
+                  const localized = comparison.variants.find((variant) => variant.key === row.key);
+                  return <NumberTd key={comparison.language}>{localized && localized.installs > 0
+                    ? formatPreciseCurrency(localized.proceeds / localized.installs) : "—"}</NumberTd>;
+                })}
                 {showUsers ? <NumberTd>{formatInt(row.users)}</NumberTd> : null}
                 {showInstalls ? <NumberTd>{formatInt(row.installs)}</NumberTd> : null}
                 {showPaid ? <NumberTd>{formatInt(row.paid)}</NumberTd> : null}

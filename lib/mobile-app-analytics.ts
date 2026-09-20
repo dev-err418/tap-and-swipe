@@ -4,6 +4,7 @@ import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as tren
 import { loadNativePaywalls } from "./native-paywall-queries";
 import type { NativePaywallReport } from "./native-paywall-analytics";
 import { POKY_NATIVE_RECOVERY_KEYS, pokyNativeRecoveryExperiment } from "./poky-native-recovery";
+import { pokyPaywallMigrationExperiment } from "./poky-paywall-migration";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -97,6 +98,7 @@ export type MobileAppExperiment = {
   showPaid?: boolean;
   showDownloadPaid?: boolean;
   sessionDays?: number;
+  languageComparisons?: { language: string; label: string; variants: MobileAppExperimentVariant[] }[];
 };
 
 export type TrialCancelBucket = {
@@ -164,6 +166,7 @@ type InstallRow = {
   appUserId: string;
   country: string;
   appVersion: string;
+  language: string;
   installedAt: number;
 };
 
@@ -507,11 +510,13 @@ async function fetchInstallCohort(app: SuperwallAppConfig, start: string, end: s
     ver: string | null;
     country: string | null;
     installedAt: string | null;
+    language: string | null;
   }>(
     `
 SELECT
   appUserId,
   argMin(JSONExtractString(meta, 'appVersion'), ts) AS ver,
+  argMin(JSONExtractString(meta, 'deviceLanguageCode'), ts) AS language,
   argMin(upper(ifNull(nullIf(JSONExtractString(headers, 'Cf-Ipcountry'), ''), 'unknown')), ts) AS country,
   argMin(appInstallDate, ts) AS installedAt
 FROM sw.demand_score_events_rep
@@ -539,6 +544,7 @@ FORMAT JSON
         appUserId: row.appUserId,
         country: normalizeCountry(row.country ?? "unknown"),
         appVersion: (row.ver ?? "").trim(),
+        language: (row.language ?? "").trim(),
         installedAt,
       },
     ];
@@ -918,6 +924,7 @@ function glowOnboardingExperiment(facts: AppFacts): MobileAppExperiment {
 
 function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
   return [
+    pokyPaywallMigrationExperiment(facts),
     pokyNativeRecoveryExperiment(
       [...facts.attributes].flatMap(([appUserId, attrs]) => Object.entries(attrs).map(([key, value]) => ({ appUserId, key, value }))),
       facts.events, new Map(facts.installs.map((row) => [row.appUserId, row.country])), facts.startMs, facts.endMs,
