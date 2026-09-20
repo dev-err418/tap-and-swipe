@@ -161,6 +161,8 @@ export function VisitorsRevenueChart({
             <YAxis
               yAxisId="revenue"
               orientation="right"
+              domain={[0, "auto"]}
+              allowDataOverflow
               tickLine={false}
               axisLine={false}
               width={50}

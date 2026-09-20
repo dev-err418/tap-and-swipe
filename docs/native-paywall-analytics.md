@@ -70,9 +70,9 @@ so Debug overrides cannot contaminate them even before the SDK labels a user san
 
 ## Storage contract: gp1
 
-### Temporary UI demo mode
+### Live data only
 
-Both apps open in **Live data** mode. Glow retains an explicit demo toggle for design work: `lib/native-paywall-demo.ts` supplies seeded, fictional numbers labelled with v2 identities and allocation percentages. That fixture is never offered as Poky data. Date filters do not affect demo rows, the main chart remains live, and no sample records are sent to Superwall. Demo winner percentages are illustrative, not statistical results.
+The dashboard always renders live Superwall data and has no demo toggle. `lib/native-paywall-demo.ts` remains a test fixture for allocation and experiment-map coverage only; it is not reachable from the dashboard and no sample records are sent to Superwall.
 
 The detailed app chart and note editor use `Europe/Paris`, independently of browser/server timezone. Today/Yesterday follow Paris calendar days (including 23/25-hour daylight-saving days); rolling 3/7/30-day filters remain elapsed-time windows. Four-hour buckets follow the Paris clock and daily buckets start at Paris midnight. `lib/app-analytics-time.ts` keeps SQL and purchase-event buckets aligned. Stored note timestamps and chart bucket timestamps remain UTC instants; never parse a Paris wall-clock string as UTC. Unrelated website funnel charts retain their existing timezone.
 

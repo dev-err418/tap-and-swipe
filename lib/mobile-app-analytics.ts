@@ -3,6 +3,7 @@ import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
 import { loadNativePaywalls } from "./native-paywall-queries";
 import type { NativePaywallReport } from "./native-paywall-analytics";
+import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_NATIVE_RECOVERY_KEYS, pokyNativeRecoveryExperiment } from "./poky-native-recovery";
 import { pokyPaywallMigrationExperiment } from "./poky-paywall-migration";
 
@@ -363,9 +364,9 @@ async function loadSuperwallAppAnalytics(
   const revenueQuery = `
     SELECT bucket, round(sum(net_proceeds), 2) AS revenue
     FROM (
-      SELECT ${bucketExpression} AS bucket, name, originalTransactionId, transactionId,
+      SELECT ${bucketExpression} AS bucket, name, originalTransactionId, transactionId, isRefund,
         if(
-          argMax(isRefund, attributionTs) = 1,
+          isRefund = 1,
           -abs(toFloat64(argMax(proceeds, attributionTs))),
           toFloat64(argMax(proceeds, attributionTs))
         ) AS net_proceeds
@@ -373,13 +374,13 @@ async function loadSuperwallAppAnalytics(
       WHERE applicationId = ${app.applicationId}
         AND isSandbox = 0
         AND source = 'integration'
-        AND name IN ('initial_purchase', 'renewal', 'non_renewing_purchase')
+        AND (name IN ('initial_purchase', 'renewal', 'non_renewing_purchase') OR isRefund = 1)
         AND isFamilyShare = 0
         AND proceeds IS NOT NULL
         AND ts >= toDateTime64('${start}', 6, 'UTC')
         AND ts < toDateTime64('${end}', 6, 'UTC')
         AND ts < now()
-      GROUP BY bucket, name, originalTransactionId, transactionId
+      GROUP BY bucket, name, originalTransactionId, transactionId, isRefund
     )
     GROUP BY bucket
     ORDER BY bucket
@@ -612,7 +613,7 @@ WHERE applicationId = ${app.applicationId}
   AND isSandbox = 0
   AND source = 'integration'
   AND isFamilyShare = 0
-  AND name IN ('initial_purchase', 'renewal', 'non_renewing_purchase', 'cancellation')
+  AND (name IN ('initial_purchase', 'renewal', 'non_renewing_purchase', 'cancellation') OR isRefund = 1)
   AND ts >= toDateTime64('${start}', 6, 'UTC')
   AND ts < now()
 LIMIT ${EVENT_DUMP_LIMIT}
@@ -628,7 +629,7 @@ FORMAT JSON
 
   const best = new Map<string, (typeof rows)[number]>();
   for (const row of rows) {
-    const key = `${row.name}|${row.originalTransactionId}|${row.transactionId ?? ""}`;
+    const key = `${row.name}|${row.originalTransactionId}|${row.transactionId ?? ""}|${Number(row.isRefund) === 1}`;
     const prev = best.get(key);
     const attributionTs = parseTs(row.attributionTs);
     if (!prev || parseTs(prev.attributionTs) < attributionTs) best.set(key, row);
@@ -743,7 +744,7 @@ function countriesFromFacts(facts: AppFacts): MobileAppCountryRow[] {
     if (event.eventTs < facts.startMs || event.eventTs >= facts.endMs) continue;
     const point = bump(event.country);
     const id = `${event.country}|${event.originalTransactionId}`;
-    if (event.netProceeds != null && isMoneyEvent(event)) {
+    if (event.netProceeds != null && isMobileMoneyEvent(event)) {
       point.proceeds = roundMoney(point.proceeds + event.netProceeds);
     }
     if (event.name === "initial_purchase" && event.periodType === "trial" && !trialIds.has(id)) {
@@ -768,14 +769,7 @@ function plansFromFacts(facts: AppFacts): MobileAppPlanCountryRow[] {
   for (const event of facts.events) {
     if (event.eventTs < facts.startMs || event.eventTs >= facts.endMs) continue;
     if (event.netProceeds == null) continue;
-    if (
-      !(
-        (event.name === "initial_purchase" && event.periodType !== "trial") ||
-        event.name === "renewal"
-      )
-    ) {
-      continue;
-    }
+    if (!isMobileMoneyEvent(event)) continue;
     const plan = planFromProductId(event.productId);
     if (plan !== "yearly" && plan !== "weekly") continue;
     const country = normalizeCountry(event.country);
@@ -788,7 +782,9 @@ function plansFromFacts(facts: AppFacts): MobileAppPlanCountryRow[] {
       weeklyProceeds: 0,
     };
     const id = `${country}|${plan}|${event.originalTransactionId}`;
-    if (!seen.has(id)) {
+    const startsPaidSubscription =
+      (event.name === "initial_purchase" && event.periodType !== "trial") || event.name === "renewal";
+    if (startsPaidSubscription && !seen.has(id)) {
       seen.add(id);
       if (plan === "yearly") point.yearlySubs += 1;
       else point.weeklySubs += 1;
@@ -876,23 +872,29 @@ function glowPaywallExperiment(facts: AppFacts): MobileAppExperiment {
     return null;
   };
 
+  const cohort = new Map<string, InstallRow>();
   for (const row of facts.installs) {
     const target = targetFor(row.appVersion);
-    if (target) addExperimentMetrics(target, { country: row.country, installs: 1 });
+    if (target) {
+      cohort.set(row.appUserId, row);
+      addExperimentMetrics(target, { country: row.country, installs: 1 });
+    }
   }
 
   const seenTrial = new Set<string>();
   const seenConverted = new Set<string>();
   const seenPaid = new Set<string>();
   for (const event of facts.events) {
-    if (!inRange(event.installedAt, facts.startMs, facts.endMs)) continue;
-    if (!inRange(event.eventTs, facts.startMs, facts.endMs)) continue;
-    const target = targetFor(event.appVersion);
+    const install = cohort.get(event.appUserId);
+    if (!install || event.eventTs < install.installedAt) continue;
+    const target = targetFor(install.appVersion);
     if (!target) continue;
-    const id = `${event.appVersion}|${event.country}|${event.originalTransactionId}`;
-    addOutcomeMetrics(target, event, event.country, id, seenTrial, seenConverted, seenPaid);
-    if (event.netProceeds != null && isMoneyEvent(event)) {
-      addExperimentMetrics(target, { country: event.country, proceeds: event.netProceeds });
+    const id = `${install.appVersion}|${install.country}|${event.originalTransactionId}`;
+    if (inRange(event.eventTs, facts.startMs, facts.endMs)) {
+      addOutcomeMetrics(target, event, install.country, id, seenTrial, seenConverted, seenPaid);
+    }
+    if (event.netProceeds != null && isMobileMoneyEvent(event)) {
+      addExperimentMetrics(target, { country: install.country, proceeds: event.netProceeds });
     }
   }
 
@@ -1060,9 +1062,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     if (inRange(event.eventTs, facts.startMs, facts.endMs)) {
       addOutcomeMetrics(target, event, country, id, seenTrial, seenConverted, seenPaid);
     }
-    if (event.netProceeds != null && isMoneyEvent(event)) {
-      const includeTotal = definition.showRetention || inRange(event.eventTs, facts.startMs, facts.endMs);
-      if (!includeTotal) continue;
+    if (event.netProceeds != null && isMobileMoneyEvent(event)) {
       const cohortStart = event.installedAt;
       addExperimentMetrics(target, {
         country,
@@ -1388,10 +1388,6 @@ function parseAppVersion(value: string): [number, number, number] | null {
   const match = value.trim().match(/^(\d+)\.(\d+)(?:\.(\d+))?/);
   if (!match) return null;
   return [Number(match[1]), Number(match[2]), Number(match[3] ?? 0)];
-}
-
-function isMoneyEvent(event: AttributedRow) {
-  return event.name === "initial_purchase" || event.name === "renewal" || event.name === "non_renewing_purchase";
 }
 
 function isPaidEvent(event: AttributedRow) {

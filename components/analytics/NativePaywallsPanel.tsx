@@ -5,7 +5,6 @@ import { PAYWALL_HORIZONS, type NativePaywallReport, type NativePaywallRow, type
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DASHBOARD_PICKER_TRIGGER_CLASS, DASHBOARD_POPOVER_CLASS, DASHBOARD_POPOVER_ITEM_CLASS, DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS } from "./dashboard-surface";
 import { cn } from "@/lib/utils";
-import { NATIVE_PAYWALL_DEMO_REPORT } from "@/lib/native-paywall-demo";
 import { nativePaywallAllocation } from "@/lib/native-paywall-allocation";
 
 const languages: Record<string, string> = { en: "English", es: "Spanish", de: "German", fr: "French" };
@@ -43,10 +42,7 @@ function makeConversionDomain(rows: NativePaywallRow[]): ConversionDomain {
   return { minimum: Math.max(0, minimum - 0.005), maximum: Math.min(1, maximum + 0.005) };
 }
 
-export default function NativePaywallsPanel({ appId, report: liveReport }: { appId: "glow" | "poky" | "versy"; report: NativePaywallReport | null }) {
-  const [previewEnabled, setDemo] = useState(false);
-  const demo = appId === "glow" && previewEnabled;
-  const report = demo ? NATIVE_PAYWALL_DEMO_REPORT : liveReport;
+export default function NativePaywallsPanel({ report }: { appId: "glow" | "poky" | "versy"; report: NativePaywallReport | null }) {
   const [language, setLanguage] = useState("en");
   const [horizon, setHorizon] = useState<PaywallHorizon>(7);
   const availableLanguages = [...new Set(report?.groups.filter((g) => g.language !== "all").map((g) => g.language) ?? [])]
@@ -55,15 +51,6 @@ export default function NativePaywallsPanel({ appId, report: liveReport }: { app
   const groups = report?.groups.filter((g) => g.language === selectedLanguage).sort((a, b) => a.name.localeCompare(b.name)) ?? [];
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200/70 bg-amber-50/70 px-5 py-3">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-xs font-semibold text-amber-900">{demo ? "Demo data" : "Live data"}</span>
-        <span className="text-xs text-amber-800">{demo ? "Fictional numbers for UI preview. Date filters don’t apply; the main chart remains live." : "Showing real Superwall analytics only."}</span>
-      </div>
-      {appId === "glow" && <button type="button" onClick={() => setDemo(!demo)} className="rounded-full border border-amber-300/70 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100">
-        {demo ? "Show live data" : "Show demo data"}
-      </button>}
-    </div>
     <section className="space-y-2 pt-2">
       <div className="flex flex-wrap items-center justify-between gap-3 px-1">
         <h2 className="text-sm font-semibold">Audiences</h2>
@@ -85,7 +72,7 @@ export default function NativePaywallsPanel({ appId, report: liveReport }: { app
         <div className="flex flex-wrap gap-2" role="group" aria-label="Language audience">
           {availableLanguages.map((code) => <button type="button" key={code} aria-pressed={code === selectedLanguage} onClick={() => setLanguage(code)} className={cn(DASHBOARD_TAB_CLASS, "h-8 px-3", code === selectedLanguage ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS)}><span aria-hidden="true" className="mr-1.5">{languageFlags[code] ?? "🌐"}</span>{languages[code] ?? code.toUpperCase()}</button>)}
         </div>
-        <p className="text-xs leading-relaxed text-muted-foreground">{demo ? "Explore the sample audiences and observation windows. " : "The date filter selects when users joined. Proceeds follow those users through today. "}Estimated APPU uses only users with a full {horizon} days of observation, including those who never pay; it is not a lifetime forecast.</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">The date filter selects when users joined. Proceeds follow those users through today. Estimated APPU uses only users with a full {horizon} days of observation, including those who never pay; it is not a lifetime forecast.</p>
         {report?.warnings.map((warning) => <p role="status" key={warning} className="text-xs text-amber-700">{warning}</p>)}
       </div>
     </section>
@@ -148,7 +135,12 @@ function ResultsTable({ title, rows, horizon, experiment, language, placement = 
         <tbody>{sortedRows.map((row) => {
           const estimate = row.estimates[horizon];
           const allocation = !placement && experiment ? nativePaywallAllocation(experiment, row.id, row.paywall, language) : null;
-          return <tr key={row.id} className="border-b border-black/[0.04] last:border-0">
+          const refundRate = row.grossRevenue > 0 ? row.refunds / row.grossRevenue : null;
+          const highRefundRate = refundRate != null && refundRate > 0.1;
+          return <tr key={row.id} className={cn(
+            "border-b border-black/[0.04] last:border-0",
+            highRefundRate && "border-red-200 bg-red-100/80 text-red-950 [&_.text-muted-foreground]:text-red-700",
+          )}>
             <td className="px-5 py-4"><div className="flex items-center gap-2 font-medium"><span>{row.label}</span>{allocation != null && <span
               className="inline-flex shrink-0 rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-[#1d4ed8]"
               title="Hardcoded allocation in the app, not observed traffic or confirmation of App Store rollout."
@@ -168,7 +160,7 @@ function ResultsTable({ title, rows, horizon, experiment, language, placement = 
             <Cell><span title={`${count(row.paid)} users have paid`}>{count(row.conversions)}</span></Cell>
             <Cell>{currency(row.proceeds)}</Cell>
             <Cell><div>{estimate.appu == null ? "—" : currency(estimate.appu)}</div><div className="mt-1 text-[10px] text-muted-foreground">{count(estimate.users)} mature users</div></Cell>
-            <Cell>{currency(row.refunds)}</Cell><Cell>{percent(row.grossRevenue > 0 ? row.refunds / row.grossRevenue : null)}</Cell>
+            <Cell>{currency(row.refunds)}</Cell><Cell>{percent(refundRate)}</Cell>
           </tr>;
         })}</tbody>
         </table>
