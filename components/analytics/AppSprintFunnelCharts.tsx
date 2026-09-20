@@ -48,6 +48,7 @@ export function VisitorsRevenueChart({
   visitLabel = "Visitors",
   revenueLabel = "Revenue",
   rateLabel,
+  timeZone = "UTC",
   notes = [],
   action,
   onAddNote,
@@ -58,6 +59,7 @@ export function VisitorsRevenueChart({
   visitLabel?: string;
   revenueLabel?: string;
   rateLabel?: string;
+  timeZone?: string;
   notes?: AnalyticsChartNote[];
   action?: ReactNode;
   onAddNote?: (date: string) => void;
@@ -146,7 +148,7 @@ export function VisitorsRevenueChart({
               axisLine={false}
               tickMargin={8}
               minTickGap={24}
-              tickFormatter={(value: number) => formatChartDate(value)}
+              tickFormatter={(value: number) => formatChartDate(value, timeZone)}
             />
             <YAxis
               yAxisId="visits"
@@ -167,7 +169,7 @@ export function VisitorsRevenueChart({
             />
             {hasRate ? <YAxis yAxisId="rate" domain={[0, 1]} hide /> : null}
             <Tooltip
-              content={<TrendTooltip visitLabel={visitLabel} revenueLabel={revenueLabel} rateLabel={rateLabel} />}
+              content={<TrendTooltip visitLabel={visitLabel} revenueLabel={revenueLabel} rateLabel={rateLabel} timeZone={timeZone} />}
               cursor={{ stroke: "var(--border)", strokeDasharray: "3 3" }}
             />
             {visibleNotes.map((note) => (
@@ -236,7 +238,7 @@ export function VisitorsRevenueChart({
                 legendType="none"
               />
             ) : null}
-            {onAddNote ? <ChartNoteButton points={chartData} onAddNote={onAddNote} /> : null}
+            {onAddNote ? <ChartNoteButton points={chartData} onAddNote={onAddNote} timeZone={timeZone} /> : null}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -247,9 +249,11 @@ export function VisitorsRevenueChart({
 function ChartNoteButton({
   points,
   onAddNote,
+  timeZone,
 }: {
   points: readonly { date: string; timestamp: number }[];
   onAddNote: (date: string) => void;
+  timeZone: string;
 }) {
   // Axis-level hover also works over lines, gaps and zero-revenue dates.
   const activeLabel = useActiveTooltipLabel();
@@ -265,8 +269,8 @@ function ChartNoteButton({
       <foreignObject x={x - 14} y={y - 14} width={28} height={28}>
         <button
           type="button"
-          aria-label={`Add note for ${formatLongDate(point.date)}`}
-          title={`Add note for ${formatLongDate(point.date)}`}
+          aria-label={`Add note for ${formatLongDate(point.date, timeZone)}`}
+          title={`Add note for ${formatLongDate(point.date, timeZone)}`}
           onClick={(event) => {
             event.stopPropagation();
             onAddNote(point.date);
@@ -445,6 +449,7 @@ function TrendTooltip({
   visitLabel = "Visitors",
   revenueLabel = "Revenue",
   rateLabel,
+  timeZone,
 }: {
   active?: boolean;
   payload?: { payload: FunnelTrendPoint }[];
@@ -452,6 +457,7 @@ function TrendTooltip({
   visitLabel?: string;
   revenueLabel?: string;
   rateLabel?: string;
+  timeZone: string;
 }) {
   if (!active || !payload?.length) return null;
   const row = payload[0]?.payload;
@@ -460,7 +466,7 @@ function TrendTooltip({
   return (
     <div className="dashboard-tooltip-shadow w-[16rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-popover text-xs text-popover-foreground ring-1 ring-foreground/5">
       <div className="grid gap-2 px-2.5 py-2">
-        <div className="font-medium text-foreground">{formatLongDate(label ?? row.date)}</div>
+        <div className="font-medium text-foreground">{formatLongDate(label ?? row.date, timeZone)}</div>
         <div className="grid gap-1.5">
           <TooltipMetric label={visitLabel} value={formatInteger(row.visits)} color={VISIT_COLOR} />
           <TooltipMetric label={revenueLabel} value={formatCurrency(row.revenue)} color={REVENUE_COLOR} />
@@ -508,18 +514,18 @@ function ChartEmpty({ children }: { children: React.ReactNode }) {
   );
 }
 
-function formatChartDate(value: string | number) {
+function formatChartDate(value: string | number, timeZone: string) {
   const includesTime = typeof value === "number" || value.includes("T");
   return new Intl.DateTimeFormat("en-US", includesTime
-    ? { month: "short", day: "numeric", hour: "numeric", timeZone: "UTC" }
-    : { month: "short", day: "numeric", timeZone: "UTC" },
+    ? { month: "short", day: "numeric", hour: "numeric", timeZone, ...(timeZone === "Europe/Paris" ? { hourCycle: "h23" as const } : {}) }
+    : { month: "short", day: "numeric", timeZone },
   ).format(parseChartDate(value));
 }
 
-function formatLongDate(value: string | number) {
+function formatLongDate(value: string | number, timeZone: string) {
   return new Intl.DateTimeFormat("en-US", typeof value === "number" || value.includes("T")
-    ? { month: "short", day: "numeric", year: "numeric", hour: "numeric", timeZone: "UTC" }
-    : { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" },
+    ? { month: "short", day: "numeric", year: "numeric", hour: "numeric", timeZone, ...(timeZone === "Europe/Paris" ? { hourCycle: "h23" as const, minute: "2-digit" as const, timeZoneName: "shortOffset" as const } : {}) }
+    : { month: "short", day: "numeric", year: "numeric", timeZone },
   ).format(parseChartDate(value));
 }
 

@@ -155,7 +155,7 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-experiments"
           className="space-y-4"
         >
-          <AppExperimentMap appId={appId} />
+          <AppExperimentMap appId={appId} experiments={experiments} nativePaywalls={nativePaywalls} />
           {experiments.length > 0 ? experiments.map((experiment) => (
             <AppExperimentCard
               key={experiment.id}

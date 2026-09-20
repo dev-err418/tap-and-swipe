@@ -34,3 +34,15 @@ test("ordinary subscription cancellation is not a refund", () => {
   const result = pokyNativeRecoveryExperiment([assignment("a", "holdout")], [event("a", 50, 2), event("a", 50, 3, "a", "cancellation")], new Map(), start, start + DAY, start + 10 * DAY);
   assert.equal(result.variants[0].proceeds, 50);
 });
+
+test("legacy campaign attributes never populate the hardcoded recovery test", () => {
+  const result = pokyNativeRecoveryExperiment([
+    { appUserId: "old", key: "recovery_variant", value: "611637" },
+    { ...assignment("old", "recovery"), key: "gp1_a_legacy_superwall_recovery" },
+    assignment("native", "holdout", "fr"),
+  ], [event("old", 100, 2)], new Map(), start, start + DAY, start + 10 * DAY);
+  assert.equal(result.id, "poky-native-recovery-holdout");
+  assert.match(result.subtitle, /Hardcoded paywalls/);
+  assert.deepEqual(result.variants.map((variant) => variant.users), [1, 0]);
+  assert.equal(result.variants.reduce((sum, variant) => sum + variant.proceeds, 0), 0);
+});

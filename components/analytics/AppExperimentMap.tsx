@@ -1,5 +1,12 @@
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import { appExperimentFlow } from "@/lib/app-experiment-flow";
+import type {
+  MobileAppExperiment,
+  MobileAppExperimentScoreMetric,
+  MobileAppExperimentVariant,
+} from "@/lib/mobile-app-analytics";
+import type { NativePaywallReport, NativePaywallRow } from "@/lib/native-paywall-analytics";
+import { analyzeExperiment, type ExperimentArm } from "@/lib/experiment-stats";
 
 const TONES = {
   blue: { line: "#a8b9eb", ink: "#284dae", fill: "#f5f7ff", border: "#dce4f8" },
@@ -7,10 +14,29 @@ const TONES = {
   neutral: { line: "#c8cbd2", ink: "#525866", fill: "#fafafa", border: "#e8e9ec" },
 };
 
-export default function AppExperimentMap({ appId }: { appId: string }) {
+export default function AppExperimentMap({
+  appId,
+  experiments = [],
+  nativePaywalls = null,
+}: {
+  appId: string;
+  experiments?: MobileAppExperiment[];
+  nativePaywalls?: NativePaywallReport | null;
+}) {
   const flow = appExperimentFlow(appId);
   if (!flow) return null;
   const nodes = new Map(flow.nodes.map((node) => [node.id, node]));
+  const bestVariants = currentBestVariantResults(experiments);
+  const paywallMetrics = currentPaywallMetrics(flow.nodes, nativePaywalls);
+  const bestNodeIds = new Set(flow.nodes.flatMap((node) => {
+    const experimentBest = node.experimentId ? bestVariants.get(node.experimentId) : null;
+    const isExperimentBest = node.paywallMetric == null
+      && node.experimentId != null
+      && node.variantId != null
+      && node.variantId === experimentBest?.key;
+    const isPaywallBest = paywallMetrics.get(node.id)?.isBest === true;
+    return isExperimentBest || isPaywallBest ? [node.id] : [];
+  }));
 
   return (
     <DashboardCard
@@ -39,6 +65,10 @@ export default function AppExperimentMap({ appId }: { appId: string }) {
             const from = nodes.get(edge.from)!;
             const to = nodes.get(edge.to)!;
             const tone = TONES[to.tone];
+            const isBestPath = bestNodeIds.has(edge.from) || bestNodeIds.has(edge.to);
+            const pathLine = isBestPath ? "#6f89d8" : tone.line;
+            const pathInk = isBestPath ? "#284dae" : tone.ink;
+            const pathFill = isBestPath ? "#e5ebff" : tone.fill;
             const startX = from.x + from.width + (from.kind === "start" ? 6 : 0);
             const curveX = startX + (to.x - startX) * 0.4;
             const badgeX = to.x - 43;
@@ -46,14 +76,14 @@ export default function AppExperimentMap({ appId }: { appId: string }) {
               <g key={`${edge.from}-${edge.to}`}>
                 <path
                   d={`M ${startX} ${from.y} C ${curveX} ${from.y}, ${curveX} ${to.y}, ${to.x - 28} ${to.y} H ${to.x}`}
-                  fill="none" stroke={tone.line} strokeWidth={1.5}
+                  fill="none" stroke={pathLine} strokeWidth={isBestPath ? 3 : 1.5}
                   strokeDasharray={edge.conditional ? "4 4" : undefined}
                 />
-                <path d={`M ${to.x - 5} ${to.y - 3} L ${to.x} ${to.y} L ${to.x - 5} ${to.y + 3}`} fill="none" stroke={tone.line} strokeWidth={1.5} />
+                <path d={`M ${to.x - 5} ${to.y - 3} L ${to.x} ${to.y} L ${to.x - 5} ${to.y + 3}`} fill="none" stroke={pathLine} strokeWidth={isBestPath ? 3 : 1.5} />
                 {edge.label ? (
                   <g>
-                    <rect x={badgeX - 23} y={to.y - 11} width={46} height={22} rx={11} fill={tone.fill} stroke={tone.line} />
-                    <text x={badgeX} y={to.y} dy="0.35em" textAnchor="middle" fill={tone.ink} fontSize={12} className="tabular-nums">{edge.label}</text>
+                    <rect x={badgeX - 23} y={to.y - 11} width={46} height={22} rx={11} fill={pathFill} stroke={pathLine} strokeWidth={isBestPath ? 1.5 : 1} />
+                    <text x={badgeX} y={to.y} dy="0.35em" textAnchor="middle" fill={pathInk} fontSize={12} fontWeight={isBestPath ? 700 : undefined} className="tabular-nums">{edge.label}</text>
                   </g>
                 ) : null}
               </g>
@@ -61,6 +91,18 @@ export default function AppExperimentMap({ appId }: { appId: string }) {
           })}
           {flow.nodes.map((node) => {
             const tone = TONES[node.tone];
+            const bestResult = node.experimentId ? bestVariants.get(node.experimentId) : null;
+            const isExperimentBest = node.paywallMetric == null
+              && node.experimentId != null
+              && node.variantId === bestResult?.key;
+            const paywallMetric = paywallMetrics.get(node.id);
+            const showsPaywallMetrics = node.paywallMetric != null;
+            const isBest = isExperimentBest || paywallMetric?.isBest === true;
+            const cardDetail = isExperimentBest
+              ? formatBestResult(bestResult)
+              : showsPaywallMetrics
+                ? formatPaywallMetric(paywallMetric)
+                : node.detail;
             if (node.kind === "start") {
               return (
                 <g key={node.id}>
@@ -72,9 +114,24 @@ export default function AppExperimentMap({ appId }: { appId: string }) {
             }
             return (
               <g key={node.id}>
-                <rect x={node.x} y={node.y - 26} width={node.width} height={52} rx={13} fill={tone.fill} stroke={tone.border} />
-                <text x={node.x + 12} y={node.y + (node.detail ? -4 : 4)} fill="#252525" fontSize={13}>{node.label}</text>
-                {node.detail ? <text x={node.x + 12} y={node.y + 14} fill="#717171" fontSize={10.5}>{node.detail}</text> : null}
+                <rect
+                  x={node.x} y={node.y - 26} width={node.width} height={52} rx={13}
+                  fill={isBest ? "#e5ebff" : tone.fill}
+                  stroke={isBest ? "#6f89d8" : tone.border}
+                  strokeWidth={isBest ? 2 : 1}
+                />
+                <text x={node.x + 12} y={node.y + (cardDetail ? -4 : 4)} fill="#252525" fontSize={13}>{node.label}</text>
+                {cardDetail ? (
+                  <text
+                    x={node.x + 12} y={node.y + 14}
+                    fill={showsPaywallMetrics ? "#a95317" : isBest ? "#284dae" : "#717171"}
+                    fontSize={isExperimentBest ? 9.5 : 10.5}
+                    fontWeight={isBest || showsPaywallMetrics ? 600 : undefined}
+                    className={isBest || showsPaywallMetrics ? "tabular-nums" : undefined}
+                  >
+                    {cardDetail}
+                  </text>
+                ) : null}
               </g>
             );
           })}
@@ -85,4 +142,131 @@ export default function AppExperimentMap({ appId }: { appId: string }) {
       </div>
     </DashboardCard>
   );
+}
+
+type PaywallMetricNode = {
+  id: string;
+  paywallMetric?: { experiment: string; variant: string; language: string };
+};
+
+export function currentPaywallMetrics(nodes: PaywallMetricNode[], report: NativePaywallReport | null) {
+  const metrics = new Map<string, { appu: number | null; conversionRate: number | null; isBest: boolean }>();
+  for (const node of nodes) {
+    if (!node.paywallMetric) continue;
+    const source = node.paywallMetric;
+    const group = report?.status === "ready"
+      ? report.groups.find((candidate) => candidate.experiment === source.experiment && candidate.language === source.language)
+      : null;
+    const row = group?.paywalls.find((candidate) => matchesPaywallVariant(candidate, source.variant));
+    const appu = row && row.users > 0 ? row.proceeds / row.users : null;
+    const ranked = group?.paywalls.flatMap((candidate) => candidate.users > 0
+      ? [{ id: candidate.id, appu: candidate.proceeds / candidate.users }]
+      : []) ?? [];
+    const maximum = ranked.length > 1 ? Math.max(...ranked.map((candidate) => candidate.appu)) : null;
+    const leaders = maximum == null ? [] : ranked.filter((candidate) => candidate.appu === maximum);
+    metrics.set(node.id, {
+      appu,
+      conversionRate: row && row.views > 0 ? row.conversions / row.views : null,
+      isBest: row != null && leaders.length === 1 && leaders[0].id === row.id,
+    });
+  }
+  return metrics;
+}
+
+function matchesPaywallVariant(row: NativePaywallRow, variant: string) {
+  return row.paywall === variant || row.id === variant || row.id.startsWith(`${variant}|`);
+}
+
+function formatAppu(value: number | null | undefined) {
+  return value == null ? "—" : new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatConversionRate(value: number | null | undefined) {
+  return value == null ? "—" : `${(value * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;
+}
+
+function formatPaywallMetric(metric: { appu: number | null; conversionRate: number | null } | null | undefined) {
+  return `APPU ${formatAppu(metric?.appu)} · CR ${formatConversionRate(metric?.conversionRate)}`;
+}
+
+export function currentBestVariants(experiments: MobileAppExperiment[]) {
+  return new Map([...currentBestVariantResults(experiments)].map(([id, result]) => [id, result.key]));
+}
+
+export function currentBestVariantResults(experiments: MobileAppExperiment[]) {
+  const best = new Map<string, { key: string; confidence: number | null; lift: number | null }>();
+  for (const experiment of experiments) {
+    const metric = experiment.scoreMetrics?.[0] ?? "appu";
+    const ranked = experiment.variants.map((variant) => ({
+      key: variant.key,
+      value: scoreValue(variant, metric, experiment.sessionDays),
+    }));
+    if (ranked.length < 2 || ranked.some((row) => row.value == null)) continue;
+    const ordered = [...ranked].sort((a, b) => b.value! - a.value!);
+    if (ordered[0].value === ordered[1].value) continue;
+    const analysis = analyzeExperiment(scoreArms(experiment, metric), metric === "download_paid" ? "conversion_rate" : "revenue_per_visitor", metric);
+    const winner = analysis.variants.find((variant) => variant.key === ordered[0].key);
+    const runnerUp = ordered[1].value!;
+    best.set(experiment.id, {
+      key: ordered[0].key,
+      confidence: winner?.chanceToWin ?? null,
+      lift: runnerUp > 0 ? ordered[0].value! / runnerUp - 1 : null,
+    });
+  }
+  return best;
+}
+
+function scoreArms(experiment: MobileAppExperiment, metric: MobileAppExperimentScoreMetric): ExperimentArm[] {
+  return experiment.variants.map((variant) => ({
+    key: variant.key,
+    label: variant.label,
+    exposures: scoreExposure(variant, metric),
+    conversions: metric === "sessions_per_day" ? Math.min(variant.users, variant.sessions) : variant.paid,
+    revenue: scoreRevenue(variant, metric, experiment.sessionDays),
+  }));
+}
+
+function scoreExposure(variant: MobileAppExperimentVariant, metric: MobileAppExperimentScoreMetric) {
+  if (metric === "sessions_per_day") return variant.users;
+  if (metric === "appu_d7") return variant.installsD7;
+  if (metric === "appu_d14") return variant.installsD14;
+  if (metric === "appu_d30") return variant.installsD30;
+  return variant.installs;
+}
+
+function scoreRevenue(variant: MobileAppExperimentVariant, metric: MobileAppExperimentScoreMetric, sessionDays = 1) {
+  if (metric === "sessions_per_day") return variant.sessions / Math.max(1, sessionDays);
+  if (metric === "download_paid") return 0;
+  if (metric === "appu_d7") return variant.proceedsD7;
+  if (metric === "appu_d14") return variant.proceedsD14;
+  if (metric === "appu_d30") return variant.proceedsD30;
+  return variant.proceeds;
+}
+
+function formatBestResult(result: { confidence: number | null; lift: number | null } | null | undefined) {
+  const confidence = result?.confidence == null ? "— conf" : `${Math.round(result.confidence * 100)}% conf`;
+  const lift = result?.lift == null ? null : `+${(result.lift * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}% better`;
+  return lift ? `${confidence} · ${lift}` : confidence;
+}
+
+function scoreValue(
+  variant: MobileAppExperimentVariant,
+  metric: MobileAppExperimentScoreMetric,
+  sessionDays = 1,
+) {
+  if (metric === "sessions_per_day") return ratioOrNull(variant.sessions, variant.users * Math.max(1, sessionDays));
+  if (metric === "download_paid") return ratioOrNull(variant.paid, variant.installs);
+  if (metric === "appu_d7") return ratioOrNull(variant.proceedsD7, variant.installsD7);
+  if (metric === "appu_d14") return ratioOrNull(variant.proceedsD14, variant.installsD14);
+  if (metric === "appu_d30") return ratioOrNull(variant.proceedsD30, variant.installsD30);
+  return ratioOrNull(variant.proceeds, variant.installs);
+}
+
+function ratioOrNull(part: number, total: number) {
+  return total > 0 && Number.isFinite(part) && Number.isFinite(total) ? part / total : null;
 }

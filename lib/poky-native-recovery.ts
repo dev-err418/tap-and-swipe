@@ -48,5 +48,5 @@ export function pokyNativeRecoveryExperiment(attributes: PaywallAttribute[], eve
       for (const days of [7, 14, 30] as const) if (a.at + days * DAY <= asOf && e.eventTs < a.at + days * DAY) s[`proceedsD${days}`] += e.netProceeds;
     }
   }
-  return { id: "poky-native-recovery-holdout", title: "Recovery A/B test", subtitle: "Native · all proceeds after first eligibility, regardless of purchase placement", variants, scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"], showUsers: true, showInstalls: false, showDownloadPaid: false };
+  return { id: "poky-native-recovery-holdout", title: "Recovery A/B test", subtitle: "Hardcoded paywalls · Recovery / No recovery 50/50 · all proceeds after first eligibility", variants, scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"], showUsers: true, showInstalls: false, showDownloadPaid: false };
 }

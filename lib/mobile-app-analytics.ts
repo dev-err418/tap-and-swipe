@@ -1,4 +1,6 @@
 import "server-only";
+import { orderAppExperiments } from "./app-experiment-order";
+import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
 import { loadNativePaywalls } from "./native-paywall-queries";
 import type { NativePaywallReport } from "./native-paywall-analytics";
 import { POKY_NATIVE_RECOVERY_KEYS, pokyNativeRecoveryExperiment } from "./poky-native-recovery";
@@ -133,12 +135,7 @@ const VERSY_SUPERWALL_ORGANIZATION_ID = 25476;
 const VERSY_SUPERWALL_APPLICATION_ID = 51393;
 const GLOW_SUPERWALL_ORGANIZATION_ID = 27020;
 const GLOW_SUPERWALL_APPLICATION_ID = 54736;
-const ALL_TIME_START = new Date("2024-01-01T00:00:00.000Z");
 const GLOW_NATIVE_PAYWALL_MIN_VERSION = [1, 7, 0] as const;
-const POKY_RECOVERY_STARTED_AT = "2026-09-18T16:04:58.000Z";
-const POKY_RECOVERY_STARTED_MS = Date.parse(POKY_RECOVERY_STARTED_AT);
-const POKY_RECOVERY_TREATMENT_VARIANTS = new Set(["611637", "611646", "611649", "611652"]);
-const POKY_RECOVERY_HOLDOUT_VARIANTS = new Set(["635510", "635511", "635512", "635513"]);
 const ANALYTICS_CACHE_MS = 90_000;
 const MAX_QUERY_CONCURRENCY = 6;
 const EVENT_DUMP_LIMIT = 50_000;
@@ -187,14 +184,6 @@ type AttributedRow = {
   expiresAt: number;
 };
 
-type RecoveryAssignmentRow = {
-  appUserId: string;
-  result: string;
-  variantId: string;
-  country: string;
-  ts: string;
-};
-
 type SessionRow = {
   appUserId: string;
   country: string;
@@ -209,7 +198,6 @@ type AppFacts = {
   attributes: Map<string, Record<string, string>>;
   events: AttributedRow[];
   sessions: SessionRow[];
-  recoveryAssignments: RecoveryAssignmentRow[];
 };
 
 type AttributeExperimentDefinition = {
@@ -457,7 +445,7 @@ async function loadSuperwallAppAnalytics(
     countries,
     plans,
     retention,
-    experiments,
+    experiments: orderAppExperiments(app.id, experiments),
     trialCancelTiming,
     nativePaywalls: paywallResult.status === "fulfilled" ? paywallResult.value : {
       status: "unavailable", asOf: Date.now(), groups: [], warnings: ["Paywall reporting is temporarily unavailable."],
@@ -474,12 +462,11 @@ async function loadAppFacts(
 ): Promise<AppFacts> {
   const keys = attributeKeysFor(app.id);
   const sessionRange = sessionWindow(startMs, endMs);
-  const [installResult, attributeResult, eventResult, sessionResult, recoveryResult] = await Promise.allSettled([
+  const [installResult, attributeResult, eventResult, sessionResult] = await Promise.allSettled([
     fetchInstallCohort(app, start, end),
     keys.length ? fetchUserAttributes(app, keys) : Promise.resolve([]),
     fetchAttributedEvents(app, start),
     app.id === "poky" ? fetchSessionStarts(app, sessionRange.from, sessionRange.to) : Promise.resolve([]),
-    app.id === "poky" ? getPokyRecoveryAssignments(app, start, end) : Promise.resolve([]),
   ]);
 
   for (const [label, result] of [
@@ -487,7 +474,6 @@ async function loadAppFacts(
     ["attributes", attributeResult],
     ["events", eventResult],
     ["sessions", sessionResult],
-    ["recovery", recoveryResult],
   ] as const) {
     if (result.status === "rejected") {
       logAnalytics("tap_and_swipe.mobile_app_facts_partial", {
@@ -506,7 +492,6 @@ async function loadAppFacts(
     attributes: attributeResult.status === "fulfilled" ? attributeMap(attributeResult.value) : new Map(),
     events: eventResult.status === "fulfilled" ? eventResult.value : [],
     sessions: sessionResult.status === "fulfilled" ? sessionResult.value : [],
-    recoveryAssignments: recoveryResult.status === "fulfilled" ? recoveryResult.value : [],
   };
 }
 
@@ -937,7 +922,6 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
       [...facts.attributes].flatMap(([appUserId, attrs]) => Object.entries(attrs).map(([key, value]) => ({ appUserId, key, value }))),
       facts.events, new Map(facts.installs.map((row) => [row.appUserId, row.country])), facts.startMs, facts.endMs,
     ),
-    pokyRecoveryExperiment(facts),
     attributeExperiment(facts, {
       id: "poky-animated-plan",
       title: "Animated plan A/B test",
@@ -1000,76 +984,6 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
       showRetention: true,
     }),
   ];
-}
-
-function pokyRecoveryExperiment(facts: AppFacts): MobileAppExperiment {
-  const recovery = emptyExperimentVariant("recovery", "Recovery paywall");
-  const none = emptyExperimentVariant("none", "None");
-  const byUser = new Map<string, { arm: "recovery" | "none"; country: string; assignedAt: number }>();
-  for (const row of facts.recoveryAssignments) {
-    const arm = recoveryArmForTrigger(row.variantId, row.result);
-    if (!arm) continue;
-    const assignedAt = parseTs(row.ts);
-    if (!Number.isFinite(assignedAt)) continue;
-    const current = byUser.get(row.appUserId);
-    if (current && current.assignedAt <= assignedAt) continue;
-    byUser.set(row.appUserId, { arm, country: normalizeCountry(row.country), assignedAt });
-  }
-
-  const now = Date.now();
-  for (const row of byUser.values()) {
-    const target = row.arm === "none" ? none : recovery;
-    addExperimentMetrics(target, {
-      country: row.country,
-      installs: 1,
-      installsD7: row.assignedAt + 7 * DAY_MS <= now ? 1 : 0,
-      installsD14: row.assignedAt + 14 * DAY_MS <= now ? 1 : 0,
-      installsD30: row.assignedAt + 30 * DAY_MS <= now ? 1 : 0,
-    });
-  }
-
-  const paidUsers = new Set<string>();
-  for (const event of facts.events) {
-    if (!event.appUserId) continue;
-    const assignment = byUser.get(event.appUserId);
-    if (!assignment) continue;
-    if (event.eventTs < assignment.assignedAt) continue;
-    if (event.eventTs < POKY_RECOVERY_STARTED_MS || event.eventTs >= facts.endMs) continue;
-    const target = assignment.arm === "none" ? none : recovery;
-    if (event.netProceeds != null && isMoneyEvent(event)) {
-      const firstPaid = event.netProceeds > 0 && !paidUsers.has(event.appUserId);
-      if (firstPaid) paidUsers.add(event.appUserId);
-      addExperimentMetrics(target, {
-        country: assignment.country,
-        proceeds: event.netProceeds,
-        paid: firstPaid ? 1 : 0,
-        proceedsD7: tenureProceeds(assignment.assignedAt, event.eventTs, now, 7, event.netProceeds),
-        proceedsD14: tenureProceeds(assignment.assignedAt, event.eventTs, now, 14, event.netProceeds),
-        proceedsD30: tenureProceeds(assignment.assignedAt, event.eventTs, now, 30, event.netProceeds),
-      });
-    }
-  }
-
-  const byTxn = subscriptionStarts(facts.events, POKY_RECOVERY_STARTED_MS, facts.endMs);
-  for (const row of byTxn.values()) {
-    if (!row.appUserId) continue;
-    const assignment = byUser.get(row.appUserId);
-    if (!assignment || row.startedAt < assignment.assignedAt) continue;
-    const target = assignment.arm === "none" ? none : recovery;
-    addExperimentMetrics(target, {
-      country: assignment.country,
-      ...retentionMetrics(row.startedAt, row.expiresAt, now),
-    });
-  }
-
-  return {
-    id: "poky-recovery-holdout",
-    title: "Recovery A/B test (legacy Superwall)",
-    subtitle: "Historical campaign · recovery paywall vs none",
-    scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"],
-    showRetention: true,
-    variants: [none, recovery],
-  };
 }
 
 function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDefinition): MobileAppExperiment {
@@ -1315,52 +1229,6 @@ const TRIAL_CANCEL_BUCKETS: { key: string; label: string; maxMinutes: number; hi
   { key: "2-3d", label: "2–3d", maxMinutes: 72 * 60 },
 ];
 
-function recoveryArmForTrigger(variantId: string, result: string): "recovery" | "none" | null {
-  if (POKY_RECOVERY_HOLDOUT_VARIANTS.has(variantId) || result === "holdout") return "none";
-  if (POKY_RECOVERY_TREATMENT_VARIANTS.has(variantId) && (result === "present" || result === "")) return "recovery";
-  return null;
-}
-
-async function getPokyRecoveryAssignments(app: SuperwallAppConfig, start: string, end: string) {
-  const from = Math.max(Date.parse(`${start.replace(" ", "T")}Z`), POKY_RECOVERY_STARTED_MS);
-  const to = Math.min(Date.parse(`${end.replace(" ", "T")}Z`), Date.now());
-  if (!Number.isFinite(from) || !Number.isFinite(to) || from >= to) return [];
-  const windows = eventRepWindows(from, to);
-  const chunks = await Promise.allSettled(
-    windows.map(([winStart, winEnd]) =>
-      querySuperwall<{
-        appUserId: string;
-        result: string;
-        variantId: string;
-        country: string;
-        ts: string;
-      }>(
-        `
-SELECT
-  appUserId,
-  JSONExtractString(props, '$result') AS result,
-  JSONExtractString(props, '$variant_id') AS variantId,
-  upper(ifNull(nullIf(JSONExtractString(headers, 'Cf-Ipcountry'), ''), 'unknown')) AS country,
-  ts
-FROM sw.events_rep
-WHERE applicationId = ${app.applicationId}
-  AND isSandbox = 0
-  AND name = 'trigger_fire'
-  AND ts > toStartOfHour(toDateTime64('${winStart}', 6, 'UTC'))
-  AND ts < toDateTime64('${winEnd}', 6, 'UTC')
-  AND ts < now()
-  AND JSONExtractString(props, '$trigger_name') IN ('transaction_abandon', 'paywall_decline')
-LIMIT 20000
-FORMAT JSON
-`.trim(),
-        app.organizationId,
-        app.apiKey,
-      ),
-    ),
-  );
-  return chunks.flatMap((chunk) => (chunk.status === "fulfilled" ? chunk.value : []));
-}
-
 function eventRepWindows(fromMs: number, toMs: number) {
   const windows: [string, string][] = [];
   let cursor = fromMs;
@@ -1577,35 +1445,6 @@ function paidTrendFromFacts(facts: AppFacts, period: Period) {
     points.set(key, point);
   }
   return [...points.values()];
-}
-
-function trendBucket(date: Date, period: Period) {
-  const bucket = new Date(date);
-  if (period === "day" || period === "yesterday" || period === "3days") {
-    bucket.setUTCMinutes(0, 0, 0);
-  } else if (period === "week") {
-    bucket.setUTCHours(Math.floor(bucket.getUTCHours() / 4) * 4, 0, 0, 0);
-  } else {
-    bucket.setUTCHours(0, 0, 0, 0);
-  }
-  return bucket;
-}
-
-function periodRange(period: Period) {
-  const before = new Date();
-  const today = new Date(Date.UTC(before.getUTCFullYear(), before.getUTCMonth(), before.getUTCDate()));
-  if (period === "day") return { since: today, before };
-  if (period === "yesterday") return { since: new Date(today.getTime() - DAY_MS), before: today };
-  if (period === "3days") return { since: new Date(before.getTime() - 3 * DAY_MS), before };
-  if (period === "week") return { since: new Date(before.getTime() - 7 * DAY_MS), before };
-  if (period === "month") return { since: new Date(before.getTime() - 30 * DAY_MS), before };
-  return { since: ALL_TIME_START, before };
-}
-
-function superwallBucketExpression(period: Period) {
-  if (period === "day" || period === "yesterday" || period === "3days") return "toStartOfHour(ts)";
-  if (period === "week") return "toStartOfInterval(ts, INTERVAL 4 HOUR)";
-  return "toStartOfDay(ts)";
 }
 
 function clickhouseDate(date: Date) {

@@ -44,8 +44,15 @@ tests. It reads the four `gp1_a_poky_native_recovery_v1_<language>` attributes,
 deduplicates first eligibility per user across language changes, and measures
 **all** subsequent server proceeds for both arms. Later main-paywall purchases
 by a holdout count. The date filter selects eligibility, while outcomes follow
-the cohort through today; D7/D14/D30 include only fully observed users. Old
-Superwall trigger IDs remain in a separately labelled legacy recovery card.
+the cohort through today; D7/D14/D30 include only fully observed users. The old
+Superwall recovery card and trigger queries have been removed; historical
+campaign results are neither displayed nor mixed into the hardcoded experiment.
+The underlying historical source records are not deleted.
+
+Result cards follow the flow map from top to bottom (`lib/app-experiment-order.ts`):
+Glow onboarding → paywall comparison → yearly price; Poky app experience → plan
+flow → combined onboarding results → native recovery. Recovery nodes use the
+native experiment's `recovery` / `holdout` assignments for their result badges.
 
 The Paywalls tab is **direct purchase attribution**, not the causal recovery
 experiment: a recovery purchase credits recovery, not the earlier main view.
@@ -66,6 +73,8 @@ so Debug overrides cannot contaminate them even before the SDK labels a user san
 ### Temporary UI demo mode
 
 Both apps open in **Live data** mode. Glow retains an explicit demo toggle for design work: `lib/native-paywall-demo.ts` supplies seeded, fictional numbers labelled with v2 identities and allocation percentages. That fixture is never offered as Poky data. Date filters do not affect demo rows, the main chart remains live, and no sample records are sent to Superwall. Demo winner percentages are illustrative, not statistical results.
+
+The detailed app chart and note editor use `Europe/Paris`, independently of browser/server timezone. Today/Yesterday follow Paris calendar days (including 23/25-hour daylight-saving days); rolling 3/7/30-day filters remain elapsed-time windows. Four-hour buckets follow the Paris clock and daily buckets start at Paris midnight. `lib/app-analytics-time.ts` keeps SQL and purchase-event buckets aligned. Stored note timestamps and chart bucket timestamps remain UTC instants; never parse a Paris wall-clock string as UTC. Unrelated website funnel charts retain their existing timezone.
 
 ### Read-only live verification
 

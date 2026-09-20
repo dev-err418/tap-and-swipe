@@ -76,10 +76,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           branches: [{ id: "name-2", label: "Name - 2 · each language", percent: 100 }],
         },
         {
-          id: "poky-recovery-holdout", label: "Recovery", scope: "All 4 languages · any origin placement", tone: "orange",
+          id: "poky-native-recovery-holdout", label: "Recovery", scope: "Hardcoded paywalls · all 4 languages · any origin placement", tone: "orange",
           branches: [
             { id: "recovery", label: "Recovery paywall", percent: 50 },
-            { id: "none", label: "No recovery", percent: 50 },
+            { id: "holdout", label: "No recovery", percent: 50 },
           ],
         },
       ],

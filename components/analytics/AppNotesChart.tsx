@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { APP_ANALYTICS_TIME_ZONE, parisDatetimeLocalValue as toDatetimeLocalValue, parisDatetimeToDate } from "@/lib/app-analytics-time";
 import {
   VisitorsRevenueChart,
   type AnalyticsChartNote,
@@ -88,7 +89,7 @@ export default function AppNotesChart({ appId, data }: { appId: AppId; data: Fun
           title,
           content,
           appVersion,
-          notedAt: new Date(notedAt).toISOString(),
+          notedAt: parisDatetimeToDate(notedAt, editingNote?.notedAt).toISOString(),
         }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -128,6 +129,8 @@ export default function AppNotesChart({ appId, data }: { appId: AppId; data: Fun
     <>
       <VisitorsRevenueChart
         data={data}
+        timeZone={APP_ANALYTICS_TIME_ZONE}
+        action={<span className="text-[11px] text-muted-foreground" title="Europe/Paris · daylight saving adjusts automatically">Paris time</span>}
         visitLabel="Installs"
         revenueLabel="Proceeds"
         rateLabel="Install → paid"
@@ -199,7 +202,7 @@ export default function AppNotesChart({ appId, data }: { appId: AppId; data: Fun
             </DialogHeader>
 
             <label className="block text-sm">
-              <span className="font-medium text-black/70">Date and time</span>
+              <span className="font-medium text-black/70">Date and time (Paris)</span>
               <input
                 type="datetime-local"
                 required
@@ -273,15 +276,12 @@ export default function AppNotesChart({ appId, data }: { appId: AppId; data: Fun
   );
 }
 
-function toDatetimeLocalValue(date: Date) {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
 function formatNoteDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: APP_ANALYTICS_TIME_ZONE,
+    hourCycle: "h23",
   }).format(new Date(value));
 }
 
