@@ -15,6 +15,7 @@ import {
 import { sendLicenseKeyEmail } from "@/lib/aso-email";
 import { grantAccess } from "@/lib/grant-access";
 import { recordCommunityWhopPayment } from "@/lib/community-payment-analytics";
+import { communityEuroTierForPlan } from "@/lib/community-pricing-experiment";
 
 type WhopWebhookData = ReturnType<ReturnType<typeof getWhop>["webhooks"]["unwrap"]>;
 type WhopWebhookSource = "default" | "community";
@@ -153,6 +154,8 @@ function tierFromPlanId(
   planId: string | undefined
 ): "full" | "starter" | null {
   if (!planId) return null;
+  const euroTier = communityEuroTierForPlan(planId);
+  if (euroTier) return euroTier;
   if (planId === WHOP_STARTER_PLAN_ID) return "starter";
   if (planId === WHOP_COMMUNITY_PLAN_ID) return "full";
   return null;
@@ -520,6 +523,7 @@ export async function POST(request: NextRequest) {
           await recordCommunityWhopPayment({
             paymentId,
             membershipId,
+            planId: planIdFromPayload,
             visitorId,
             amountUsd: amount,
             currency: paymentCurrency(data),

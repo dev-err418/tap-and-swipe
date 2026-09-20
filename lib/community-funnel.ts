@@ -5,6 +5,9 @@ import type {
   AppSprintFunnelAnalytics,
   AppSprintFunnelBreakdownRow,
 } from "@/lib/appsprint-funnel";
+import {
+  assembleCommunityPricingExperiment,
+} from "@/lib/community-pricing-experiment";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -17,6 +20,7 @@ type FunnelEvent = {
   referrer: string | null;
   ref: string | null;
   revenue: number | null;
+  currency: string | null;
   createdAt: Date;
 };
 
@@ -57,6 +61,7 @@ export async function getCommunityFunnelAnalytics(
       referrer: true,
       ref: true,
       revenue: true,
+      currency: true,
       createdAt: true,
     },
     orderBy: { createdAt: "asc" },
@@ -214,6 +219,7 @@ function assembleAnalytics(
           referrerHost: normalizeHost(event.referrer),
         };
       }),
+    pricingExperiment: assembleCommunityPricingExperiment(events),
     heroPreviewExperiment: [],
   };
 }

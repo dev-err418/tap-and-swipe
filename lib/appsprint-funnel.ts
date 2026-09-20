@@ -71,14 +71,14 @@ export type AppSprintFunnelAnalytics = {
     referrerHost: string | null;
   }[];
   pricingExperiment?: {
-    variant: "legacy_usd" | "annual_108";
+    variant: string;
     label: string;
     visitors: number;
     paymentPageViews: number;
     trials: number;
     paid: number;
     revenue: number;
-    currency: "USD";
+    currency: string;
   }[];
   heroPreviewExperiment: {
     variant: string;

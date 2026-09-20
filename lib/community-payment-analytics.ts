@@ -1,8 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import {
+  communityPricingMarker,
+  communityPricingVariantForPlan,
+} from "@/lib/community-pricing-experiment";
 
 export async function recordCommunityWhopPayment(input: {
   paymentId: string;
   membershipId?: string;
+  planId?: string;
   visitorId?: string | null;
   amountUsd: number;
   currency?: string | null;
@@ -35,6 +40,10 @@ export async function recordCommunityWhopPayment(input: {
     orderBy: { createdAt: "desc" },
   });
   const type = input.billingReason === "subscription_cycle" ? "renewal" : "paid";
+  const pricingVariant = communityPricingVariantForPlan(input.planId);
+  const currency = pricingVariant
+    ? communityPricingMarker(pricingVariant)
+    : normalize(input.currency)?.toLowerCase() ?? "usd";
 
   await prisma.pageEvent.upsert({
     where: {
@@ -53,7 +62,7 @@ export async function recordCommunityWhopPayment(input: {
       referrer: attribution?.referrer ?? null,
       ref: attribution?.ref ?? null,
       revenue: Math.round(input.amountUsd * 100),
-      currency: normalize(input.currency)?.toLowerCase() ?? "usd",
+      currency,
       createdAt: occurredAt,
     },
     update: {
@@ -62,7 +71,7 @@ export async function recordCommunityWhopPayment(input: {
       referrer: attribution?.referrer ?? null,
       ref: attribution?.ref ?? null,
       revenue: Math.round(input.amountUsd * 100),
-      currency: normalize(input.currency)?.toLowerCase() ?? "usd",
+      currency,
       createdAt: occurredAt,
     },
   });

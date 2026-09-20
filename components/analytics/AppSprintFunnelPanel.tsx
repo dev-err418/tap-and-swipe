@@ -91,9 +91,9 @@ export default function AppSprintFunnelPanel({
           <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-black">Revenue / visitor</Th></tr></thead>
             <tbody>
-              {(analytics.pricingExperiment ?? []).map((row) => (
+              {(analytics.pricingExperiment ?? []).map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
-                  <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {row.variant === "legacy_usd" ? "A" : "B"}</Badge><span className="font-medium">{row.label}</span></div></Td>
+                  <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatPreciseCurrency(row.revenue)}</NumberTd><NumberTd className="font-bold">{formatPreciseCurrency(ratio(row.revenue, row.visitors))}</NumberTd>
                 </tr>
               ))}
@@ -552,4 +552,3 @@ function formatPreciseCurrency(value: number) { return new Intl.NumberFormat("en
 function finite(value: number) { return Number.isFinite(value) ? value : 0; }
 function countryFlag(code: string) { return code.toUpperCase().replace(/./g, (character) => String.fromCodePoint(127397 + character.charCodeAt(0))); }
 function countryName(code: string | null | undefined) { if (!code) return "Unknown"; try { return new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase()) ?? code; } catch { return code; } }
-
