@@ -28,6 +28,7 @@ import ProxyHealthPanel from "@/components/aso-debug/ProxyHealthPanel";
 import LicenseUsagePanel from "@/components/aso-debug/LicenseUsagePanel";
 import FeedbackPanel from "@/components/aso-debug/FeedbackPanel";
 import TrialAbusePanel from "@/components/aso-debug/TrialAbusePanel";
+import { activeABTestCount } from "@/lib/app-experiment-map";
 
 export const dynamic = "force-dynamic";
 
@@ -260,7 +261,16 @@ function websiteData(
         visitors: row.visits,
         revenue: row.revenue,
       }));
-  return { site, domain, metrics, trend };
+  return { site, domain, metrics, trend, activeTests: activeWebsiteABTestCount(analytics) };
+}
+
+function activeWebsiteABTestCount(analytics: AppSprintFunnelAnalytics) {
+  return [
+    analytics.pricingExperiment,
+    analytics.heroPreviewExperiment,
+    analytics.trialExperiment,
+    analytics.onboardingExperiment,
+  ].filter((rows) => new Set(rows?.map((row) => row.variant) ?? []).size > 1).length;
 }
 
 function WebsiteCard({
@@ -269,22 +279,25 @@ function WebsiteCard({
   domain,
   metrics,
   trend,
+  activeTests,
 }: {
   period: Period;
   site: WebsiteSite;
   domain: string;
   metrics: WebsiteMetricsRow;
   trend: WebsiteTrendPoint[];
+  activeTests: number;
 }) {
   const href = buildAnalyticsUrl({ period, site });
 
   return (
     <Link
       href={href}
-      className={`block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${DASHBOARD_SURFACE_CLASS}`}
+      className={`relative block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${DASHBOARD_SURFACE_CLASS}`}
     >
       <div className="pointer-events-none select-none">
-        <div className="flex items-center gap-3">
+        <ProjectExperimentBadge count={activeTests} />
+        <div className="flex items-center gap-3 pr-8">
           <WebsiteFavicon domain={domain} size="small" />
           <h2 className="truncate text-xl font-semibold tracking-tight">{domain}</h2>
         </div>
@@ -304,6 +317,7 @@ function WebsiteCard({
 }
 
 function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Period }) {
+  const activeTests = activeABTestCount(app.id);
   const points: WebsiteTrendPoint[] = app.trend.map((point) => ({
     bucket: point.bucket,
     visitors: point.downloads,
@@ -313,10 +327,11 @@ function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Perio
   return (
     <Link
       href={buildAnalyticsUrl({ period, app: app.id })}
-      className={`block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${DASHBOARD_SURFACE_CLASS}`}
+      className={`relative block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${DASHBOARD_SURFACE_CLASS}`}
     >
       <div className="pointer-events-none select-none">
-        <div className="flex items-center gap-3">
+        <ProjectExperimentBadge count={activeTests} />
+        <div className="flex items-center gap-3 pr-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={app.iconUrl}
@@ -339,6 +354,20 @@ function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Perio
         </p>
       </div>
     </Link>
+  );
+}
+
+function ProjectExperimentBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  const label = `${count} A/B ${count === 1 ? "test" : "tests"} running`;
+  return (
+    <span
+      aria-label={label}
+      title={label}
+      className="absolute top-4 right-4 inline-flex size-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold leading-none tabular-nums text-white shadow-sm ring-2 ring-white"
+    >
+      {count}
+    </span>
   );
 }
 

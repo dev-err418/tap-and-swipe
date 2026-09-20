@@ -97,3 +97,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
 
   return null;
 }
+
+export function activeABTestCount(appId: string) {
+  return appExperimentMap(appId)?.tests.filter((experiment) => experiment.branches.length > 1).length ?? 0;
+}

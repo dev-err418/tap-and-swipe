@@ -2,9 +2,10 @@ import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { getWhop, WHOP_COMMUNITY_PLAN_ID } from "@/lib/whop";
 
 export const dynamic = "force-dynamic";
+
+const WHOP_COMMUNITY_URL = "https://whop.com/appsprint-community/products/app-sprint-access/";
 
 export default async function CommunityRedirect({
   searchParams,
@@ -17,11 +18,6 @@ export default async function CommunityRedirect({
   const sessionId = randomUUID();
   const country = h.get("cf-ipcountry") || null;
   const ref = params.utm_code ?? params.ref ?? null;
-  const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const checkoutRedirectBase = configuredAppUrl.startsWith("https://")
-    ? configuredAppUrl.replace(/\/$/, "")
-    : "https://tap-and-swipe.com";
-
   let referrer: string | null = null;
   const referer = h.get("referer");
   if (referer) {
@@ -29,21 +25,6 @@ export default async function CommunityRedirect({
       referrer = new URL(referer).hostname.replace(/^www\./, "") || null;
     } catch {}
   }
-
-  const checkout = await getWhop().checkoutConfigurations.create({
-    plan_id: WHOP_COMMUNITY_PLAN_ID,
-    redirect_url: `${checkoutRedirectBase}/join-discord`,
-    metadata: {
-      visitorId,
-      country: country ?? "",
-      tier: "full",
-      ...(ref && { ref }),
-      ...(referrer && { referrer }),
-    },
-  });
-  const checkoutUrl = checkout.purchase_url.startsWith("http")
-    ? checkout.purchase_url
-    : `https://whop.com${checkout.purchase_url}`;
 
   await prisma.pageEvent.create({
     data: {
@@ -57,5 +38,5 @@ export default async function CommunityRedirect({
     },
   }).catch((error) => console.error("[community] analytics event failed", error));
 
-  redirect(checkoutUrl);
+  redirect(WHOP_COMMUNITY_URL);
 }

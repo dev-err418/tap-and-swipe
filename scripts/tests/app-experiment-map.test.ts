@@ -3,7 +3,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import AppExperimentMap, { currentBestVariants, currentPaywallMetrics } from "../../components/analytics/AppExperimentMap";
-import { appExperimentMap } from "../../lib/app-experiment-map";
+import { activeABTestCount, appExperimentMap } from "../../lib/app-experiment-map";
 import { appExperimentFlow } from "../../lib/app-experiment-flow";
 import type { MobileAppExperiment, MobileAppExperimentVariant } from "../../lib/mobile-app-analytics";
 import { NATIVE_PAYWALL_DEMO_REPORT } from "../../lib/native-paywall-demo";
@@ -47,6 +47,12 @@ test("Poky shows independent 50/50 tests, four 25% combinations, and localized s
 test("unsupported apps do not show invented experiments", () => {
   assert.equal(appExperimentMap("versy"), null);
   assert.equal(appExperimentMap("unknown"), null);
+});
+
+test("active A/B counts exclude historical comparisons and single-offer allocations", () => {
+  assert.equal(activeABTestCount("glow"), 2);
+  assert.equal(activeABTestCount("poky"), 4);
+  assert.equal(activeABTestCount("versy"), 0);
 });
 
 test("result cards follow the onboarding-to-paywall progression without mutating inputs", () => {
