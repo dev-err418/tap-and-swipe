@@ -1,4 +1,5 @@
 import { appExperimentMap, type AppExperimentMapDefinition } from "./app-experiment-map";
+import { formatPaywallAllocation } from "./native-paywall-allocation";
 
 export type ExperimentFlowNode = {
   id: string; x: number; y: number; width: number;
@@ -26,14 +27,15 @@ export function appExperimentFlow(appId: string): ExperimentFlow | null {
 
 function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   const [onboarding, paywalls, journalPractice] = map.tests;
+  const centerY = 64 + (paywalls.branches.length - 1) * 52;
   const nodes: ExperimentFlowNode[] = [
-    { id: "start", x: 36, y: 168, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
-    { id: "placements", x: 390, y: 168, width: 162, label: "Paywall entry", detail: "Same variant everywhere", tone: "neutral" },
+    { id: "start", x: 36, y: centerY, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
+    { id: "placements", x: 390, y: centerY, width: 162, label: "Paywall entry", detail: "Same variant everywhere", tone: "neutral" },
   ];
   const edges: ExperimentFlowEdge[] = [];
   onboarding.branches.forEach((branch, index) => {
     nodes.push({
-      id: branch.id, x: 164, y: 112 + index * 112, width: 142, label: branch.label, tone: "blue",
+      id: branch.id, x: 164, y: centerY - 56 + index * 112, width: 142, label: branch.label, tone: "blue",
       experimentId: onboarding.id, variantId: branch.id,
     });
     edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` }, { from: branch.id, to: "placements" });
@@ -43,19 +45,19 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
       id: branch.id, x: 684, y: 64 + index * 104, width: 180, label: branch.label, tone: "orange",
       paywallMetric: { experiment: paywalls.id, variant: branch.id, language: "all" },
     });
-    edges.push({ from: "placements", to: branch.id, label: `${branch.percent}%` });
+    edges.push({ from: "placements", to: branch.id, label: formatPaywallAllocation(branch.percent) });
   });
-  nodes.push({ id: "home", x: 960, y: 168, width: 140, label: "Home button", detail: "Enrollment off", tone: "neutral" });
+  nodes.push({ id: "home", x: 960, y: centerY, width: 140, label: "Home button", detail: "Next app release", tone: "neutral" });
   paywalls.branches.forEach((branch) => edges.push({ from: branch.id, to: "home" }));
   journalPractice.branches.forEach((branch, index) => {
-    nodes.push({ id: `home-${branch.id}`, x: 1210, y: 112 + index * 112, width: 150,
+    nodes.push({ id: `home-${branch.id}`, x: 1210, y: centerY - 56 + index * 112, width: 150,
       label: branch.label, tone: "blue", experimentId: journalPractice.id, variantId: branch.id });
     edges.push({ from: "home", to: `home-${branch.id}`, label: `${branch.percent}%` });
   });
   return {
-    width: 1396, height: 320, nodes, edges,
+    width: 1396, height: 112 + (paywalls.branches.length - 1) * 104, nodes, edges,
     stages: [{ x: 164, label: "Onboarding flow" }, { x: 390, label: "Placements" }, { x: 684, label: "Native paywalls" }, { x: 1210, label: "Journal VS Practice" }],
-    notes: ["The 25/25/50 paywall split applies within English / fallback, Spanish and German, independently of IAM / Copy.", ...map.notes],
+    notes: ["Each Yearly/Weekly design receives 25%; yr_49, yr_59 and yr_34 share the remaining 50% equally (~17% each). Displayed percentages are rounded; the actual allocation totals 100%. The split applies within each language, independently of IAM / Copy.", ...map.notes],
   };
 }
 

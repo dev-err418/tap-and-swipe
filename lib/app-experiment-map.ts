@@ -1,4 +1,4 @@
-import { nativePaywallAllocation } from "./native-paywall-allocation";
+import { GLOW_PAYWALL_EXPERIMENT } from "./native-paywall-allocation";
 
 export type ExperimentMapBranch = { id: string; label: string; percent: number };
 export type ExperimentMapTest = {
@@ -33,24 +33,25 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
         {
-          id: "native_paywalls_v2", label: "Native paywalls", scope: "English / fallback · Spanish · German", tone: "orange",
-          branches: ["yr_49", "yr_59", "yr_wk_59"].map((variant) => ({
-            id: variant,
-            label: variant,
-            percent: nativePaywallAllocation("native_paywalls_v2", variant, variant)!,
+          id: GLOW_PAYWALL_EXPERIMENT.id, label: "Native paywalls", scope: "Next app release · English / fallback · Spanish · German", tone: "orange",
+          branches: GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => ({
+            id,
+            label: id,
+            percent,
           })),
         },
         {
-          id: "journal_vs_practice_v1", label: "Journal VS Practice", scope: "Home button · prepared, production enrollment off", tone: "blue",
+          id: "journal_vs_practice_v1", label: "Journal VS Practice", scope: "Home button · enabled in next app release", tone: "blue",
           branches: [
-            { id: "journal", label: "Journal", percent: 50 },
-            { id: "practice", label: "Practice", percent: 50 },
+            { id: "journal", label: "Journal", percent: 30 },
+            { id: "practice", label: "Practice", percent: 70 },
           ],
         },
       ],
       notes: [
         "Results start September 20, 2026 at 08:00 GMT+2; earlier cohorts and proceeds are excluded.",
-        "App-code allocations for new assignments; existing users keep their variants. This does not confirm App Store rollout.",
+        "V3 starts a new sticky paywall assignment on upgrade; v1/v2 results and pending purchases stay separate. Onboarding assignments are unchanged.",
+        "The $34.99 Yearly subscription must be approved before production rollout. This map shows next-release app configuration, not live rollout.",
       ],
     };
   }

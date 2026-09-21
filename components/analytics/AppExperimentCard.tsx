@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import type {
   MobileAppExperiment,
   MobileAppExperimentScoreMetric,
   MobileAppExperimentVariant,
 } from "@/lib/mobile-app-analytics";
-import { DashboardCard } from "@/components/analytics/DashboardCard";
+import { AppExperimentLayout, ExperimentTable, ExperimentTh as Th, ExperimentTd as Td, ExperimentNumberTd as NumberTd, ExperimentVariantLabel } from "@/components/analytics/AppExperimentLayout";
 import ExperimentStats, { ExperimentWarningBadge } from "@/components/analytics/ExperimentStats";
 import {
   DASHBOARD_POPOVER_CLASS,
@@ -19,7 +19,6 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 
 const ALL_COUNTRIES = "all";
 
@@ -64,27 +63,18 @@ export default function AppExperimentCard({
   const scoreSessions = scoreMetrics.includes("sessions_per_day");
 
   return (
-    <DashboardCard
+    <AppExperimentLayout
       title={experiment.title}
+      subtitle={experiment.subtitle}
       titleAccessory={warningAnalysis ? <ExperimentWarningBadge analysis={warningAnalysis} /> : null}
-      titleClassName="flex items-center gap-1.5"
       action={
-        <div className="flex items-center gap-2">
-          {topCountries.length > 0 ? (
-            <CountryFilter value={country} countries={topCountries} onValueChange={setCountry} />
-          ) : null}
-          <span className="text-xs text-muted-foreground">{experiment.subtitle}</span>
-        </div>
+        topCountries.length > 0 ? <CountryFilter value={country} countries={topCountries} onValueChange={setCountry} /> : null
       }
-      contentClassName="min-w-0 p-0"
     >
       {scored.map((item) => (
         <ExperimentStats key={item.key} analysis={item.analysis} title={item.title} titleClassName="font-bold" />
       ))}
-      <div className="overflow-x-auto">
-        <table className="w-max min-w-full text-sm">
-          <thead>
-            <tr className="border-b border-black/10 text-left text-xs text-black/50">
+      <ExperimentTable headings={<>
               <Th>Variant</Th>
               {languages.map((comparison) => <Th key={comparison.language} right>{comparison.label}</Th>)}
               {showUsers ? <Th right>Users</Th> : null}
@@ -127,16 +117,11 @@ export default function AppExperimentCard({
                   APPU
                 </Th>
               ) : null}
-            </tr>
-          </thead>
-          <tbody>
+      </>}>
             {variants.map((row, index) => (
               <tr key={row.key} className="border-b border-black/[0.07]">
                 <Td>
-                  <div className="flex items-center gap-2 whitespace-nowrap">
-                    <Badge>Variant {variantLetter(index)}</Badge>
-                    <span className="font-medium">{row.label}</span>
-                  </div>
+                  <ExperimentVariantLabel index={index}>{row.label}</ExperimentVariantLabel>
                 </Td>
                 {languages.map((comparison) => {
                   const localized = comparison.variants.find((variant) => variant.key === row.key);
@@ -187,10 +172,8 @@ export default function AppExperimentCard({
                 ) : null}
               </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </DashboardCard>
+      </ExperimentTable>
+    </AppExperimentLayout>
   );
 }
 
@@ -356,21 +339,6 @@ function firstInsufficient(analyses: ExperimentAnalysis[]) {
   return analyses.find((analysis) => !analysis.sufficientData) ?? null;
 }
 
-function Th({ children, right = false, className }: { children: ReactNode; right?: boolean; className?: string }) {
-  return <th className={cn("whitespace-nowrap px-4 py-3 font-medium", right && "text-right", className)}>{children}</th>;
-}
-function Td({ children }: { children: ReactNode }) {
-  return <td className="whitespace-nowrap px-4 py-3">{children}</td>;
-}
-function NumberTd({ children, className }: { children: ReactNode; className?: string }) {
-  return <td className={cn("whitespace-nowrap px-4 py-3 text-right font-mono tabular-nums", className)}>{children}</td>;
-}
-function Badge({ children }: { children: ReactNode }) {
-  return <span className="inline-flex rounded-md bg-black/[0.055] px-2 py-0.5 text-xs font-medium">{children}</span>;
-}
-function variantLetter(index: number) {
-  return String.fromCharCode(65 + Math.max(0, index));
-}
 function ratio(part: number, total: number) {
   return total > 0 ? part / total : 0;
 }

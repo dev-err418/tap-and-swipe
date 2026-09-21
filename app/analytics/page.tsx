@@ -57,6 +57,13 @@ const PERIOD_SUMMARY_LABELS: Record<Period, string> = {
   all: "across all time",
 };
 
+const APP_DAY_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Europe/Paris",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 type WebsiteMetricsRow = {
   visitors: number;
   revenue_cents: number;
@@ -632,12 +639,23 @@ async function AppDetail({
 
   const proceeds = app.revenueCents / 100;
   const windowLabel = APP_PERIOD_LABELS[period];
+  const dailyConversions = new Map<string, { installs: number; conversions: number }>();
+  for (const point of app.trend) {
+    const day = appDayKey(point.bucket);
+    const totals = dailyConversions.get(day) ?? { installs: 0, conversions: 0 };
+    totals.installs += point.downloads;
+    totals.conversions += app.id === "glow" ? point.trials : point.paid;
+    dailyConversions.set(day, totals);
+  }
   const trend = app.trend.map((point) => ({
     date: point.bucket.toISOString(),
     visits: point.downloads,
     revenue: point.revenue,
-    trialStarts: 0,
-    rate: point.downloads > 0 ? point.paid / point.downloads : undefined,
+    trialStarts: point.trials,
+    rate: point.downloads > 0
+      ? (app.id === "glow" ? point.trials : point.paid) / point.downloads
+      : undefined,
+    averageRate: dailyRate(dailyConversions.get(appDayKey(point.bucket))),
   }));
 
   return (
@@ -694,6 +712,15 @@ async function AppDetail({
 
 function formatNumber(value: number | bigint) {
   return Number(value).toLocaleString("en-US");
+}
+
+function appDayKey(date: Date) {
+  const parts = Object.fromEntries(APP_DAY_FORMATTER.formatToParts(date).map((part) => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function dailyRate(totals: { installs: number; conversions: number } | undefined) {
+  return totals && totals.installs > 0 ? totals.conversions / totals.installs : undefined;
 }
 
 function websiteFaviconUrl(domain: string) {

@@ -152,6 +152,58 @@ test("invalid product lists cannot bypass fallback checks", () => {
   assert.match(result.warnings[0], /1 malformed/);
 });
 
+test("v3 reports five designs separately, including both Weekly packages, without mixing v2", () => {
+  const annual = "com.arthurbuildsstuff.glow.Annual";
+  const pro = "com.arthurbuildsstuff.glow.pro.yearly";
+  const yearly34 = "com.arthurbuildsstuff.glow.yearly.3499";
+  const weekly = "com.arthurbuildsstuff.glow.Weekly";
+  const variants = [
+    ["yr_49", [annual]], ["yr_59", [pro]], ["yr_34", [yearly34]],
+    ["yr_wk_59", [pro, weekly]], ["yr_wk_34", [yearly34, weekly]],
+  ] as const;
+  const attrs: PaywallAttribute[] = [];
+  const events: PaywallRevenue[] = [];
+  for (const [index, [variant, products]] of variants.entries()) {
+    for (let i = 0; i < 60; i++) {
+      const owner = `${variant}_${i}`;
+      const tx = String(5000 + index * 100 + i);
+      const productID = products[i % products.length];
+      const assignment = record({ experiment: "native_paywalls_v3", experimentName: "Native paywalls · 5 variants",
+        variant, variantName: variant, paywall: variant, variantCount: 5,
+        expectedProduct: products[0], allowedProducts: [...products], viewedAt: start + DAY, displayedProduct: productID });
+      const placement = { ...assignment, placement: "themes_upgrade", reachedAt: start + DAY };
+      attrs.push(attribute(owner, "gp1_a_native_paywalls_v3", assignment),
+        attribute(owner, "gp1_p_native_paywalls_v3__themes_upgrade", placement));
+      // The same install can retain an old v2 record without joining the new results.
+      if (index === 0) attrs.push(attribute(owner, "gp1_a_native_paywalls_v2", record({
+        experiment: "native_paywalls_v2", variant: "yr_49", paywall: "yr_49", variantCount: 3,
+      })));
+      if (i < 10) {
+        const purchase: PaywallPurchase = { context: placement, productID, transactionID: tx, originalTransactionID: tx,
+          startedAt: start + 2 * DAY, purchasedAt: start + 2 * DAY };
+        attrs.push(attribute(owner, `gp1_t_${tx}`, purchase));
+        events.push(money({ id: tx, originalTransactionId: tx, transactionId: tx }));
+      }
+    }
+  }
+  const result = report(attrs, events);
+  const group = result.groups.find((g) => g.language === "all" && g.experiment === "native_paywalls_v3")!;
+  assert.equal(group.paywalls.length, 5);
+  for (const row of group.paywalls) {
+    assert.equal(row.users, 60);
+    assert.equal(row.conversions, 10);
+    assert.equal(row.proceeds, 85);
+    assert.equal(row.estimates[7].reason, null);
+    assert.notEqual(row.estimates[7].chanceBest, null);
+  }
+  assert.equal(group.placements[0].proceeds, 425);
+  assert.equal(result.groups.find((g) => g.language === "all" && g.experiment === "native_paywalls_v2")!.paywalls[0].proceeds, 0);
+  // No winner claim while even one of the five randomized arms is missing.
+  const partial = report(attrs.filter((a) => !a.appUserId.startsWith("yr_wk_34_")), events.slice(0, 40));
+  const partialGroup = partial.groups.find((g) => g.language === "all" && g.experiment === "native_paywalls_v3")!;
+  assert.ok(partialGroup.paywalls.every((row) => row.estimates[7].chanceBest == null));
+});
+
 test("recovery APPU is the weighted combination of regular and recovery stages", () => {
   const attrs: PaywallAttribute[] = [];
   for (const [index, [owner, variant]] of ([["control", "holdout"], ["offer", "recovery"]] as const).entries()) {

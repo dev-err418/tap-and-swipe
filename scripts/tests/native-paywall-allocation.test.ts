@@ -1,19 +1,43 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { nativePaywallAllocation } from "../../lib/native-paywall-allocation";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import NativePaywallsPanel from "../../components/analytics/NativePaywallsPanel";
+import { GLOW_PAYWALL_EXPERIMENT, formatPaywallAllocation, nativePaywallAllocation } from "../../lib/native-paywall-allocation";
 import { NATIVE_PAYWALL_DEMO_REPORT } from "../../lib/native-paywall-demo";
 
-test("every preview audience shows the requested 25/25/50 allocation", () => {
+test("every fixture audience mirrors all five v3 allocations", () => {
   for (const group of NATIVE_PAYWALL_DEMO_REPORT.groups) {
     const percentages = group.paywalls.map((row) => nativePaywallAllocation(group.experiment, row.id, row.paywall));
-    assert.deepEqual(percentages, [25, 25, 50]);
+    assert.deepEqual(percentages, [100 / 6, 100 / 6, 100 / 6, 25, 25]);
     assert.equal(percentages.reduce<number>((sum, value) => sum + (value ?? 0), 0), 100);
     const totalUsers = group.paywalls.reduce((sum, row) => sum + row.users, 0);
-    assert.deepEqual(group.paywalls.map((row) => row.users / totalUsers * 100), [25, 25, 50]);
+    group.paywalls.forEach((row, i) => assert.ok(Math.abs(row.users / totalUsers * 100 - percentages[i]!) < 1e-9));
     for (const horizon of [7, 14, 30] as const) {
       assert.equal(group.paywalls.reduce((sum, row) => sum + (row.estimates[horizon].chanceBest ?? 0), 0), 1);
     }
   }
+});
+
+test("v3 composite rows use exact equal yearly weights and readable percentage labels", () => {
+  for (const { id, percent } of GLOW_PAYWALL_EXPERIMENT.variants) {
+    assert.equal(nativePaywallAllocation("native_paywalls_v3", `${id}|${id}`, id), percent);
+  }
+  assert.equal(formatPaywallAllocation(100 / 6), "~17%");
+  assert.equal(formatPaywallAllocation(25), "25%");
+  assert.equal(nativePaywallAllocation("native_paywalls_v2", "yr_34", "yr_34"), null);
+  assert.equal(nativePaywallAllocation("native_paywalls_v3", "yr_wk_34", "yr_wk_59"), null);
+});
+
+test("the live paywall panel shows next-release allocations even before data arrives", () => {
+  const markup = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "glow", report: null }));
+  for (const { id } of GLOW_PAYWALL_EXPERIMENT.variants) assert.ok(markup.includes(id));
+  assert.match(markup, /~17%/);
+  assert.match(markup, /25%/);
+  assert.match(markup, /needs Apple approval/);
+  assert.doesNotMatch(markup, /166666/);
+  const poky = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "poky", report: null }));
+  assert.doesNotMatch(poky, /yr_wk_34/);
 });
 
 test("unknown experiments, variants, paywalls and placements have no invented allocation", () => {

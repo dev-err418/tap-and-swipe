@@ -11,7 +11,7 @@ The dashboard's existing server-side Superwall Query API connection reads these 
 Related app files (in the sibling `glow-app/glow-app` repo):
 
 - `native/Glow/NativePaywallAnalytics.swift`: persisted local state, scalar-JSON attributes, transaction observer.
-- `native/Glow/GlowProductID.swift`: `GlowPaywallVariant` and persisted `GlowPaywallAssignment`, active v2 25/25/50 split; historical v1 helpers are retained but no longer drive presentation.
+- `native/Glow/GlowProductID.swift`: `GlowPaywallVariant` and persisted `GlowPaywallAssignment`, active v3 five-variant split; historical v1 helpers are retained but no longer drive presentation.
 - `native/Glow/SuperwallService.swift`: custom entry-point reach/dismiss hooks; no SDK placement registration.
 - `native/Glow/Views/GlowPaywallView.swift`: actual appearance hook.
 - `native/Glow/GlowSubscriptionStore.swift`: capture purchase attempt/result.
@@ -21,7 +21,7 @@ Dashboard files:
 
 - `lib/native-paywall-queries.ts`: paginated attribute fetch, authoritative money queries.
 - `lib/native-paywall-analytics.ts`: validation, attribution, cohort aggregation and statistics (pure/testable).
-- `lib/native-paywall-allocation.ts`: mirrors the hardcoded next-release experiment `native_paywalls_v2`: `yr_49` 25%, `yr_59` 25%, `yr_wk_59` 50%. Variant and paywall identity are the same stable string. Historical `native_yearly_v1` stays Annual/Pro yearly 50/50. Supports both demo variant IDs and live composite `variant|paywall` row IDs. Unknown allocations are omitted, never inferred from user counts. Badges describe code configuration, not observed traffic, remote configuration or confirmation of an App Store rollout.
+- `lib/native-paywall-allocation.ts`: mirrors the hardcoded next-release experiment `native_paywalls_v3`: `yr_wk_59` and `yr_wk_34` receive 25% each; `yr_49`, `yr_59` and `yr_34` share the remaining 50% equally (exactly 1/6 each, displayed as ~17%). Variant and paywall identity are the same stable string. Historical `native_yearly_v1` stays Annual/Pro yearly 50/50, and `native_paywalls_v2` retains its 25/25/50 allocation. Supports both demo variant IDs and live composite `variant|paywall` row IDs. Unknown allocations are omitted, never inferred from user counts. Badges describe code configuration, not observed traffic, remote configuration or confirmation of an App Store rollout.
 - `components/analytics/NativePaywallsPanel.tsx`: language audience filter, all experiment groups, paywall/placement tables.
 - `lib/mobile-app-analytics.ts`: loads this report for Glow and Poky's detail views.
 
@@ -107,15 +107,15 @@ Assignment/placement payload:
 {
   "schema": 1,
   "environment": "production",
-  "experiment": "native_paywalls_v2",
-  "experimentName": "Native paywalls · 25/25/50",
+  "experiment": "native_paywalls_v3",
+  "experimentName": "Native paywalls · 5 variants",
   "variant": "yr_wk_59",
   "variantName": "yr_wk_59",
   "paywall": "yr_wk_59",
   "language": "en",
   "assignedAt": 1790000000000,
   "randomized": true,
-  "variantCount": 3,
+  "variantCount": 5,
   "expectedProduct": "com.arthurbuildsstuff.glow.pro.yearly",
   "allowedProducts": ["com.arthurbuildsstuff.glow.pro.yearly", "com.arthurbuildsstuff.glow.Weekly"],
   "viewedAt": 1790000030000,
@@ -123,11 +123,11 @@ Assignment/placement payload:
 }
 ```
 
-Placement records add `placement` and `reachedAt`. `expectedProduct` is the default product; `allowedProducts` lists valid offers in the assigned design. It is optional for backward compatibility: missing means `[expectedProduct]`. The list is inside the scalar JSON string, never a raw Superwall attribute array. `hadFallback: true` persists if a presentation selects a SKU outside that set. A Weekly purchase from `yr_wk_59` remains a valid conversion for that design, not contamination. Purchase payloads contain `context` (a copy of the placement record with the current selected product), `productID`, `startedAt`, `transactionID`, `originalTransactionID`, and `purchasedAt`. All times are UTC Unix milliseconds; transaction IDs are decimal **strings**, never JS numbers. IDs for experiments/variants/paywalls/placements use lowercase ASCII letters, digits and underscores (max 100 characters).
+Placement records add `placement` and `reachedAt`. `expectedProduct` is the default product; `allowedProducts` lists valid offers in the assigned design. It is optional for backward compatibility: missing means `[expectedProduct]`. The list is inside the scalar JSON string, never a raw Superwall attribute array. `hadFallback: true` persists if a presentation selects a SKU outside that set. A Weekly purchase from either `yr_wk_59` or `yr_wk_34` remains a valid conversion for its assigned design, not contamination. Purchase payloads contain `context` (a copy of the placement record with the current selected product), `productID`, `startedAt`, `transactionID`, `originalTransactionID`, and `purchasedAt`. All times are UTC Unix milliseconds; transaction IDs are decimal **strings**, never JS numbers. IDs for experiments/variants/paywalls/placements use lowercase ASCII letters, digits and underscores (max 100 characters).
 
-V2 is assigned on the first launch of the new build and persists variant, time and language together in `glow.paywall.assignment.v2`; reporting publishes it after SDK startup for unsubscribed users. Existing installs get a fresh randomized v2 assignment too, so this is not exclusively a first-install cohort. Existing subscriptions are unchanged. The old `glow.paywall.yearly.v1` bucket, historical v1 records and pending purchase contexts remain untouched. V1 records predating timestamp tracking remain `randomized: false`; v2 never rewrites or backdates them. Already subscribed users are not newly enrolled in reporting at startup. Views mean **unique people**, not repeated impressions; a placement reach does not imply a view.
+V3 is assigned on the first launch of the new build and persists variant, time and language together in `glow.paywall.assignment.v3`; reporting publishes it after SDK startup for unsubscribed users. Existing installs get a fresh randomized v3 assignment too, so this is not exclusively a first-install cohort. Existing subscriptions are unchanged. The old `glow.paywall.yearly.v1` and `glow.paywall.assignment.v2` buckets, historical v1/v2 records and pending purchase contexts remain untouched. V1 records predating timestamp tracking remain `randomized: false`; v3 never rewrites or backdates them. Already subscribed users are not newly enrolled in reporting at startup. Views mean **unique people**, not repeated impressions; a placement reach does not imply a view.
 
-Language comes from Glow's resolved app localization and freezes at assignment. Later language changes do not move historical results into another audience. A new experiment needs a new ID; never overwrite old assignments to restart a test. V2 tests both price anchors and the new Yearly/Weekly design. The same assigned variant appears at every placement, full-screen for onboarding and modal otherwise. `yr_59` and `yr_wk_59` remain separate even when both sell Pro Yearly; never infer the design from SKU. Legacy `themes_upgrade_top_card` remains a valid ID but has no active card in the current app UI.
+Language comes from Glow's resolved app localization and freezes at assignment. Later language changes do not move historical results into another audience. A new experiment needs a new ID; never overwrite old assignments to restart a test. V3 tests three yearly-only anchors and two Yearly/Weekly designs. Twelve uniform app-side buckets give exact weights of 2/2/2/3/3. Both package designs use `com.arthurbuildsstuff.glow.Weekly`; both $34.99 designs use `com.arthurbuildsstuff.glow.yearly.3499`. The latter subscription is unsubmitted and needs Apple approval before production rollout. The panel shows the configuration even without live data, never fabricated result rows. The same assigned variant appears at every placement, full-screen for onboarding and modal otherwise. `yr_59` and `yr_wk_59` remain separate even when both sell Pro Yearly; never infer the design from SKU. Legacy `themes_upgrade_top_card` remains a valid ID but has no active card in the current app UI.
 
 ## Purchase, renewal, refund attribution
 

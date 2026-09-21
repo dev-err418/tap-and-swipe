@@ -33,13 +33,14 @@ test("every configured audience has a complete, valid allocation", () => {
 
 test("Glow includes configured onboarding, paywall and Journal VS Practice assignments", () => {
   const map = appExperimentMap("glow")!;
-  assert.deepEqual(map.tests.map((experiment) => experiment.id), ["glow-onboarding-copy", "native_paywalls_v2", "journal_vs_practice_v1"]);
-  assert.deepEqual(map.tests[2].branches.map((branch) => branch.percent), [50, 50]);
-  assert.match(map.tests[2].scope, /enrollment off/);
+  assert.deepEqual(map.tests.map((experiment) => experiment.id), ["glow-onboarding-copy", "native_paywalls_v3", "journal_vs_practice_v1"]);
+  assert.deepEqual(map.tests[2].branches.map((branch) => [branch.id, branch.percent]), [["journal", 30], ["practice", 70]]);
+  assert.match(map.tests[2].scope, /enabled in next app release/);
+  assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.detail, "Next app release");
   assert.deepEqual(map.tests[0].branches.map((branch) => branch.percent), [50, 50]);
-  assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [25, 25, 50]);
+  assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [100 / 6, 100 / 6, 100 / 6, 25, 25]);
   for (const branch of map.tests[1].branches) {
-    assert.equal(branch.percent, nativePaywallAllocation("native_paywalls_v2", branch.id, branch.id));
+    assert.equal(branch.percent, nativePaywallAllocation("native_paywalls_v3", branch.id, branch.id));
   }
 });
 
@@ -167,7 +168,7 @@ test("the map falls back to overall APPU when fixed-age branches are not mature"
 test("paywall variants use compact APPU/CR cards and highlight the unique APPU leader", () => {
   const flow = appExperimentFlow("glow")!;
   const metrics = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT);
-  assert.equal(metrics.size, 3);
+  assert.equal(metrics.size, 5);
   assert.ok([...metrics.values()].every((metric) => metric.appu != null && metric.conversionRate != null));
 
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
@@ -178,8 +179,8 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
   assert.match(markup, /English/);
   assert.match(markup, /Spanish/);
   assert.match(markup, /German/);
-  assert.equal(markup.match(/APPU \$/g)?.length, 3);
-  assert.equal(markup.match(/ · CR /g)?.length, 3);
+  assert.equal(markup.match(/APPU \$/g)?.length, 5);
+  assert.equal(markup.match(/ · CR /g)?.length, 5);
   assert.match(markup, /fill="#fff0e4"/);
   assert.match(markup, /stroke="#d98245"/);
   assert.match(markup, /stroke-width="3"/);
@@ -191,8 +192,8 @@ test("the map language picker scopes paywall metrics to the selected audience", 
   const flow = appExperimentFlow("glow")!;
   const english = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT, "en");
   const spanish = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT, "es");
-  assert.equal(english.size, 3);
-  assert.equal(spanish.size, 3);
+  assert.equal(english.size, 5);
+  assert.equal(spanish.size, 5);
   assert.notEqual(english.get("yr_49")?.appu, spanish.get("yr_49")?.appu);
 
   const poky = appExperimentFlow("poky")!;
@@ -260,11 +261,13 @@ test("Poky branches through background, four plan combinations and all paywalls 
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "cancel").map((edge) => edge.label), ["50%", "50%"]);
 });
 
-test("Glow shares the same three paywalls after either onboarding flow", () => {
+test("Glow shares all five paywalls after either onboarding flow without clipping nodes", () => {
   const flow = appExperimentFlow("glow")!;
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["50%", "50%"]);
   assert.equal(flow.edges.filter((edge) => edge.to === "placements").length, 2);
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "placements").map((edge) => edge.label), ["25%", "25%", "50%"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "placements").map((edge) => edge.label), ["~17%", "~17%", "~17%", "25%", "25%"]);
+  assert.ok(flow.nodes.every((node) => node.y + 40 < flow.height));
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "home").map((edge) => [edge.to, edge.label]), [["home-journal", "30%"], ["home-practice", "70%"]]);
 });
 
 function experiment(

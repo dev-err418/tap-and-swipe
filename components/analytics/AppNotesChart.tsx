@@ -133,7 +133,8 @@ export default function AppNotesChart({ appId, data }: { appId: AppId; data: Fun
         action={<span className="text-[11px] text-muted-foreground" title="Europe/Paris · daylight saving adjusts automatically">Paris time</span>}
         visitLabel="Installs"
         revenueLabel="Proceeds"
-        rateLabel="Install → paid"
+        rateLabel={appId === "glow" ? "Install → trial" : "Install → paid"}
+        averageRateLabel="Daily average"
         notes={notes}
         onAddNote={openComposer}
         onNoteClick={(note) => {

@@ -1,9 +1,28 @@
 /**
- * Mirrors the hardcoded Glow and Poky allocations in released app code.
+ * Mirrors the hardcoded Glow and Poky allocations in app code.
  * Not remote app config, observed traffic, or confirmation of App Store rollout.
  * Historical native_yearly_v1 retains its original 50/50 allocation.
  */
+export const GLOW_PAYWALL_EXPERIMENT = {
+  id: "native_paywalls_v3",
+  name: "Native paywalls · 5 variants",
+  variants: [
+    { id: "yr_49", percent: 100 / 6 },
+    { id: "yr_59", percent: 100 / 6 },
+    { id: "yr_34", percent: 100 / 6 },
+    { id: "yr_wk_59", percent: 25 },
+    { id: "yr_wk_34", percent: 25 },
+  ],
+} as const;
+
+export function formatPaywallAllocation(percent: number): string {
+  return Math.abs(percent - 100 / 6) < 1e-9 ? "~17%" : `${Number(percent.toFixed(2))}%`;
+}
+
 const allocations = [
+  ...GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => ({
+    experiment: GLOW_PAYWALL_EXPERIMENT.id, variant: id, paywall: id, percent,
+  })),
   { experiment: "native_yearly_v1", variant: "annual", paywall: "native_timeline_annual_v1", percent: 50 },
   { experiment: "native_yearly_v1", variant: "pro_yearly", paywall: "native_timeline_pro_yearly_v1", percent: 50 },
   { experiment: "native_paywalls_v2", variant: "yr_49", paywall: "yr_49", percent: 25 },

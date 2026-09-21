@@ -3,6 +3,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import JournalPracticePanel from "../../components/analytics/JournalPracticePanel";
+import AppExperimentCard from "../../components/analytics/AppExperimentCard";
 import { buildJournalPracticeReport, DAY_MS, JOURNAL_PRACTICE_ID, JOURNAL_PRACTICE_KEY, type JournalPracticeAttribute } from "../../lib/journal-practice-analytics";
 import { loadJournalPractice } from "../../lib/journal-practice-queries";
 
@@ -82,9 +83,41 @@ test("dashboard distinguishes no data and failures and labels app-return metrics
   const report = buildJournalPracticeReport([], start, start + 1, start + 8 * DAY_MS);
   const html = renderToStaticMarkup(createElement(JournalPracticePanel, { report }));
   assert.match(html, /Journal VS Practice/);
+  assert.match(html, /30% Journal · 70% Practice/);
   assert.match(html, /No production assignments/);
+  assert.match(html, /Enabled in the next app release: 30% Journal \/ 70% Practice/);
+  assert.doesNotMatch(html, /enrollment stays off/);
   assert.match(html, /not subscription retention/);
   assert.match(renderToStaticMarkup(createElement(JournalPracticePanel, { report: null })), /unavailable/);
+});
+
+test("activity tests share the regular A/B card and table styling without inventing revenue or winners", () => {
+  const report = buildJournalPracticeReport([attribute("a")], start, start + 1, start + 8 * DAY_MS);
+  const html = renderToStaticMarkup(createElement(JournalPracticePanel, { report })).replaceAll(/<!--.*?-->/g, "");
+  const regular = renderToStaticMarkup(createElement(AppExperimentCard, {
+    experiment: { id: "reference", title: "Reference", subtitle: "50/50", variants: [], scoreMetrics: [] },
+  }));
+  for (const className of ["h-[46px]", "text-xs font-semibold text-black", "w-max min-w-full text-sm", "border-b border-black/10 text-left text-xs text-black/50"]) {
+    assert.ok(html.includes(className));
+    assert.ok(regular.includes(className));
+  }
+  assert.match(html, /Variant A/);
+  assert.match(html, /Variant B/);
+  assert.match(html, /text-right font-mono tabular-nums/);
+  assert.match(html, /0\.0%/); // Mature observed non-return is a true zero.
+  assert.match(html, /—/); // Immature/unobserved data is still missing, not zero.
+  assert.match(html, /0\.14/);
+  assert.doesNotMatch(html, /Proceeds|chance to win|text-lg font-semibold/);
+});
+
+test("unavailable activity data never renders stale metrics", () => {
+  const populated = buildJournalPracticeReport([attribute("a")], start, start + 1, start + 8 * DAY_MS);
+  const html = renderToStaticMarkup(createElement(JournalPracticePanel, {
+    report: { ...populated, status: "unavailable", warnings: ["Example reporting warning"] },
+  }));
+  assert.match(html, /unavailable/);
+  assert.match(html, /Example reporting warning/);
+  assert.doesNotMatch(html, /<table/);
 });
 
 test("a failed second page never returns the first page as a complete cohort", async () => {

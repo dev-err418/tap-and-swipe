@@ -33,6 +33,7 @@ export type FunnelTrendPoint = {
   revenue: number;
   trialStarts: number;
   rate?: number;
+  averageRate?: number;
 };
 
 export type AnalyticsChartNote = {
@@ -48,6 +49,7 @@ export function VisitorsRevenueChart({
   visitLabel = "Visitors",
   revenueLabel = "Revenue",
   rateLabel,
+  averageRateLabel,
   timeZone = "UTC",
   notes = [],
   action,
@@ -59,6 +61,7 @@ export function VisitorsRevenueChart({
   visitLabel?: string;
   revenueLabel?: string;
   rateLabel?: string;
+  averageRateLabel?: string;
   timeZone?: string;
   notes?: AnalyticsChartNote[];
   action?: ReactNode;
@@ -67,7 +70,8 @@ export function VisitorsRevenueChart({
   emptyMessage?: string;
 }) {
   const hasRate = Boolean(rateLabel) && data.some((point) => point.rate !== undefined);
-  const hasData = data.some((point) => point.visits > 0 || point.revenue > 0 || (point.rate ?? 0) > 0);
+  const hasAverageRate = Boolean(averageRateLabel) && data.some((point) => point.averageRate !== undefined);
+  const hasData = data.some((point) => point.visits > 0 || point.revenue > 0 || (point.rate ?? 0) > 0 || (point.averageRate ?? 0) > 0);
   const chartData = data.map((point) => ({
     ...point,
     timestamp: parseChartDate(point.date).getTime(),
@@ -120,6 +124,7 @@ export function VisitorsRevenueChart({
           <LegendItem label={visitLabel} color={VISIT_COLOR} />
           <LegendItem label={revenueLabel} color={REVENUE_COLOR} />
           {hasRate && rateLabel ? <LegendItem label={rateLabel} color={RATE_COLOR} /> : null}
+          {hasAverageRate && averageRateLabel ? <LegendItem label={averageRateLabel} color={RATE_COLOR} dashed /> : null}
           {visibleNotes.length > 0 ? <LegendItem label="Notes" color={NOTE_COLOR} /> : null}
         </div>
         <div className="flex justify-end">{action}</div>
@@ -169,9 +174,9 @@ export function VisitorsRevenueChart({
               tick={{ fontSize: 12 }}
               tickFormatter={formatCompactCurrency}
             />
-            {hasRate ? <YAxis yAxisId="rate" domain={[0, 1]} hide /> : null}
+            {hasRate || hasAverageRate ? <YAxis yAxisId="rate" domain={[0, 1]} hide /> : null}
             <Tooltip
-              content={<TrendTooltip visitLabel={visitLabel} revenueLabel={revenueLabel} rateLabel={rateLabel} timeZone={timeZone} />}
+              content={<TrendTooltip visitLabel={visitLabel} revenueLabel={revenueLabel} rateLabel={rateLabel} averageRateLabel={averageRateLabel} timeZone={timeZone} />}
               cursor={{ stroke: "var(--border)", strokeDasharray: "3 3" }}
             />
             {visibleNotes.map((note) => (
@@ -225,6 +230,23 @@ export function VisitorsRevenueChart({
               isAnimationActive={false}
               legendType="none"
             />
+            {hasAverageRate ? (
+              <Line
+                yAxisId="rate"
+                type="stepAfter"
+                dataKey="averageRate"
+                name={averageRateLabel}
+                stroke={RATE_COLOR}
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                strokeOpacity={0.72}
+                dot={false}
+                activeDot={false}
+                connectNulls
+                isAnimationActive={false}
+                legendType="none"
+              />
+            ) : null}
             {hasRate ? (
               <Line
                 yAxisId="rate"
@@ -359,7 +381,7 @@ function formatAppVersion(value: string) {
   return /^v/i.test(trimmed) ? trimmed : `v${trimmed}`;
 }
 
-function LegendItem({ label, color }: { label: string; color: string }) {
+function LegendItem({ label, color, dashed = false }: { label: string; color: string; dashed?: boolean }) {
   return (
     <span
       className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-1 font-medium"
@@ -370,8 +392,8 @@ function LegendItem({ label, color }: { label: string; color: string }) {
       }}
     >
       <span
-        className="size-2 shrink-0 rounded-[2px]"
-        style={{ backgroundColor: color }}
+        className={dashed ? "h-0 w-3 shrink-0 border-t-2 border-dashed" : "size-2 shrink-0 rounded-[2px]"}
+        style={dashed ? { borderColor: color } : { backgroundColor: color }}
       />
       {label}
     </span>
@@ -451,6 +473,7 @@ function TrendTooltip({
   visitLabel = "Visitors",
   revenueLabel = "Revenue",
   rateLabel,
+  averageRateLabel,
   timeZone,
 }: {
   active?: boolean;
@@ -459,6 +482,7 @@ function TrendTooltip({
   visitLabel?: string;
   revenueLabel?: string;
   rateLabel?: string;
+  averageRateLabel?: string;
   timeZone: string;
 }) {
   if (!active || !payload?.length) return null;
@@ -474,6 +498,9 @@ function TrendTooltip({
           <TooltipMetric label={revenueLabel} value={formatCurrency(row.revenue)} color={REVENUE_COLOR} />
           {rateLabel && row.rate !== undefined ? (
             <TooltipMetric label={rateLabel} value={formatRate(row.rate)} color={RATE_COLOR} />
+          ) : null}
+          {averageRateLabel && row.averageRate !== undefined ? (
+            <TooltipMetric label={averageRateLabel} value={formatRate(row.averageRate)} color={RATE_COLOR} />
           ) : null}
           {row.trialStarts > 0 ? (
             <TooltipMetric

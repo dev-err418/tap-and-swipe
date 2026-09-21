@@ -16,6 +16,7 @@ export type MobileAppTrendPoint = {
   bucket: Date;
   downloads: number;
   revenue: number;
+  trials: number;
   paid: number;
 };
 
@@ -436,6 +437,7 @@ async function loadSuperwallAppAnalytics(
       bucket: parseClickhouseDate(row.bucket),
       revenue: Number(row.revenue ?? 0),
     })),
+    facts ? trialTrendFromFacts(facts, period) : [],
     facts ? paidTrendFromFacts(facts, period) : [],
   );
   const countries = facts ? countriesFromFacts(facts) : [];
@@ -1446,25 +1448,57 @@ function inRange(value: number, startMs: number, endMs: number) {
 function mergeTrend(
   downloads: { bucket: Date; downloads: number }[],
   revenue: { bucket: Date; revenue: number }[],
+  trials: { bucket: Date; trials: number }[],
   paid: { bucket: Date; paid: number }[],
 ): MobileAppTrendPoint[] {
   const points = new Map<number, MobileAppTrendPoint>();
   for (const row of downloads) {
-    points.set(row.bucket.getTime(), { bucket: row.bucket, downloads: row.downloads, revenue: 0, paid: 0 });
+    points.set(row.bucket.getTime(), { bucket: row.bucket, downloads: row.downloads, revenue: 0, trials: 0, paid: 0 });
   }
   for (const row of revenue) {
     const timestamp = row.bucket.getTime();
-    const point = points.get(timestamp) ?? { bucket: row.bucket, downloads: 0, revenue: 0, paid: 0 };
+    const point = points.get(timestamp) ?? { bucket: row.bucket, downloads: 0, revenue: 0, trials: 0, paid: 0 };
     point.revenue += row.revenue;
+    points.set(timestamp, point);
+  }
+  for (const row of trials) {
+    const timestamp = row.bucket.getTime();
+    const point = points.get(timestamp) ?? { bucket: row.bucket, downloads: 0, revenue: 0, trials: 0, paid: 0 };
+    point.trials += row.trials;
     points.set(timestamp, point);
   }
   for (const row of paid) {
     const timestamp = row.bucket.getTime();
-    const point = points.get(timestamp) ?? { bucket: row.bucket, downloads: 0, revenue: 0, paid: 0 };
+    const point = points.get(timestamp) ?? { bucket: row.bucket, downloads: 0, revenue: 0, trials: 0, paid: 0 };
     point.paid += row.paid;
     points.set(timestamp, point);
   }
   return [...points.values()].sort((a, b) => a.bucket.getTime() - b.bucket.getTime());
+}
+
+function trialTrendFromFacts(facts: AppFacts, period: Period) {
+  const firstTrialByTransaction = new Map<string, number>();
+  for (const event of facts.events) {
+    if (
+      event.eventTs < facts.startMs ||
+      event.eventTs >= facts.endMs ||
+      event.name !== "initial_purchase" ||
+      event.periodType !== "trial"
+    ) continue;
+    const id = `${event.country}|${event.originalTransactionId}`;
+    const current = firstTrialByTransaction.get(id);
+    if (current === undefined || event.eventTs < current) firstTrialByTransaction.set(id, event.eventTs);
+  }
+
+  const points = new Map<number, { bucket: Date; trials: number }>();
+  for (const timestamp of firstTrialByTransaction.values()) {
+    const bucket = trendBucket(new Date(timestamp), period);
+    const key = bucket.getTime();
+    const point = points.get(key) ?? { bucket, trials: 0 };
+    point.trials += 1;
+    points.set(key, point);
+  }
+  return [...points.values()];
 }
 
 function paidTrendFromFacts(facts: AppFacts, period: Period) {

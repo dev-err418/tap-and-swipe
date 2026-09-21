@@ -1,6 +1,6 @@
 # Glow: Journal VS Practice
 
-App experiment `journal_vs_practice_v1`: sticky 50/50 Journal / Practice, independent of onboarding and paywalls. Changes only the home button's title, icon and destination. Journal retains existing behavior; Practice opens its own modal. Automatic journal prompts and settings/history remain shared. **Production enrollment is currently off** while Practice is a shell. Debug overrides are development-only and do not rewrite random assignment.
+App experiment `journal_vs_practice_v1`: sticky 30% Journal / 70% Practice for new assignments, independent of onboarding and paywalls. This replaces the prepared 50/50 split before production enrollment; existing development assignments stay unchanged. Changes the home button's title, icon and destination. Journal retains existing behavior; Practice opens its own modal and suppresses Journal prompts, shortcuts, history and related stats without deleting saved entries. **Production enrollment is enabled in the next app build**, approved September 21, 2026; existing installed releases do not change remotely. Debug overrides are development-only and do not rewrite random assignment.
 
 Source of truth: Glow's `native/Glow/JournalPracticeExperiment.swift` and `native/JOURNAL-PRACTICE-EXPERIMENT.md`. No remote configuration, analytics database, ingestion endpoint, Superwall campaign or SDK placement.
 
@@ -25,8 +25,10 @@ Dates select **assignment cohorts**, with follow-up through now. Return means fo
 
 ## Release checklist
 
-1. Implement and verify Practice content; do not send real users into the placeholder.
-2. Enable Glow's `productionRolloutEnabled`; update its rollout test and dashboard/map staged copy.
+The A/B results card uses `AppExperimentLayout` and its shared table, column styles, and Variant A/B badges, exactly like `AppExperimentCard`. It keeps activity-specific retention/session metrics and does not fabricate revenue, country filters, or winner probabilities. Empty, unavailable, and immature values remain distinct.
+
+1. Practice now has 50 paired recordings per language, a player, saved shuffled sessions and offline fallback; finish real-device and fluent localized listening checks.
+2. Glow's `productionRolloutEnabled` is enabled; production/sandbox persistence tests and dashboard/map copy match the 30/70 release configuration.
 3. Ship the native app and deploy the dashboard separately. Source configuration does not prove App Store rollout.
 4. Verify actual production assignment/activity ingestion, allocation counts, mature denominators and environment exclusion.
 5. Use a new experiment ID if changing a live treatment or measurement definition.

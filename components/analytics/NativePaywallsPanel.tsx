@@ -5,7 +5,7 @@ import { PAYWALL_HORIZONS, type NativePaywallReport, type NativePaywallRow, type
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DASHBOARD_PICKER_TRIGGER_CLASS, DASHBOARD_POPOVER_CLASS, DASHBOARD_POPOVER_ITEM_CLASS, DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS } from "./dashboard-surface";
 import { cn } from "@/lib/utils";
-import { nativePaywallAllocation } from "@/lib/native-paywall-allocation";
+import { GLOW_PAYWALL_EXPERIMENT, formatPaywallAllocation, nativePaywallAllocation } from "@/lib/native-paywall-allocation";
 
 const languages: Record<string, string> = { en: "English", es: "Spanish", de: "German", fr: "French" };
 const languageFlags: Record<string, string> = { en: "🇬🇧", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷" };
@@ -42,7 +42,7 @@ function makeConversionDomain(rows: NativePaywallRow[]): ConversionDomain {
   return { minimum: Math.max(0, minimum - 0.005), maximum: Math.min(1, maximum + 0.005) };
 }
 
-export default function NativePaywallsPanel({ report }: { appId: "glow" | "poky" | "versy"; report: NativePaywallReport | null }) {
+export default function NativePaywallsPanel({ appId, report }: { appId: "glow" | "poky" | "versy"; report: NativePaywallReport | null }) {
   const [language, setLanguage] = useState("en");
   const [horizon, setHorizon] = useState<PaywallHorizon>(7);
   const availableLanguages = [...new Set(report?.groups.filter((g) => g.language !== "all").map((g) => g.language) ?? [])]
@@ -51,6 +51,18 @@ export default function NativePaywallsPanel({ report }: { appId: "glow" | "poky"
   const groups = report?.groups.filter((g) => g.language === selectedLanguage).sort((a, b) => a.name.localeCompare(b.name)) ?? [];
 
   return <div className="space-y-4">
+    {appId === "glow" && <section aria-label="Configured paywall allocation" className="space-y-2 pt-2">
+      <h2 className="px-1 text-sm font-semibold">Next-release allocation</h2>
+      <div className={cn(DASHBOARD_SURFACE_CLASS, "space-y-3 p-5")}>
+        <div className="flex flex-wrap gap-2">
+          {GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => <span key={id} className="rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-2 py-1 text-xs text-[#1d4ed8]">
+            {id} <span className="ml-1 font-semibold tabular-nums">{formatPaywallAllocation(percent)}</span>
+          </span>)}
+        </div>
+        <p className="text-xs text-muted-foreground">Configured in app code, not observed traffic or confirmation of App Store rollout. Yearly-only variants receive exactly one sixth each; ~17% is rounded for display.</p>
+        <p className="text-xs text-amber-700">The $34.99 Yearly product needs Apple approval before production rollout.</p>
+      </div>
+    </section>}
     <section className="space-y-2 pt-2">
       <div className="flex flex-wrap items-center justify-between gap-3 px-1">
         <h2 className="text-sm font-semibold">Audiences</h2>
@@ -144,8 +156,8 @@ function ResultsTable({ title, rows, horizon, experiment, language, placement = 
             <td className="px-5 py-4"><div className="flex items-center gap-2 font-medium"><span>{row.label}</span>{allocation != null && <span
               className="inline-flex shrink-0 rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-[#1d4ed8]"
               title="Hardcoded allocation in the app, not observed traffic or confirmation of App Store rollout."
-              aria-label={`${allocation}% configured allocation`}
-            >{allocation}%</span>}</div>{row.paywall && <div className="mt-1 text-[10px] text-muted-foreground">{row.paywall}</div>}</td>
+              aria-label={`${formatPaywallAllocation(allocation)} configured allocation`}
+            >{formatPaywallAllocation(allocation)}</span>}</div>{row.paywall && <div className="mt-1 text-[10px] text-muted-foreground">{row.paywall}</div>}</td>
             <Cell>{row.funnelAppu != null ? currency(row.funnelAppu) : row.users ? currency(row.proceeds / row.users) : "—"}</Cell>
             <ProbabilityBestCell
               chance={placement ? null : estimate.chanceBest}
