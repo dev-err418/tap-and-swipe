@@ -1,5 +1,7 @@
 # Native paywall analytics (Glow and Poky)
 
+Glow's separate [Journal VS Practice](journal-practice-experiment.md) activity experiment uses `gjp1_journal_vs_practice_v1`. It does not alter the paywall ledger or purchase attribution described here.
+
 ## Architecture and constraints
 
 Glow and Poky render native SwiftUI paywalls and hardcode their experiments/traffic splits. Superwall is used only for purchase/subscription infrastructure and custom user-attribute storage. **Do not add Superwall campaigns, placement registration, presentation-result calls, or remotely configured experiments.** No D1/PostgreSQL tables, ingestion routes, or webhook receivers are needed for this feature.
