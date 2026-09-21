@@ -72,13 +72,13 @@ function pokyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
     const y = 148 + bgIndex * 240;
     nodes.push({
       id: bgId, x: 160, y, width: 150, label: bg.id === "control" ? "Original" : "Warm experience",
-      detail: "50/50 in next release", tone: "blue", experimentId: background.id, variantId: bg.id,
+      tone: "blue", experimentId: background.id, variantId: bg.id,
     });
     edges.push({ from: "start", to: bgId, label: `${bg.percent}%` });
     plan.branches.forEach((branch, planIndex) => {
       const id = `${bgId}-${branch.id}`;
       nodes.push({ id, x: 398, y: y - 60 + planIndex * 120, width: 150, label: branch.label,
-        detail: `${bg.percent * branch.percent / 100}% of new assignments`, tone: "blue",
+        tone: "blue",
         experimentId: plan.id, variantId: branch.id });
       edges.push({ from: bgId, to: id, label: `${branch.percent}%` }, { from: id, to: "language" });
     });
@@ -106,7 +106,7 @@ function pokyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   });
   recovery.branches.forEach((branch, index) => {
     nodes.push({ id: branch.id, x: 1418, y: 208 + index * 120, width: 164, label: branch.label,
-      detail: branch.id === "recovery" ? "Localized · once only" : "Remains hard-gated", tone: "orange",
+      tone: "orange",
       experimentId: recovery.id, variantId: branch.id });
     edges.push({ from: "cancel", to: branch.id, label: `${branch.percent}%` });
   });

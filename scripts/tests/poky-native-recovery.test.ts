@@ -20,6 +20,19 @@ test("native recovery includes non-viewers and later main-paywall purchases in h
   assert.equal(offer.proceeds, 0);
   assert.equal(offer.paid, 1);
   assert.equal(none.countries.US.proceeds, 60);
+  assert.equal(result.languageVariants?.en[0].proceeds, 60);
+  assert.equal(result.languageVariants?.en[1].proceeds, 0);
+});
+
+test("native recovery keeps language APPU cohorts separate", () => {
+  const result = pokyNativeRecoveryExperiment([
+    assignment("english", "holdout", "en"),
+    assignment("spanish", "holdout", "es"),
+  ], [event("english", 10, 2), event("spanish", 30, 2)], new Map(), start, start + DAY, start + 10 * DAY);
+  assert.equal(result.languageVariants?.en[0].proceeds, 10);
+  assert.equal(result.languageVariants?.en[0].users, 1);
+  assert.equal(result.languageVariants?.es[0].proceeds, 30);
+  assert.equal(result.languageVariants?.es[0].users, 1);
 });
 
 test("first eligibility is sticky across languages; sandbox, future and pre-assignment outcomes are excluded", () => {

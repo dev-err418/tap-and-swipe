@@ -2,6 +2,7 @@ import "server-only";
 import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
 import { loadNativePaywalls } from "./native-paywall-queries";
+import { glowExperimentStart } from "./glow-experiment-window";
 import { loadJournalPractice } from "./journal-practice-queries";
 import type { JournalPracticeReport } from "./journal-practice-analytics";
 import type { NativePaywallReport } from "./native-paywall-analytics";
@@ -102,6 +103,7 @@ export type MobileAppExperiment = {
   showDownloadPaid?: boolean;
   sessionDays?: number;
   languageComparisons?: { language: string; label: string; variants: MobileAppExperimentVariant[] }[];
+  languageVariants?: Record<string, MobileAppExperimentVariant[]>;
 };
 
 export type TrialCancelBucket = {
@@ -403,7 +405,12 @@ async function loadSuperwallAppAnalytics(
     ),
     includeCountries ? loadAppFacts(app, start, end, startMs, endMs) : Promise.resolve(null),
     includeCountries && (app.id === "glow" || app.id === "poky")
-      ? loadNativePaywalls(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
+      ? loadNativePaywalls(
+          <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
+          app.applicationId,
+          app.id === "glow" ? glowExperimentStart(startMs) : startMs,
+          endMs,
+        )
       : Promise.resolve(null),
     includeCountries && app.id === "glow"
       ? loadJournalPractice(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
@@ -883,6 +890,7 @@ function glowPaywallExperiment(facts: AppFacts): MobileAppExperiment {
 
   const cohort = new Map<string, InstallRow>();
   for (const row of facts.installs) {
+    if (row.installedAt < glowExperimentStart(facts.startMs)) continue;
     const target = targetFor(row.appVersion);
     if (target) {
       cohort.set(row.appUserId, row);
@@ -1006,7 +1014,11 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
 
 function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDefinition): MobileAppExperiment {
   const variants = definition.variants.map((variant) => emptyExperimentVariant(variant.key, variant.label));
-  const targetFor = (attrs: Record<string, string> | undefined) => {
+  const languageVariants = Object.fromEntries(["en", "es", "de", "fr"].map((language) => [
+    language,
+    definition.variants.map((variant) => emptyExperimentVariant(variant.key, variant.label)),
+  ]));
+  const variantIndexFor = (attrs: Record<string, string> | undefined) => {
     if (!attrs) return null;
     if (definition.id.startsWith("poky-") && attrs.poky_tracking_environment !== "production") return null;
     const matched = definition.variants.find((variant) =>
@@ -1014,20 +1026,32 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
         ([key, value]) => (attrs[key] ?? "").trim().toLowerCase() === value,
       ),
     );
-    return matched ? variants[definition.variants.indexOf(matched)] : null;
+    return matched ? definition.variants.indexOf(matched) : null;
   };
   const now = Date.now();
+  const cohortStartMs = definition.id.startsWith("glow-") ? glowExperimentStart(facts.startMs) : facts.startMs;
   const countryByUser = new Map<string, string>();
-  for (const row of facts.installs) countryByUser.set(row.appUserId, row.country);
+  const languageByUser = new Map<string, string>();
+  for (const row of facts.installs) {
+    countryByUser.set(row.appUserId, row.country);
+    languageByUser.set(row.appUserId, experimentLanguage(row.language));
+  }
   for (const row of facts.sessions) {
     if (!countryByUser.has(row.appUserId)) countryByUser.set(row.appUserId, row.country);
   }
+  const targetsFor = (appUserId: string, attrs: Record<string, string> | undefined) => {
+    const index = variantIndexFor(attrs);
+    if (index == null) return [];
+    const language = languageByUser.get(appUserId);
+    return [variants[index], ...(language ? [languageVariants[language][index]] : [])];
+  };
+  const addForUser = (appUserId: string, attrs: Record<string, string> | undefined, metrics: Partial<MobileAppExperimentSlice> & { country: string }) => {
+    for (const target of targetsFor(appUserId, attrs)) addExperimentMetrics(target, metrics);
+  };
 
   if (definition.countAssignedUsers) {
     for (const [appUserId, attrs] of facts.attributes) {
-      const target = targetFor(attrs);
-      if (!target) continue;
-      addExperimentMetrics(target, {
+      addForUser(appUserId, attrs, {
         country: countryByUser.get(appUserId) ?? "unknown",
         users: 1,
       });
@@ -1035,10 +1059,9 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   }
 
   for (const row of facts.installs) {
+    if (row.installedAt < cohortStartMs) continue;
     const attrs = facts.attributes.get(row.appUserId);
-    const target = targetFor(attrs);
-    if (!target) continue;
-    addExperimentMetrics(target, {
+    addForUser(row.appUserId, attrs, {
       country: row.country,
       installs: 1,
       completed: definition.showCompletion && isOnboardingComplete(attrs) ? 1 : 0,
@@ -1050,9 +1073,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
 
   if (definition.includeSessions) {
     for (const row of facts.sessions) {
-      const target = targetFor(facts.attributes.get(row.appUserId));
-      if (!target) continue;
-      addExperimentMetrics(target, {
+      addForUser(row.appUserId, facts.attributes.get(row.appUserId), {
         country: countryByUser.get(row.appUserId) ?? row.country,
         sessions: row.sessions,
       });
@@ -1063,23 +1084,25 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   const seenConverted = new Set<string>();
   const seenPaid = new Set<string>();
   for (const event of facts.events) {
-    if (!event.appUserId || !inRange(event.installedAt, facts.startMs, facts.endMs)) continue;
-    const target = targetFor(facts.attributes.get(event.appUserId));
-    if (!target) continue;
+    if (!event.appUserId || !inRange(event.installedAt, cohortStartMs, facts.endMs)) continue;
+    const targets = targetsFor(event.appUserId, facts.attributes.get(event.appUserId));
+    if (!targets.length) continue;
     const country = event.country;
     const id = `${country}|${event.originalTransactionId}`;
     if (inRange(event.eventTs, facts.startMs, facts.endMs)) {
-      addOutcomeMetrics(target, event, country, id, seenTrial, seenConverted, seenPaid);
+      addOutcomeMetrics(targets, event, country, id, seenTrial, seenConverted, seenPaid);
     }
     if (event.netProceeds != null && isMobileMoneyEvent(event)) {
       const cohortStart = event.installedAt;
-      addExperimentMetrics(target, {
-        country,
-        proceeds: event.netProceeds,
-        proceedsD7: tenureProceeds(cohortStart, event.eventTs, now, 7, event.netProceeds),
-        proceedsD14: tenureProceeds(cohortStart, event.eventTs, now, 14, event.netProceeds),
-        proceedsD30: tenureProceeds(cohortStart, event.eventTs, now, 30, event.netProceeds),
-      });
+      for (const target of targets) {
+        addExperimentMetrics(target, {
+          country,
+          proceeds: event.netProceeds,
+          proceedsD7: tenureProceeds(cohortStart, event.eventTs, now, 7, event.netProceeds),
+          proceedsD14: tenureProceeds(cohortStart, event.eventTs, now, 14, event.netProceeds),
+          proceedsD30: tenureProceeds(cohortStart, event.eventTs, now, 30, event.netProceeds),
+        });
+      }
     }
   }
 
@@ -1087,9 +1110,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     const byTxn = subscriptionStarts(facts.events, facts.startMs, facts.endMs);
     for (const row of byTxn.values()) {
       if (!row.appUserId) continue;
-      const target = targetFor(facts.attributes.get(row.appUserId));
-      if (!target) continue;
-      addExperimentMetrics(target, {
+      addForUser(row.appUserId, facts.attributes.get(row.appUserId), {
         country: row.country,
         ...retentionMetrics(row.startedAt, row.expiresAt, now),
       });
@@ -1111,11 +1132,17 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     showDownloadPaid: definition.showDownloadPaid,
     sessionDays: definition.includeSessions ? facts.sessionDays : undefined,
     variants,
+    languageVariants,
   };
 }
 
+function experimentLanguage(value: string) {
+  const language = value.trim().toLowerCase().split(/[-_]/)[0];
+  return ["es", "de", "fr"].includes(language) ? language : "en";
+}
+
 function addOutcomeMetrics(
-  target: MobileAppExperimentVariant,
+  target: MobileAppExperimentVariant | MobileAppExperimentVariant[],
   event: AttributedRow,
   country: string,
   id: string,
@@ -1123,17 +1150,18 @@ function addOutcomeMetrics(
   seenConverted: Set<string>,
   seenPaid: Set<string>,
 ) {
+  const targets = Array.isArray(target) ? target : [target];
   if (event.name === "initial_purchase" && event.periodType === "trial" && !seenTrial.has(id)) {
     seenTrial.add(id);
-    addExperimentMetrics(target, { country, trials: 1 });
+    for (const row of targets) addExperimentMetrics(row, { country, trials: 1 });
   }
   if (event.name === "renewal" && event.isTrialConversion && !seenConverted.has(id)) {
     seenConverted.add(id);
-    addExperimentMetrics(target, { country, converted: 1 });
+    for (const row of targets) addExperimentMetrics(row, { country, converted: 1 });
   }
   if (isPaidEvent(event) && !seenPaid.has(id)) {
     seenPaid.add(id);
-    addExperimentMetrics(target, { country, paid: 1 });
+    for (const row of targets) addExperimentMetrics(row, { country, paid: 1 });
   }
 }
 

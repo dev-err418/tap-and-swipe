@@ -9,6 +9,14 @@ import type { MobileAppExperiment, MobileAppExperimentVariant } from "../../lib/
 import { NATIVE_PAYWALL_DEMO_REPORT } from "../../lib/native-paywall-demo";
 import { nativePaywallAllocation } from "../../lib/native-paywall-allocation";
 import { orderAppExperiments } from "../../lib/app-experiment-order";
+import { GLOW_EXPERIMENT_START_MS, glowExperimentStart } from "../../lib/glow-experiment-window";
+
+test("Glow experiment data begins at Sep 20, 2026 08:00 GMT+2", () => {
+  assert.equal(GLOW_EXPERIMENT_START_MS, Date.parse("2026-09-20T06:00:00.000Z"));
+  assert.equal(glowExperimentStart(Date.parse("2026-09-01T00:00:00.000Z")), GLOW_EXPERIMENT_START_MS);
+  assert.equal(glowExperimentStart(Date.parse("2026-09-21T00:00:00.000Z")), Date.parse("2026-09-21T00:00:00.000Z"));
+  assert.match(appExperimentMap("glow")!.notes[0], /September 20, 2026 at 08:00 GMT\+2/);
+});
 
 test("every configured audience has a complete, valid allocation", () => {
   for (const app of ["glow", "poky"]) {
@@ -90,15 +98,15 @@ test("both maps render their percentage badges without analytics data", () => {
   assert.equal(renderToStaticMarkup(createElement(AppExperimentMap, { appId: "versy" })), "");
 });
 
-test("the map marks the current leader at each non-paywall step", () => {
+test("the map shows APPU for every experiment step and marks the current leader", () => {
   const experiments: MobileAppExperiment[] = [
     experiment("poky-animated-plan", "appu_d7", [
-      variant("control", { installsD7: 100, proceedsD7: 20 }),
-      variant("animated_plan", { installsD7: 100, proceedsD7: 30 }),
+      variant("control", { installs: 100, proceeds: 20, installsD7: 100, proceedsD7: 20 }),
+      variant("animated_plan", { installs: 100, proceeds: 30, installsD7: 100, proceedsD7: 30 }),
     ]),
     experiment("poky-app-experience", "sessions_per_day", [
-      variant("control", { users: 100, sessions: 200 }),
-      variant("new_experience", { users: 100, sessions: 250 }),
+      variant("control", { users: 100, sessions: 200, proceeds: 12 }),
+      variant("new_experience", { users: 100, sessions: 250, proceeds: 18 }),
     ]),
     experiment("poky-native-recovery-holdout", "appu", [
       variant("holdout", { installs: 100, proceeds: 10 }),
@@ -113,10 +121,12 @@ test("the map marks the current leader at each non-paywall step", () => {
   ]);
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "poky", experiments }));
   assert.doesNotMatch(markup, />BEST<\/text>/);
-  assert.equal(markup.match(/% conf/g)?.length, 2);
-  assert.equal(markup.match(/% better/g)?.length, 2);
-  assert.match(markup, /APPU \$0\.10/);
+  assert.doesNotMatch(markup, /% conf|% better|50\/50 in next release|25% of new assignments/);
+  assert.match(markup, /APPU \$0\.12/);
+  assert.match(markup, /APPU \$0\.18/);
   assert.match(markup, /APPU \$0\.20/);
+  assert.match(markup, /APPU \$0\.30/);
+  assert.match(markup, /APPU \$0\.10/);
   assert.match(markup, /stroke-width="3"/);
 });
 
@@ -164,6 +174,10 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
     appId: "glow",
     nativePaywalls: NATIVE_PAYWALL_DEMO_REPORT,
   }));
+  assert.match(markup, /Experiment map language audience/);
+  assert.match(markup, /English/);
+  assert.match(markup, /Spanish/);
+  assert.match(markup, /German/);
   assert.equal(markup.match(/APPU \$/g)?.length, 3);
   assert.equal(markup.match(/ · CR /g)?.length, 3);
   assert.match(markup, /fill="#fff0e4"/);
@@ -171,6 +185,39 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
   assert.match(markup, /stroke-width="3"/);
   assert.doesNotMatch(markup, /height="68"/);
   assert.doesNotMatch(markup, /% conf/);
+});
+
+test("the map language picker scopes paywall metrics to the selected audience", () => {
+  const flow = appExperimentFlow("glow")!;
+  const english = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT, "en");
+  const spanish = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT, "es");
+  assert.equal(english.size, 3);
+  assert.equal(spanish.size, 3);
+  assert.notEqual(english.get("yr_49")?.appu, spanish.get("yr_49")?.appu);
+
+  const poky = appExperimentFlow("poky")!;
+  const pokyEnglish = currentPaywallMetrics(poky.nodes, NATIVE_PAYWALL_DEMO_REPORT, "en");
+  assert.equal(pokyEnglish.get("name-2-es")?.appu, null);
+  assert.equal(pokyEnglish.get("name-2-de")?.appu, null);
+});
+
+test("the map language picker scopes every experiment APPU to the selected audience", () => {
+  const localized = experiment("glow-onboarding-copy", "appu", [
+    variant("iam", { installs: 10, proceeds: 90 }),
+    variant("copy", { installs: 10, proceeds: 80 }),
+  ]);
+  localized.languageVariants = {
+    en: [variant("iam", { installs: 10, proceeds: 1 }), variant("copy", { installs: 10, proceeds: 2 })],
+    es: [variant("iam", { installs: 10, proceeds: 3 }), variant("copy", { installs: 10, proceeds: 4 })],
+  };
+  const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
+    appId: "glow",
+    experiments: [localized],
+    nativePaywalls: NATIVE_PAYWALL_DEMO_REPORT,
+  }));
+  assert.match(markup, /APPU \$0\.10/);
+  assert.match(markup, /APPU \$0\.20/);
+  assert.doesNotMatch(markup, /APPU \$9\.00|APPU \$8\.00/);
 });
 
 test("flows have one onboarding origin, valid left-to-right edges and no disconnected nodes", () => {
@@ -200,7 +247,7 @@ test("flows have one onboarding origin, valid left-to-right edges and no disconn
 
 test("Poky branches through background, four plan combinations and all paywalls before conditional recovery", () => {
   const flow = appExperimentFlow("poky")!;
-  const plans = flow.nodes.filter((node) => node.detail === "25% of new assignments");
+  const plans = flow.nodes.filter((node) => node.experimentId === "poky-animated-plan");
   assert.equal(plans.length, 4);
   for (const plan of plans) {
     assert.ok(flow.edges.some((edge) => edge.to === plan.id && edge.label === "50%"));

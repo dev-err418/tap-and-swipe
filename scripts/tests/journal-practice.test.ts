@@ -86,3 +86,24 @@ test("dashboard distinguishes no data and failures and labels app-return metrics
   assert.match(html, /not subscription retention/);
   assert.match(renderToStaticMarkup(createElement(JournalPracticePanel, { report: null })), /unavailable/);
 });
+
+test("a failed second page never returns the first page as a complete cohort", async () => {
+  let calls = 0;
+  const report = await loadJournalPractice(async <T,>(sql: string) => {
+    calls++;
+    if (calls === 1) return Array.from({ length: 10000 }, (_, i) => attribute(`user-${String(i).padStart(5, "0")}`)) as T[];
+    assert.match(sql, /appUserId > 'user-09999'/);
+    throw new Error("second page unavailable");
+  }, 54736, start, start + 1);
+  assert.equal(calls, 2);
+  assert.equal(report.status, "unavailable");
+  assert.deepEqual(report.rows, []);
+});
+
+test("double-encoded scalar JSON is accepted and unexpected schema is rejected", () => {
+  const a = attribute("valid");
+  a.value = JSON.stringify(a.value);
+  const report = buildJournalPracticeReport([a, attribute("invalid", { schema: 2 })], start, start + 1, start + 8 * DAY_MS);
+  assert.equal(report.rows[0].users, 1);
+  assert.equal(report.warnings.length, 1);
+});

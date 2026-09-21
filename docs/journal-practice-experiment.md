@@ -4,6 +4,8 @@ App experiment `journal_vs_practice_v1`: sticky 50/50 Journal / Practice, indepe
 
 Source of truth: Glow's `native/Glow/JournalPracticeExperiment.swift` and `native/JOURNAL-PRACTICE-EXPERIMENT.md`. No remote configuration, analytics database, ingestion endpoint, Superwall campaign or SDK placement.
 
+Debug builds allow manual Journal/Practice previews without Premium; this does not grant an entitlement or unlock other features. Release retains the same Premium requirement for both arms. Automatic journal prompts still require a real entitlement. All preview activity remains excluded from production reporting.
+
 ## Contract
 
 Custom Superwall scalar JSON string: `gjp1_journal_vs_practice_v1`.

@@ -12,18 +12,22 @@ const empty = (): MobileAppExperimentSlice => ({ users: 0, sessions: 0, installs
  */
 export function pokyNativeRecoveryExperiment(attributes: PaywallAttribute[], events: Outcome[], countries: Map<string, string>, start: number, end: number, asOf = Date.now()): MobileAppExperiment {
   const variants: MobileAppExperimentVariant[] = ["holdout", "recovery"].map((key) => ({ ...empty(), key, label: key === "holdout" ? "No recovery" : "Recovery", countries: {} }));
-  const assigned = new Map<string, { arm: number; at: number; country: string }>();
+  const languageVariants = Object.fromEntries(["en", "es", "de", "fr"].map((language) => [language,
+    ["holdout", "recovery"].map((key) => ({ ...empty(), key, label: key === "holdout" ? "No recovery" : "Recovery", countries: {} })),
+  ]));
+  const assigned = new Map<string, { arm: number; at: number; country: string; language: string }>();
   for (const [key, record] of parsePaywallAttributes(attributes.filter((a) => POKY_NATIVE_RECOVERY_KEYS.includes(a.key))).assignments) {
     if (!POKY_NATIVE_RECOVERY_KEYS.includes(`gp1_a_${record.experiment}`) || !["holdout", "recovery"].includes(record.variant) || record.assignedAt > asOf) continue;
     const user = key.slice(0, key.lastIndexOf("|"));
     if ((assigned.get(user)?.at ?? Infinity) <= record.assignedAt) continue;
-    assigned.set(user, { arm: record.variant === "holdout" ? 0 : 1, at: record.assignedAt, country: countries.get(user) ?? "unknown" });
+    assigned.set(user, { arm: record.variant === "holdout" ? 0 : 1, at: record.assignedAt, country: countries.get(user) ?? "unknown", language: record.language });
   }
   // Pick the first eligibility BEFORE filtering dates, so changing language cannot re-enrol a user.
   for (const [user, assignment] of assigned) if (assignment.at < start || assignment.at >= end) assigned.delete(user);
-  const slices = (a: { arm: number; country: string }) => {
+  const slices = (a: { arm: number; country: string; language: string }) => {
     const variant = variants[a.arm];
-    return [variant, variant.countries[a.country] ??= empty()];
+    const localized = languageVariants[a.language]?.[a.arm];
+    return [variant, variant.countries[a.country] ??= empty(), ...(localized ? [localized] : [])];
   };
   for (const a of assigned.values()) for (const s of slices(a)) {
     s.users++; s.installs++;
@@ -48,5 +52,5 @@ export function pokyNativeRecoveryExperiment(attributes: PaywallAttribute[], eve
       for (const days of [7, 14, 30] as const) if (a.at + days * DAY <= asOf && e.eventTs < a.at + days * DAY) s[`proceedsD${days}`] += e.netProceeds;
     }
   }
-  return { id: "poky-native-recovery-holdout", title: "Recovery A/B test", subtitle: "Hardcoded paywalls · Recovery / No recovery 50/50 · all proceeds after first eligibility", variants, scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"], showUsers: true, showInstalls: false, showDownloadPaid: false };
+  return { id: "poky-native-recovery-holdout", title: "Recovery A/B test", subtitle: "Hardcoded paywalls · Recovery / No recovery 50/50 · all proceeds after first eligibility", variants, languageVariants, scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"], showUsers: true, showInstalls: false, showDownloadPaid: false };
 }

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import { appExperimentFlow, type ExperimentFlowEdge, type ExperimentFlowNode } from "@/lib/app-experiment-flow";
 import type {
@@ -7,6 +10,12 @@ import type {
 } from "@/lib/mobile-app-analytics";
 import type { NativePaywallReport, NativePaywallRow } from "@/lib/native-paywall-analytics";
 import { analyzeExperiment, type ExperimentArm } from "@/lib/experiment-stats";
+import {
+  DASHBOARD_TAB_ACTIVE_CLASS,
+  DASHBOARD_TAB_CLASS,
+  DASHBOARD_TAB_INACTIVE_CLASS,
+} from "@/components/analytics/dashboard-surface";
+import { cn } from "@/lib/utils";
 
 const TONES = {
   blue: { line: "#a8b9eb", ink: "#284dae", fill: "#f5f7ff", border: "#dce4f8" },
@@ -18,6 +27,8 @@ const BEST_TONES = {
   orange: { line: "#d98245", ink: "#a95317", fill: "#fff0e4" },
   neutral: { line: "#8f96a3", ink: "#525866", fill: "#f0f1f3" },
 };
+const LANGUAGE_LABELS: Record<string, string> = { en: "English", es: "Spanish", de: "German", fr: "French" };
+const LANGUAGE_FLAGS: Record<string, string> = { en: "🇬🇧", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷" };
 
 export default function AppExperimentMap({
   appId,
@@ -28,12 +39,18 @@ export default function AppExperimentMap({
   experiments?: MobileAppExperiment[];
   nativePaywalls?: NativePaywallReport | null;
 }) {
+  const [language, setLanguage] = useState("en");
   const flow = appExperimentFlow(appId);
   if (!flow) return null;
+  const availableLanguages = [...new Set(
+    nativePaywalls?.groups.filter((group) => group.language !== "all").map((group) => group.language) ?? [],
+  )].sort((a, b) => a === b ? 0 : a === "en" ? -1 : b === "en" ? 1 : 0);
+  const selectedLanguage = availableLanguages.includes(language) ? language : availableLanguages[0];
   const nodes = new Map(flow.nodes.map((node) => [node.id, node]));
-  const bestVariants = currentBestVariantResults(experiments);
-  const experimentAppu = currentExperimentAppu(experiments);
-  const paywallMetrics = currentPaywallMetrics(flow.nodes, nativePaywalls);
+  const visibleExperiments = experimentsForLanguage(experiments, selectedLanguage);
+  const bestVariants = currentBestVariantResults(visibleExperiments);
+  const experimentAppu = currentExperimentAppu(visibleExperiments);
+  const paywallMetrics = currentPaywallMetrics(flow.nodes, nativePaywalls, selectedLanguage);
   const candidateBestNodeIds = new Set(flow.nodes.flatMap((node) => {
     const experimentBest = node.experimentId ? bestVariants.get(node.experimentId) : null;
     const isExperimentBest = node.paywallMetric == null
@@ -51,6 +68,26 @@ export default function AppExperimentMap({
       action={<span className="text-xs text-muted-foreground">Configured allocation · not observed traffic</span>}
       contentClassName="px-4 pb-4 pt-1"
     >
+      {availableLanguages.length > 0 ? (
+        <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Experiment map language audience">
+          {availableLanguages.map((code) => (
+            <button
+              type="button"
+              key={code}
+              aria-pressed={code === selectedLanguage}
+              onClick={() => setLanguage(code)}
+              className={cn(
+                DASHBOARD_TAB_CLASS,
+                "h-8 px-3",
+                code === selectedLanguage ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS,
+              )}
+            >
+              <span aria-hidden="true" className="mr-1.5">{LANGUAGE_FLAGS[code] ?? "🌐"}</span>
+              {LANGUAGE_LABELS[code] ?? code.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div
         className="overflow-x-auto rounded-xl scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         tabIndex={0}
@@ -101,23 +138,22 @@ export default function AppExperimentMap({
             const tone = TONES[node.tone];
             const bestTone = BEST_TONES[node.tone];
             const bestResult = node.experimentId ? bestVariants.get(node.experimentId) : null;
-            const appuOnly = node.experimentId === "poky-native-recovery-holdout"
-              ? experimentAppu.get(`${node.experimentId}|${node.variantId}`)
-              : undefined;
+            const experimentMetricKey = node.experimentId && node.variantId
+              ? `${node.experimentId}|${node.variantId}`
+              : null;
+            const experimentAppuValue = experimentMetricKey ? experimentAppu.get(experimentMetricKey) : undefined;
             const isExperimentBest = bestPathNodeIds.has(node.id)
               && node.paywallMetric == null
               && node.experimentId != null
               && node.variantId === bestResult?.key;
             const paywallMetric = paywallMetrics.get(node.id);
             const showsPaywallMetrics = node.paywallMetric != null;
-            const showsAppuOnly = appuOnly !== undefined;
+            const showsExperimentAppu = experimentMetricKey != null;
             const isBest = isExperimentBest || (bestPathNodeIds.has(node.id) && paywallMetric?.isBest === true);
-            const cardDetail = showsAppuOnly
-              ? `APPU ${formatAppu(appuOnly)}`
-              : isExperimentBest
-                ? formatBestResult(bestResult)
-                : showsPaywallMetrics
+            const cardDetail = showsPaywallMetrics
                 ? formatPaywallMetric(paywallMetric)
+                : showsExperimentAppu
+                  ? `APPU ${formatAppu(experimentAppuValue)}`
                 : node.detail;
             if (node.kind === "start") {
               return (
@@ -140,10 +176,10 @@ export default function AppExperimentMap({
                 {cardDetail ? (
                   <text
                     x={node.x + 12} y={node.y + 14}
-                    fill={showsPaywallMetrics || showsAppuOnly ? TONES.orange.ink : isBest ? bestTone.ink : "#717171"}
-                    fontSize={isExperimentBest && !showsAppuOnly ? 9.5 : 10.5}
-                    fontWeight={isBest || showsPaywallMetrics || showsAppuOnly ? 600 : undefined}
-                    className={isBest || showsPaywallMetrics || showsAppuOnly ? "tabular-nums" : undefined}
+                    fill={showsPaywallMetrics ? TONES.orange.ink : isBest ? bestTone.ink : "#717171"}
+                    fontSize={10.5}
+                    fontWeight={isBest || showsPaywallMetrics || showsExperimentAppu ? 600 : undefined}
+                    className={isBest || showsPaywallMetrics || showsExperimentAppu ? "tabular-nums" : undefined}
                   >
                     {cardDetail}
                   </text>
@@ -185,13 +221,21 @@ type PaywallMetricNode = {
   paywallMetric?: { experiment: string; variant: string; language: string };
 };
 
-export function currentPaywallMetrics(nodes: PaywallMetricNode[], report: NativePaywallReport | null) {
+export function currentPaywallMetrics(
+  nodes: PaywallMetricNode[],
+  report: NativePaywallReport | null,
+  selectedLanguage?: string,
+) {
   const metrics = new Map<string, { appu: number | null; conversionRate: number | null; isBest: boolean }>();
   for (const node of nodes) {
     if (!node.paywallMetric) continue;
     const source = node.paywallMetric;
+    const language = source.language === "all" && selectedLanguage ? selectedLanguage : source.language;
+    const isSelectedAudience = !selectedLanguage || source.language === "all" || source.language === selectedLanguage;
     const group = report?.status === "ready"
-      ? report.groups.find((candidate) => candidate.experiment === source.experiment && candidate.language === source.language)
+      ? report.groups.find((candidate) => isSelectedAudience
+        && candidate.experiment === source.experiment
+        && candidate.language === language)
       : null;
     const row = group?.paywalls.find((candidate) => matchesPaywallVariant(candidate, source.variant));
     const appu = row && row.users > 0 ? row.proceeds / row.users : null;
@@ -241,6 +285,14 @@ function currentExperimentAppu(experiments: MobileAppExperiment[]) {
     if (users > 0 && Number.isFinite(variant.proceeds)) values.set(`${experiment.id}|${variant.key}`, variant.proceeds / users);
   }
   return values;
+}
+
+function experimentsForLanguage(experiments: MobileAppExperiment[], language: string | undefined) {
+  if (!language) return experiments;
+  return experiments.map((experiment) => ({
+    ...experiment,
+    variants: experiment.languageVariants?.[language] ?? [],
+  }));
 }
 
 export function currentBestVariantResults(experiments: MobileAppExperiment[]) {
@@ -295,12 +347,6 @@ function scoreRevenue(variant: MobileAppExperimentVariant, metric: MobileAppExpe
   if (metric === "appu_d14") return variant.proceedsD14;
   if (metric === "appu_d30") return variant.proceedsD30;
   return variant.proceeds;
-}
-
-function formatBestResult(result: { confidence: number | null; lift: number | null } | null | undefined) {
-  const confidence = result?.confidence == null ? "— conf" : `${Math.round(result.confidence * 100)}% conf`;
-  const lift = result?.lift == null ? null : `+${(result.lift * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}% better`;
-  return lift ? `${confidence} · ${lift}` : confidence;
 }
 
 function scoreValue(

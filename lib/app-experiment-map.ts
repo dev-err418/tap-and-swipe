@@ -48,7 +48,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
       ],
-      notes: ["App-code allocations for new assignments; existing users keep their variants. This does not confirm App Store rollout."],
+      notes: [
+        "Results start September 20, 2026 at 08:00 GMT+2; earlier cohorts and proceeds are excluded.",
+        "App-code allocations for new assignments; existing users keep their variants. This does not confirm App Store rollout.",
+      ],
     };
   }
 
