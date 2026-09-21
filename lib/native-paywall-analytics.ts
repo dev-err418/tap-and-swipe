@@ -64,12 +64,14 @@ export type NativePaywallRow = {
   proceeds: number;
   grossRevenue: number;
   refunds: number;
+  funnelAppu: number | null;
   estimates: Record<PaywallHorizon, Estimate>;
 };
 export type NativePaywallGroup = {
   experiment: string;
   name: string;
   language: string;
+  paywallRevenueScope: "direct_attribution" | "weighted_funnel";
   paywalls: NativePaywallRow[];
   placements: NativePaywallRow[];
 };
@@ -238,6 +240,7 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
   const output: NativePaywallGroup[] = [];
   for (const group of groups.values()) {
     const paywalls = [...group.paywalls.values()].sort((a, b) => a.id.localeCompare(b.id));
+    const paywallRevenueScope = isRecoveryComparison(paywalls) ? "weighted_funnel" : "direct_attribution";
     const rows = paywalls.map((row) => summarize(row, asOf, false));
     for (const horizon of PAYWALL_HORIZONS) {
       const stats = paywalls.map((row) => moments(row, asOf, horizon));
@@ -245,7 +248,6 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
       const blocked = parsed.invalid > 0 ? "Some tracking records are invalid; winner estimates are unavailable."
         : missingMoney > 0 ? "Some transaction amounts are unavailable."
         : awaitingMoney.some(({ purchase: p }) => p.context.experiment === group.experiment && (group.language === "all" || p.context.language === group.language)) ? "Waiting for Apple server revenue to reconcile verified purchases."
-        : group.experiment.startsWith("poky_native_recovery_v1_") ? "Use the Recovery A/B test for all post-assignment proceeds, including the holdout. This table shows direct paywall attribution only."
         : rows.length < 2 || rows.length !== expected ? "Waiting for all variants."
         : stats.some((s) => s.confounded) ? "Includes existing assignments or a fallback offer; not a clean randomized cohort."
         : stats.some((s) => s.n < 50 || s.paid < 5) ? `Needs 50 mature users and 5 paid users per variant at D${horizon}.` : null;
@@ -258,14 +260,31 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
         row.estimates[horizon].reason = blocked;
       });
     }
-    output.push({ experiment: group.experiment, name: group.name, language: group.language, paywalls: rows,
+    output.push({ experiment: group.experiment, name: group.name, language: group.language, paywallRevenueScope, paywalls: rows,
       placements: [...group.placements.values()].map((row) => summarize(row, asOf, true)).sort((a, b) => b.proceeds - a.proceeds) });
+  }
+  for (const group of output.filter((candidate) => candidate.paywallRevenueScope === "weighted_funnel")) {
+    const main = output.find((candidate) => candidate.language === group.language
+      && candidate.experiment === group.experiment.replace("_recovery_", "_main_"));
+    const mainUsers = main?.paywalls.reduce((sum, row) => sum + row.users, 0) ?? 0;
+    const mainProceeds = main?.paywalls.reduce((sum, row) => sum + row.proceeds, 0) ?? 0;
+    for (const row of group.paywalls) {
+      const isRecovery = row.id.split("|", 1)[0] === "recovery";
+      const users = mainUsers + (isRecovery ? row.users : 0);
+      const proceeds = mainProceeds + (isRecovery ? row.proceeds : 0);
+      row.funnelAppu = users ? proceeds / users : null;
+    }
   }
   return { status: "ready", asOf, groups: output, warnings: [
     ...(parsed.invalid ? [`${parsed.invalid} malformed tracking records were excluded.`] : []),
     ...(missingMoney ? [`${missingMoney} transaction amounts are unavailable; proceeds are incomplete.`] : []),
     ...(awaitingMoney.length ? [`${awaitingMoney.length} verified purchases are awaiting Apple server revenue; proceeds may be incomplete.`] : []),
   ] };
+}
+
+function isRecoveryComparison(rows: WorkingRow[]) {
+  const variants = new Set(rows.flatMap((row) => [...row.people.values()].map((person) => person.record.variant)));
+  return variants.has("recovery") && (variants.has("holdout") || variants.has("no_recovery"));
 }
 
 function sameAssignment(a: PaywallRecord, b: PaywallRecord) {
@@ -296,7 +315,7 @@ function summarize(row: WorkingRow, asOf: number, placement: boolean): NativePay
     conversions: people.filter((p) => p.convertedAt != null).length,
     paid: people.filter((p) => p.money.some((m) => m.revenue > 0)).length,
     proceeds: money.reduce((sum, m) => sum + m.proceeds, 0),
-    grossRevenue: money.reduce((sum, m) => sum + m.revenue, 0), refunds: money.reduce((sum, m) => sum + m.refund, 0),
+    grossRevenue: money.reduce((sum, m) => sum + m.revenue, 0), refunds: money.reduce((sum, m) => sum + m.refund, 0), funnelAppu: null,
     estimates: Object.fromEntries(PAYWALL_HORIZONS.map((days) => {
       const stats = moments(row, asOf, days);
       return [days, { users: stats.n, appu: stats.n ? stats.mean : null, chanceBest: null, relativeDelta: null, credibleInterval: null,

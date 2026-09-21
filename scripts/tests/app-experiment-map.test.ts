@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import AppExperimentMap, { currentBestVariants, currentPaywallMetrics } from "../../components/analytics/AppExperimentMap";
+import AppExperimentMap, { currentBestPathNodeIds, currentBestVariants, currentPaywallMetrics } from "../../components/analytics/AppExperimentMap";
 import { activeABTestCount, appExperimentMap } from "../../lib/app-experiment-map";
 import { appExperimentFlow } from "../../lib/app-experiment-flow";
 import type { MobileAppExperiment, MobileAppExperimentVariant } from "../../lib/mobile-app-analytics";
@@ -23,9 +23,11 @@ test("every configured audience has a complete, valid allocation", () => {
   }
 });
 
-test("Glow includes only current onboarding and paywall assignments, not historical comparisons", () => {
+test("Glow includes configured onboarding, paywall and Journal VS Practice assignments", () => {
   const map = appExperimentMap("glow")!;
-  assert.deepEqual(map.tests.map((experiment) => experiment.id), ["glow-onboarding-copy", "native_paywalls_v2"]);
+  assert.deepEqual(map.tests.map((experiment) => experiment.id), ["glow-onboarding-copy", "native_paywalls_v2", "journal_vs_practice_v1"]);
+  assert.deepEqual(map.tests[2].branches.map((branch) => branch.percent), [50, 50]);
+  assert.match(map.tests[2].scope, /enrollment off/);
   assert.deepEqual(map.tests[0].branches.map((branch) => branch.percent), [50, 50]);
   assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [25, 25, 50]);
   for (const branch of map.tests[1].branches) {
@@ -50,7 +52,7 @@ test("unsupported apps do not show invented experiments", () => {
 });
 
 test("active A/B counts exclude historical comparisons and single-offer allocations", () => {
-  assert.equal(activeABTestCount("glow"), 2);
+  assert.equal(activeABTestCount("glow"), 3);
   assert.equal(activeABTestCount("poky"), 4);
   assert.equal(activeABTestCount("versy"), 0);
 });
@@ -111,9 +113,25 @@ test("the map marks the current leader at each non-paywall step", () => {
   ]);
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "poky", experiments }));
   assert.doesNotMatch(markup, />BEST<\/text>/);
-  assert.equal(markup.match(/% conf/g)?.length, 4);
-  assert.equal(markup.match(/% better/g)?.length, 4);
+  assert.equal(markup.match(/% conf/g)?.length, 2);
+  assert.equal(markup.match(/% better/g)?.length, 2);
+  assert.match(markup, /APPU \$0\.10/);
+  assert.match(markup, /APPU \$0\.20/);
   assert.match(markup, /stroke-width="3"/);
+});
+
+test("repeated downstream winners highlight only the branch under the winning parent", () => {
+  const flow = appExperimentFlow("poky")!;
+  const candidates = new Set([
+    "background-new_experience",
+    "background-control-animated_plan",
+    "background-new_experience-animated_plan",
+  ]);
+  const active = currentBestPathNodeIds(flow.nodes, flow.edges, candidates);
+  assert.equal(active.has("background-new_experience"), true);
+  assert.equal(active.has("background-new_experience-animated_plan"), true);
+  assert.equal(active.has("background-new_experience-control"), false);
+  assert.equal(active.has("background-control-animated_plan"), false);
 });
 
 test("the map does not call a tied or data-less result best", () => {
@@ -128,6 +146,14 @@ test("the map does not call a tied or data-less result best", () => {
   assert.equal(currentBestVariants([tied, missing]).size, 0);
 });
 
+test("the map falls back to overall APPU when fixed-age branches are not mature", () => {
+  const immature = experiment("poky-animated-plan", "appu_d7", [
+    variant("control", { installs: 100, proceeds: 30 }),
+    variant("animated_plan", { installs: 100, proceeds: 20 }),
+  ]);
+  assert.equal(currentBestVariants([immature]).get("poky-animated-plan"), "control");
+});
+
 test("paywall variants use compact APPU/CR cards and highlight the unique APPU leader", () => {
   const flow = appExperimentFlow("glow")!;
   const metrics = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT);
@@ -140,7 +166,8 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
   }));
   assert.equal(markup.match(/APPU \$/g)?.length, 3);
   assert.equal(markup.match(/ · CR /g)?.length, 3);
-  assert.match(markup, /fill="#e5ebff"/);
+  assert.match(markup, /fill="#fff0e4"/);
+  assert.match(markup, /stroke="#d98245"/);
   assert.match(markup, /stroke-width="3"/);
   assert.doesNotMatch(markup, /height="68"/);
   assert.doesNotMatch(markup, /% conf/);

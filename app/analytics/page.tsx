@@ -686,6 +686,7 @@ async function AppDetail({
         experiments={app.experiments}
         trialCancelTiming={app.trialCancelTiming}
         nativePaywalls={app.nativePaywalls}
+        journalPractice={app.journalPractice}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { DashboardCard } from "@/components/analytics/DashboardCard";
-import { appExperimentFlow } from "@/lib/app-experiment-flow";
+import { appExperimentFlow, type ExperimentFlowEdge, type ExperimentFlowNode } from "@/lib/app-experiment-flow";
 import type {
   MobileAppExperiment,
   MobileAppExperimentScoreMetric,
@@ -12,6 +12,11 @@ const TONES = {
   blue: { line: "#a8b9eb", ink: "#284dae", fill: "#f5f7ff", border: "#dce4f8" },
   orange: { line: "#ebc09c", ink: "#a95317", fill: "#fff8f1", border: "#f1dfcf" },
   neutral: { line: "#c8cbd2", ink: "#525866", fill: "#fafafa", border: "#e8e9ec" },
+};
+const BEST_TONES = {
+  blue: { line: "#6f89d8", ink: "#284dae", fill: "#e5ebff" },
+  orange: { line: "#d98245", ink: "#a95317", fill: "#fff0e4" },
+  neutral: { line: "#8f96a3", ink: "#525866", fill: "#f0f1f3" },
 };
 
 export default function AppExperimentMap({
@@ -27,8 +32,9 @@ export default function AppExperimentMap({
   if (!flow) return null;
   const nodes = new Map(flow.nodes.map((node) => [node.id, node]));
   const bestVariants = currentBestVariantResults(experiments);
+  const experimentAppu = currentExperimentAppu(experiments);
   const paywallMetrics = currentPaywallMetrics(flow.nodes, nativePaywalls);
-  const bestNodeIds = new Set(flow.nodes.flatMap((node) => {
+  const candidateBestNodeIds = new Set(flow.nodes.flatMap((node) => {
     const experimentBest = node.experimentId ? bestVariants.get(node.experimentId) : null;
     const isExperimentBest = node.paywallMetric == null
       && node.experimentId != null
@@ -37,6 +43,7 @@ export default function AppExperimentMap({
     const isPaywallBest = paywallMetrics.get(node.id)?.isBest === true;
     return isExperimentBest || isPaywallBest ? [node.id] : [];
   }));
+  const bestPathNodeIds = currentBestPathNodeIds(flow.nodes, flow.edges, candidateBestNodeIds);
 
   return (
     <DashboardCard
@@ -65,10 +72,11 @@ export default function AppExperimentMap({
             const from = nodes.get(edge.from)!;
             const to = nodes.get(edge.to)!;
             const tone = TONES[to.tone];
-            const isBestPath = bestNodeIds.has(edge.from) || bestNodeIds.has(edge.to);
-            const pathLine = isBestPath ? "#6f89d8" : tone.line;
-            const pathInk = isBestPath ? "#284dae" : tone.ink;
-            const pathFill = isBestPath ? "#e5ebff" : tone.fill;
+            const isBestPath = bestPathNodeIds.has(edge.from) && bestPathNodeIds.has(edge.to);
+            const pathTone = to.tone === "neutral" ? BEST_TONES[from.tone] : BEST_TONES[to.tone];
+            const pathLine = isBestPath ? pathTone.line : tone.line;
+            const pathInk = isBestPath ? pathTone.ink : tone.ink;
+            const pathFill = isBestPath ? pathTone.fill : tone.fill;
             const startX = from.x + from.width + (from.kind === "start" ? 6 : 0);
             const curveX = startX + (to.x - startX) * 0.4;
             const badgeX = to.x - 43;
@@ -91,16 +99,24 @@ export default function AppExperimentMap({
           })}
           {flow.nodes.map((node) => {
             const tone = TONES[node.tone];
+            const bestTone = BEST_TONES[node.tone];
             const bestResult = node.experimentId ? bestVariants.get(node.experimentId) : null;
-            const isExperimentBest = node.paywallMetric == null
+            const appuOnly = node.experimentId === "poky-native-recovery-holdout"
+              ? experimentAppu.get(`${node.experimentId}|${node.variantId}`)
+              : undefined;
+            const isExperimentBest = bestPathNodeIds.has(node.id)
+              && node.paywallMetric == null
               && node.experimentId != null
               && node.variantId === bestResult?.key;
             const paywallMetric = paywallMetrics.get(node.id);
             const showsPaywallMetrics = node.paywallMetric != null;
-            const isBest = isExperimentBest || paywallMetric?.isBest === true;
-            const cardDetail = isExperimentBest
-              ? formatBestResult(bestResult)
-              : showsPaywallMetrics
+            const showsAppuOnly = appuOnly !== undefined;
+            const isBest = isExperimentBest || (bestPathNodeIds.has(node.id) && paywallMetric?.isBest === true);
+            const cardDetail = showsAppuOnly
+              ? `APPU ${formatAppu(appuOnly)}`
+              : isExperimentBest
+                ? formatBestResult(bestResult)
+                : showsPaywallMetrics
                 ? formatPaywallMetric(paywallMetric)
                 : node.detail;
             if (node.kind === "start") {
@@ -116,18 +132,18 @@ export default function AppExperimentMap({
               <g key={node.id}>
                 <rect
                   x={node.x} y={node.y - 26} width={node.width} height={52} rx={13}
-                  fill={isBest ? "#e5ebff" : tone.fill}
-                  stroke={isBest ? "#6f89d8" : tone.border}
+                  fill={isBest ? bestTone.fill : tone.fill}
+                  stroke={isBest ? bestTone.line : tone.border}
                   strokeWidth={isBest ? 2 : 1}
                 />
                 <text x={node.x + 12} y={node.y + (cardDetail ? -4 : 4)} fill="#252525" fontSize={13}>{node.label}</text>
                 {cardDetail ? (
                   <text
                     x={node.x + 12} y={node.y + 14}
-                    fill={showsPaywallMetrics ? "#a95317" : isBest ? "#284dae" : "#717171"}
-                    fontSize={isExperimentBest ? 9.5 : 10.5}
-                    fontWeight={isBest || showsPaywallMetrics ? 600 : undefined}
-                    className={isBest || showsPaywallMetrics ? "tabular-nums" : undefined}
+                    fill={showsPaywallMetrics || showsAppuOnly ? TONES.orange.ink : isBest ? bestTone.ink : "#717171"}
+                    fontSize={isExperimentBest && !showsAppuOnly ? 9.5 : 10.5}
+                    fontWeight={isBest || showsPaywallMetrics || showsAppuOnly ? 600 : undefined}
+                    className={isBest || showsPaywallMetrics || showsAppuOnly ? "tabular-nums" : undefined}
                   >
                     {cardDetail}
                   </text>
@@ -142,6 +158,26 @@ export default function AppExperimentMap({
       </div>
     </DashboardCard>
   );
+}
+
+/** Keep repeated downstream variants on one winning route. Neutral merge points
+ * stay available so independently scored paywall/recovery stages still render.
+ */
+export function currentBestPathNodeIds(nodes: ExperimentFlowNode[], edges: ExperimentFlowEdge[], candidateBestNodeIds: Set<string>) {
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const active = new Set(nodes.filter((node) => node.kind === "start" || (!node.experimentId && !node.paywallMetric)).map((node) => node.id));
+  for (let pass = 0; pass < nodes.length; pass++) {
+    let changed = false;
+    for (const edge of edges) {
+      const target = byId.get(edge.to);
+      if (!target || active.has(edge.to) || !active.has(edge.from)) continue;
+      if ((target.experimentId || target.paywallMetric) && !candidateBestNodeIds.has(target.id)) continue;
+      active.add(target.id);
+      changed = true;
+    }
+    if (!changed) break;
+  }
+  return active;
 }
 
 type PaywallMetricNode = {
@@ -198,17 +234,30 @@ export function currentBestVariants(experiments: MobileAppExperiment[]) {
   return new Map([...currentBestVariantResults(experiments)].map(([id, result]) => [id, result.key]));
 }
 
+function currentExperimentAppu(experiments: MobileAppExperiment[]) {
+  const values = new Map<string, number>();
+  for (const experiment of experiments) for (const variant of experiment.variants) {
+    const users = variant.users > 0 ? variant.users : variant.installs;
+    if (users > 0 && Number.isFinite(variant.proceeds)) values.set(`${experiment.id}|${variant.key}`, variant.proceeds / users);
+  }
+  return values;
+}
+
 export function currentBestVariantResults(experiments: MobileAppExperiment[]) {
   const best = new Map<string, { key: string; confidence: number | null; lift: number | null }>();
   for (const experiment of experiments) {
-    const metric = experiment.scoreMetrics?.[0] ?? "appu";
-    const ranked = experiment.variants.map((variant) => ({
-      key: variant.key,
-      value: scoreValue(variant, metric, experiment.sessionDays),
-    }));
-    if (ranked.length < 2 || ranked.some((row) => row.value == null)) continue;
-    const ordered = [...ranked].sort((a, b) => b.value! - a.value!);
-    if (ordered[0].value === ordered[1].value) continue;
+    const metrics = [...new Set([...(experiment.scoreMetrics ?? ["appu"]), "appu" as const])];
+    const scored = metrics.flatMap((metric) => {
+      const ranked = experiment.variants.map((variant) => ({
+        key: variant.key,
+        value: scoreValue(variant, metric, experiment.sessionDays),
+      }));
+      if (ranked.length < 2 || ranked.some((row) => row.value == null)) return [];
+      const ordered = [...ranked].sort((a, b) => b.value! - a.value!);
+      return ordered[0].value === ordered[1].value ? [] : [{ metric, ordered }];
+    })[0];
+    if (!scored) continue;
+    const { metric, ordered } = scored;
     const analysis = analyzeExperiment(scoreArms(experiment, metric), metric === "download_paid" ? "conversion_rate" : "revenue_per_visitor", metric);
     const winner = analysis.variants.find((variant) => variant.key === ordered[0].key);
     const runnerUp = ordered[1].value!;

@@ -54,10 +54,12 @@ Glow onboarding → paywall comparison → yearly price; Poky app experience →
 flow → combined onboarding results → native recovery. Recovery nodes use the
 native experiment's `recovery` / `holdout` assignments for their result badges.
 
-The Paywalls tab is **direct purchase attribution**, not the causal recovery
-experiment: a recovery purchase credits recovery, not the earlier main view.
-Its recovery winner probability is deliberately disabled; use the AB card.
-Never fabricate recovery views for holdouts to make their outcomes appear.
+The Paywalls tab uses direct purchase attribution for proceeds and placements.
+Recovery-vs-holdout APPU is a weighted funnel comparison. No recovery is the
+matching language's regular-paywall proceeds divided by regular-paywall users.
+Recovery combines regular-paywall and recovery proceeds, divided by the sum of
+their users. This is a descriptive combined-stage metric; placement rows remain
+direct attribution, and holdout recovery views are never fabricated.
 
 Fresh onboarding/background assignments publish `onboarding_plan_allocation`
 and `home_experience_allocation` as `50_50`. Inherited assignments are `legacy`.

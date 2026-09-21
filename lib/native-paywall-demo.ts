@@ -20,7 +20,7 @@ function createDemoReport(): NativePaywallReport {
     const refunds = Math.round(paid * 0.035) * (variant ? 39.99 : 29.99);
     const proceeds = (grossRevenue - refunds) * 0.85;
     return {
-      id, label, paywall: id, users, views, conversions, paid, grossRevenue, refunds, proceeds,
+      id, label, paywall: id, users, views, conversions, paid, grossRevenue, refunds, proceeds, funnelAppu: null,
       estimates: Object.fromEntries(PAYWALL_HORIZONS.map((days) => [days, {
         users: Math.round(users * ({ 7: 0.88, 14: 0.72, 30: 0.46 }[days])),
         appu: proceeds / users * ({ 7: 0.74, 14: 0.87, 30: 0.98 }[days]),
@@ -64,7 +64,8 @@ function createDemoReport(): NativePaywallReport {
     // Partition outcomes so the synthetic placement revenue matches the paywall total.
     const allocated = { conversions: 0, paid: 0, proceeds: 0, grossRevenue: 0, refunds: 0 };
     return {
-      experiment: "native_paywalls_v2", name: "Native paywalls · 25/25/50", language, paywalls,
+      experiment: "native_paywalls_v2", name: "Native paywalls · 25/25/50", language,
+      paywallRevenueScope: "direct_attribution", paywalls,
       placements: placements.map(([id, label, weight], index) => {
         const users = Math.round(totals.users * (weight + 0.045));
         const result: NativePaywallRow = { ...totals, id, label, paywall: "", users, views: Math.round(users * 0.94), estimates: { ...totals.estimates } };
@@ -84,6 +85,7 @@ function createDemoReport(): NativePaywallReport {
   });
   const all: NativePaywallGroup = {
     experiment: "native_paywalls_v2", name: "Native paywalls · 25/25/50", language: "all",
+    paywallRevenueScope: "direct_attribution",
     paywalls: groups[0].paywalls.map((_, i) => sum(groups.map((g) => g.paywalls[i]))),
     placements: groups[0].placements.map((_, i) => sum(groups.map((g) => g.placements[i]))),
   };

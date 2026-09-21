@@ -2,6 +2,8 @@ import "server-only";
 import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
 import { loadNativePaywalls } from "./native-paywall-queries";
+import { loadJournalPractice } from "./journal-practice-queries";
+import type { JournalPracticeReport } from "./journal-practice-analytics";
 import type { NativePaywallReport } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_NATIVE_RECOVERY_KEYS, pokyNativeRecoveryExperiment } from "./poky-native-recovery";
@@ -130,6 +132,7 @@ export type MobileAppAnalytics = {
   experiments: MobileAppExperiment[];
   trialCancelTiming?: TrialCancelTiming | null;
   nativePaywalls?: NativePaywallReport | null;
+  journalPractice?: JournalPracticeReport | null;
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -387,7 +390,7 @@ async function loadSuperwallAppAnalytics(
     FORMAT JSON
   `;
 
-  const [downloadResult, revenueResult, factsResult, paywallResult] = await Promise.allSettled([
+  const [downloadResult, revenueResult, factsResult, paywallResult, journalPracticeResult] = await Promise.allSettled([
     querySuperwall<{ bucket: string; downloads: string | number }>(
       downloadsQuery,
       app.organizationId,
@@ -401,6 +404,9 @@ async function loadSuperwallAppAnalytics(
     includeCountries ? loadAppFacts(app, start, end, startMs, endMs) : Promise.resolve(null),
     includeCountries && (app.id === "glow" || app.id === "poky")
       ? loadNativePaywalls(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
+      : Promise.resolve(null),
+    includeCountries && app.id === "glow"
+      ? loadJournalPractice(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
       : Promise.resolve(null),
   ]);
 
@@ -451,6 +457,9 @@ async function loadSuperwallAppAnalytics(
     retention,
     experiments: orderAppExperiments(app.id, experiments),
     trialCancelTiming,
+    journalPractice: journalPracticeResult.status === "fulfilled" ? journalPracticeResult.value : {
+      status: "unavailable", asOf: Date.now(), rows: [], warnings: ["Activity reporting is temporarily unavailable."],
+    },
     nativePaywalls: paywallResult.status === "fulfilled" ? paywallResult.value : {
       status: "unavailable", asOf: Date.now(), groups: [], warnings: ["Paywall reporting is temporarily unavailable."],
     },

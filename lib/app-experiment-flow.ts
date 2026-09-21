@@ -25,7 +25,7 @@ export function appExperimentFlow(appId: string): ExperimentFlow | null {
 }
 
 function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
-  const [onboarding, paywalls] = map.tests;
+  const [onboarding, paywalls, journalPractice] = map.tests;
   const nodes: ExperimentFlowNode[] = [
     { id: "start", x: 36, y: 168, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
     { id: "placements", x: 390, y: 168, width: 162, label: "Paywall entry", detail: "Same variant everywhere", tone: "neutral" },
@@ -45,9 +45,16 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
     });
     edges.push({ from: "placements", to: branch.id, label: `${branch.percent}%` });
   });
+  nodes.push({ id: "home", x: 960, y: 168, width: 140, label: "Home button", detail: "Enrollment off", tone: "neutral" });
+  paywalls.branches.forEach((branch) => edges.push({ from: branch.id, to: "home" }));
+  journalPractice.branches.forEach((branch, index) => {
+    nodes.push({ id: `home-${branch.id}`, x: 1210, y: 112 + index * 112, width: 150,
+      label: branch.label, tone: "blue", experimentId: journalPractice.id, variantId: branch.id });
+    edges.push({ from: "home", to: `home-${branch.id}`, label: `${branch.percent}%` });
+  });
   return {
-    width: 898, height: 320, nodes, edges,
-    stages: [{ x: 164, label: "Onboarding flow" }, { x: 390, label: "Placements" }, { x: 684, label: "Native paywalls" }],
+    width: 1396, height: 320, nodes, edges,
+    stages: [{ x: 164, label: "Onboarding flow" }, { x: 390, label: "Placements" }, { x: 684, label: "Native paywalls" }, { x: 1210, label: "Journal VS Practice" }],
     notes: ["The 25/25/50 paywall split applies within English / fallback, Spanish and German, independently of IAM / Copy.", ...map.notes],
   };
 }

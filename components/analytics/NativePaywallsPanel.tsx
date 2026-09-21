@@ -80,7 +80,7 @@ export default function NativePaywallsPanel({ report }: { appId: "glow" | "poky"
       : !groups.length ? <Empty>No native paywall tracking yet for this cohort. Results will appear after users run the instrumented app release.</Empty>
       : groups.map((group) => <div key={group.experiment} className="space-y-4">
         {groups.length > 1 ? <h2 className="px-1 pt-2 text-sm font-semibold">{group.name}</h2> : null}
-        <ResultsTable title="Paywalls" rows={group.paywalls} horizon={horizon} experiment={group.experiment} language={group.language} />
+        <ResultsTable title="Paywalls" rows={group.paywalls} horizon={horizon} experiment={group.experiment} language={group.language} weightedFunnel={group.paywallRevenueScope === "weighted_funnel"} />
         <ResultsTable title="Placements" rows={group.placements} horizon={horizon} placement />
       </div>)}
   </div>;
@@ -90,10 +90,10 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <div className={cn(DASHBOARD_SURFACE_CLASS, "flex min-h-48 items-center justify-center p-8 text-center text-sm text-muted-foreground")}>{children}</div>;
 }
 
-function ResultsTable({ title, rows, horizon, experiment, language, placement = false }: { title: string; rows: NativePaywallRow[]; horizon: PaywallHorizon; experiment?: string; language?: string; placement?: boolean }) {
+function ResultsTable({ title, rows, horizon, experiment, language, placement = false, weightedFunnel = false }: { title: string; rows: NativePaywallRow[]; horizon: PaywallHorizon; experiment?: string; language?: string; placement?: boolean; weightedFunnel?: boolean }) {
   const sortedRows = [...rows].sort((a, b) => {
-    const appuA = a.users ? a.proceeds / a.users : Number.NEGATIVE_INFINITY;
-    const appuB = b.users ? b.proceeds / b.users : Number.NEGATIVE_INFINITY;
+    const appuA = a.funnelAppu ?? (a.users ? a.proceeds / a.users : Number.NEGATIVE_INFINITY);
+    const appuB = b.funnelAppu ?? (b.users ? b.proceeds / b.users : Number.NEGATIVE_INFINITY);
     return appuB - appuA || b.users - a.users;
   });
   const conversionDomain = makeConversionDomain(sortedRows);
@@ -109,7 +109,7 @@ function ResultsTable({ title, rows, horizon, experiment, language, placement = 
     return Math.max(bound, Math.abs(estimate.relativeDelta ?? 0), ...(interval ? interval.map(Math.abs) : [0]));
   }, 0.25);
   const columns = [
-    ["APPU", "Net proceeds divided by every assigned user in this row."],
+    ["APPU", weightedFunnel ? "Weighted funnel APPU: No recovery is regular paywall proceeds / users. Recovery combines regular and recovery proceeds / users." : "Net proceeds divided by every assigned user in this row."],
     ["Probability best", placement ? "Placements have different audiences and are not randomized." : `Approximate probability of the highest D${horizon} APPU. Requires all variants, 50 mature users and 5 paid users per variant.`],
     ["Conv. rate", "Conversions divided by unique viewers. The bar is a 95% confidence interval for the true conversion rate, not a daily high/low range."],
     ["Users", placement ? "Assigned users who reached this placement. A user may reach several placements." : "All users assigned to this variant, including non-viewers and non-payers."],
@@ -127,7 +127,7 @@ function ResultsTable({ title, rows, horizon, experiment, language, placement = 
     return "min-w-24";
   };
   return <section className="space-y-2 pt-2">
-    <h3 className="px-1 text-sm font-semibold">{title}</h3>
+    <div className="flex flex-wrap items-baseline justify-between gap-2 px-1"><h3 className="text-sm font-semibold">{title}</h3>{weightedFunnel ? <p className="text-[11px] text-muted-foreground">Weighted funnel: paywall + recovery vs paywall only</p> : null}</div>
     <div className={cn(DASHBOARD_SURFACE_CLASS, "overflow-hidden")}>
       <div className="overflow-x-auto scrollbar-none">
         <table className="w-full min-w-[1380px] text-left text-xs">
@@ -146,7 +146,7 @@ function ResultsTable({ title, rows, horizon, experiment, language, placement = 
               title="Hardcoded allocation in the app, not observed traffic or confirmation of App Store rollout."
               aria-label={`${allocation}% configured allocation`}
             >{allocation}%</span>}</div>{row.paywall && <div className="mt-1 text-[10px] text-muted-foreground">{row.paywall}</div>}</td>
-            <Cell>{row.users ? currency(row.proceeds / row.users) : "—"}</Cell>
+            <Cell>{row.funnelAppu != null ? currency(row.funnelAppu) : row.users ? currency(row.proceeds / row.users) : "—"}</Cell>
             <ProbabilityBestCell
               chance={placement ? null : estimate.chanceBest}
               isLeader={!placement && estimate.chanceBest != null && estimate.chanceBest === uniqueHighestChance}

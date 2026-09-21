@@ -18,6 +18,8 @@ import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
 import AppNotesChart from "@/components/analytics/AppNotesChart";
 import NativePaywallsPanel from "@/components/analytics/NativePaywallsPanel";
+import JournalPracticePanel from "@/components/analytics/JournalPracticePanel";
+import type { JournalPracticeReport } from "@/lib/journal-practice-analytics";
 import type { NativePaywallReport } from "@/lib/native-paywall-analytics";
 import {
   DASHBOARD_SURFACE_CLASS,
@@ -49,6 +51,7 @@ export default function AppOverviewPanel({
   experiments = [],
   trialCancelTiming = null,
   nativePaywalls = null,
+  journalPractice = null,
 }: {
   appId: "glow" | "poky" | "versy";
   installs: number;
@@ -62,6 +65,7 @@ export default function AppOverviewPanel({
   experiments?: MobileAppExperiment[];
   trialCancelTiming?: TrialCancelTiming | null;
   nativePaywalls?: NativePaywallReport | null;
+  journalPractice?: JournalPracticeReport | null;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
   const appu = installs > 0 ? proceeds / installs : 0;
@@ -156,6 +160,7 @@ export default function AppOverviewPanel({
           className="space-y-4"
         >
           <AppExperimentMap appId={appId} experiments={experiments} nativePaywalls={nativePaywalls} />
+          {appId === "glow" && <JournalPracticePanel report={journalPractice} />}
           {experiments.length > 0 ? experiments.map((experiment) => (
             <AppExperimentCard
               key={experiment.id}

@@ -40,6 +40,13 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
             percent: nativePaywallAllocation("native_paywalls_v2", variant, variant)!,
           })),
         },
+        {
+          id: "journal_vs_practice_v1", label: "Journal VS Practice", scope: "Home button · prepared, production enrollment off", tone: "blue",
+          branches: [
+            { id: "journal", label: "Journal", percent: 50 },
+            { id: "practice", label: "Practice", percent: 50 },
+          ],
+        },
       ],
       notes: ["App-code allocations for new assignments; existing users keep their variants. This does not confirm App Store rollout."],
     };

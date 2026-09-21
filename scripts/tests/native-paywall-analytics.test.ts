@@ -151,3 +151,39 @@ test("invalid product lists cannot bypass fallback checks", () => {
   assert.equal(result.groups.length, 0);
   assert.match(result.warnings[0], /1 malformed/);
 });
+
+test("recovery APPU is the weighted combination of regular and recovery stages", () => {
+  const attrs: PaywallAttribute[] = [];
+  for (const [index, [owner, variant]] of ([["control", "holdout"], ["offer", "recovery"]] as const).entries()) {
+    const mainAssignment = record({ experiment: "native_main_v1_en", experimentName: "Main",
+      variant: "main", variantName: "Main", paywall: "main", variantCount: 1, viewedAt: start + 0.25 * DAY });
+    const mainPlacement = { ...mainAssignment, placement: "onboarding", reachedAt: start + 0.25 * DAY };
+    const mainTx = String(201 + index);
+    const mainPurchase: PaywallPurchase = { context: mainPlacement, productID: "annual", transactionID: mainTx,
+      originalTransactionID: mainTx, startedAt: start + 0.5 * DAY, purchasedAt: start + 0.5 * DAY };
+    attrs.push(attribute(owner, "gp1_a_native_main_v1_en", mainAssignment),
+      attribute(owner, "gp1_p_native_main_v1_en__onboarding", mainPlacement), attribute(owner, `gp1_t_${mainTx}`, mainPurchase));
+    const assignment = record({ experiment: "native_recovery_v1_en", experimentName: "Recovery offer · 50/50",
+      variant, variantName: variant === "holdout" ? "No recovery" : "Recovery", paywall: variant,
+      expectedProduct: variant, assignedAt: start + 0.75 * DAY, viewedAt: variant === "recovery" ? start + 0.8 * DAY : undefined });
+    attrs.push(attribute(owner, "gp1_a_native_recovery_v1_en", assignment));
+    if (variant === "recovery") {
+      const placement = { ...assignment, placement: "automatic_recovery", reachedAt: start + 0.8 * DAY };
+      const purchase: PaywallPurchase = { context: placement, productID: variant, transactionID: "301",
+        originalTransactionID: "301", startedAt: start + 2 * DAY, purchasedAt: start + 2 * DAY };
+      attrs.push(attribute(owner, "gp1_p_native_recovery_v1_en__automatic_recovery", placement), attribute(owner, "gp1_t_301", purchase));
+    }
+  }
+  const result = report(attrs, [
+    money({ id: "main-control", originalTransactionId: "201", transactionId: "201", proceeds: 8, price: 10, ts: iso(0.5) }),
+    money({ id: "main-offer", originalTransactionId: "202", transactionId: "202", proceeds: 8, price: 10, ts: iso(0.5) }),
+    money({ id: "recovery-offer", originalTransactionId: "301", transactionId: "301", proceeds: 4, price: 5, ts: iso(3) }),
+  ]);
+  const group = result.groups.find((g) => g.language === "en" && g.experiment === "native_recovery_v1_en")!;
+  assert.equal(group.paywallRevenueScope, "weighted_funnel");
+  assert.equal(group.paywalls.find((row) => row.id.startsWith("holdout"))!.funnelAppu, 8);
+  assert.equal(group.paywalls.find((row) => row.id.startsWith("recovery"))!.funnelAppu, 20 / 3);
+  assert.equal(group.paywalls.find((row) => row.id.startsWith("holdout"))!.proceeds, 0);
+  assert.equal(group.paywalls.find((row) => row.id.startsWith("recovery"))!.proceeds, 4);
+  assert.equal(group.placements[0].proceeds, 4);
+});
