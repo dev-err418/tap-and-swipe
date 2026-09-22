@@ -89,7 +89,7 @@ export default function AppSprintFunnelPanel({
         </div>
       </div>
 
-      {showPricingExperiment ? <DashboardCard title="Pricing A/B test" titleAccessory={<ExperimentWarningBadge analysis={pricingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">50/50 · {experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
+      {showPricingExperiment ? <DashboardCard title="Pricing A/B test" titleAccessory={<ExperimentWarningBadge analysis={pricingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">20% legacy / 80% $108 · {experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={pricingAnalysis} />
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
