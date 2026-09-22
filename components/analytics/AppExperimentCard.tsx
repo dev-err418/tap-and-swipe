@@ -162,7 +162,6 @@ export default function AppExperimentCard({
               </tr>
             ))}
       </ExperimentTable>
-      {experiment.planningNote ? <p className="px-4 py-3 text-xs text-muted-foreground">{experiment.planningNote}</p> : null}
     </AppExperimentLayout>
   );
 }

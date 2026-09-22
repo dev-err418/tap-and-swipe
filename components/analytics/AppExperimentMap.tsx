@@ -50,6 +50,7 @@ export default function AppExperimentMap({
   const visibleExperiments = experimentsForLanguage(experiments, selectedLanguage);
   const bestVariants = currentBestVariantResults(visibleExperiments);
   const experimentAppu = currentExperimentAppu(visibleExperiments);
+  const cohortMetrics = currentCohortMetrics(flow.nodes, flow.edges, visibleExperiments);
   const paywallMetrics = currentPaywallMetrics(flow.nodes, nativePaywalls, selectedLanguage);
   const candidateBestNodeIds = new Set(flow.nodes.flatMap((node) => {
     const experimentBest = node.experimentId ? bestVariants.get(node.experimentId) : null;
@@ -58,7 +59,7 @@ export default function AppExperimentMap({
       && node.variantId != null
       && node.variantId === experimentBest?.key;
     const isPaywallBest = paywallMetrics.get(node.id)?.isBest === true;
-    return isExperimentBest || isPaywallBest ? [node.id] : [];
+    return isExperimentBest || isPaywallBest || cohortMetrics.get(node.id)?.isBest ? [node.id] : [];
   }));
   const bestPathNodeIds = currentBestPathNodeIds(flow.nodes, flow.edges, candidateBestNodeIds);
 
@@ -147,10 +148,13 @@ export default function AppExperimentMap({
               && node.experimentId != null
               && node.variantId === bestResult?.key;
             const paywallMetric = paywallMetrics.get(node.id);
+            const cohortMetric = cohortMetrics.get(node.id);
             const showsPaywallMetrics = node.paywallMetric != null;
-            const showsExperimentAppu = experimentMetricKey != null;
-            const isBest = isExperimentBest || (bestPathNodeIds.has(node.id) && paywallMetric?.isBest === true);
-            const cardDetail = showsPaywallMetrics
+            const showsExperimentAppu = experimentMetricKey != null || node.cohortMetric != null;
+            const isBest = isExperimentBest || (bestPathNodeIds.has(node.id) && (paywallMetric?.isBest === true || cohortMetric?.isBest === true));
+            const cardDetail = node.cohortMetric
+                ? `APPU ${formatAppu(cohortMetric?.appu)}`
+                : showsPaywallMetrics
                 ? formatPaywallMetric(paywallMetric)
                 : showsExperimentAppu
                   ? `APPU ${formatAppu(experimentAppuValue)}`
@@ -166,6 +170,7 @@ export default function AppExperimentMap({
             }
             return (
               <g key={node.id}>
+                {cohortMetric?.appu != null && <title>{`${cohortMetric.users.toLocaleString("en-US")} users · ${formatAppu(cohortMetric.proceeds)} net proceeds, including non-payers`}</title>}
                 <rect
                   x={node.x} y={node.y - 26} width={node.width} height={52} rx={13}
                   fill={isBest ? bestTone.fill : tone.fill}
@@ -189,9 +194,6 @@ export default function AppExperimentMap({
           })}
         </svg>
       </div>
-      <div className="mt-3 space-y-1 text-xs leading-relaxed text-muted-foreground">
-        {flow.notes.map((note) => <p key={note}>{note}</p>)}
-      </div>
     </DashboardCard>
   );
 }
@@ -201,19 +203,47 @@ export default function AppExperimentMap({
  */
 export function currentBestPathNodeIds(nodes: ExperimentFlowNode[], edges: ExperimentFlowEdge[], candidateBestNodeIds: Set<string>) {
   const byId = new Map(nodes.map((node) => [node.id, node]));
-  const active = new Set(nodes.filter((node) => node.kind === "start" || (!node.experimentId && !node.paywallMetric)).map((node) => node.id));
+  const active = new Set(nodes.filter((node) => node.kind === "start" || (!node.experimentId && !node.paywallMetric && !node.cohortMetric)).map((node) => node.id));
   for (let pass = 0; pass < nodes.length; pass++) {
     let changed = false;
     for (const edge of edges) {
       const target = byId.get(edge.to);
       if (!target || active.has(edge.to) || !active.has(edge.from)) continue;
-      if ((target.experimentId || target.paywallMetric) && !candidateBestNodeIds.has(target.id)) continue;
+      if ((target.experimentId || target.paywallMetric || target.cohortMetric) && !candidateBestNodeIds.has(target.id)) continue;
       active.add(target.id);
       changed = true;
     }
     if (!changed) break;
   }
   return active;
+}
+
+/** Use all installed users in the joint cohort, never the paying-only experience
+ * card or marginal plan totals. Summing proceeds and users makes each parent
+ * the observed-user-weighted average of its children (not a configured 50/50 mean).
+ */
+export function currentCohortMetrics(nodes: ExperimentFlowNode[], edges: ExperimentFlowEdge[], experiments: MobileAppExperiment[]) {
+  const metrics = new Map<string, { users: number; proceeds: number; appu: number | null; isBest: boolean }>();
+  for (const node of nodes) {
+    if (!node.cohortMetric) continue;
+    const source = experiments.find((experiment) => experiment.id === node.cohortMetric!.experiment);
+    const variants = node.cohortMetric.variants.map((key) => source?.variants.find((variant) => variant.key === key));
+    const complete = variants.length > 0 && !source?.paidUsersOnly && variants.every((variant) => variant != null
+      && Number.isFinite(variant.installs) && variant.installs >= 0 && Number.isFinite(variant.proceeds));
+    const users = complete ? variants.reduce((sum, variant) => sum + variant!.installs, 0) : 0;
+    const proceeds = complete ? variants.reduce((sum, variant) => sum + variant!.proceeds, 0) : 0;
+    metrics.set(node.id, { users, proceeds, appu: users > 0 ? proceeds / users : null, isBest: false });
+  }
+  // Compare plan choices within their own experience branch, using the exact
+  // total APPU shown on the cards rather than sessions or a different horizon.
+  for (const parent of new Set(edges.map((edge) => edge.from))) {
+    const siblings = edges.filter((edge) => edge.from === parent && metrics.has(edge.to)).map((edge) => metrics.get(edge.to)!);
+    if (siblings.length < 2 || siblings.some((metric) => metric.appu == null)) continue;
+    const maximum = Math.max(...siblings.map((metric) => metric.appu!));
+    const leaders = siblings.filter((metric) => metric.appu === maximum);
+    if (leaders.length === 1) leaders[0].isBest = true;
+  }
+  return metrics;
 }
 
 type PaywallMetricNode = {

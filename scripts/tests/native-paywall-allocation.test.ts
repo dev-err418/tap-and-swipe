@@ -32,7 +32,6 @@ test("the live paywall panel shows next-release allocations even before data arr
   for (const { id } of GLOW_PAYWALL_EXPERIMENT.variants) assert.ok(markup.includes(id));
   assert.match(markup, /~17%/);
   assert.match(markup, /25%/);
-  assert.match(markup, /needs Apple approval/);
   assert.doesNotMatch(markup, /166666/);
   const poky = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "poky", report: null }));
   assert.doesNotMatch(poky, /yr_wk_34/);

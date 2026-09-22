@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import AppExperimentMap, { currentBestPathNodeIds, currentBestVariants, currentPaywallMetrics } from "../../components/analytics/AppExperimentMap";
+import AppExperimentMap, { currentBestPathNodeIds, currentBestVariants, currentCohortMetrics, currentPaywallMetrics } from "../../components/analytics/AppExperimentMap";
 import { activeABTestCount, appExperimentMap } from "../../lib/app-experiment-map";
 import { appExperimentFlow } from "../../lib/app-experiment-flow";
 import type { MobileAppExperiment, MobileAppExperimentVariant } from "../../lib/mobile-app-analytics";
@@ -109,6 +109,12 @@ test("both maps render their percentage badges without analytics data", () => {
 
 test("the map shows APPU for every experiment step and marks the current leader", () => {
   const experiments: MobileAppExperiment[] = [
+    experiment("poky-onboarding-abcd", "appu", [
+      variant("extra_original", { installs: 50, proceeds: 4 }),
+      variant("intro_original", { installs: 50, proceeds: 8 }),
+      variant("extra_chat", { installs: 50, proceeds: 3 }),
+      variant("intro_chat", { installs: 50, proceeds: 15 }),
+    ]),
     experiment("poky-animated-plan", "appu_d7", [
       variant("control", { installs: 100, proceeds: 20, installsD7: 100, proceedsD7: 20 }),
       variant("animated_plan", { installs: 100, proceeds: 30, installsD7: 100, proceedsD7: 30 }),
@@ -124,6 +130,7 @@ test("the map shows APPU for every experiment step and marks the current leader"
   ];
 
   assert.deepEqual([...currentBestVariants(experiments)], [
+    ["poky-onboarding-abcd", "intro_chat"],
     ["poky-animated-plan", "animated_plan"],
     ["poky-app-experience", "new_experience"],
     ["poky-native-recovery-holdout", "recovery"],
@@ -151,6 +158,75 @@ test("repeated downstream winners highlight only the branch under the winning pa
   assert.equal(active.has("background-new_experience-animated_plan"), true);
   assert.equal(active.has("background-new_experience-control"), false);
   assert.equal(active.has("background-control-animated_plan"), false);
+});
+
+test("Poky parents use the user-weighted APPU of their own joint-cohort children", () => {
+  const flow = appExperimentFlow("poky")!;
+  const cohorts = experiment("poky-onboarding-abcd", "appu_d7", [
+    variant("extra_original", { installs: 90, proceeds: 9 }),
+    variant("intro_original", { installs: 10, proceeds: 5 }),
+    variant("extra_chat", { installs: 90, proceeds: 270, installsD7: 90, proceedsD7: 270 }),
+    variant("intro_chat", { installs: 10, proceeds: 60, installsD7: 10, proceedsD7: 0 }),
+  ]);
+  const unrelated = [
+    { ...experiment("poky-app-experience", "sessions_per_day", [
+      variant("new_experience", { users: 10, proceeds: 249.4 }),
+    ]), paidUsersOnly: true },
+    experiment("poky-animated-plan", "appu", [
+      variant("control", { installs: 100, proceeds: 382 }),
+      variant("animated_plan", { installs: 100, proceeds: 318 }),
+    ]),
+  ];
+  const metrics = currentCohortMetrics(flow.nodes, flow.edges, [cohorts, ...unrelated]);
+  const parent = metrics.get("background-new_experience")!;
+  const standard = metrics.get("background-new_experience-control")!;
+  const animated = metrics.get("background-new_experience-animated_plan")!;
+  assert.equal(parent.users, 100);
+  assert.equal(parent.proceeds, 330);
+  assert.equal(parent.appu, 3.3); // Observed 90/10 weighting, not configured 50/50 (4.5).
+  assert.equal(parent.appu, (standard.appu! * standard.users + animated.appu! * animated.users) / parent.users);
+  assert.equal(metrics.get("background-control")!.appu, 0.14);
+  assert.equal(metrics.get("background-control-control")!.appu, 0.1);
+  assert.equal(standard.appu, 3);
+  assert.equal(animated.appu, 6);
+  assert.equal(parent.isBest, true);
+  assert.equal(standard.isBest, false);
+  assert.equal(animated.isBest, true); // Highlight matches displayed total APPU, not D7.
+  const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "poky", experiments: [cohorts, ...unrelated] }));
+  assert.match(markup, /APPU \$3\.30/);
+  assert.match(markup, /APPU \$6\.00/);
+  assert.doesNotMatch(markup, /APPU \$24\.94|APPU \$3\.82|APPU \$3\.18/);
+  assert.doesNotMatch(markup, /Paywall percentages apply|Results start September|Background 50\/50 applies|The recovery group is assigned/);
+});
+
+test("Poky map does not substitute paying-only or marginal data for missing joint cohorts", () => {
+  const flow = appExperimentFlow("poky")!;
+  const missing = currentCohortMetrics(flow.nodes, flow.edges, [experiment("poky-app-experience", "appu", [
+    variant("new_experience", { users: 10, proceeds: 249.4 }),
+  ])]);
+  assert.ok([...missing.values()].every((metric) => metric.appu == null && !metric.isBest));
+  const partial = currentCohortMetrics(flow.nodes, flow.edges, [experiment("poky-onboarding-abcd", "appu", [
+    variant("extra_chat", { installs: 10, proceeds: 100 }),
+  ])]);
+  assert.equal(partial.get("background-new_experience")!.appu, null);
+  assert.equal(partial.get("background-new_experience-control")!.appu, 10);
+  assert.equal(partial.get("background-new_experience-control")!.isBest, false);
+});
+
+test("Poky weighted map uses the selected language's joint cohorts", () => {
+  const cohorts = experiment("poky-onboarding-abcd", "appu", [
+    variant("extra_chat", { installs: 10, proceeds: 1000 }), variant("intro_chat", { installs: 10, proceeds: 1000 }),
+  ]);
+  cohorts.languageVariants = { en: [
+    variant("extra_chat", { installs: 30, proceeds: 30 }), variant("intro_chat", { installs: 10, proceeds: 30 }),
+    variant("extra_original", { installs: 5, proceeds: 0 }), variant("intro_original", { installs: 5, proceeds: 0 }),
+  ] };
+  const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
+    appId: "poky", experiments: [cohorts], nativePaywalls: NATIVE_PAYWALL_DEMO_REPORT,
+  }));
+  assert.match(markup, /APPU \$1\.50/);
+  assert.match(markup, /40 users · \$60\.00 net proceeds/);
+  assert.doesNotMatch(markup, /APPU \$100\.00/);
 });
 
 test("the map does not call a tied or data-less result best", () => {
@@ -270,7 +346,7 @@ test("flows have one onboarding origin, valid left-to-right edges and no disconn
 
 test("Poky branches through background, four plan combinations and all paywalls before conditional recovery", () => {
   const flow = appExperimentFlow("poky")!;
-  const plans = flow.nodes.filter((node) => node.experimentId === "poky-animated-plan");
+  const plans = flow.nodes.filter((node) => node.cohortMetric?.variants.length === 1);
   assert.equal(plans.length, 4);
   for (const plan of plans) {
     assert.ok(flow.edges.some((edge) => edge.to === plan.id && edge.label === "50%"));

@@ -20,6 +20,9 @@ export function formatPaywallAllocation(percent: number): string {
 }
 
 const allocations = [
+  ...["en", "es", "de", "fr"].flatMap((language) => ["holdout", "recovery"].map((variant) => ({
+    experiment: `poky_native_recovery_v2_${language}`, variant, paywall: variant, percent: 50,
+  }))),
   ...GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => ({
     experiment: GLOW_PAYWALL_EXPERIMENT.id, variant: id, paywall: id, percent,
   })),

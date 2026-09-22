@@ -9,7 +9,6 @@ function ReturnRate({ metric }: { metric: ReturnMetric }) {
 export default function JournalPracticePanel({ report }: { report: JournalPracticeReport | null }) {
   return <AppExperimentLayout title="Journal VS Practice" label="Journal VS Practice"
     subtitle="30% Journal · 70% Practice">
-    <p className="border-b border-black/[0.08] px-4 py-4 text-xs text-muted-foreground">Enabled in the next app release: 30% Journal / 70% Practice. Enrollment starts after onboarding when users run that build. Debug and sandbox activity are excluded. Assignment stays stable per installation.</p>
     {!report || report.status === "unavailable"
       ? <p role="status" className="px-4 py-4 text-sm text-muted-foreground">Activity reporting is unavailable. Refresh to retry.</p>
       : <>
@@ -30,7 +29,5 @@ export default function JournalPracticePanel({ report }: { report: JournalPracti
           </tr>)}
         </ExperimentTable>
       </>}
-    {report?.warnings.map((warning) => <p role="status" key={warning} className="px-4 pt-3 text-xs text-amber-800">{warning}</p>)}
-    <p className="px-4 py-4 text-xs leading-relaxed text-muted-foreground">Dates select assignment cohorts, followed through today. Return means foreground app activity in the elapsed 24-hour window at day 1, 7 or 30—not subscription retention. Only fully observed windows qualify. Sessions count cold launches and returns after 30 minutes in the background. The first-seven-day average includes non-returners and zero-session days. Data arrives eventually; no winner is declared from these descriptive results.</p>
   </AppExperimentLayout>;
 }

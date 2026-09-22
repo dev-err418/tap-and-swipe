@@ -87,7 +87,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           branches: [{ id: "name-2", label: "Name - 2 · each language", percent: 100 }],
         },
         {
-          id: "poky-native-recovery-holdout", label: "Recovery", scope: "Hardcoded paywalls · all 4 languages · any origin placement", tone: "orange",
+          id: "poky-native-recovery-holdout", label: "Recovery", scope: "Hardcoded paywalls · upfront 50/50 · any origin placement", tone: "orange",
           branches: [
             { id: "recovery", label: "Recovery paywall", percent: 50 },
             { id: "holdout", label: "No recovery", percent: 50 },
@@ -102,7 +102,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       notes: [
         "Results start September 20, 2026 at 16:00 GMT+2; earlier cohorts and proceeds are excluded.",
         "Background 50/50 applies to new assignments in the next release. Earlier builds use 70/30; saved assignments are unchanged.",
-        "Recovery follows purchase cancellation or main-paywall dismissal, at most once. The home-screen shortcut is a separate 100% offer, not part of the recovery test.",
+        "The recovery group is assigned before onboarding. All subsequent proceeds count in that group, including immediate regular-paywall purchases. The offer appears after purchase cancellation, at most once; the home-screen shortcut remains available to both groups.",
       ],
     };
   }

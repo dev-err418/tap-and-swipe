@@ -33,6 +33,7 @@ export type PaywallPurchase = {
 
 export type PaywallAttribute = { appUserId: string; key: string; value: string };
 export type PaywallRevenue = {
+  appUserId?: string | null;
   id: string;
   name: string;
   originalTransactionId: string;
@@ -68,6 +69,7 @@ export type NativePaywallRow = {
   estimate: Estimate;
 };
 export type NativePaywallGroup = {
+  outcomeScope?: "recovery_flow" | "recovery_eligibility";
   experiment: string;
   name: string;
   language: string;
@@ -143,15 +145,32 @@ type Person = { record: PaywallRecord; convertedAt: number | null; money: { at: 
 type WorkingRow = { id: string; label: string; paywall: string; people: Map<string, Person> };
 type WorkingGroup = { experiment: string; name: string; language: string; paywalls: Map<string, WorkingRow>; placements: Map<string, WorkingRow> };
 
+export const isRecoveryExperiment = (experiment: string) => /^poky_native_recovery_v[12]_(en|es|de|fr)$/.test(experiment);
+
+/** First assignment wins across language changes, before selecting a date cohort. */
+export function firstRecoveryAssignments(assignments: Map<string, PaywallRecord>, asOf: number, version = 1) {
+  const first = new Map<string, PaywallRecord>();
+  for (const [key, record] of assignments) {
+    if (!isRecoveryExperiment(record.experiment) || !record.experiment.startsWith(`poky_native_recovery_v${version}_`)
+      || !["holdout", "recovery"].includes(record.variant) || record.assignedAt > asOf) continue;
+    const owner = key.slice(0, key.lastIndexOf("|"));
+    if ((first.get(owner)?.assignedAt ?? Infinity) > record.assignedAt) first.set(owner, record);
+  }
+  return first;
+}
+
 export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue: PaywallRevenue[], start: number, end: number, asOf = Date.now()): NativePaywallReport {
   const parsed = parsePaywallAttributes(attributes);
+  const recoveryAssignments = [1, 2].map((version) => firstRecoveryAssignments(parsed.assignments, asOf, version));
   const groups = new Map<string, WorkingGroup>();
   const inCohort = (r: PaywallRecord) => r.assignedAt >= start && r.assignedAt < end && r.assignedAt <= asOf;
   const groupFor = (r: PaywallRecord, language: string) => {
     const id = `${r.experiment}|${language}`;
     let group = groups.get(id);
     if (!group) {
-      group = { experiment: r.experiment, name: r.experimentName, language, paywalls: new Map(), placements: new Map() };
+      group = { experiment: r.experiment, name: isRecoveryExperiment(r.experiment)
+        ? r.experiment.includes("_v2_") ? "Regular flow vs recovery · 50/50" : "Recovery after cancellation · legacy 50/50"
+        : r.experimentName, language, paywalls: new Map(), placements: new Map() };
       groups.set(id, group);
     }
     return group;
@@ -164,13 +183,18 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
       const id = placement ? r.placement! : `${r.variant}|${r.paywall}`;
       let row = rows.get(id);
       if (!row) {
-        row = { id, label: placement ? r.placement! : r.variantName, paywall: placement ? "" : r.paywall, people: new Map() };
+        row = { id, label: placement ? r.placement! : isRecoveryExperiment(r.experiment)
+          ? r.variant === "holdout" ? "Regular flow" : "Regular flow + recovery"
+          : r.variantName, paywall: placement ? "" : r.paywall, people: new Map() };
         rows.set(id, row);
       }
       row.people.set(owner, { record: r, convertedAt: null, money: [] });
     }
   };
-  for (const [key, r] of parsed.assignments) enroll(key.slice(0, key.lastIndexOf("|")), r, false);
+  for (const [key, r] of parsed.assignments) {
+    const owner = key.slice(0, key.lastIndexOf("|"));
+    if (!isRecoveryExperiment(r.experiment) || recoveryAssignments.some((assignments) => assignments.get(owner) === r)) enroll(owner, r, false);
+  }
   for (const { owner, record } of parsed.placements) {
     const assigned = parsed.assignments.get(`${owner}|${record.experiment}`);
     if (assigned && sameAssignment(assigned, record)) enroll(owner, record, true);
@@ -181,10 +205,18 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
     if (!assigned || !sameAssignment(assigned, context)) return [];
     return ["all", context.language].flatMap((language) => {
       const group = groups.get(`${context.experiment}|${language}`);
-      return [group?.paywalls.get(`${context.variant}|${context.paywall}`)?.people.get(owner),
+      return [isRecoveryExperiment(context.experiment) ? undefined : group?.paywalls.get(`${context.variant}|${context.paywall}`)?.people.get(owner),
         group?.placements.get(context.placement ?? "")?.people.get(owner)].filter((p): p is Person => Boolean(p));
     });
   };
+  const recoveryPeopleFor = (owner: string, at: number): Person[] => recoveryAssignments.flatMap((assignments) => {
+    const r = assignments.get(owner);
+    if (!r || !inCohort(r) || at < r.assignedAt || at > asOf) return [];
+    return ["all", r.language].flatMap((language) => {
+      const person = groups.get(`${r.experiment}|${language}`)?.paywalls.get(`${r.variant}|${r.paywall}`)?.people.get(owner);
+      return person ? [person] : [];
+    });
+  });
 
   const anchors = new Map<string, { owner: string; purchase: PaywallPurchase }[]>();
   for (const item of parsed.purchases) {
@@ -193,6 +225,12 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
     const list = anchors.get(p.originalTransactionID) ?? [];
     list.push(item);
     anchors.set(p.originalTransactionID, list);
+    for (const person of recoveryPeopleFor(item.owner, p.purchasedAt)) {
+      person.convertedAt = Math.min(person.convertedAt ?? Infinity, p.purchasedAt);
+      if (sameAssignment(person.record, p.context) && person.record.viewedAt == null) {
+        person.record = { ...person.record, viewedAt: p.context.viewedAt };
+      }
+    }
     for (const person of peopleFor(item.owner, p.context)) {
       person.convertedAt = Math.min(person.convertedAt ?? Infinity, p.purchasedAt);
       // Attributes arrive independently; the immutable purchase context also proves a view.
@@ -213,18 +251,17 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
     if (!previous || dateMs(event.attributionTs) > dateMs(previous.attributionTs)) unique.set(key, event);
   }
   const receivedTransactions = new Set([...unique.values()].filter((e) => Number(e.isRefund) !== 1 && Number(e.price) >= 0).map((e) => `${e.originalTransactionId}|${e.transactionId}`));
-  const awaitingMoney = parsed.purchases.filter(({ purchase: p }) => inCohort(p.context) && p.purchasedAt <= asOf
+  const awaitingMoney = parsed.purchases.filter(({ owner, purchase: p }) => (inCohort(p.context) || recoveryPeopleFor(owner, p.purchasedAt).length > 0) && p.purchasedAt <= asOf
     && !receivedTransactions.has(`${p.originalTransactionID}|${p.transactionID}`));
   let missingMoney = 0;
   for (const event of unique.values()) {
     const list = anchors.get(event.originalTransactionId);
-    if (!list) continue;
     const targetTime = dateMs(event.purchasedAt);
     // A refund belongs to its charged transaction, not to a later resubscription/paywall.
-    const item = list.find(({ purchase }) => purchase.transactionID === event.transactionId)
-      ?? list.find(({ purchase }) => purchase.purchasedAt <= (Number.isFinite(targetTime) ? targetTime : dateMs(event.ts)));
-    if (!item) continue;
-    const people = peopleFor(item.owner, item.purchase.context);
+    const item = list?.find(({ purchase }) => purchase.transactionID === event.transactionId)
+      ?? list?.find(({ purchase }) => purchase.purchasedAt <= (Number.isFinite(targetTime) ? targetTime : dateMs(event.ts)));
+    const flowPeople = recoveryPeopleFor(item?.owner ?? event.appUserId ?? "", dateMs(event.ts));
+    const people = [...(item ? peopleFor(item.owner, item.purchase.context) : []), ...flowPeople];
     if (!people.length) continue;
     if (event.price == null || event.proceeds == null || !Number.isFinite(Number(event.price)) || !Number.isFinite(Number(event.proceeds))) {
       missingMoney++;
@@ -232,6 +269,9 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
     }
     const refund = Number(event.isRefund) === 1 || Number(event.price) < 0;
     const proceeds = refund ? -Math.abs(Number(event.proceeds)) : Number(event.proceeds);
+    if (!refund && ["initial_purchase", "non_renewing_purchase"].includes(event.name)) {
+      for (const person of flowPeople) person.convertedAt = Math.min(person.convertedAt ?? Infinity, dateMs(event.ts));
+    }
     for (const person of people) person.money.push({ at: dateMs(event.ts), proceeds,
       revenue: refund ? 0 : Math.max(0, Number(event.price)), refund: refund ? Math.abs(Number(event.price)) : 0 });
   }
@@ -245,7 +285,8 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
       const expected = Math.max(0, ...stats.map((s) => s.variantCount));
       const hardBlock = parsed.invalid > 0 ? "Some tracking records are invalid; winner estimates are unavailable."
         : missingMoney > 0 ? "Some transaction amounts are unavailable."
-        : awaitingMoney.some(({ purchase: p }) => p.context.experiment === group.experiment && (group.language === "all" || p.context.language === group.language)) ? "Waiting for Apple server revenue to reconcile verified purchases."
+        : awaitingMoney.some(({ owner, purchase: p }) => (p.context.experiment === group.experiment && (group.language === "all" || p.context.language === group.language))
+          || (isRecoveryExperiment(group.experiment) && recoveryPeopleFor(owner, p.purchasedAt).some((person) => person.record.experiment === group.experiment && (group.language === "all" || person.record.language === group.language)))) ? "Waiting for Apple server revenue to reconcile verified purchases."
         : rows.length < 2 || rows.length !== expected ? "Waiting for all variants."
         : stats.some((s) => s.confounded) ? "Includes existing assignments or a fallback offer; not a clean randomized cohort." : null;
       const sampleBlock = stats.some((s) => s.n < 20 || s.paid < 3)
@@ -288,6 +329,7 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
       });
     }
     output.push({ experiment: group.experiment, name: group.name, language: group.language, paywalls: rows,
+      ...(isRecoveryExperiment(group.experiment) ? { outcomeScope: group.experiment.includes("_v2_") ? "recovery_flow" as const : "recovery_eligibility" as const } : {}),
       placements: [...group.placements.values()].map((row) => summarize(row, asOf, true)).sort((a, b) => b.proceeds - a.proceeds) });
   }
   return { status: "ready", asOf, groups: output, warnings: [

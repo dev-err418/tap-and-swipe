@@ -230,7 +230,7 @@ test("v3 reports five designs separately, including both Weekly packages, withou
   assert.ok(partialGroup.paywalls.every((row) => row.estimate.chanceBest == null));
 });
 
-test("recovery paywalls use only their directly attributed total APPU", () => {
+test("recovery compares complete user outcomes while placements keep direct attribution", () => {
   const attrs: PaywallAttribute[] = [];
   for (const [index, [owner, variant]] of ([["control", "holdout"], ["offer", "recovery"]] as const).entries()) {
     const mainAssignment = record({ experiment: "native_main_v1_en", experimentName: "Main",
@@ -241,15 +241,15 @@ test("recovery paywalls use only their directly attributed total APPU", () => {
       originalTransactionID: mainTx, startedAt: start + 0.5 * DAY, purchasedAt: start + 0.5 * DAY };
     attrs.push(attribute(owner, "gp1_a_native_main_v1_en", mainAssignment),
       attribute(owner, "gp1_p_native_main_v1_en__onboarding", mainPlacement), attribute(owner, `gp1_t_${mainTx}`, mainPurchase));
-    const assignment = record({ experiment: "native_recovery_v1_en", experimentName: "Recovery offer · 50/50",
+    const assignment = record({ experiment: "poky_native_recovery_v1_en", experimentName: "Recovery offer · 50/50",
       variant, variantName: variant === "holdout" ? "No recovery" : "Recovery", paywall: variant,
-      expectedProduct: variant, assignedAt: start + 0.75 * DAY, viewedAt: variant === "recovery" ? start + 0.8 * DAY : undefined });
-    attrs.push(attribute(owner, "gp1_a_native_recovery_v1_en", assignment));
+      expectedProduct: variant, assignedAt: start + 0.3 * DAY, viewedAt: variant === "recovery" ? start + 0.8 * DAY : undefined });
+    attrs.push(attribute(owner, "gp1_a_poky_native_recovery_v1_en", assignment));
     if (variant === "recovery") {
       const placement = { ...assignment, placement: "automatic_recovery", reachedAt: start + 0.8 * DAY };
       const purchase: PaywallPurchase = { context: placement, productID: variant, transactionID: "301",
         originalTransactionID: "301", startedAt: start + 2 * DAY, purchasedAt: start + 2 * DAY };
-      attrs.push(attribute(owner, "gp1_p_native_recovery_v1_en__automatic_recovery", placement), attribute(owner, "gp1_t_301", purchase));
+      attrs.push(attribute(owner, "gp1_p_poky_native_recovery_v1_en__automatic_recovery", placement), attribute(owner, "gp1_t_301", purchase));
     }
   }
   const result = report(attrs, [
@@ -257,10 +257,109 @@ test("recovery paywalls use only their directly attributed total APPU", () => {
     money({ id: "main-offer", originalTransactionId: "202", transactionId: "202", proceeds: 8, price: 10, ts: iso(0.5) }),
     money({ id: "recovery-offer", originalTransactionId: "301", transactionId: "301", proceeds: 4, price: 5, ts: iso(3) }),
   ]);
-  const group = result.groups.find((g) => g.language === "en" && g.experiment === "native_recovery_v1_en")!;
+  const group = result.groups.find((g) => g.language === "en" && g.experiment === "poky_native_recovery_v1_en")!;
   const holdout = group.paywalls.find((row) => row.id.startsWith("holdout"))!;
   const recovery = group.paywalls.find((row) => row.id.startsWith("recovery"))!;
-  assert.equal(holdout.proceeds / holdout.users, 0);
-  assert.equal(recovery.proceeds / recovery.users, 4);
+  assert.equal(holdout.proceeds / holdout.users, 8);
+  assert.equal(holdout.views, 0);
+  assert.equal(holdout.conversions, 1);
+  assert.equal(recovery.proceeds / recovery.users, 12);
+  assert.equal(recovery.users, 1);
+  assert.equal(recovery.conversions, 1);
+  assert.equal(group.outcomeScope, "recovery_eligibility");
+  assert.equal(result.groups.find((g) => g.language === "en" && g.experiment === "native_main_v1_en")!.paywalls[0].proceeds, 16);
   assert.equal(group.placements[0].proceeds, 4);
+});
+
+const recoveryAssignment = (owner: string, variant = "holdout", language = "en", at = start) =>
+  attribute(owner, `gp1_a_poky_native_recovery_v1_${language}`, record({ experiment: `poky_native_recovery_v1_${language}`,
+    variant, paywall: variant, language, assignedAt: at }));
+
+test("recovery includes zero payers, identity-linked purchases, renewals and refunds exactly once", () => {
+  const attrs = [recoveryAssignment("buyer"), recoveryAssignment("free"), recoveryAssignment("offer", "recovery")];
+  const purchase = money({ appUserId: "buyer" });
+  const renewal = money({ appUserId: "buyer", name: "renewal", transactionId: "101", ts: iso(4) });
+  const refund = money({ appUserId: "buyer", name: "cancellation", transactionId: "101", isRefund: 1, ts: iso(5) });
+  const result = report(attrs, [purchase, purchase, renewal, refund,
+    money({ appUserId: "buyer", transactionId: "102", ts: iso(-1) }),
+    money({ appUserId: "buyer", transactionId: "103", ts: iso(11) }),
+    money({ appUserId: "other", transactionId: "104" })]);
+  const row = result.groups.find((g) => g.language === "en")!.paywalls.find((r) => r.paywall === "holdout")!;
+  assert.equal(row.users, 2);
+  assert.equal(row.proceeds, 8.5);
+  assert.equal(row.estimate.appu, 4.25);
+  assert.equal(row.paid, 1);
+  assert.equal(row.conversions, 1);
+  assert.equal(row.views, 0);
+  assert.equal(row.refunds, 10);
+  assert.equal(row.grossRevenue, 20);
+});
+
+test("recovery language changes cannot re-enrol users or duplicate their proceeds", () => {
+  const result = report([recoveryAssignment("outside", "holdout", "en", start - DAY),
+    recoveryAssignment("outside", "recovery", "es"), recoveryAssignment("inside"),
+    recoveryAssignment("inside", "recovery", "es", start + 0.5 * DAY)],
+  [money({ appUserId: "outside" }), money({ appUserId: "inside", transactionId: "200" })]);
+  assert.equal(result.groups.length, 2); // all + English, no second enrollment in Spanish.
+  assert.equal(result.groups[0].paywalls[0].users, 1);
+  assert.equal(result.groups[0].paywalls[0].proceeds, 8.5);
+});
+
+test("recovery loader fetches ordinary purchases by assigned user without purchase attributes", async () => {
+  const queries: string[] = [];
+  const result = await loadNativePaywalls(async <T>(sql: string) => {
+    queries.push(sql);
+    if (sql.includes("sw.user_attributes_rep")) return [recoveryAssignment("buyer")] as T[];
+    assert.match(sql, /appUserId IN \('buyer'\)/);
+    assert.match(sql, /source = 'integration'/);
+    assert.match(sql, /isSandbox = 0/);
+    assert.match(sql, /isFamilyShare = 0/);
+    return [money({ appUserId: "buyer" })] as T[];
+  }, 49771, start, start + DAY);
+  assert.equal(queries.length, 2);
+  assert.equal(result.groups[0].paywalls[0].proceeds, 8.5);
+});
+
+test("recovery loader follows transaction anchors even when main assignment predates the cohort", async () => {
+  const attrs = [...fixture("buyer", { assignedAt: start - 40 * DAY }), recoveryAssignment("buyer")];
+  const result = await loadNativePaywalls(async <T>(sql: string) => {
+    if (sql.includes("sw.user_attributes_rep")) return attrs as T[];
+    if (sql.includes("AND appUserId IN")) return []; // Apple identity absent, but native context identifies this buyer.
+    assert.match(sql, /originalTransactionId IN \('100'\)/);
+    return [money()] as T[];
+  }, 49771, start, start + DAY);
+  assert.equal(result.groups[0].paywalls[0].proceeds, 8.5);
+  assert.deepEqual(result.warnings, []);
+});
+
+test("unavailable recovery amounts suppress winner estimates", () => {
+  const result = report([recoveryAssignment("buyer"), recoveryAssignment("offer", "recovery")],
+    [money({ appUserId: "buyer", proceeds: null })]);
+  assert.match(result.warnings.join(" "), /amounts are unavailable/);
+  assert.equal(result.groups[0].paywalls[0].estimate.chanceBest, null);
+});
+
+test("a regular purchase awaiting Apple money also blocks the recovery comparison", () => {
+  const result = report([...fixture("buyer"), recoveryAssignment("buyer"), recoveryAssignment("offer", "recovery")], []);
+  const group = result.groups.find((g) => g.language === "en" && g.outcomeScope)!;
+  assert.equal(group.paywalls.find((row) => row.paywall === "holdout")!.conversions, 1);
+  assert.ok(group.paywalls.every((row) => row.estimate.chanceBest == null));
+  assert.match(group.paywalls[0].estimate.reason!, /Waiting for Apple server revenue/);
+});
+
+test("full-flow v2 and cancellation-only v1 stay separate", () => {
+  const v1 = recoveryAssignment("old");
+  const v2 = (owner: string, variant: string) => {
+    const a = recoveryAssignment(owner, variant);
+    return { ...a, key: a.key.replace("_v1_", "_v2_"), value: a.value.replaceAll("_v1_", "_v2_") };
+  };
+  const result = report([v1, v2("buyer", "holdout"), v2("free", "holdout"), v2("offer", "recovery")],
+    [money({ appUserId: "buyer", ts: iso(0.001) }), money({ appUserId: "old", transactionId: "200", proceeds: 100 })]);
+  const flow = result.groups.find((g) => g.language === "en" && g.outcomeScope === "recovery_flow")!;
+  const control = flow.paywalls.find((row) => row.paywall === "holdout")!;
+  assert.equal(control.users, 2);
+  assert.equal(control.estimate.appu, 4.25);
+  assert.equal(control.views, 0);
+  const old = result.groups.find((g) => g.language === "en" && g.outcomeScope === "recovery_eligibility")!;
+  assert.equal(old.paywalls[0].proceeds, 100);
 });

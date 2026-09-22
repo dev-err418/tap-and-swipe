@@ -58,8 +58,6 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
             {id} <span className="ml-1 font-semibold tabular-nums">{formatPaywallAllocation(percent)}</span>
           </span>)}
         </div>
-        <p className="text-xs text-muted-foreground">Configured in app code, not observed traffic or confirmation of App Store rollout. Yearly-only variants receive exactly one sixth each; ~17% is rounded for display.</p>
-        <p className="text-xs text-amber-700">The $34.99 Yearly product needs Apple approval before production rollout.</p>
       </div>
     </section>}
     <section className="space-y-2 pt-2">
@@ -70,7 +68,6 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
         <div className="flex flex-wrap gap-2" role="group" aria-label="Language audience">
           {availableLanguages.map((code) => <button type="button" key={code} aria-pressed={code === selectedLanguage} onClick={() => setLanguage(code)} className={cn(DASHBOARD_TAB_CLASS, "h-8 px-3", code === selectedLanguage ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS)}><span aria-hidden="true" className="mr-1.5">{languageFlags[code] ?? "🌐"}</span>{languages[code] ?? code.toUpperCase()}</button>)}
         </div>
-        <p className="text-xs leading-relaxed text-muted-foreground">The date filter selects when users joined. Total APPU includes every assigned user and all proceeds, renewals and refunds attributed to their paywall through today.</p>
         {report?.warnings.map((warning) => <p role="status" key={warning} className="text-xs text-amber-700">{warning}</p>)}
       </div>
     </section>
@@ -78,7 +75,7 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
       : !groups.length ? <Empty>No native paywall tracking yet for this cohort. Results will appear after users run the instrumented app release.</Empty>
       : groups.map((group) => <div key={group.experiment} className="space-y-4">
         {groups.length > 1 ? <h2 className="px-1 pt-2 text-sm font-semibold">{group.name}</h2> : null}
-        <ResultsTable title="Paywalls" rows={group.paywalls} experiment={group.experiment} language={group.language} />
+        <ResultsTable title={group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} />
         <ResultsTable title="Placements" rows={group.placements} placement />
       </div>)}
   </div>;
@@ -88,13 +85,13 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <div className={cn(DASHBOARD_SURFACE_CLASS, "flex min-h-48 items-center justify-center p-8 text-center text-sm text-muted-foreground")}>{children}</div>;
 }
 
-function ResultsTable({ title, rows, experiment, language, placement = false }: { title: string; rows: NativePaywallRow[]; experiment?: string; language?: string; placement?: boolean }) {
+function ResultsTable({ title, rows, experiment, language, placement = false, flow = false }: { title: string; rows: NativePaywallRow[]; experiment?: string; language?: string; placement?: boolean; flow?: boolean }) {
   const sortedRows = [...rows].sort((a, b) => {
     const appuA = a.users ? a.proceeds / a.users : Number.NEGATIVE_INFINITY;
     const appuB = b.users ? b.proceeds / b.users : Number.NEGATIVE_INFINITY;
     return appuB - appuA || b.users - a.users;
   });
-  const conversionDomain = makeConversionDomain(sortedRows);
+  const conversionDomain = makeConversionDomain(flow ? sortedRows.map((row) => ({ ...row, views: row.users })) : sortedRows);
   const chances = placement ? [] : sortedRows.flatMap((row) => {
     const chance = row.estimate.chanceBest;
     return chance == null ? [] : [chance];
@@ -108,13 +105,13 @@ function ResultsTable({ title, rows, experiment, language, placement = false }: 
   }, 0.25);
   const readiness = placement ? null : sortedRows.find((row) => row.estimate.readiness)?.estimate.readiness ?? null;
   const columns = [
-    ["Total APPU", "All net proceeds attributed to this paywall through today, including renewals and refunds, divided by every assigned user."],
+    ["Total APPU", flow ? "All net proceeds after recovery assignment, from any paywall, divided by unique assigned users. Each person counts once, including non-payers." : "All net proceeds attributed to this paywall through today, including renewals and refunds, divided by every assigned user."],
     ["Probability best", placement ? "Placements have different audiences and are not randomized." : "Approximate probability of the highest total APPU. Shown early; treat it as unstable until every variant has 20 users and 3 paid users. The bar is the 95% confidence interval for APPU lift versus the first paywall."],
-    ["Conv. rate", "Conversions divided by unique viewers. The bar is a 95% confidence interval for the true conversion rate, not a daily high/low range."],
+    ["Conv. rate", flow ? "Users with a verified new purchase after assignment divided by all assigned users. Includes regular and recovery purchases." : "Conversions divided by unique viewers. The bar is a 95% confidence interval for the true conversion rate, not a daily high/low range."],
     ["Users", placement ? "Assigned users who reached this placement. A user may reach several placements." : "All users assigned to this variant, including non-viewers and non-payers."],
-    ["Views", "Unique users who actually saw the native paywall; repeat openings count once."],
+    [flow ? "Recovery views" : "Views", "Unique users who actually saw the native paywall; repeat openings count once."],
     ["Conversions", "Unique users with a verified purchase, including free trial starts. Restores and renewals are not new conversions."],
-    ["Proceeds", "Attributed proceeds after store fees/taxes and refunded proceeds, including renewals. USD."],
+    ["Proceeds", flow ? "All net proceeds after assignment for this flow's users, including regular purchases, recovery purchases, renewals and refunds. USD." : "Attributed proceeds after store fees/taxes and refunded proceeds, including renewals. USD."],
     ["Refunds", "Refunded customer revenue in USD, attributed back to the original purchase."],
     ["Refund rate", "Refunded customer revenue divided by gross customer revenue before refunds; not divided by proceeds."],
   ];
@@ -128,7 +125,7 @@ function ResultsTable({ title, rows, experiment, language, placement = false }: 
     <div className={cn(DASHBOARD_SURFACE_CLASS, "overflow-hidden")}>
       <div className="overflow-x-auto scrollbar-none">
         <table className="w-full min-w-[1220px] text-left text-xs">
-          <thead><tr className="border-b border-black/[0.06] text-muted-foreground"><th className="min-w-[180px] px-5 py-3 font-medium">{placement ? "Placement" : "Paywall"}</th>{columns.map(([label, hint]) => <th key={label} className={cn(columnWidth(label), "px-3 py-3 text-right font-medium")}><abbr title={hint} className="cursor-help whitespace-nowrap no-underline">{label}</abbr></th>)}</tr></thead>
+          <thead><tr className="border-b border-black/[0.06] text-muted-foreground"><th className="min-w-[180px] px-5 py-3 font-medium">{placement ? "Placement" : flow ? "Flow" : "Paywall"}</th>{columns.map(([label, hint]) => <th key={label} className={cn(columnWidth(label), "px-3 py-3 text-right font-medium")}><abbr title={hint} className="cursor-help whitespace-nowrap no-underline">{label}</abbr></th>)}</tr></thead>
         <tbody>{sortedRows.map((row) => {
           const estimate = row.estimate;
           const allocation = !placement && experiment ? nativePaywallAllocation(experiment, row.id, row.paywall, language) : null;
@@ -152,7 +149,7 @@ function ResultsTable({ title, rows, experiment, language, placement = false }: 
               bound={probabilityBound}
               reason={placement ? "Placements are not randomly assigned." : estimate.reason}
             />
-            <ConversionRateCell conversions={row.conversions} views={row.views} domain={conversionDomain} />
+            <ConversionRateCell conversions={row.conversions} views={flow ? row.users : row.views} domain={conversionDomain} />
             <Cell>{count(row.users)}</Cell><Cell>{count(row.views)}</Cell>
             <Cell><span title={`${count(row.paid)} users have paid`}>{count(row.conversions)}</span></Cell>
             <Cell>{currency(row.proceeds)}</Cell>
@@ -162,7 +159,6 @@ function ResultsTable({ title, rows, experiment, language, placement = false }: 
         </table>
         {!rows.length && <p className="p-6 text-sm text-muted-foreground">No {title.toLowerCase()} recorded yet.</p>}
       </div>
-      {!placement && sortedRows.some((r) => r.estimate.reason) && <p className="px-5 py-3 text-xs text-muted-foreground">{sortedRows.find((r) => r.estimate.reason)?.estimate.reason}</p>}
     </div>
   </section>;
 }

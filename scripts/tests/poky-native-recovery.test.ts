@@ -4,7 +4,7 @@ import { pokyNativeRecoveryExperiment } from "../../lib/poky-native-recovery";
 import type { PaywallAttribute } from "../../lib/native-paywall-analytics";
 const DAY = 86400000;
 const start = Date.parse("2026-09-01T00:00:00Z");
-const assignment = (appUserId: string, variant: string, language = "en", at = start, environment = "production"): PaywallAttribute => ({ appUserId, key: `gp1_a_poky_native_recovery_v1_${language}`, value: JSON.stringify({ schema: 1, environment, experiment: `poky_native_recovery_v1_${language}`, experimentName: "Recovery", variant, variantName: variant, paywall: variant, language, assignedAt: at, randomized: true, variantCount: 2, expectedProduct: "recovery" }) });
+const assignment = (appUserId: string, variant: string, language = "en", at = start, environment = "production"): PaywallAttribute => ({ appUserId, key: `gp1_a_poky_native_recovery_v2_${language}`, value: JSON.stringify({ schema: 1, environment, experiment: `poky_native_recovery_v2_${language}`, experimentName: "Recovery", variant, variantName: variant, paywall: variant, language, assignedAt: at, randomized: true, variantCount: 2, expectedProduct: "recovery" }) });
 const event = (appUserId: string, amount: number, day: number, tx = appUserId, name = "initial_purchase") => ({ appUserId, netProceeds: amount, eventTs: start + day * DAY, name, originalTransactionId: appUserId, transactionId: tx, attributionTs: start + day * DAY });
 
 test("native recovery includes non-viewers and later main-paywall purchases in holdout, without duplicating revenue", () => {
@@ -58,4 +58,17 @@ test("legacy campaign attributes never populate the hardcoded recovery test", ()
   assert.match(result.subtitle, /Hardcoded paywalls/);
   assert.deepEqual(result.variants.map((variant) => variant.users), [1, 0]);
   assert.equal(result.variants.reduce((sum, variant) => sum + variant.proceeds, 0), 0);
+});
+
+test("upfront groups include immediate regular buyers and non-viewers, excluding the old cancellation-only experiment", () => {
+  const old = assignment("old", "holdout");
+  const result = pokyNativeRecoveryExperiment([
+    assignment("immediate-control", "holdout"), assignment("free-control", "holdout"),
+    assignment("immediate-offer", "recovery"), assignment("recovered", "recovery"),
+    { ...old, key: old.key.replace("_v2_", "_v1_"), value: old.value.replaceAll("_v2_", "_v1_") },
+  ], [event("immediate-control", 40, 0.001), event("immediate-offer", 40, 0.001),
+    event("recovered", 20, 1), event("old", 1000, 1)], new Map(), start, start + DAY, start + 10 * DAY);
+  assert.equal(result.variants[0].proceeds / result.variants[0].users, 20);
+  assert.equal(result.variants[1].proceeds / result.variants[1].users, 30);
+  assert.deepEqual(result.scoreMetrics, ["appu"]);
 });

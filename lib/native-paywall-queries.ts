@@ -1,4 +1,4 @@
-import { buildNativePaywallReport, parsePaywallAttributes, type NativePaywallReport, type PaywallAttribute, type PaywallRevenue } from "./native-paywall-analytics";
+import { buildNativePaywallReport, firstRecoveryAssignments, parsePaywallAttributes, type NativePaywallReport, type PaywallAttribute, type PaywallRevenue } from "./native-paywall-analytics";
 
 type Query = <T>(sql: string) => Promise<T[]>;
 const quote = (s: string) => `'${s.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
@@ -23,13 +23,30 @@ ORDER BY appUserId, key LIMIT 10000 FORMAT JSON`);
       cursor = rows.at(-1);
     }
     const parsed = parsePaywallAttributes(attributes);
-    const originals = [...new Set(parsed.purchases.filter(({ purchase: p }) =>
-      p.context.assignedAt >= start && p.context.assignedAt < end && p.purchasedAt <= asOf
+    // Recovery compares user outcomes, including ordinary purchases without a gp1_t
+    // recovery context. Fetch both arms by identity, never by recovery product.
+    const recoveryUsers = [...new Set([1, 2].flatMap((version) => [...firstRecoveryAssignments(parsed.assignments, asOf, version)]
+      .filter(([, record]) => record.assignedAt >= start && record.assignedAt < end).map(([owner]) => owner)))];
+    const recoveryUserSet = new Set(recoveryUsers);
+    const originals = [...new Set(parsed.purchases.filter(({ owner, purchase: p }) =>
+      ((p.context.assignedAt >= start && p.context.assignedAt < end) || recoveryUserSet.has(owner)) && p.purchasedAt <= asOf
     ).map(({ purchase: p }) => p.originalTransactionID))];
     const events: PaywallRevenue[] = [];
+    for (let i = 0; i < recoveryUsers.length; i += 500) {
+      const rows = await query<PaywallRevenue>(`
+SELECT appUserId, id, name, originalTransactionId, transactionId, isRefund, price, proceeds, ts, purchasedAt, attributionTs
+FROM open_revenue.attributed_events_by_ts_rep FINAL
+WHERE applicationId = ${applicationID} AND isSandbox = 0 AND source = 'integration' AND isFamilyShare = 0
+  AND appUserId IN (${recoveryUsers.slice(i, i + 500).map(quote).join(",")})
+  AND ts >= fromUnixTimestamp64Milli(${Math.trunc(start)}) AND ts < fromUnixTimestamp64Milli(${asOf})
+  AND (name IN ('initial_purchase', 'renewal', 'non_renewing_purchase') OR isRefund = 1)
+LIMIT 50001 FORMAT JSON`);
+      if (rows.length > 50000) throw new Error("Transaction data exceeds the current reporting limit.");
+      events.push(...rows);
+    }
     for (let i = 0; i < originals.length; i += 500) {
       const rows = await query<PaywallRevenue>(`
-SELECT id, name, originalTransactionId, transactionId, isRefund, price, proceeds, ts, purchasedAt, attributionTs
+SELECT appUserId, id, name, originalTransactionId, transactionId, isRefund, price, proceeds, ts, purchasedAt, attributionTs
 FROM open_revenue.attributed_events_by_ts_rep FINAL
 WHERE applicationId = ${applicationID} AND isSandbox = 0 AND source = 'integration' AND isFamilyShare = 0
   AND originalTransactionId IN (${originals.slice(i, i + 500).map(quote).join(",")})

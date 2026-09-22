@@ -8,6 +8,8 @@ export type ExperimentFlowNode = {
   kind?: "start";
   experimentId?: string;
   variantId?: string;
+  /** Disjoint joint-assignment cohorts; parents sum the same leaves as their children. */
+  cohortMetric?: { experiment: string; variants: string[] };
   paywallMetric?: { experiment: string; variant: string; language: string };
 };
 export type ExperimentFlowEdge = { from: string; to: string; label?: string; conditional?: boolean };
@@ -71,17 +73,18 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
   const edges: ExperimentFlowEdge[] = [];
   background.branches.forEach((bg, bgIndex) => {
     const bgId = `background-${bg.id}`;
+    const experience = bg.id === "control" ? "original" : "chat";
     const y = 148 + bgIndex * 240;
     nodes.push({
       id: bgId, x: 160, y, width: 150, label: bg.id === "control" ? "Original" : "Warm experience",
-      tone: "blue", experimentId: background.id, variantId: bg.id,
+      tone: "blue", cohortMetric: { experiment: "poky-onboarding-abcd", variants: [`extra_${experience}`, `intro_${experience}`] },
     });
     edges.push({ from: "start", to: bgId, label: `${bg.percent}%` });
     plan.branches.forEach((branch, planIndex) => {
       const id = `${bgId}-${branch.id}`;
       nodes.push({ id, x: 398, y: y - 60 + planIndex * 120, width: 150, label: branch.label,
         tone: "blue",
-        experimentId: plan.id, variantId: branch.id });
+        cohortMetric: { experiment: "poky-onboarding-abcd", variants: [`${branch.id === "control" ? "extra" : "intro"}_${experience}`] } });
       edges.push({ from: bgId, to: id, label: `${branch.percent}%` }, { from: id, to: "language" });
     });
   });
@@ -123,6 +126,6 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
       { x: 618, label: "Audience" }, { x: 902, label: "Main paywalls" },
       { x: 1166, label: "Recovery trigger" }, { x: 1418, label: "Recovery test" },
     ],
-    notes: ["Paywall percentages apply within each language, not across languages. Dashed lines apply only after cancelling a purchase or dismissing a main paywall.", ...map.notes],
+    notes: [],
   };
 }
