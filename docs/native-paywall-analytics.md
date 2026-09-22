@@ -178,7 +178,7 @@ paywall-assignment populations and direct purchase attribution; they are not
 further subdivisions of the four onboarding cohorts. Poky's map has no footer
 notes; hovering a populated onboarding node shows its users and net proceeds.
 
-Most A/B result cards display APPU D7 and D14; the full-flow Recovery card uses total APPU. D30 APPU remains available in the underlying data. Poky's historical Superwall-vs-native comparison loads Superwall installs from 30 days before the September 20 experiment cutoff (August 21), while native installs retain the selected, cutoff-clamped cohort window. This expanded history is isolated from other experiment and dashboard totals. Its planning panel is indicative, has no completion-date projection or decisive verdict, and explains the unequal observation time of these non-randomized cohorts.
+Most A/B result cards display APPU D7 and D14; the full-flow Recovery card uses total APPU. D30 APPU remains available in the underlying data. Glow and Poky's historical Superwall-vs-native comparisons load Superwall installs from 30 days before their September 20 experiment cutoffs (August 21), while native installs retain the selected, cutoff-clamped cohort window. This expanded history is isolated from other experiment and dashboard totals. Their planning panels are indicative, with no completion-date projection or decisive verdict for these non-randomized cohorts. Glow classifies the earliest observed install version as Superwall before 1.7.0 and native from 1.7.0; upgrades do not move that user. All linked outcomes are followed through now, including historical trial starts/conversions, renewals and refunds; revenue is deduplicated and trial/paid counts are unique users.
 
 The AB tests and Paywalls tabs always use a rolling **30-day assignment cohort**, independently of the dashboard period selector used by the Data tab and overview charts. Outcomes are followed through report `asOf` (now), even when the cohort period ended earlier. Both paywall tables use that same 30-day cohort. Placement rows include only cohort members reaching that placement and can overlap in users; each transaction is attributed to one placement.
 
@@ -196,6 +196,17 @@ The AB tests and Paywalls tabs always use a rolling **30-day assignment cohort**
 Placements are not randomized arms. Their total APPU is descriptive; their Probability best stays blank with an explanation. Summing paywall rows within one experiment is valid; summing different experiments or placement user counts can double-count people.
 
 ## Limits and failure behavior
+
+Glow's Data-tab Countries/APPU and CR horizontal charts (including their metric menus,
+tooltips and detail views) use mature install cohorts. Users must be at least
+72 hours past installation and, when a trial is observed, 72 hours past its start.
+Cancelled trials and non-payers remain in the eligible denominator; immediate
+buyers do not qualify early. The date picker selects installs, with their linked
+transactions followed through now, including later conversions, renewals and
+refunds. All metrics use the same users and their install country. Recent-only
+periods can therefore have no mature data. This filter does not change the
+overview totals, trend, trial-survival chart or other apps. Glow's CR is paid users /
+installs, using the same 72-hour-mature cohort as APPU.
 
 - Historical pre-instrumentation views/placements cannot be reconstructed; keep them untracked.
 - Local persistence is scoped to Superwall identity and build environment. Uninstall/reset loses local pending attempts; there is no cross-device assignment synchronization. Do not introduce login/identity switching without designing migration.

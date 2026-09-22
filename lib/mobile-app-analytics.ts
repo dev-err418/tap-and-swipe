@@ -1,5 +1,7 @@
 import "server-only";
 import { paidExperienceCohort } from "./paid-experience-cohort";
+import { glowMatureCountries } from "./glow-mature-countries";
+import { GLOW_SUPERWALL_HISTORY_START_MS, glowPaywallMigrationExperiment } from "./glow-paywall-migration";
 import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
 import { loadNativePaywalls } from "./native-paywall-queries";
@@ -137,6 +139,8 @@ export type MobileAppAnalytics = {
   paid: number;
   trend: MobileAppTrendPoint[];
   countries: MobileAppCountryRow[];
+  /** Countries/APPU and CR charts; Glow uses fully observed 72-hour cohorts. */
+  dataCountries?: MobileAppCountryRow[];
   plans: MobileAppPlanCountryRow[];
   retention: MobileAppRetentionCountryRow[];
   experiments: MobileAppExperiment[];
@@ -151,7 +155,6 @@ const VERSY_SUPERWALL_ORGANIZATION_ID = 25476;
 const VERSY_SUPERWALL_APPLICATION_ID = 51393;
 const GLOW_SUPERWALL_ORGANIZATION_ID = 27020;
 const GLOW_SUPERWALL_APPLICATION_ID = 54736;
-const GLOW_NATIVE_PAYWALL_MIN_VERSION = [1, 7, 0] as const;
 const ANALYTICS_CACHE_MS = 90_000;
 const MAX_QUERY_CONCURRENCY = 6;
 const EVENT_DUMP_LIMIT = 50_000;
@@ -473,6 +476,7 @@ async function loadSuperwallAppAnalytics(
     paid: countries.reduce((sum, row) => sum + row.paid, 0),
     trend,
     countries,
+    dataCountries: facts && app.id === "glow" ? glowMatureCountries(facts) : countries,
     plans,
     retention,
     experiments: orderAppExperiments(app.id, experiments),
@@ -494,8 +498,10 @@ async function loadAppFacts(
   endMs: number,
 ): Promise<AppFacts> {
   const keys = attributeKeysFor(app.id);
-  const historyStartMs = app.id === "poky" ? pokyExperimentStart(0) - 30 * DAY_MS : startMs;
-  const fetchStart = app.id === "poky" ? clickhouseDate(new Date(Math.min(startMs, historyStartMs))) : start;
+  const hasMigrationHistory = app.id === "poky" || app.id === "glow";
+  const historyStartMs = app.id === "poky" ? pokyExperimentStart(0) - 30 * DAY_MS
+    : app.id === "glow" ? GLOW_SUPERWALL_HISTORY_START_MS : startMs;
+  const fetchStart = hasMigrationHistory ? clickhouseDate(new Date(Math.min(startMs, historyStartMs))) : start;
   const sessionRange = sessionWindow(startMs, endMs);
   const [installResult, attributeResult, eventResult, sessionResult] = await Promise.allSettled([
     fetchInstallCohort(app, fetchStart, end),
@@ -520,7 +526,7 @@ async function loadAppFacts(
   }
 
   return {
-    migrationHistory: app.id === "poky" && installResult.status === "fulfilled" && eventResult.status === "fulfilled"
+    migrationHistory: hasMigrationHistory && installResult.status === "fulfilled" && eventResult.status === "fulfilled"
       ? { installs: installResult.value, events: eventResult.value, startMs: historyStartMs } : undefined,
     startMs,
     endMs,
@@ -870,7 +876,10 @@ function retentionFromFacts(facts: AppFacts): MobileAppRetentionCountryRow[] {
 
 function glowExperiments(facts: AppFacts): MobileAppExperiment[] {
   return [
-    glowPaywallExperiment(facts),
+    glowPaywallMigrationExperiment({ ...facts,
+      installs: facts.migrationHistory?.installs ?? facts.installs,
+      events: facts.migrationHistory?.events ?? facts.events,
+    }),
     attributeExperiment(facts, {
       id: "glow-yearly-price",
       title: "Yearly price A/B test",
@@ -893,53 +902,6 @@ function glowExperiments(facts: AppFacts): MobileAppExperiment[] {
     }),
     glowOnboardingExperiment(facts),
   ];
-}
-
-function glowPaywallExperiment(facts: AppFacts): MobileAppExperiment {
-  const legacy = emptyExperimentVariant("legacy", "Superwall web");
-  const native = emptyExperimentVariant("native", "Native paywall");
-  const targetFor = (appVersion: string) => {
-    const variant = paywallVariantForVersion(appVersion);
-    if (variant === "native") return native;
-    if (variant === "legacy") return legacy;
-    return null;
-  };
-
-  const cohort = new Map<string, InstallRow>();
-  for (const row of facts.installs) {
-    if (row.installedAt < glowExperimentStart(facts.startMs)) continue;
-    const target = targetFor(row.appVersion);
-    if (target) {
-      cohort.set(row.appUserId, row);
-      addExperimentMetrics(target, { country: row.country, installs: 1 });
-    }
-  }
-
-  const seenTrial = new Set<string>();
-  const seenConverted = new Set<string>();
-  const seenPaid = new Set<string>();
-  for (const event of facts.events) {
-    const install = cohort.get(event.appUserId);
-    if (!install || event.eventTs < install.installedAt) continue;
-    const target = targetFor(install.appVersion);
-    if (!target) continue;
-    const id = `${install.appVersion}|${install.country}|${event.originalTransactionId}`;
-    if (inRange(event.eventTs, facts.startMs, facts.endMs)) {
-      addOutcomeMetrics(target, event, install.country, id, seenTrial, seenConverted, seenPaid);
-    }
-    if (event.netProceeds != null && isMobileMoneyEvent(event)) {
-      addExperimentMetrics(target, { country: install.country, proceeds: event.netProceeds });
-    }
-  }
-
-  return {
-    id: "glow-native-paywall",
-    title: "Paywall A/B test",
-    subtitle: "1.7.0+ vs earlier",
-    scoreMetrics: ["appu", "download_paid"],
-    showTrials: true,
-    variants: [legacy, native],
-  };
 }
 
 function glowOnboardingExperiment(facts: AppFacts): MobileAppExperiment {
@@ -1442,24 +1404,8 @@ function addExperimentMetricsToSlice(target: MobileAppExperimentSlice, next: Mob
   target.retainedD30 += next.retainedD30;
 }
 
-function paywallVariantForVersion(value: string): "native" | "legacy" | null {
-  const version = parseAppVersion(value);
-  if (!version) return null;
-  for (let index = 0; index < GLOW_NATIVE_PAYWALL_MIN_VERSION.length; index += 1) {
-    if (version[index] > GLOW_NATIVE_PAYWALL_MIN_VERSION[index]) return "native";
-    if (version[index] < GLOW_NATIVE_PAYWALL_MIN_VERSION[index]) return "legacy";
-  }
-  return "native";
-}
-
 function roundMoney(value: number) {
   return Math.round(value * 100) / 100;
-}
-
-function parseAppVersion(value: string): [number, number, number] | null {
-  const match = value.trim().match(/^(\d+)\.(\d+)(?:\.(\d+))?/);
-  if (!match) return null;
-  return [Number(match[1]), Number(match[2]), Number(match[3] ?? 0)];
 }
 
 function isPaidEvent(event: AttributedRow) {

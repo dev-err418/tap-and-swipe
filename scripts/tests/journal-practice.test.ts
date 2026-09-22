@@ -6,6 +6,7 @@ import JournalPracticePanel from "../../components/analytics/JournalPracticePane
 import AppExperimentCard from "../../components/analytics/AppExperimentCard";
 import { buildJournalPracticeReport, DAY_MS, JOURNAL_PRACTICE_ID, JOURNAL_PRACTICE_KEY, type JournalPracticeAttribute } from "../../lib/journal-practice-analytics";
 import { loadJournalPractice } from "../../lib/journal-practice-queries";
+import { journalPracticeComparisons } from "../../lib/journal-practice-comparison";
 
 const start = Date.UTC(2026, 8, 1);
 function attribute(id: string, overrides: Record<string, unknown> = {}): JournalPracticeAttribute {
@@ -45,6 +46,8 @@ test("sessions use equal 7-day windows with zeros, excluding immature users", ()
   assert.equal(report.rows[0].users, 3);
   assert.equal(report.rows[0].sessionUsersD7, 2);
   assert.equal(report.rows[0].sessionsPerUserDayD7, 8 / 14);
+  assert.ok(Math.abs(report.rows[0].sessionsPerUserDayVarianceD7! - 18 / 49) < 1e-10);
+  assert.equal(report.rows[1].sessionsPerUserDayVarianceD7, null);
 });
 
 test("only production randomized assignments in the selected cohort count", () => {
@@ -85,13 +88,14 @@ test("dashboard distinguishes no data and failures and labels app-return metrics
   assert.match(html, /Journal VS Practice/);
   assert.match(html, /30% Journal · 70% Practice/);
   assert.match(html, /No production assignments/);
-  assert.match(html, /Enabled in the next app release: 30% Journal \/ 70% Practice/);
   assert.doesNotMatch(html, /enrollment stays off/);
-  assert.match(html, /not subscription retention/);
+  assert.match(html, /D1 return/);
+  assert.match(html, /D7 return/);
+  assert.doesNotMatch(html, /D30 return/);
   assert.match(renderToStaticMarkup(createElement(JournalPracticePanel, { report: null })), /unavailable/);
 });
 
-test("activity tests share the regular A/B card and table styling without inventing revenue or winners", () => {
+test("activity tests share the regular A/B comparison charts and table without inventing revenue or immature winners", () => {
   const report = buildJournalPracticeReport([attribute("a")], start, start + 1, start + 8 * DAY_MS);
   const html = renderToStaticMarkup(createElement(JournalPracticePanel, { report })).replaceAll(/<!--.*?-->/g, "");
   const regular = renderToStaticMarkup(createElement(AppExperimentCard, {
@@ -107,7 +111,9 @@ test("activity tests share the regular A/B card and table styling without invent
   assert.match(html, /0\.0%/); // Mature observed non-return is a true zero.
   assert.match(html, /—/); // Immature/unobserved data is still missing, not zero.
   assert.match(html, /0\.14/);
-  assert.doesNotMatch(html, /Proceeds|chance to win|text-lg font-semibold/);
+  assert.match(html, /chance to win/);
+  assert.match(html, /Planning pending/);
+  assert.doesNotMatch(html, /Proceeds|100%.*?chance to win|text-lg font-semibold/);
 });
 
 test("unavailable activity data never renders stale metrics", () => {
@@ -116,8 +122,26 @@ test("unavailable activity data never renders stale metrics", () => {
     report: { ...populated, status: "unavailable", warnings: ["Example reporting warning"] },
   }));
   assert.match(html, /unavailable/);
-  assert.match(html, /Example reporting warning/);
   assert.doesNotMatch(html, /<table/);
+  assert.doesNotMatch(html, /chance to win/);
+});
+
+test("comparison charts use mature return denominators and per-user session variance", () => {
+  const attributes = ["journal", "practice"].flatMap((variant) => Array.from({ length: 100 }, (_, index) => attribute(`${variant}-${index}`, {
+    variant, updatedAt: start + DAY_MS,
+    days: { "0": { sessions: index % 2 ? 7 : 1, opens: 0, active: true },
+      ...(index < (variant === "journal" ? 30 : 50) ? { "1": { sessions: 1, opens: 0, active: true } } : {}),
+    },
+  })));
+  const report = buildJournalPracticeReport(attributes, start, start + 1, start + 8 * DAY_MS);
+  const comparisons = journalPracticeComparisons(report);
+  assert.deepEqual(comparisons[0].analysis.variants.map((row) => row.metricValue), [0.3, 0.5]);
+  assert.ok(comparisons[0].analysis.variants[1].chanceToWin! > 0.95);
+  assert.ok(comparisons[2].analysis.sufficientData);
+  assert.ok(Math.abs(comparisons[2].analysis.variants[0].metricValue - report.rows[0].sessionsPerUserDayD7!) < 1e-10);
+  assert.deepEqual(comparisons.map((row) => row.title), ["D1 return", "D7 return", "Sessions / user / day"]);
+  const flagged = journalPracticeComparisons({ ...report, warnings: ["Malformed records"] });
+  assert.ok(flagged.every(({ analysis }) => analysis.variants.every((row) => row.chanceToWin === null)));
 });
 
 test("a failed second page never returns the first page as a complete cohort", async () => {

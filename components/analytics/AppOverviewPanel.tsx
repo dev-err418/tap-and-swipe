@@ -46,6 +46,7 @@ export default function AppOverviewPanel({
   windowLabel,
   trend,
   countries,
+  dataCountries = countries,
   experimentCountries = countries,
   plans,
   retention,
@@ -61,6 +62,7 @@ export default function AppOverviewPanel({
   windowLabel: string;
   trend: FunnelTrendPoint[];
   countries: MobileAppCountryRow[];
+  dataCountries?: MobileAppCountryRow[];
   experimentCountries?: MobileAppCountryRow[];
   plans: MobileAppPlanCountryRow[];
   retention: MobileAppRetentionCountryRow[];
@@ -135,8 +137,8 @@ export default function AppOverviewPanel({
         >
           {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-            <AppCountryBreakdown countries={countries} />
-            <AppConversionBreakdown countries={countries} />
+            <AppCountryBreakdown countries={dataCountries} />
+            <AppConversionBreakdown countries={dataCountries} conversion="paid" />
           </div>
           {showPlans || showRetention ? (
             <div className="grid min-w-0 gap-4 xl:grid-cols-2">

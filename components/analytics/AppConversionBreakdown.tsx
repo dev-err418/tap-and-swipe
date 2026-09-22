@@ -40,9 +40,12 @@ const METRIC_LABELS: Record<ConversionMetric, string> = {
 const BASE_OPTIONS = ["installs", "paid", "install_to_paid"] as const;
 const TRIAL_OPTIONS = ["trials", "install_to_trial", "trial_to_paid"] as const;
 
-export default function AppConversionBreakdown({ countries }: { countries: MobileAppCountryRow[] }) {
+type ConversionTarget = "paid" | "trial";
+
+export default function AppConversionBreakdown({ countries, conversion = "paid" }: { countries: MobileAppCountryRow[]; conversion?: ConversionTarget }) {
   const hasTrials = countries.some((row) => row.trials > 0);
-  const options = hasTrials ? [...BASE_OPTIONS, ...TRIAL_OPTIONS] : [...BASE_OPTIONS];
+  const options: ConversionMetric[] = conversion === "trial" ? ["installs", "trials", "install_to_trial"]
+    : hasTrials ? [...BASE_OPTIONS, ...TRIAL_OPTIONS] : [...BASE_OPTIONS];
   const [metric, setMetric] = useState<ConversionMetric>("installs");
   const sorted = [...countries].sort((a, b) => metricValue(b, metric) - metricValue(a, metric) || b.installs - a.installs);
   const preview = sorted.slice(0, PREVIEW_ROWS);
@@ -62,15 +65,15 @@ export default function AppConversionBreakdown({ countries }: { countries: Mobil
       headerClassName="h-[46px] border-b-0 py-0 pr-2"
       contentClassName="h-[24.5rem] space-y-0 p-0 pr-0.5"
       footer={
-        sorted.length > PREVIEW_ROWS ? <ConversionDetails rows={sorted} metric={metric} /> : undefined
+        sorted.length > PREVIEW_ROWS ? <ConversionDetails rows={sorted} metric={metric} conversion={conversion} /> : undefined
       }
     >
-      <ConversionTable rows={preview} metric={metric} />
+      <ConversionTable rows={preview} metric={metric} conversion={conversion} />
     </DashboardCard>
   );
 }
 
-function ConversionDetails({ rows, metric }: { rows: MobileAppCountryRow[]; metric: ConversionMetric }) {
+function ConversionDetails({ rows, metric, conversion }: { rows: MobileAppCountryRow[]; metric: ConversionMetric; conversion: ConversionTarget }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -86,13 +89,13 @@ function ConversionDetails({ rows, metric }: { rows: MobileAppCountryRow[]; metr
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden bg-white p-0 sm:max-w-3xl">
           <DialogHeader className="px-6 pt-6 pr-16">
-            <DialogTitle>Conversion details</DialogTitle>
+            <DialogTitle>{conversion === "trial" ? "Install → trial" : "Conversion details"}</DialogTitle>
             <DialogDescription>
               {rows.length.toLocaleString("en-US")} {rows.length === 1 ? "country" : "countries"} for the selected period, sorted by {METRIC_LABELS[metric].toLowerCase()}.
             </DialogDescription>
           </DialogHeader>
           <div className="min-h-0 max-h-[65dvh] overflow-auto overscroll-contain border-t border-black/[0.06] p-0 pr-0.5">
-            <ConversionTable rows={rows} metric={metric} />
+            <ConversionTable rows={rows} metric={metric} conversion={conversion} />
           </div>
         </DialogContent>
       </Dialog>
@@ -108,10 +111,10 @@ type ConversionTooltipState = {
   y: number;
 };
 
-function ConversionTable({ rows, metric }: { rows: MobileAppCountryRow[]; metric: ConversionMetric }) {
+function ConversionTable({ rows, metric, conversion }: { rows: MobileAppCountryRow[]; metric: ConversionMetric; conversion: ConversionTarget }) {
   const [tooltip, setTooltip] = useState<ConversionTooltipState | null>(null);
   const maxInstalls = Math.max(0, ...rows.map((row) => row.installs));
-  const maxPaid = Math.max(0, ...rows.map((row) => row.paid));
+  const maxConversions = Math.max(0, ...rows.map((row) => conversion === "trial" ? row.trials : row.paid));
   if (rows.length === 0) {
     return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No conversion data yet.</div>;
   }
@@ -125,13 +128,14 @@ function ConversionTable({ rows, metric }: { rows: MobileAppCountryRow[]; metric
             row={row}
             metric={metric}
             maxInstalls={maxInstalls}
-            maxPaid={maxPaid}
+            maxConversions={maxConversions}
+            conversion={conversion}
             onTooltipChange={setTooltip}
           />
         ))}
       </div>
       {tooltip && globalThis.document
-        ? createPortal(<ConversionTooltip tooltip={tooltip} />, globalThis.document.body)
+        ? createPortal(<ConversionTooltip tooltip={tooltip} conversion={conversion} />, globalThis.document.body)
         : null}
     </>
   );
@@ -141,19 +145,25 @@ function ConversionRow({
   row,
   metric,
   maxInstalls,
-  maxPaid,
+  maxConversions,
+  conversion,
   onTooltipChange,
 }: {
   row: MobileAppCountryRow;
   metric: ConversionMetric;
   maxInstalls: number;
-  maxPaid: number;
+  maxConversions: number;
+  conversion: ConversionTarget;
   onTooltipChange: (tooltip: ConversionTooltipState | null) => void;
 }) {
-  const showPaidBar = metric !== "install_to_paid" && maxPaid > 0;
-  const installWidth = barPercent(row.installs, maxInstalls, showPaidBar ? PRIMARY_BAR_SHARE : 100);
-  const paidWidth = showPaidBar ? barPercent(row.paid, maxPaid, SECONDARY_BAR_SHARE) : barPercent(installToPaid(row), 1, 100);
-  const barWidth = metric === "install_to_paid" ? paidWidth : Math.min(100, installWidth + paidWidth);
+  const rateOnly = metric === (conversion === "trial" ? "install_to_trial" : "install_to_paid");
+  const showConversionBar = !rateOnly && maxConversions > 0;
+  const rate = conversion === "trial" ? installToTrial(row) : installToPaid(row);
+  const installWidth = barPercent(row.installs, maxInstalls, showConversionBar ? PRIMARY_BAR_SHARE : 100);
+  const conversionWidth = showConversionBar
+    ? barPercent(conversion === "trial" ? row.trials : row.paid, maxConversions, SECONDARY_BAR_SHARE)
+    : rateOnly ? barPercent(rate, 1, 100) : 0;
+  const barWidth = rateOnly ? conversionWidth : Math.min(100, installWidth + conversionWidth);
   const label = countryName(row.country);
   const marker = row.country === "unknown" ? "??" : countryFlag(row.country);
   const updateTooltip = (event: PointerEvent<HTMLDivElement>) => {
@@ -174,7 +184,7 @@ function ConversionRow({
       onBlur={() => onTooltipChange(null)}
     >
       <div className="relative h-8 min-w-0 overflow-hidden rounded-r-md">
-        {metric === "install_to_paid" ? (
+        {rateOnly ? (
           <span
             aria-hidden="true"
             className="pointer-events-none absolute inset-y-0 left-0 rounded-r-md"
@@ -184,14 +194,14 @@ function ConversionRow({
           <>
             <span
               aria-hidden="true"
-              className={`pointer-events-none absolute inset-y-0 left-0 ${showPaidBar ? "" : "rounded-r-md"}`}
+              className={`pointer-events-none absolute inset-y-0 left-0 ${showConversionBar ? "" : "rounded-r-md"}`}
               style={{ width: `${installWidth}%`, backgroundColor: INSTALL_COLOR, opacity: 0.88 }}
             />
-            {showPaidBar ? (
+            {showConversionBar ? (
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-y-0 rounded-r-md"
-                style={{ left: `${installWidth}%`, width: `${paidWidth}%`, backgroundColor: PAID_COLOR, opacity: 0.88 }}
+                style={{ left: `${installWidth}%`, width: `${conversionWidth}%`, backgroundColor: PAID_COLOR, opacity: 0.88 }}
               />
             ) : null}
           </>
@@ -199,7 +209,7 @@ function ConversionRow({
         <div className="relative z-10 flex h-full min-w-0 items-center gap-2 px-3 text-sm font-medium text-foreground">
           <span className="flex size-5 shrink-0 items-center justify-center text-base">{marker}</span>
           <span className="min-w-0 flex-1 truncate">{label}</span>
-          <span className="shrink-0 font-mono text-xs font-medium tabular-nums">{formatMetric(row, metric)}</span>
+          <span className="shrink-0 font-mono text-xs font-medium tabular-nums">{formatRate(rate)}</span>
         </div>
         <div
           aria-hidden="true"
@@ -209,7 +219,7 @@ function ConversionRow({
           <div className="flex h-full min-w-0 items-center gap-2 px-3 text-sm font-medium text-white">
             <span className="flex size-5 shrink-0 items-center justify-center text-base">{marker}</span>
             <span className="min-w-0 flex-1 truncate">{label}</span>
-            <span className="shrink-0 font-mono text-xs font-medium tabular-nums">{formatMetric(row, metric)}</span>
+            <span className="shrink-0 font-mono text-xs font-medium tabular-nums">{formatRate(rate)}</span>
           </div>
         </div>
       </div>
@@ -217,16 +227,20 @@ function ConversionRow({
   );
 }
 
-function ConversionTooltip({ tooltip }: { tooltip: ConversionTooltipState }) {
+function ConversionTooltip({ tooltip, conversion }: { tooltip: ConversionTooltipState; conversion: ConversionTarget }) {
   const tooltipWidth = 192;
-  const tooltipHeight = tooltip.row.trials > 0 ? 172 : 116;
+  const tooltipHeight = conversion === "trial" ? 116 : tooltip.row.trials > 0 ? 172 : 116;
   const gap = 14;
   const left = Math.max(8, Math.min(tooltip.x + gap, window.innerWidth - tooltipWidth - 8));
   const top =
     tooltip.y + gap + tooltipHeight > window.innerHeight
       ? Math.max(8, tooltip.y - tooltipHeight - gap)
       : tooltip.y + gap;
-  const metrics = [
+  const metrics = conversion === "trial" ? [
+    { label: "Installs", value: formatInt(tooltip.row.installs), color: INSTALL_COLOR },
+    { label: "Trials", value: formatInt(tooltip.row.trials), color: PAID_COLOR },
+    { label: "Install → trial", value: formatRate(installToTrial(tooltip.row)) },
+  ] : [
     { label: "Installs", value: formatInt(tooltip.row.installs), color: INSTALL_COLOR },
     { label: "Paid", value: formatInt(tooltip.row.paid), color: PAID_COLOR },
     ...(tooltip.row.trials > 0
@@ -272,10 +286,6 @@ function metricValue(row: MobileAppCountryRow, metric: ConversionMetric) {
   if (metric === "install_to_trial") return installToTrial(row);
   if (metric === "trial_to_paid") return trialToPaid(row);
   return installToPaid(row);
-}
-
-function formatMetric(row: MobileAppCountryRow, _metric: ConversionMetric) {
-  return formatRate(installToPaid(row));
 }
 
 function installToPaid(row: MobileAppCountryRow) {

@@ -14,6 +14,7 @@ export type JournalPracticeRow = {
   variant: "journal" | "practice"; label: string; users: number;
   d1: ReturnMetric; d7: ReturnMetric; d30: ReturnMetric;
   sessionUsersD7: number; sessionsD7: number; sessionsPerUserDayD7: number | null;
+  sessionsPerUserDayVarianceD7: number | null;
 };
 export type JournalPracticeReport = {
   status: "ready" | "empty" | "unavailable"; asOf: number;
@@ -74,13 +75,18 @@ export function buildJournalPracticeReport(attributes: JournalPracticeAttribute[
     };
     // A common seven-day observation window prevents younger cohorts biasing the comparison.
     const mature = users.filter((r) => r.assignedAt + 7 * DAY_MS <= asOf);
-    const sessionsD7 = mature.reduce((sum, r) => sum + Object.entries(r.days)
-      .filter(([day]) => Number(day) < 7).reduce((total, [, day]) => total + day.sessions, 0), 0);
+    const sessionTotals = mature.map((r) => Object.entries(r.days)
+      .filter(([day]) => Number(day) < 7).reduce((total, [, day]) => total + day.sessions, 0));
+    const sessionsD7 = sessionTotals.reduce((sum, sessions) => sum + sessions, 0);
+    const sessionsPerUserDayD7 = mature.length ? sessionsD7 / (mature.length * 7) : null;
+    const sessionsPerUserDayVarianceD7 = mature.length > 1
+      ? sessionTotals.reduce((sum, sessions) => sum + (sessions / 7 - sessionsPerUserDayD7!) ** 2, 0) / (mature.length - 1)
+      : null;
     return {
       variant, label: variant === "journal" ? "Journal" : "Practice", users: users.length,
       d1: retention(1), d7: retention(7), d30: retention(30),
       sessionUsersD7: mature.length, sessionsD7,
-      sessionsPerUserDayD7: mature.length ? sessionsD7 / (mature.length * 7) : null,
+      sessionsPerUserDayD7, sessionsPerUserDayVarianceD7,
     };
   });
   return { status: cohort.length ? "ready" : "empty", asOf, rows, warnings };

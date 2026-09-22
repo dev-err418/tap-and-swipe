@@ -25,7 +25,7 @@ Dates select **assignment cohorts**, with follow-up through now. Return means fo
 
 ## Release checklist
 
-The A/B results card uses `AppExperimentLayout` and its shared table, column styles, and Variant A/B badges, exactly like `AppExperimentCard`. It keeps activity-specific retention/session metrics and does not fabricate revenue, country filters, or winner probabilities. Empty, unavailable, and immature values remain distinct.
+The A/B results card uses `AppExperimentLayout`, `ExperimentStats` comparison charts and readiness rings, and the shared table, column styles, and Variant A/B badges, like the other tests. The card shows D1/D7 return comparisons, which use each window's mature eligible users and returning users. Sessions/user/day uses seven-day mature users and the actual sample variance of each user's daily session average; sessions are not treated as independent users. The shared model estimates chance to win only when both arms have sufficient data and there are no validation warnings. It makes no automatic winner declaration. No revenue or country filters are fabricated. Empty, unavailable, and immature values remain distinct. Table denominator details are on hover, with no explanatory footer.
 
 1. Practice now has 50 paired recordings per language, a player, saved shuffled sessions and offline fallback; finish real-device and fluent localized listening checks.
 2. Glow's `productionRolloutEnabled` is enabled; production/sandbox persistence tests and dashboard/map copy match the 30/70 release configuration.

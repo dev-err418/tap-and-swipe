@@ -724,6 +724,7 @@ async function AppDetail({
         windowLabel={windowLabel}
         trend={trend}
         countries={app.countries}
+        dataCountries={app.dataCountries}
         experimentCountries={experimentApp?.countries ?? app.countries}
         plans={app.plans}
         retention={app.retention}

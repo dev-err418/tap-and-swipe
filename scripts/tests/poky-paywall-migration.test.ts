@@ -62,7 +62,8 @@ test("one comparison card renders both language APPUs and an empty arm honestly"
   assert.match(markup, /Spanish total APPU/);
   assert.match(markup, /English total APPU/);
   assert.match(markup, /Superwall vs native/);
-  assert.match(markup, /Historical cohorts, not randomized/);
+  assert.equal(result.randomized, false);
+  assert.match(result.planningNote!, /Historical cohorts, not randomized/);
   assert.match(markup, /Planning pending/);
   assert.match(markup, /—/);
 });
