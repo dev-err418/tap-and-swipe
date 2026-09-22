@@ -46,6 +46,7 @@ export default function AppOverviewPanel({
   windowLabel,
   trend,
   countries,
+  experimentCountries = countries,
   plans,
   retention,
   experiments = [],
@@ -60,6 +61,7 @@ export default function AppOverviewPanel({
   windowLabel: string;
   trend: FunnelTrendPoint[];
   countries: MobileAppCountryRow[];
+  experimentCountries?: MobileAppCountryRow[];
   plans: MobileAppPlanCountryRow[];
   retention: MobileAppRetentionCountryRow[];
   experiments?: MobileAppExperiment[];
@@ -72,7 +74,7 @@ export default function AppOverviewPanel({
   const installToPaid = installs > 0 ? paid / installs : 0;
   const showPlans = plans.some((row) => row.yearlySubs + row.weeklySubs > 0);
   const showRetention = retention.length > 0;
-  const topCountries = countries
+  const topCountries = experimentCountries
     .map((row) => row.country)
     .filter((country) => country !== "unknown")
     .slice(0, 5);

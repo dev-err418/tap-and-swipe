@@ -32,12 +32,14 @@ const REVENUE_BAR_SHARE = 100 - VISITOR_BAR_SHARE;
 
 export default function AppSprintFunnelPanel({
   analytics,
+  experimentAnalytics = analytics,
   showHeroExperiment = true,
   showPricingExperiment = false,
   showTrialExperiment = false,
   showOnboardingExperiment = false,
 }: {
   analytics: AppSprintFunnelAnalytics;
+  experimentAnalytics?: AppSprintFunnelAnalytics;
   showHeroExperiment?: boolean;
   showPricingExperiment?: boolean;
   showTrialExperiment?: boolean;
@@ -51,6 +53,7 @@ export default function AppSprintFunnelPanel({
   const visits = analytics.totals.asoVisits;
   const revenue = daily.reduce((sum, row) => sum + row.revenue, 0);
   const windowLabel = `Last ${analytics.windowDays} ${analytics.windowDays === 1 ? "day" : "days"}`;
+  const experimentWindowLabel = "Last 30 days";
 
   const trend = interval.length > 0
     ? interval.map((row) => ({
@@ -65,11 +68,11 @@ export default function AppSprintFunnelPanel({
         revenue: row.revenue,
         trialStarts: row.asoTrials,
       }));
-  const readinessWindow = { elapsedDays: analytics.windowDays, asOfMs: Date.parse(analytics.generatedAt) };
-  const pricingAnalysis = analyzeExperiment(toRevenueArms(analytics.pricingExperiment ?? []), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
-  const heroAnalysis = analyzeExperiment(toRevenueArms(analytics.heroPreviewExperiment), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
-  const trialAnalysis = analyzeExperiment(toRevenueArms(analytics.trialExperiment ?? []), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
-  const onboardingAnalysis = analyzeExperiment((analytics.onboardingExperiment ?? []).map((row) => ({ key: row.variant, label: row.label, exposures: row.visitors, conversions: row.completed, revenue: row.revenue })), "conversion_rate", "Completion rate", readinessWindow);
+  const readinessWindow = { elapsedDays: 30, asOfMs: Date.parse(experimentAnalytics.generatedAt) };
+  const pricingAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.pricingExperiment ?? []), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
+  const heroAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.heroPreviewExperiment), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
+  const trialAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.trialExperiment ?? []), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
+  const onboardingAnalysis = analyzeExperiment((experimentAnalytics.onboardingExperiment ?? []).map((row) => ({ key: row.variant, label: row.label, exposures: row.visitors, conversions: row.completed, revenue: row.revenue })), "conversion_rate", "Completion rate", readinessWindow);
   return (
     <section className="space-y-4">
       <div className="min-w-0 overflow-visible rounded-[28px] border-0 bg-white shadow-none">
@@ -86,31 +89,31 @@ export default function AppSprintFunnelPanel({
         </div>
       </div>
 
-      {showPricingExperiment ? <DashboardCard title="Pricing A/B test" titleAccessory={<ExperimentWarningBadge analysis={pricingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">50/50 · {windowLabel}</span>} contentClassName="min-w-0 p-0">
+      {showPricingExperiment ? <DashboardCard title="Pricing A/B test" titleAccessory={<ExperimentWarningBadge analysis={pricingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">50/50 · {experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={pricingAnalysis} />
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-black">Revenue / visitor</Th></tr></thead>
             <tbody>
-              {(analytics.pricingExperiment ?? []).map((row, index) => (
+              {(experimentAnalytics.pricingExperiment ?? []).map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
                   <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatPreciseCurrency(row.revenue)}</NumberTd><NumberTd className="font-bold">{formatPreciseCurrency(ratio(row.revenue, row.visitors))}</NumberTd>
                 </tr>
               ))}
-              {!analytics.pricingExperiment?.length ? <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Pricing experiment data is not available yet.</td></tr> : null}
+              {!experimentAnalytics.pricingExperiment?.length ? <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Pricing experiment data is not available yet.</td></tr> : null}
             </tbody>
           </table>
         </div>
       </DashboardCard> : null}
 
-      {showHeroExperiment ? <DashboardCard title="Hero preview A/B test" titleAccessory={<ExperimentWarningBadge analysis={heroAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
+      {showHeroExperiment ? <DashboardCard title="Hero preview A/B test" titleAccessory={<ExperimentWarningBadge analysis={heroAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={heroAnalysis} />
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
             <tbody>
-              {analytics.heroPreviewExperiment.map((row, index) => (
+              {experimentAnalytics.heroPreviewExperiment.map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
                   <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
@@ -121,13 +124,13 @@ export default function AppSprintFunnelPanel({
         </div>
       </DashboardCard> : null}
 
-      {showTrialExperiment ? <DashboardCard title="Trial length A/B/C test" titleAccessory={<ExperimentWarningBadge analysis={trialAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
+      {showTrialExperiment ? <DashboardCard title="Trial length A/B/C test" titleAccessory={<ExperimentWarningBadge analysis={trialAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={trialAnalysis} />
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Trial</Th><Th right>Trial rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
             <tbody>
-              {(analytics.trialExperiment ?? []).map((row, index) => (
+              {(experimentAnalytics.trialExperiment ?? []).map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
                   <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatPercent(ratio(row.trials, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
@@ -138,13 +141,13 @@ export default function AppSprintFunnelPanel({
         </div>
       </DashboardCard> : null}
 
-      {showOnboardingExperiment ? <DashboardCard title="Onboarding A/B test" titleAccessory={<ExperimentWarningBadge analysis={onboardingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0 p-0">
+      {showOnboardingExperiment ? <DashboardCard title="Onboarding A/B test" titleAccessory={<ExperimentWarningBadge analysis={onboardingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={onboardingAnalysis} />
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Started</Th><Th right>Completed</Th><Th right>Completion rate</Th><Th right>Payment page</Th><Th right>Trial</Th><Th right>Paid</Th><Th right>Revenue</Th></tr></thead>
             <tbody>
-              {(analytics.onboardingExperiment ?? []).map((row, index) => (
+              {(experimentAnalytics.onboardingExperiment ?? []).map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
                   <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.completed)}</NumberTd><NumberTd>{formatPercent(ratio(row.completed, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>

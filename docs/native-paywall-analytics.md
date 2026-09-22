@@ -147,7 +147,7 @@ Poky's App experience A/B test uses only users with a positive server purchase o
 
 A/B result cards display APPU D7 and D14 only; D30 APPU remains available in the underlying data and the separate Paywalls horizon selector. Poky's historical Superwall-vs-native comparison loads Superwall installs from 30 days before the September 20 experiment cutoff (August 21), while native installs retain the selected, cutoff-clamped cohort window. This expanded history is isolated from other experiment and dashboard totals. Its planning panel is indicative, has no completion-date projection or decisive verdict, and explains the unequal observation time of these non-randomized cohorts.
 
-The dashboard date filter selects **assignment time**. Outcomes are followed through report `asOf` (now), even when the selected cohort period ended earlier. Both tables use that same cohort. Placement rows include only cohort members reaching that placement and can overlap in users; each transaction is attributed to one placement.
+The AB tests and Paywalls tabs always use a rolling **30-day assignment cohort**, independently of the dashboard period selector used by the Data tab and overview charts. Outcomes are followed through report `asOf` (now), even when the cohort period ended earlier. Both paywall tables use that same 30-day cohort. Placement rows include only cohort members reaching that placement and can overlap in users; each transaction is attributed to one placement.
 
 - **Users:** all assigned users for a paywall; assigned users who reached a particular placement for placement rows.
 - **Views:** unique users actually shown that paywall/placement. Repeated openings count once.

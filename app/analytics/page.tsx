@@ -488,13 +488,19 @@ async function WebsiteDetail({
   period: Period;
   site: WebsiteSite;
 }) {
-  const analytics = site === "appsprint"
-    ? await getAppSprintFunnelAnalytics(period)
-    : site === "postback"
-      ? await getPostbackFunnelAnalytics(period)
-      : site === "grewit"
-        ? await getGrewItFunnelAnalytics(period)
-        : await getCommunityFunnelAnalytics(period);
+  const analyticsPromise = getWebsiteAnalytics(site, period);
+  const experimentAnalyticsPromise = period === "month"
+    ? analyticsPromise
+    : getWebsiteAnalytics(site, "month");
+  const [analyticsResult, experimentAnalyticsResult] = await Promise.allSettled([
+    analyticsPromise,
+    experimentAnalyticsPromise,
+  ]);
+  if (analyticsResult.status === "rejected") throw analyticsResult.reason;
+  const analytics = analyticsResult.value;
+  const experimentAnalytics = experimentAnalyticsResult.status === "fulfilled"
+    ? experimentAnalyticsResult.value
+    : analytics;
   const domain = site === "appsprint"
     ? "appsprint.app"
     : site === "postback"
@@ -534,6 +540,7 @@ async function WebsiteDetail({
       {analytics ? (
         <AppSprintFunnelPanel
           analytics={analytics}
+          experimentAnalytics={experimentAnalytics ?? analytics}
           showHeroExperiment={false}
           showPricingExperiment={site === "appsprint" || site === "community"}
           showTrialExperiment={site === "postback"}
@@ -549,6 +556,16 @@ async function WebsiteDetail({
       )}
     </div>
   );
+}
+
+function getWebsiteAnalytics(site: WebsiteSite, period: Period) {
+  return site === "appsprint"
+    ? getAppSprintFunnelAnalytics(period)
+    : site === "postback"
+      ? getPostbackFunnelAnalytics(period)
+      : site === "grewit"
+        ? getGrewItFunnelAnalytics(period)
+        : getCommunityFunnelAnalytics(period);
 }
 
 function AppSprintOperations() {
@@ -612,8 +629,16 @@ async function AppDetail({
   appId: AppId;
 }) {
   let app: MobileAppAnalytics | null = null;
+  let experimentApp: MobileAppAnalytics | null = null;
   try {
-    app = await getMobileAppById(period, appId);
+    const appPromise = getMobileAppById(period, appId);
+    const experimentAppPromise = period === "month"
+      ? appPromise
+      : getMobileAppById("month", appId);
+    const [appResult, experimentResult] = await Promise.allSettled([appPromise, experimentAppPromise]);
+    if (appResult.status === "rejected") throw appResult.reason;
+    app = appResult.value;
+    experimentApp = experimentResult.status === "fulfilled" ? experimentResult.value : app;
   } catch (error) {
     const log = process.env.NODE_ENV === "development" ? console.warn : console.error;
     log("tap_and_swipe.mobile_app_detail_failed", {
@@ -699,12 +724,13 @@ async function AppDetail({
         windowLabel={windowLabel}
         trend={trend}
         countries={app.countries}
+        experimentCountries={experimentApp?.countries ?? app.countries}
         plans={app.plans}
         retention={app.retention}
-        experiments={app.experiments}
+        experiments={experimentApp?.experiments ?? app.experiments}
         trialCancelTiming={app.trialCancelTiming}
-        nativePaywalls={app.nativePaywalls}
-        journalPractice={app.journalPractice}
+        nativePaywalls={experimentApp?.nativePaywalls ?? app.nativePaywalls}
+        journalPractice={experimentApp?.journalPractice ?? app.journalPractice}
       />
     </div>
   );
