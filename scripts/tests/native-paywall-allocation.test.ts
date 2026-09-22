@@ -13,9 +13,7 @@ test("every fixture audience mirrors all five v3 allocations", () => {
     assert.equal(percentages.reduce<number>((sum, value) => sum + (value ?? 0), 0), 100);
     const totalUsers = group.paywalls.reduce((sum, row) => sum + row.users, 0);
     group.paywalls.forEach((row, i) => assert.ok(Math.abs(row.users / totalUsers * 100 - percentages[i]!) < 1e-9));
-    for (const horizon of [7, 14, 30] as const) {
-      assert.equal(group.paywalls.reduce((sum, row) => sum + (row.estimates[horizon].chanceBest ?? 0), 0), 1);
-    }
+    assert.equal(group.paywalls.reduce((sum, row) => sum + (row.estimate.chanceBest ?? 0), 0), 1);
   }
 });
 
@@ -38,6 +36,12 @@ test("the live paywall panel shows next-release allocations even before data arr
   assert.doesNotMatch(markup, /166666/);
   const poky = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "poky", report: null }));
   assert.doesNotMatch(poky, /yr_wk_34/);
+});
+
+test("the paywall panel uses one total APPU metric without fixed-day windows", () => {
+  const markup = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "glow", report: NATIVE_PAYWALL_DEMO_REPORT }));
+  assert.match(markup, /Total APPU/);
+  assert.doesNotMatch(markup, /APPU window|Estimated APPU D7|Estimated APPU D14|Estimated APPU D30/);
 });
 
 test("unknown experiments, variants, paywalls and placements have no invented allocation", () => {

@@ -1,3 +1,5 @@
+import { calculateExperimentReadiness, type ExperimentReadiness } from "./experiment-stats";
+
 /** Native iOS gp1 scalar-JSON attribute contract. See docs/native-paywall-analytics.md. */
 export type PaywallRecord = {
   schema: 1;
@@ -43,14 +45,13 @@ export type PaywallRevenue = {
   attributionTs: string;
 };
 
-export const PAYWALL_HORIZONS = [7, 14, 30] as const;
-export type PaywallHorizon = (typeof PAYWALL_HORIZONS)[number];
 type Estimate = {
   users: number;
   appu: number | null;
   chanceBest: number | null;
   relativeDelta: number | null;
   credibleInterval: [number, number] | null;
+  readiness: ExperimentReadiness | null;
   reason: string | null;
 };
 export type NativePaywallRow = {
@@ -64,14 +65,12 @@ export type NativePaywallRow = {
   proceeds: number;
   grossRevenue: number;
   refunds: number;
-  funnelAppu: number | null;
-  estimates: Record<PaywallHorizon, Estimate>;
+  estimate: Estimate;
 };
 export type NativePaywallGroup = {
   experiment: string;
   name: string;
   language: string;
-  paywallRevenueScope: "direct_attribution" | "weighted_funnel";
   paywalls: NativePaywallRow[];
   placements: NativePaywallRow[];
 };
@@ -240,51 +239,62 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
   const output: NativePaywallGroup[] = [];
   for (const group of groups.values()) {
     const paywalls = [...group.paywalls.values()].sort((a, b) => a.id.localeCompare(b.id));
-    const paywallRevenueScope = isRecoveryComparison(paywalls) ? "weighted_funnel" : "direct_attribution";
     const rows = paywalls.map((row) => summarize(row, asOf, false));
-    for (const horizon of PAYWALL_HORIZONS) {
-      const stats = paywalls.map((row) => moments(row, asOf, horizon));
+    {
+      const stats = paywalls.map((row) => totalMoments(row, asOf));
       const expected = Math.max(0, ...stats.map((s) => s.variantCount));
-      const blocked = parsed.invalid > 0 ? "Some tracking records are invalid; winner estimates are unavailable."
+      const hardBlock = parsed.invalid > 0 ? "Some tracking records are invalid; winner estimates are unavailable."
         : missingMoney > 0 ? "Some transaction amounts are unavailable."
         : awaitingMoney.some(({ purchase: p }) => p.context.experiment === group.experiment && (group.language === "all" || p.context.language === group.language)) ? "Waiting for Apple server revenue to reconcile verified purchases."
         : rows.length < 2 || rows.length !== expected ? "Waiting for all variants."
-        : stats.some((s) => s.confounded) ? "Includes existing assignments or a fallback offer; not a clean randomized cohort."
-        : stats.some((s) => s.n < 50 || s.paid < 5) ? `Needs 50 mature users and 5 paid users per variant at D${horizon}.` : null;
-      const probabilities = blocked ? null : probabilityBest(stats);
-      const comparisons = blocked ? null : relativeAppuComparisons(stats);
+        : stats.some((s) => s.confounded) ? "Includes existing assignments or a fallback offer; not a clean randomized cohort." : null;
+      const sampleBlock = stats.some((s) => s.n < 20 || s.paid < 3)
+        ? "Early estimate — needs 20 users and 3 paid users per variant for a more stable comparison." : null;
+      const blocked = hardBlock ?? sampleBlock;
+      // Show the estimate as soon as every randomized arm is present. The sample warning
+      // communicates uncertainty; it should not remove the probability visualization.
+      const probabilities = hardBlock ? null : probabilityBest(stats);
+      const comparisons = hardBlock ? null : relativeAppuComparisons(stats);
+      const firstAssignedAt = Math.min(...stats.flatMap((stat) => stat.firstAssignedAt == null ? [] : [stat.firstAssignedAt]));
+      // These paywall tests have symmetric variants rather than a semantic control. Use
+      // an arm with observed APPU as the planning reference instead of alphabetical order.
+      const readinessOrder = stats.map((stat, index) => ({ stat, paywall: paywalls[index] }))
+        .sort((a, b) => Number(b.stat.mean > 0) - Number(a.stat.mean > 0));
+      const readiness = hardBlock ? null : calculateExperimentReadiness(
+        readinessOrder.map(({ stat, paywall }) => ({
+          key: paywall.id,
+          label: paywall.label,
+          exposures: stat.n,
+          conversions: stat.paid,
+          revenue: stat.mean * stat.n,
+          variance: stat.variance,
+        })),
+        "revenue_per_visitor",
+        {
+          minimumDetectableEffect: 0.5,
+          minimumSamplesPerVariant: 20,
+          minimumConversionsPerVariant: 3,
+          elapsedDays: Number.isFinite(firstAssignedAt) ? Math.max(1, (asOf - firstAssignedAt) / DAY) : undefined,
+          asOfMs: asOf,
+          decisiveProbability: probabilities ? Math.max(...probabilities) : null,
+        },
+      );
       rows.forEach((row, i) => {
-        row.estimates[horizon].chanceBest = probabilities?.[i] ?? null;
-        row.estimates[horizon].relativeDelta = comparisons?.[i].relativeDelta ?? null;
-        row.estimates[horizon].credibleInterval = comparisons?.[i].credibleInterval ?? null;
-        row.estimates[horizon].reason = blocked;
+        row.estimate.chanceBest = probabilities?.[i] ?? null;
+        row.estimate.relativeDelta = comparisons?.[i].relativeDelta ?? null;
+        row.estimate.credibleInterval = comparisons?.[i].credibleInterval ?? null;
+        row.estimate.readiness = readiness;
+        row.estimate.reason = blocked;
       });
     }
-    output.push({ experiment: group.experiment, name: group.name, language: group.language, paywallRevenueScope, paywalls: rows,
+    output.push({ experiment: group.experiment, name: group.name, language: group.language, paywalls: rows,
       placements: [...group.placements.values()].map((row) => summarize(row, asOf, true)).sort((a, b) => b.proceeds - a.proceeds) });
-  }
-  for (const group of output.filter((candidate) => candidate.paywallRevenueScope === "weighted_funnel")) {
-    const main = output.find((candidate) => candidate.language === group.language
-      && candidate.experiment === group.experiment.replace("_recovery_", "_main_"));
-    const mainUsers = main?.paywalls.reduce((sum, row) => sum + row.users, 0) ?? 0;
-    const mainProceeds = main?.paywalls.reduce((sum, row) => sum + row.proceeds, 0) ?? 0;
-    for (const row of group.paywalls) {
-      const isRecovery = row.id.split("|", 1)[0] === "recovery";
-      const users = mainUsers + (isRecovery ? row.users : 0);
-      const proceeds = mainProceeds + (isRecovery ? row.proceeds : 0);
-      row.funnelAppu = users ? proceeds / users : null;
-    }
   }
   return { status: "ready", asOf, groups: output, warnings: [
     ...(parsed.invalid ? [`${parsed.invalid} malformed tracking records were excluded.`] : []),
     ...(missingMoney ? [`${missingMoney} transaction amounts are unavailable; proceeds are incomplete.`] : []),
     ...(awaitingMoney.length ? [`${awaitingMoney.length} verified purchases are awaiting Apple server revenue; proceeds may be incomplete.`] : []),
   ] };
-}
-
-function isRecoveryComparison(rows: WorkingRow[]) {
-  const variants = new Set(rows.flatMap((row) => [...row.people.values()].map((person) => person.record.variant)));
-  return variants.has("recovery") && (variants.has("holdout") || variants.has("no_recovery"));
 }
 
 function sameAssignment(a: PaywallRecord, b: PaywallRecord) {
@@ -294,14 +304,16 @@ function sameAssignment(a: PaywallRecord, b: PaywallRecord) {
     && JSON.stringify(a.allowedProducts ?? [a.expectedProduct]) === JSON.stringify(b.allowedProducts ?? [b.expectedProduct]);
 }
 
-function moments(row: WorkingRow, asOf: number, days: number) {
-  const people = [...row.people.values()].filter((p) => p.record.assignedAt + days * DAY <= asOf);
-  const values = people.map((p) => p.money.filter((m) => m.at <= p.record.assignedAt + days * DAY));
+function totalMoments(row: WorkingRow, asOf: number) {
+  const people = [...row.people.values()].filter((p) => p.record.assignedAt <= asOf);
+  const values = people.map((p) => p.money.filter((m) => m.at <= asOf));
   const proceeds = values.map((events) => events.reduce((sum, m) => sum + m.proceeds, 0));
   const n = proceeds.length;
   const mean = n ? proceeds.reduce((a, b) => a + b, 0) / n : 0;
   const variance = n > 1 ? proceeds.reduce((sum, x) => sum + (x - mean) ** 2, 0) / (n - 1) : 0;
-  return { n, mean, se: Math.sqrt(variance / Math.max(n, 1)), paid: values.filter((events) => events.some((m) => m.revenue > 0)).length,
+  const firstAssignedAt = people.length ? Math.min(...people.map((person) => person.record.assignedAt)) : null;
+  return { n, mean, variance, se: Math.sqrt(variance / Math.max(n, 1)), paid: values.filter((events) => events.some((m) => m.revenue > 0)).length,
+    firstAssignedAt,
     confounded: [...row.people.values()].some((p) => !p.record.randomized || p.record.hadFallback === true
       || Boolean(p.record.displayedProduct && !(p.record.allowedProducts ?? [p.record.expectedProduct]).includes(p.record.displayedProduct))),
     variantCount: Math.max(0, ...[...row.people.values()].map((p) => p.record.variantCount)) };
@@ -310,17 +322,16 @@ function moments(row: WorkingRow, asOf: number, days: number) {
 function summarize(row: WorkingRow, asOf: number, placement: boolean): NativePaywallRow {
   const people = [...row.people.values()];
   const money = people.flatMap((p) => p.money);
+  const stats = totalMoments(row, asOf);
   return { id: row.id, label: row.label, paywall: row.paywall, users: people.length,
     views: people.filter((p) => p.record.viewedAt != null && p.record.viewedAt <= asOf).length,
     conversions: people.filter((p) => p.convertedAt != null).length,
     paid: people.filter((p) => p.money.some((m) => m.revenue > 0)).length,
     proceeds: money.reduce((sum, m) => sum + m.proceeds, 0),
-    grossRevenue: money.reduce((sum, m) => sum + m.revenue, 0), refunds: money.reduce((sum, m) => sum + m.refund, 0), funnelAppu: null,
-    estimates: Object.fromEntries(PAYWALL_HORIZONS.map((days) => {
-      const stats = moments(row, asOf, days);
-      return [days, { users: stats.n, appu: stats.n ? stats.mean : null, chanceBest: null, relativeDelta: null, credibleInterval: null,
-        reason: placement ? "Placements are not randomly assigned; no winner probability." : null }];
-    })) as Record<PaywallHorizon, Estimate> };
+    grossRevenue: money.reduce((sum, m) => sum + m.revenue, 0), refunds: money.reduce((sum, m) => sum + m.refund, 0),
+    estimate: { users: stats.n, appu: stats.n ? stats.mean : null, chanceBest: null, relativeDelta: null, credibleInterval: null,
+      readiness: null,
+      reason: placement ? "Placements are not randomly assigned; no winner probability." : null } };
 }
 
 /** Normal approximation using actual per-user variance (including zeros and refunds). */

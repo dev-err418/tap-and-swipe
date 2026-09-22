@@ -31,24 +31,24 @@ export default function AppExperimentCard({
 }) {
   const [country, setCountry] = useState(ALL_COUNTRIES);
   const variants = variantsForCountry(experiment.variants, country);
-  const scoreMetrics = experiment.scoreMetrics ?? ["appu", "download_paid"];
+  const scoreMetrics = (experiment.scoreMetrics ?? ["appu", "download_paid"]).filter((metric) => metric !== "appu_d30");
   const sessionDays = experiment.sessionDays && experiment.sessionDays > 0 ? experiment.sessionDays : 1;
+  const elapsedDays = experiment.elapsedDays && experiment.elapsedDays > 0 ? experiment.elapsedDays : sessionDays;
   const languages = (experiment.languageComparisons ?? []).map((comparison) => ({
     ...comparison, variants: variantsForCountry(comparison.variants, country),
   }));
   const scored = [
     ...languages.map((comparison) => ({
       key: `language-${comparison.language}`, title: comparison.label,
-      analysis: analyzeExperiment(toAppuArms(comparison.variants), "revenue_per_visitor", comparison.label),
+      analysis: analyzeExperiment(toAppuArms(comparison.variants), "revenue_per_visitor", comparison.label, { elapsedDays }),
     })),
-    ...scoreMetrics.map((metric) => scoredAnalysis(metric, variants, sessionDays)),
+    ...scoreMetrics.map((metric) => scoredAnalysis(metric, variants, sessionDays, elapsedDays)),
   ];
   const warningAnalysis = firstInsufficient(scored.map((item) => item.analysis)) ?? scored[0]?.analysis;
   const bestDownloadPaidKey = bestVariantKey(variants, (row) => ratio(row.paid, row.installs));
   const bestAppuKey = bestVariantKey(variants, (row) => ratio(row.proceeds, row.installs));
   const bestAppuD7Key = bestVariantKey(variants, (row) => ratio(row.proceedsD7, row.installsD7));
   const bestAppuD14Key = bestVariantKey(variants, (row) => ratio(row.proceedsD14, row.installsD14));
-  const bestAppuD30Key = bestVariantKey(variants, (row) => ratio(row.proceedsD30, row.installsD30));
   const bestSessionsKey = bestVariantKey(variants, (row) => ratio(row.sessions, row.users * sessionDays));
   const showTrials = experiment.showTrials === true;
   const showRetention = experiment.showRetention === true;
@@ -57,7 +57,7 @@ export default function AppExperimentCard({
   const showInstalls = experiment.showInstalls !== false;
   const showPaid = experiment.showPaid !== false;
   const showDownloadPaid = experiment.showDownloadPaid !== false;
-  const showCohortAppu = scoreMetrics.some((metric) => metric === "appu_d7" || metric === "appu_d14" || metric === "appu_d30");
+  const showCohortAppu = scoreMetrics.some((metric) => metric === "appu_d7" || metric === "appu_d14");
   const scoreDownloadPaid = scoreMetrics.includes("download_paid");
   const scoreAppu = scoreMetrics.includes("appu");
   const scoreSessions = scoreMetrics.includes("sessions_per_day");
@@ -65,19 +65,18 @@ export default function AppExperimentCard({
   return (
     <AppExperimentLayout
       title={experiment.title}
-      subtitle={experiment.subtitle}
       titleAccessory={warningAnalysis ? <ExperimentWarningBadge analysis={warningAnalysis} /> : null}
       action={
         topCountries.length > 0 ? <CountryFilter value={country} countries={topCountries} onValueChange={setCountry} /> : null
       }
     >
       {scored.map((item) => (
-        <ExperimentStats key={item.key} analysis={item.analysis} title={item.title} titleClassName="font-bold" />
+        <ExperimentStats key={item.key} analysis={item.analysis} title={item.title} titleClassName="font-bold" showReadiness={experiment.randomized !== false || !!experiment.planningNote} historical={experiment.randomized === false} />
       ))}
       <ExperimentTable headings={<>
               <Th>Variant</Th>
               {languages.map((comparison) => <Th key={comparison.language} right>{comparison.label}</Th>)}
-              {showUsers ? <Th right>Users</Th> : null}
+              {showUsers ? <Th right>{experiment.paidUsersOnly ? "Paid users" : "Users"}</Th> : null}
               {showInstalls ? <Th right>Installs</Th> : null}
               {showPaid ? <Th right>Paid</Th> : null}
               <Th right>Proceeds</Th>
@@ -97,11 +96,6 @@ export default function AppExperimentCard({
               {showCohortAppu ? (
                 <Th right className="font-bold text-black">
                   APPU D14
-                </Th>
-              ) : null}
-              {showCohortAppu ? (
-                <Th right className="font-bold text-black">
-                  APPU D30
                 </Th>
               ) : null}
               {showRetention ? <Th right>D7 subscribed</Th> : null}
@@ -152,11 +146,6 @@ export default function AppExperimentCard({
                     {formatPreciseCurrency(ratio(row.proceedsD14, row.installsD14))}
                   </NumberTd>
                 ) : null}
-                {showCohortAppu ? (
-                  <NumberTd className={row.key === bestAppuD30Key ? "font-bold" : undefined}>
-                    {formatPreciseCurrency(ratio(row.proceedsD30, row.installsD30))}
-                  </NumberTd>
-                ) : null}
                 {showRetention ? <NumberTd>{formatPercent(ratio(row.retainedD7, row.eligibleD7))}</NumberTd> : null}
                 {showRetention ? <NumberTd>{formatPercent(ratio(row.retainedD14, row.eligibleD14))}</NumberTd> : null}
                 {showRetention ? <NumberTd>{formatPercent(ratio(row.retainedD30, row.eligibleD30))}</NumberTd> : null}
@@ -173,6 +162,7 @@ export default function AppExperimentCard({
               </tr>
             ))}
       </ExperimentTable>
+      {experiment.planningNote ? <p className="px-4 py-3 text-xs text-muted-foreground">{experiment.planningNote}</p> : null}
     </AppExperimentLayout>
   );
 }
@@ -255,42 +245,43 @@ function scoredAnalysis(
   metric: MobileAppExperimentScoreMetric,
   variants: MobileAppExperimentVariant[],
   sessionDays = 1,
+  elapsedDays = sessionDays,
 ) {
   if (metric === "sessions_per_day") {
     return {
       key: metric,
       title: "Avg sessions / day",
-      analysis: analyzeExperiment(toSessionsArms(variants, sessionDays), "revenue_per_visitor", "Avg sessions / day"),
+      analysis: analyzeExperiment(toSessionsArms(variants, sessionDays), "revenue_per_visitor", "Avg sessions / day", { elapsedDays }),
     };
   }
   if (metric === "appu") {
-    return { key: metric, title: "APPU", analysis: analyzeExperiment(toAppuArms(variants), "revenue_per_visitor", "APPU") };
+    return { key: metric, title: "APPU", analysis: analyzeExperiment(toAppuArms(variants), "revenue_per_visitor", "APPU", { elapsedDays }) };
   }
   if (metric === "download_paid") {
     return {
       key: metric,
       title: "Download → paid",
-      analysis: analyzeExperiment(toDownloadPaidArms(variants), "conversion_rate", "Download → paid"),
+      analysis: analyzeExperiment(toDownloadPaidArms(variants), "conversion_rate", "Download → paid", { elapsedDays }),
     };
   }
   if (metric === "appu_d7") {
     return {
       key: metric,
       title: "APPU D7",
-      analysis: analyzeExperiment(toCohortAppuArms(variants, 7), "revenue_per_visitor", "APPU D7"),
+      analysis: analyzeExperiment(toCohortAppuArms(variants, 7), "revenue_per_visitor", "APPU D7", { elapsedDays: Math.max(1, elapsedDays - 7) }),
     };
   }
   if (metric === "appu_d14") {
     return {
       key: metric,
       title: "APPU D14",
-      analysis: analyzeExperiment(toCohortAppuArms(variants, 14), "revenue_per_visitor", "APPU D14"),
+      analysis: analyzeExperiment(toCohortAppuArms(variants, 14), "revenue_per_visitor", "APPU D14", { elapsedDays: Math.max(1, elapsedDays - 14) }),
     };
   }
   return {
     key: metric,
     title: "APPU D30",
-    analysis: analyzeExperiment(toCohortAppuArms(variants, 30), "revenue_per_visitor", "APPU D30"),
+    analysis: analyzeExperiment(toCohortAppuArms(variants, 30), "revenue_per_visitor", "APPU D30", { elapsedDays: Math.max(1, elapsedDays - 30) }),
   };
 }
 
@@ -326,13 +317,18 @@ function toCohortAppuArms(variants: MobileAppExperimentVariant[], days: 7 | 14 |
 
 function toSessionsArms(variants: MobileAppExperimentVariant[], sessionDays: number): ExperimentArm[] {
   const days = sessionDays > 0 ? sessionDays : 1;
-  return variants.map((row) => ({
-    key: row.key,
-    label: row.label,
-    exposures: row.users,
-    conversions: Math.min(row.users, row.sessions),
-    revenue: row.sessions / days,
-  }));
+  return variants.map((row) => {
+    const mean = row.users > 0 ? row.sessions / days / row.users : 0;
+    return {
+      key: row.key,
+      label: row.label,
+      exposures: row.users,
+      conversions: Math.min(row.users, row.sessions),
+      revenue: row.sessions / days,
+      // Aggregate session rows do not retain squared values; use a Poisson planning approximation.
+      variance: mean,
+    };
+  });
 }
 
 function firstInsufficient(analyses: ExperimentAnalysis[]) {

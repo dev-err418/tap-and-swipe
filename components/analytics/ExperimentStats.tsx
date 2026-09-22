@@ -2,7 +2,7 @@
 
 import { useState, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
-import type { ExperimentAnalysis, VariantExperimentResult } from "@/lib/experiment-stats";
+import type { ExperimentAnalysis, ExperimentReadiness, VariantExperimentResult } from "@/lib/experiment-stats";
 import { cn } from "@/lib/utils";
 
 const WIN_COLOR = "#1d4ed8";
@@ -26,19 +26,32 @@ export default function ExperimentStats({
   analysis,
   title,
   titleClassName,
+  showReadiness = true,
+  historical = false,
 }: {
   analysis: ExperimentAnalysis;
   title?: string;
   titleClassName?: string;
+  showReadiness?: boolean;
+  historical?: boolean;
 }) {
   if (analysis.variants.length === 0) return null;
   const leaderKey = uniqueChanceKey(analysis.variants, "max");
   const trailingKey = uniqueChanceKey(analysis.variants, "min");
   const bound = intervalBound(analysis.variants);
+  const readiness = historical ? {
+    ...analysis.readiness,
+    status: analysis.readiness.status === "decisive" ? "inconclusive" as const : analysis.readiness.status,
+    estimatedDaysRemaining: null,
+    estimatedCompletionAt: null,
+  } : analysis.readiness;
   return (
     <div className="border-b border-black/[0.08] px-4 py-4">
-      {title ? (
-        <p className={cn("mb-3 text-xs font-semibold text-black", titleClassName)}>{title}</p>
+      {title || showReadiness ? (
+        <div className="mb-3 flex items-center gap-2">
+          {title ? <p className={cn("text-xs font-semibold text-black", titleClassName)}>{title}</p> : null}
+          {showReadiness ? <ReadinessIndicator readiness={readiness} /> : null}
+        </div>
       ) : null}
       <div className="grid gap-6 sm:grid-cols-2">
         {analysis.variants.map((variant) => (
@@ -53,6 +66,94 @@ export default function ExperimentStats({
       </div>
     </div>
   );
+}
+
+export function ReadinessIndicator({ readiness }: { readiness: ExperimentReadiness }) {
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
+  const label = readiness.status === "decisive" ? "Decisive"
+    : readiness.status === "inconclusive" ? "Inconclusive"
+      : readiness.status === "collecting" ? "Collecting data"
+        : "Planning pending";
+  const statusColor = readiness.status === "decisive" ? WIN_COLOR
+    : readiness.status === "inconclusive" ? LOSE_COLOR
+      : "#525252";
+  const completion = readiness.estimatedCompletionAt
+    ? `around ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "Europe/Paris" }).format(new Date(readiness.estimatedCompletionAt))}`
+    : readiness.estimatedDaysRemaining != null && readiness.estimatedDaysRemaining > 0
+      ? `about ${readiness.estimatedDaysRemaining.toLocaleString("en-US")} days`
+      : readiness.estimatedDaysRemaining === 0 ? "target reached" : null;
+
+  const reportedProgress = readiness.progress == null ? 0 : Math.max(0, readiness.progress);
+  const ringProgress = Math.min(1, reportedProgress);
+  const radius = 8;
+  const circumference = 2 * Math.PI * radius;
+  const ariaLabel = readiness.required == null
+    ? `${label}. ${readiness.reason ?? "Sample target unavailable."}`
+    : `${label}. ${Math.round(reportedProgress * 100)}% of the total participant target: ${formatCount(readiness.observed)} of ${formatCount(readiness.required)} participants.${readiness.remaining ? ` ${formatCount(readiness.remaining)} more needed in underfilled variants.` : ""}`;
+  const showFromFocus = (element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    setTooltip({ x: rect.left + rect.width / 2, y: rect.bottom });
+  };
+
+  return <>
+    <button
+      type="button"
+      className="inline-flex size-6 shrink-0 cursor-help items-center justify-center rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#1d4ed8]/40"
+      aria-label={ariaLabel}
+      onPointerEnter={(event) => setTooltip({ x: event.clientX, y: event.clientY })}
+      onPointerMove={(event) => setTooltip({ x: event.clientX, y: event.clientY })}
+      onPointerLeave={() => setTooltip(null)}
+      onFocus={(event) => showFromFocus(event.currentTarget)}
+      onBlur={() => setTooltip(null)}
+    >
+      <svg viewBox="0 0 22 22" className="size-[22px] -rotate-90" aria-hidden="true">
+        <circle cx="11" cy="11" r={radius} fill="none" stroke={LOSE_COLOR} strokeOpacity="0.14" strokeWidth="3" />
+        <circle
+          cx="11"
+          cy="11"
+          r={radius}
+          fill="none"
+          stroke={LOSE_COLOR}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - ringProgress)}
+        />
+      </svg>
+    </button>
+    {tooltip && globalThis.document ? createPortal(
+      <ReadinessTooltip readiness={readiness} label={label} statusColor={statusColor} completion={completion} x={tooltip.x} y={tooltip.y} />,
+      globalThis.document.body,
+    ) : null}
+  </>;
+}
+
+function ReadinessTooltip({ readiness, label, statusColor, completion, x, y }: {
+  readiness: ExperimentReadiness;
+  label: string;
+  statusColor: string;
+  completion: string | null;
+  x: number;
+  y: number;
+}) {
+  const tooltipWidth = 320;
+  const tooltipHeight = 128;
+  const gap = 12;
+  const left = Math.max(8, Math.min(x - tooltipWidth / 2, window.innerWidth - tooltipWidth - 8));
+  const top = y + gap + tooltipHeight > window.innerHeight ? Math.max(8, y - tooltipHeight - gap) : y + gap;
+
+  return <div
+    role="tooltip"
+    className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] w-80 rounded-lg bg-[#f7f7f7] px-3 py-2.5 text-xs text-muted-foreground"
+    style={{ left, top }}
+  >
+    <div className="font-semibold" style={{ color: statusColor }}>{label}</div>
+    {readiness.required == null ? <p className="mt-1.5">{readiness.reason}</p> : <>
+      <p className="mt-1.5"><span className="font-medium tabular-nums text-foreground">{formatCount(readiness.observed)} / {formatCount(readiness.required)}</span> participants · {Math.round((readiness.progress ?? 0) * 100)}% of total target</p>
+      <p className="mt-1">{readiness.remaining != null && readiness.remaining > 0 ? `${formatCount(readiness.remaining)} more needed in underfilled variants · ` : ""}detects a {formatPercent(readiness.minimumDetectableEffect)} relative change at {formatPercent(readiness.confidenceLevel)} confidence / {formatPercent(readiness.power)} power</p>
+      {completion ? <p className="mt-1 font-medium text-foreground">Projected: {completion}</p> : null}
+    </>}
+  </div>;
 }
 
 function VariantChance({
@@ -216,7 +317,7 @@ function IntervalTooltip({
   y: number;
 }) {
   const tooltipWidth = 192;
-  const tooltipHeight = 92;
+  const tooltipHeight = 132;
   const gap = 14;
   const left = Math.max(8, Math.min(x + gap, window.innerWidth - tooltipWidth - 8));
   const top = y + gap + tooltipHeight > window.innerHeight ? Math.max(8, y - tooltipHeight - gap) : y + gap;
@@ -242,6 +343,7 @@ function IntervalTooltip({
           </div>
         ))}
       </div>
+      <p className="max-w-64 text-[11px] leading-snug text-muted-foreground">95% confidence interval for the lift versus control. If it crosses 0%, either variant could still be better.</p>
     </div>
   );
 }
@@ -257,6 +359,10 @@ function chanceTone(variant: VariantExperimentResult) {
 
 function formatPercent(value: number) {
   return `${Math.round(value * 100)}%`;
+}
+
+function formatCount(value: number) {
+  return Math.round(value).toLocaleString("en-US");
 }
 
 function formatDelta(value: number) {

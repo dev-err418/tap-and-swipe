@@ -2,7 +2,12 @@ const MIN_SAMPLES = 50;
 const MIN_CONVERSIONS = 5;
 const DEBUG_RELAX_GATES = true;
 const CONFIDENCE_LEVEL = 0.95;
+const DEFAULT_POWER = 0.8;
+const CONVERSION_MDE = 0.3;
+const VALUE_MDE = 0.3;
 const SIMULATION_RUNS = 20_000;
+const Z_95_TWO_SIDED = 1.959963984540054;
+const Z_80_POWER = 0.8416212335729143;
 
 export type ExperimentArm = {
   key: string;
@@ -10,6 +15,8 @@ export type ExperimentArm = {
   exposures: number;
   conversions: number;
   revenue: number;
+  /** Per-user sample variance when the source has it. */
+  variance?: number;
 };
 
 export type ExperimentMetricKind = "revenue_per_visitor" | "conversion_rate";
@@ -40,18 +47,53 @@ export type ExperimentAnalysis = {
   sufficientData: boolean;
   reason: string | null;
   needed: ExperimentSampleNeed | null;
+  readiness: ExperimentReadiness;
   variants: VariantExperimentResult[];
+};
+
+export type ExperimentReadinessStatus = "collecting" | "decisive" | "inconclusive" | "unavailable";
+
+export type ExperimentReadiness = {
+  status: ExperimentReadinessStatus;
+  observed: number;
+  required: number | null;
+  remaining: number | null;
+  progress: number | null;
+  minimumDetectableEffect: number;
+  confidenceLevel: number;
+  power: number;
+  estimatedDaysRemaining: number | null;
+  estimatedCompletionAt: string | null;
+  reason: string | null;
+};
+
+export type ExperimentReadinessOptions = {
+  minimumDetectableEffect?: number;
+  minimumSamplesPerVariant?: number;
+  minimumConversionsPerVariant?: number;
+  elapsedDays?: number;
+  asOfMs?: number;
+  decisiveProbability?: number | null;
 };
 
 export function analyzeExperiment(
   arms: ExperimentArm[],
   metric: ExperimentMetricKind,
   metricLabel: string,
+  readinessOptions: ExperimentReadinessOptions = {},
 ): ExperimentAnalysis {
   const needed = sampleNeed(arms, metric, metricLabel);
   const needReason = formatSampleNeed(needed);
   if (arms.length === 0) {
-    return { metric, metricLabel, sufficientData: false, reason: needReason ?? "Not enough data yet.", needed, variants: [] };
+    return {
+      metric,
+      metricLabel,
+      sufficientData: false,
+      reason: needReason ?? "Not enough data yet.",
+      needed,
+      readiness: calculateExperimentReadiness(arms, metric, readinessOptions),
+      variants: [],
+    };
   }
 
   const stats = arms.map((arm) => summarizeArm(arm, metric));
@@ -86,12 +128,17 @@ export function analyzeExperiment(
   });
 
   const sufficientData = stats.every((arm) => !arm.warning) && control.mean !== 0;
+  const bestProbability = Math.max(0, ...variants.flatMap((variant) => variant.chanceToWin == null ? [] : [variant.chanceToWin]));
   return {
     metric,
     metricLabel,
     sufficientData,
     reason: sufficientData ? null : needReason ?? warning,
     needed: sufficientData ? null : needed,
+    readiness: calculateExperimentReadiness(arms, metric, {
+      ...readinessOptions,
+      decisiveProbability: readinessOptions.decisiveProbability ?? bestProbability,
+    }),
     variants,
   };
 }
@@ -101,6 +148,9 @@ type ArmStats = {
   label: string;
   mean: number;
   se: number;
+  variance: number;
+  n: number;
+  conversions: number;
   ok: boolean;
   warning: string | null;
 };
@@ -108,7 +158,7 @@ type ArmStats = {
 function summarizeArm(arm: ExperimentArm, metric: ExperimentMetricKind): ArmStats {
   const n = arm.exposures;
   if (n <= 0) {
-    return { key: arm.key, label: arm.label, mean: 0, se: 0, ok: false, warning: "Not enough data yet." };
+    return { key: arm.key, label: arm.label, mean: 0, se: 0, variance: 0, n: 0, conversions: 0, ok: false, warning: "Not enough data yet." };
   }
 
   if (metric === "conversion_rate") {
@@ -118,8 +168,9 @@ function summarizeArm(arm: ExperimentArm, metric: ExperimentMetricKind): ArmStat
       n < MIN_SAMPLES || conversions < MIN_CONVERSIONS || n * (1 - p) < MIN_CONVERSIONS
         ? "Not enough data yet."
         : null;
-    const se = Math.sqrt((p * (1 - p)) / n) || fallbackSe(p, n);
-    return { key: arm.key, label: arm.label, mean: p, se, ok: true, warning };
+    const variance = p * (1 - p);
+    const se = Math.sqrt(variance / n) || fallbackSe(p, n);
+    return { key: arm.key, label: arm.label, mean: p, se, variance, n, conversions, ok: true, warning };
   }
 
   const mean = arm.revenue / n;
@@ -130,8 +181,125 @@ function summarizeArm(arm: ExperimentArm, metric: ExperimentMetricKind): ArmStat
     n < MIN_SAMPLES || arm.conversions < MIN_CONVERSIONS ? "Not enough data yet." : null;
   const p = Math.min(1, conversions / n);
   const aov = conversions > 0 ? arm.revenue / Math.max(arm.conversions, 1) : mean;
-  const se = Math.sqrt((p * (1 - p) * aov * aov) / n) || fallbackSe(mean, n);
-  return { key: arm.key, label: arm.label, mean, se, ok: true, warning };
+  const variance = arm.variance != null && Number.isFinite(arm.variance) && arm.variance >= 0
+    ? arm.variance
+    : p * (1 - p) * aov * aov;
+  const se = Math.sqrt(variance / n) || fallbackSe(mean, n);
+  return { key: arm.key, label: arm.label, mean, se, variance, n, conversions: arm.conversions, ok: true, warning };
+}
+
+/** Fixed-horizon planning target. This is deliberately independent from the live winner probability. */
+export function calculateExperimentReadiness(
+  arms: ExperimentArm[],
+  metric: ExperimentMetricKind,
+  options: ExperimentReadinessOptions = {},
+): ExperimentReadiness {
+  const minimumDetectableEffect = options.minimumDetectableEffect
+    ?? (metric === "conversion_rate" ? CONVERSION_MDE : VALUE_MDE);
+  const minimumSamplesPerVariant = options.minimumSamplesPerVariant ?? MIN_SAMPLES;
+  const minimumConversionsPerVariant = options.minimumConversionsPerVariant ?? MIN_CONVERSIONS;
+  const base = {
+    observed: arms.reduce((sum, arm) => sum + Math.max(0, arm.exposures), 0),
+    minimumDetectableEffect,
+    confidenceLevel: CONFIDENCE_LEVEL,
+    power: DEFAULT_POWER,
+  };
+  if (arms.length < 2) return unavailableReadiness(base, "Waiting for at least two variants.");
+
+  const stats = arms.map((arm) => summarizeArm(arm, metric));
+  const control = stats[0];
+  if (!control.ok || control.mean <= 0) {
+    return unavailableReadiness(base, "Waiting for a non-zero control baseline.");
+  }
+
+  const requiredPerVariant = requiredSamplesPerVariant(
+    stats,
+    metric,
+    minimumDetectableEffect,
+    minimumSamplesPerVariant,
+    minimumConversionsPerVariant,
+  );
+  if (requiredPerVariant == null || !Number.isFinite(requiredPerVariant)) {
+    return unavailableReadiness(base, "A stable sample target cannot be estimated yet.");
+  }
+
+  const required = requiredPerVariant * arms.length;
+  const remainingByArm = arms.map((arm) => Math.max(0, requiredPerVariant - Math.max(0, arm.exposures)));
+  const remaining = remainingByArm.reduce((sum, value) => sum + value, 0);
+  const progress = required > 0 ? base.observed / required : 0;
+  const elapsedDays = options.elapsedDays && options.elapsedDays > 0 ? options.elapsedDays : null;
+  const estimatedDaysRemaining = elapsedDays == null || remaining === 0 ? (remaining === 0 ? 0 : null) : estimateRemainingDays(arms, remainingByArm, elapsedDays);
+  const estimatedCompletionAt = estimatedDaysRemaining != null && options.asOfMs != null
+    ? new Date(options.asOfMs + estimatedDaysRemaining * 86_400_000).toISOString()
+    : null;
+  const decisive = (options.decisiveProbability ?? 0) >= CONFIDENCE_LEVEL;
+  const status: ExperimentReadinessStatus = remaining > 0
+    ? "collecting"
+    : decisive
+      ? "decisive"
+      : "inconclusive";
+
+  return {
+    ...base,
+    status,
+    required,
+    remaining,
+    progress,
+    estimatedDaysRemaining,
+    estimatedCompletionAt,
+    reason: null,
+  };
+}
+
+function unavailableReadiness(
+  base: Pick<ExperimentReadiness, "observed" | "minimumDetectableEffect" | "confidenceLevel" | "power">,
+  reason: string,
+): ExperimentReadiness {
+  return { ...base, status: "unavailable", required: null, remaining: null, progress: null,
+    estimatedDaysRemaining: null, estimatedCompletionAt: null, reason };
+}
+
+function requiredSamplesPerVariant(
+  stats: ArmStats[],
+  metric: ExperimentMetricKind,
+  mde: number,
+  minimumSamples: number,
+  minimumConversions: number,
+) {
+  const control = stats[0];
+  const z = Z_95_TWO_SIDED + Z_80_POWER;
+  if (metric === "conversion_rate") {
+    const p1 = control.mean;
+    const p2 = Math.min(0.999999, p1 * (1 + mde));
+    const difference = p2 - p1;
+    if (difference <= 0) return null;
+    const midpoint = (p1 + p2) / 2;
+    const numerator = Z_95_TWO_SIDED * Math.sqrt(2 * midpoint * (1 - midpoint))
+      + Z_80_POWER * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2));
+    return Math.max(minimumSamples, Math.ceil((numerator / difference) ** 2), Math.ceil(minimumConversions / p1), Math.ceil(minimumConversions / (1 - p1)));
+  }
+
+  const difference = Math.abs(control.mean) * mde;
+  const usableVariances = stats.filter((stat) => stat.ok && stat.variance > 0).map((stat) => stat.variance);
+  if (difference <= 0 || usableVariances.length === 0) return null;
+  const pooledVariance = usableVariances.reduce((sum, value) => sum + value, 0) / usableVariances.length;
+  const conversionRate = control.n > 0 ? control.conversions / control.n : 0;
+  return Math.max(
+    minimumSamples,
+    Math.ceil((2 * z * z * pooledVariance) / (difference * difference)),
+    conversionRate > 0 ? Math.ceil(minimumConversions / conversionRate) : minimumSamples,
+  );
+}
+
+function estimateRemainingDays(arms: ExperimentArm[], remaining: number[], elapsedDays: number) {
+  let days = 0;
+  for (let index = 0; index < arms.length; index += 1) {
+    if (remaining[index] <= 0) continue;
+    const rate = Math.max(0, arms[index].exposures) / elapsedDays;
+    if (rate <= 0) return null;
+    days = Math.max(days, remaining[index] / rate);
+  }
+  return Math.ceil(days);
 }
 
 function fallbackSe(mean: number, n: number) {

@@ -1,8 +1,10 @@
 import "server-only";
+import { paidExperienceCohort } from "./paid-experience-cohort";
 import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
 import { loadNativePaywalls } from "./native-paywall-queries";
 import { glowExperimentStart } from "./glow-experiment-window";
+import { pokyExperimentStart } from "./poky-experiment-window";
 import { loadJournalPractice } from "./journal-practice-queries";
 import type { JournalPracticeReport } from "./journal-practice-analytics";
 import type { NativePaywallReport } from "./native-paywall-analytics";
@@ -89,6 +91,7 @@ export type MobileAppExperimentScoreMetric =
   | "sessions_per_day";
 
 export type MobileAppExperiment = {
+  paidUsersOnly?: boolean;
   id: string;
   title: string;
   subtitle: string;
@@ -103,6 +106,10 @@ export type MobileAppExperiment = {
   showPaid?: boolean;
   showDownloadPaid?: boolean;
   sessionDays?: number;
+  elapsedDays?: number;
+  /** False for descriptive version/cohort comparisons that are not randomized trials. */
+  randomized?: boolean;
+  planningNote?: string;
   languageComparisons?: { language: string; label: string; variants: MobileAppExperimentVariant[] }[];
   languageVariants?: Record<string, MobileAppExperimentVariant[]>;
 };
@@ -201,6 +208,7 @@ type SessionRow = {
 };
 
 type AppFacts = {
+  migrationHistory?: { installs: InstallRow[]; events: AttributedRow[]; startMs: number };
   startMs: number;
   endMs: number;
   sessionDays: number;
@@ -211,6 +219,7 @@ type AppFacts = {
 };
 
 type AttributeExperimentDefinition = {
+  paidUsersOnly?: boolean;
   id: string;
   title: string;
   subtitle: string;
@@ -409,7 +418,9 @@ async function loadSuperwallAppAnalytics(
       ? loadNativePaywalls(
           <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
           app.applicationId,
-          app.id === "glow" ? glowExperimentStart(startMs) : startMs,
+          app.id === "glow"
+            ? glowExperimentStart(startMs)
+            : pokyExperimentStart(startMs),
           endMs,
         )
       : Promise.resolve(null),
@@ -483,11 +494,13 @@ async function loadAppFacts(
   endMs: number,
 ): Promise<AppFacts> {
   const keys = attributeKeysFor(app.id);
+  const historyStartMs = app.id === "poky" ? pokyExperimentStart(0) - 30 * DAY_MS : startMs;
+  const fetchStart = app.id === "poky" ? clickhouseDate(new Date(Math.min(startMs, historyStartMs))) : start;
   const sessionRange = sessionWindow(startMs, endMs);
   const [installResult, attributeResult, eventResult, sessionResult] = await Promise.allSettled([
-    fetchInstallCohort(app, start, end),
+    fetchInstallCohort(app, fetchStart, end),
     keys.length ? fetchUserAttributes(app, keys) : Promise.resolve([]),
-    fetchAttributedEvents(app, start),
+    fetchAttributedEvents(app, fetchStart),
     app.id === "poky" ? fetchSessionStarts(app, sessionRange.from, sessionRange.to) : Promise.resolve([]),
   ]);
 
@@ -507,12 +520,14 @@ async function loadAppFacts(
   }
 
   return {
+    migrationHistory: app.id === "poky" && installResult.status === "fulfilled" && eventResult.status === "fulfilled"
+      ? { installs: installResult.value, events: eventResult.value, startMs: historyStartMs } : undefined,
     startMs,
     endMs,
     sessionDays: sessionRange.days,
-    installs: installResult.status === "fulfilled" ? installResult.value : [],
+    installs: installResult.status === "fulfilled" ? installResult.value.filter((row) => row.installedAt >= startMs) : [],
     attributes: attributeResult.status === "fulfilled" ? attributeMap(attributeResult.value) : new Map(),
-    events: eventResult.status === "fulfilled" ? eventResult.value : [],
+    events: eventResult.status === "fulfilled" ? eventResult.value.filter((row) => row.eventTs >= startMs) : [],
     sessions: sessionResult.status === "fulfilled" ? sessionResult.value : [],
   };
 }
@@ -944,13 +959,21 @@ function glowOnboardingExperiment(facts: AppFacts): MobileAppExperiment {
 }
 
 function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
+  const scopedFacts = { ...facts, startMs: pokyExperimentStart(facts.startMs) };
   return [
-    pokyPaywallMigrationExperiment(facts),
+    pokyPaywallMigrationExperiment({ ...scopedFacts,
+      installs: facts.migrationHistory?.installs ?? scopedFacts.installs,
+      events: facts.migrationHistory?.events ?? scopedFacts.events,
+      legacyStartMs: facts.migrationHistory?.startMs,
+    }),
     pokyNativeRecoveryExperiment(
-      [...facts.attributes].flatMap(([appUserId, attrs]) => Object.entries(attrs).map(([key, value]) => ({ appUserId, key, value }))),
-      facts.events, new Map(facts.installs.map((row) => [row.appUserId, row.country])), facts.startMs, facts.endMs,
+      [...scopedFacts.attributes].flatMap(([appUserId, attrs]) => Object.entries(attrs).map(([key, value]) => ({ appUserId, key, value }))),
+      scopedFacts.events,
+      new Map(scopedFacts.installs.map((row) => [row.appUserId, row.country])),
+      scopedFacts.startMs,
+      scopedFacts.endMs,
     ),
-    attributeExperiment(facts, {
+    attributeExperiment(scopedFacts, {
       id: "poky-animated-plan",
       title: "Animated plan A/B test",
       subtitle: "Control vs Animated plan · fresh 50/50 assignments",
@@ -959,11 +982,12 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
         { key: "control", label: "Control", attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50" } },
         { key: "animated_plan", label: "Animated plan", attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50" } },
       ],
-      scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"],
+      scoreMetrics: ["appu_d7", "appu_d14"],
       showRetention: true,
     }),
-    attributeExperiment(facts, {
+    attributeExperiment(paidExperienceCohort(scopedFacts), {
       id: "poky-app-experience",
+      paidUsersOnly: true,
       title: "App experience A/B test",
       subtitle: "Original vs AI Chat · fresh 50/50 assignments",
       attributeKeys: ["home_experience_variant"],
@@ -971,7 +995,7 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
         { key: "control", label: "Original", attributes: { home_experience_variant: "control", home_experience_allocation: "50_50" } },
         { key: "new_experience", label: "AI Chat", attributes: { home_experience_variant: "new_experience", home_experience_allocation: "50_50" } },
       ],
-      scoreMetrics: ["sessions_per_day", "appu_d7", "appu_d14", "appu_d30"],
+      scoreMetrics: ["sessions_per_day", "appu_d7", "appu_d14"],
       showRetention: true,
       countAssignedUsers: true,
       includeSessions: true,
@@ -981,7 +1005,7 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
       showPaid: false,
       showDownloadPaid: false,
     }),
-    attributeExperiment(facts, {
+    attributeExperiment(scopedFacts, {
       id: "poky-onboarding-abcd",
       title: "Onboarding A/B/C/D test",
       subtitle: "Extra animation × AI Chat · fresh 25/25/25/25 assignments",
@@ -1008,7 +1032,7 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
           attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", home_experience_variant: "new_experience", home_experience_allocation: "50_50" },
         },
       ],
-      scoreMetrics: ["appu_d7", "appu_d14", "appu_d30"],
+      scoreMetrics: ["appu_d7", "appu_d14"],
       showRetention: true,
     }),
   ];
@@ -1032,6 +1056,11 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   };
   const now = Date.now();
   const cohortStartMs = definition.id.startsWith("glow-") ? glowExperimentStart(facts.startMs) : facts.startMs;
+  const eligibleAppUserIds = new Set(
+    facts.installs
+      .filter((row) => inRange(row.installedAt, cohortStartMs, facts.endMs))
+      .map((row) => row.appUserId),
+  );
   const countryByUser = new Map<string, string>();
   const languageByUser = new Map<string, string>();
   for (const row of facts.installs) {
@@ -1053,6 +1082,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
 
   if (definition.countAssignedUsers) {
     for (const [appUserId, attrs] of facts.attributes) {
+      if (!eligibleAppUserIds.has(appUserId)) continue;
       addForUser(appUserId, attrs, {
         country: countryByUser.get(appUserId) ?? "unknown",
         users: 1,
@@ -1075,6 +1105,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
 
   if (definition.includeSessions) {
     for (const row of facts.sessions) {
+      if (!eligibleAppUserIds.has(row.appUserId)) continue;
       addForUser(row.appUserId, facts.attributes.get(row.appUserId), {
         country: countryByUser.get(row.appUserId) ?? row.country,
         sessions: row.sessions,
@@ -1109,9 +1140,9 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   }
 
   if (definition.showRetention) {
-    const byTxn = subscriptionStarts(facts.events, facts.startMs, facts.endMs);
+    const byTxn = subscriptionStarts(facts.events, cohortStartMs, facts.endMs);
     for (const row of byTxn.values()) {
-      if (!row.appUserId) continue;
+      if (!row.appUserId || !eligibleAppUserIds.has(row.appUserId)) continue;
       addForUser(row.appUserId, facts.attributes.get(row.appUserId), {
         country: row.country,
         ...retentionMetrics(row.startedAt, row.expiresAt, now),
@@ -1121,6 +1152,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
 
   return {
     id: definition.id,
+    paidUsersOnly: definition.paidUsersOnly,
     title: definition.title,
     subtitle: definition.subtitle,
     scoreMetrics: definition.scoreMetrics,
@@ -1133,6 +1165,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     showPaid: definition.showPaid,
     showDownloadPaid: definition.showDownloadPaid,
     sessionDays: definition.includeSessions ? facts.sessionDays : undefined,
+    elapsedDays: Math.max(1, (Math.min(now, facts.endMs) - cohortStartMs) / DAY_MS),
     variants,
     languageVariants,
   };

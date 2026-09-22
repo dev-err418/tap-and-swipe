@@ -65,10 +65,11 @@ export default function AppSprintFunnelPanel({
         revenue: row.revenue,
         trialStarts: row.asoTrials,
       }));
-  const pricingAnalysis = analyzeExperiment(toRevenueArms(analytics.pricingExperiment ?? []), "revenue_per_visitor", "Revenue / visitor");
-  const heroAnalysis = analyzeExperiment(toRevenueArms(analytics.heroPreviewExperiment), "revenue_per_visitor", "Revenue / visitor");
-  const trialAnalysis = analyzeExperiment(toRevenueArms(analytics.trialExperiment ?? []), "revenue_per_visitor", "Revenue / visitor");
-  const onboardingAnalysis = analyzeExperiment((analytics.onboardingExperiment ?? []).map((row) => ({ key: row.variant, label: row.label, exposures: row.visitors, conversions: row.completed, revenue: row.revenue })), "conversion_rate", "Completion rate");
+  const readinessWindow = { elapsedDays: analytics.windowDays, asOfMs: Date.parse(analytics.generatedAt) };
+  const pricingAnalysis = analyzeExperiment(toRevenueArms(analytics.pricingExperiment ?? []), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
+  const heroAnalysis = analyzeExperiment(toRevenueArms(analytics.heroPreviewExperiment), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
+  const trialAnalysis = analyzeExperiment(toRevenueArms(analytics.trialExperiment ?? []), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
+  const onboardingAnalysis = analyzeExperiment((analytics.onboardingExperiment ?? []).map((row) => ({ key: row.variant, label: row.label, exposures: row.visitors, conversions: row.completed, revenue: row.revenue })), "conversion_rate", "Completion rate", readinessWindow);
   return (
     <section className="space-y-4">
       <div className="min-w-0 overflow-visible rounded-[28px] border-0 bg-white shadow-none">

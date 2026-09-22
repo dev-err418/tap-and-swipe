@@ -40,12 +40,12 @@ export default function AppExperimentMap({
   nativePaywalls?: NativePaywallReport | null;
 }) {
   const [language, setLanguage] = useState("en");
-  const flow = appExperimentFlow(appId);
-  if (!flow) return null;
   const availableLanguages = [...new Set(
     nativePaywalls?.groups.filter((group) => group.language !== "all").map((group) => group.language) ?? [],
   )].sort((a, b) => a === b ? 0 : a === "en" ? -1 : b === "en" ? 1 : 0);
   const selectedLanguage = availableLanguages.includes(language) ? language : availableLanguages[0];
+  const flow = appExperimentFlow(appId, selectedLanguage);
+  if (!flow) return null;
   const nodes = new Map(flow.nodes.map((node) => [node.id, node]));
   const visibleExperiments = experimentsForLanguage(experiments, selectedLanguage);
   const bestVariants = currentBestVariantResults(visibleExperiments);

@@ -10,12 +10,20 @@ import { NATIVE_PAYWALL_DEMO_REPORT } from "../../lib/native-paywall-demo";
 import { nativePaywallAllocation } from "../../lib/native-paywall-allocation";
 import { orderAppExperiments } from "../../lib/app-experiment-order";
 import { GLOW_EXPERIMENT_START_MS, glowExperimentStart } from "../../lib/glow-experiment-window";
+import { POKY_EXPERIMENT_START_MS, pokyExperimentStart } from "../../lib/poky-experiment-window";
 
 test("Glow experiment data begins at Sep 20, 2026 08:00 GMT+2", () => {
   assert.equal(GLOW_EXPERIMENT_START_MS, Date.parse("2026-09-20T06:00:00.000Z"));
   assert.equal(glowExperimentStart(Date.parse("2026-09-01T00:00:00.000Z")), GLOW_EXPERIMENT_START_MS);
   assert.equal(glowExperimentStart(Date.parse("2026-09-21T00:00:00.000Z")), Date.parse("2026-09-21T00:00:00.000Z"));
   assert.match(appExperimentMap("glow")!.notes[0], /September 20, 2026 at 08:00 GMT\+2/);
+});
+
+test("Poky experiment data begins at Sep 20, 2026 16:00 GMT+2", () => {
+  assert.equal(POKY_EXPERIMENT_START_MS, Date.parse("2026-09-20T14:00:00.000Z"));
+  assert.equal(pokyExperimentStart(Date.parse("2026-09-01T00:00:00.000Z")), POKY_EXPERIMENT_START_MS);
+  assert.equal(pokyExperimentStart(Date.parse("2026-09-21T00:00:00.000Z")), Date.parse("2026-09-21T00:00:00.000Z"));
+  assert.match(appExperimentMap("poky")!.notes[0], /September 20, 2026 at 16:00 GMT\+2/);
 });
 
 test("every configured audience has a complete, valid allocation", () => {
@@ -200,6 +208,20 @@ test("the map language picker scopes paywall metrics to the selected audience", 
   const pokyEnglish = currentPaywallMetrics(poky.nodes, NATIVE_PAYWALL_DEMO_REPORT, "en");
   assert.equal(pokyEnglish.get("name-2-es")?.appu, null);
   assert.equal(pokyEnglish.get("name-2-de")?.appu, null);
+});
+
+test("Poky flow only includes main paywalls for the selected language", () => {
+  const english = appExperimentFlow("poky", "en")!;
+  const englishPaywalls = english.nodes.filter((node) => node.paywallMetric);
+  assert.deepEqual(englishPaywalls.map((node) => node.id), ["624224", "624761"]);
+  assert.ok(englishPaywalls.every((node) => node.paywallMetric?.language === "en"));
+  assert.equal(english.edges.filter((edge) => edge.from === "language").length, 2);
+  assert.equal(english.edges.filter((edge) => edge.to === "cancel").length, 2);
+
+  const spanish = appExperimentFlow("poky", "es")!;
+  const spanishPaywalls = spanish.nodes.filter((node) => node.paywallMetric);
+  assert.deepEqual(spanishPaywalls.map((node) => node.id), ["name-2-es"]);
+  assert.equal(spanishPaywalls[0].paywallMetric?.language, "es");
 });
 
 test("the map language picker scopes every experiment APPU to the selected audience", () => {

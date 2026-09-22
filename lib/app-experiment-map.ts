@@ -100,6 +100,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         percent: p.percent * e.percent / 100,
       }))),
       notes: [
+        "Results start September 20, 2026 at 16:00 GMT+2; earlier cohorts and proceeds are excluded.",
         "Background 50/50 applies to new assignments in the next release. Earlier builds use 70/30; saved assignments are unchanged.",
         "Recovery follows purchase cancellation or main-paywall dismissal, at most once. The home-screen shortcut is a separate 100% offer, not part of the recovery test.",
       ],

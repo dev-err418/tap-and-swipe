@@ -1,4 +1,4 @@
-import { PAYWALL_HORIZONS, type NativePaywallGroup, type NativePaywallReport, type NativePaywallRow } from "./native-paywall-analytics";
+import { type NativePaywallGroup, type NativePaywallReport, type NativePaywallRow } from "./native-paywall-analytics";
 import { GLOW_PAYWALL_EXPERIMENT } from "./native-paywall-allocation";
 
 // UI-only synthetic data. Never send this to Superwall or merge it with live reports.
@@ -21,29 +21,26 @@ function createDemoReport(): NativePaywallReport {
     const refunds = Math.round(paid * 0.035) * (variant ? 39.99 : 29.99);
     const proceeds = (grossRevenue - refunds) * 0.85;
     return {
-      id, label, paywall: id, users, views, conversions, paid, grossRevenue, refunds, proceeds, funnelAppu: null,
-      estimates: Object.fromEntries(PAYWALL_HORIZONS.map((days) => [days, {
-        users: Math.round(users * ({ 7: 0.88, 14: 0.72, 30: 0.46 }[days])),
-        appu: proceeds / users * ({ 7: 0.74, 14: 0.87, 30: 0.98 }[days]),
+      id, label, paywall: id, users, views, conversions, paid, grossRevenue, refunds, proceeds,
+      estimate: {
+        users,
+        appu: proceeds / users,
         chanceBest: [0.05, 0.10, 0.15, 0.30, 0.40][variant],
         relativeDelta: [null, 0.25, 0.4, 0.74, 0.96][variant],
-        credibleInterval: [[-0.12, 0.12], [0.1, 0.4], [0.2, 0.6], [0.58, 0.90], [0.78, 1.14]][variant],
+        credibleInterval: [[-0.12, 0.12], [0.1, 0.4], [0.2, 0.6], [0.58, 0.90], [0.78, 1.14]][variant] as [number, number],
+        readiness: null,
         reason: null,
-      }])) as NativePaywallRow["estimates"],
+      },
     };
   };
   const sum = (rows: NativePaywallRow[]): NativePaywallRow => {
-    const total = { ...rows[0], estimates: { ...rows[0].estimates } };
+    const total = { ...rows[0], estimate: { ...rows[0].estimate } };
     for (const key of ["users", "views", "conversions", "paid", "grossRevenue", "refunds", "proceeds"] as const) {
       total[key] = rows.reduce((n, r) => n + r[key], 0);
     }
-    for (const days of PAYWALL_HORIZONS) {
-      const users = rows.reduce((n, r) => n + r.estimates[days].users, 0);
-      total.estimates[days] = {
-        ...total.estimates[days], users,
-        appu: rows.reduce((n, r) => n + (r.estimates[days].appu ?? 0) * r.estimates[days].users, 0) / users,
-      };
-    }
+    const users = rows.reduce((n, r) => n + r.estimate.users, 0);
+    total.estimate = { ...total.estimate, users,
+      appu: rows.reduce((n, r) => n + (r.estimate.appu ?? 0) * r.estimate.users, 0) / users };
     return total;
   };
   const placements = [
@@ -63,18 +60,18 @@ function createDemoReport(): NativePaywallReport {
     const allocated = { conversions: 0, paid: 0, proceeds: 0, grossRevenue: 0, refunds: 0 };
     return {
       experiment: GLOW_PAYWALL_EXPERIMENT.id, name: GLOW_PAYWALL_EXPERIMENT.name, language,
-      paywallRevenueScope: "direct_attribution", paywalls,
+      paywalls,
       placements: placements.map(([id, label, weight], index) => {
         const users = Math.round(totals.users * (weight + 0.045));
-        const result: NativePaywallRow = { ...totals, id, label, paywall: "", users, views: Math.round(users * 0.94), estimates: { ...totals.estimates } };
+        const result: NativePaywallRow = { ...totals, id, label, paywall: "", users, views: Math.round(users * 0.94), estimate: { ...totals.estimate } };
         for (const key of ["conversions", "paid", "proceeds", "grossRevenue", "refunds"] as const) {
           result[key] = index === placements.length - 1 ? totals[key] - allocated[key] : Math.round(totals[key] * weight);
           allocated[key] += result[key];
         }
-        for (const days of PAYWALL_HORIZONS) result.estimates[days] = {
-          users: Math.round(users * ({ 7: 0.88, 14: 0.72, 30: 0.46 }[days])),
-          appu: result.proceeds / users * ({ 7: 0.74, 14: 0.87, 30: 0.98 }[days]),
-          chanceBest: null, relativeDelta: null, credibleInterval: null,
+        result.estimate = {
+          users,
+          appu: result.proceeds / users,
+          chanceBest: null, relativeDelta: null, credibleInterval: null, readiness: null,
           reason: "Placements are not randomly assigned.",
         };
         return result;
@@ -83,7 +80,6 @@ function createDemoReport(): NativePaywallReport {
   });
   const all: NativePaywallGroup = {
     experiment: GLOW_PAYWALL_EXPERIMENT.id, name: GLOW_PAYWALL_EXPERIMENT.name, language: "all",
-    paywallRevenueScope: "direct_attribution",
     paywalls: groups[0].paywalls.map((_, i) => sum(groups.map((g) => g.paywalls[i]))),
     placements: groups[0].placements.map((_, i) => sum(groups.map((g) => g.placements[i]))),
   };

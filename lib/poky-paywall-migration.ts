@@ -2,7 +2,7 @@ import type { MobileAppExperiment, MobileAppExperimentSlice, MobileAppExperiment
 
 type Install = { appUserId: string; country: string; appVersion: string; language: string; installedAt: number };
 type Outcome = { appUserId: string; eventTs: number; name: string; netProceeds: number | null; originalTransactionId: string; transactionId: string; attributionTs: number };
-type Facts = { startMs: number; endMs: number; installs: Install[]; events: Outcome[]; attributes: Map<string, Record<string, string>> };
+type Facts = { startMs: number; endMs: number; legacyStartMs?: number; installs: Install[]; events: Outcome[]; attributes: Map<string, Record<string, string>> };
 
 const empty = (): MobileAppExperimentSlice => ({ users: 0, sessions: 0, installs: 0, completed: 0, trials: 0, converted: 0, paid: 0, proceeds: 0, installsD7: 0, proceedsD7: 0, eligibleD7: 0, retainedD7: 0, installsD14: 0, proceedsD14: 0, eligibleD14: 0, retainedD14: 0, installsD30: 0, proceedsD30: 0, eligibleD30: 0, retainedD30: 0 });
 const variants = (): MobileAppExperimentVariant[] => [
@@ -48,12 +48,13 @@ export function pokyPaywallMigrationExperiment(facts: Facts, asOf = Date.now()):
     if ((firstInstalls.get(install.appUserId)?.installedAt ?? Infinity) > install.installedAt) firstInstalls.set(install.appUserId, install);
   }
   for (const install of firstInstalls.values()) {
-    if (install.installedAt < facts.startMs || install.installedAt >= facts.endMs || install.installedAt > asOf) continue;
+    if (install.installedAt >= facts.endMs || install.installedAt > asOf) continue;
     const environment = facts.attributes.get(install.appUserId)?.poky_tracking_environment?.trim().toLowerCase();
     if (environment && environment !== "production") continue;
     const engine = pokyPaywallEngine(install.appVersion);
     const language = pokyComparisonLanguage(install.language);
     if (!engine || !language) continue;
+    if (install.installedAt < (engine === "legacy" ? facts.legacyStartMs ?? facts.startMs : facts.startMs)) continue;
     cohort.set(install.appUserId, { install, arm: engine === "native" ? 1 : 0, language });
   }
   const slices = (user: NonNullable<ReturnType<typeof cohort.get>>) => {
@@ -86,6 +87,7 @@ export function pokyPaywallMigrationExperiment(facts: Facts, asOf = Date.now()):
     id: "poky-superwall-vs-native",
     title: "Conversion rate · Superwall vs native",
     subtitle: "EN + ES · installs on 1.1.2+ vs earlier · historical cohorts, not randomized · total proceeds to date",
-    variants: overall, languageComparisons, scoreMetrics: ["download_paid"],
+    variants: overall, languageComparisons, scoreMetrics: ["download_paid"], randomized: false,
+    planningNote: `Historical cohorts, not randomized. Superwall installs from ${new Date(facts.legacyStartMs ?? facts.startMs).toISOString().slice(0, 10)}; native installs from ${new Date(facts.startMs).toISOString().slice(0, 10)}. Proceeds follow each cohort through today, so older users have more time to pay. Planning is an indicative sample estimate, not proof of a causal winner.`,
   };
 }

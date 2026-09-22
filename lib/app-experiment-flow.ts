@@ -19,10 +19,10 @@ export type ExperimentFlow = {
 };
 
 /** Presentation order, not assignment timing: independent, sticky buckets remain independent. */
-export function appExperimentFlow(appId: string): ExperimentFlow | null {
+export function appExperimentFlow(appId: string, selectedLanguage?: string): ExperimentFlow | null {
   const map = appExperimentMap(appId);
   if (!map) return null;
-  return appId === "glow" ? glowFlow(map) : pokyFlow(map);
+  return appId === "glow" ? glowFlow(map) : pokyFlow(map, selectedLanguage);
 }
 
 function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
@@ -61,7 +61,7 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   };
 }
 
-function pokyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
+function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): ExperimentFlow {
   const [plan, background, english, localized, recovery] = map.tests;
   const nodes: ExperimentFlowNode[] = [
     { id: "start", x: 36, y: 268, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
@@ -95,9 +95,13 @@ function pokyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
       metricVariant: "name", percent: localized.branches[0].percent,
     })),
   ];
-  offers.forEach((offer, index) => {
+  const visibleOffers = selectedLanguage
+    ? offers.filter((offer) => offer.languageCode === selectedLanguage)
+    : offers;
+  const firstOfferY = 268 - (visibleOffers.length - 1) * 50;
+  visibleOffers.forEach((offer, index) => {
     nodes.push({
-      id: offer.id, x: 902, y: 68 + index * 100, width: 176, label: offer.label, detail: offer.language, tone: "orange",
+      id: offer.id, x: 902, y: firstOfferY + index * 100, width: 176, label: offer.label, detail: offer.language, tone: "orange",
       paywallMetric: {
         experiment: `poky_native_main_v1_${offer.languageCode}`,
         variant: offer.metricVariant,

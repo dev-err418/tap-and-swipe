@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { PAYWALL_HORIZONS, type NativePaywallReport, type NativePaywallRow, type PaywallHorizon } from "@/lib/native-paywall-analytics";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DASHBOARD_PICKER_TRIGGER_CLASS, DASHBOARD_POPOVER_CLASS, DASHBOARD_POPOVER_ITEM_CLASS, DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS } from "./dashboard-surface";
+import { type NativePaywallReport, type NativePaywallRow } from "@/lib/native-paywall-analytics";
+import { DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS } from "./dashboard-surface";
 import { cn } from "@/lib/utils";
 import { GLOW_PAYWALL_EXPERIMENT, formatPaywallAllocation, nativePaywallAllocation } from "@/lib/native-paywall-allocation";
+import { ReadinessIndicator } from "@/components/analytics/ExperimentStats";
 
 const languages: Record<string, string> = { en: "English", es: "Spanish", de: "German", fr: "French" };
 const languageFlags: Record<string, string> = { en: "🇬🇧", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷" };
@@ -44,7 +44,6 @@ function makeConversionDomain(rows: NativePaywallRow[]): ConversionDomain {
 
 export default function NativePaywallsPanel({ appId, report }: { appId: "glow" | "poky" | "versy"; report: NativePaywallReport | null }) {
   const [language, setLanguage] = useState("en");
-  const [horizon, setHorizon] = useState<PaywallHorizon>(7);
   const availableLanguages = [...new Set(report?.groups.filter((g) => g.language !== "all").map((g) => g.language) ?? [])]
     .sort((a, b) => a === b ? 0 : a === "en" ? -1 : b === "en" ? 1 : 0);
   const selectedLanguage = availableLanguages.includes(language) ? language : availableLanguages[0];
@@ -66,25 +65,12 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
     <section className="space-y-2 pt-2">
       <div className="flex flex-wrap items-center justify-between gap-3 px-1">
         <h2 className="text-sm font-semibold">Audiences</h2>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>APPU window</span>
-            <Select value={String(horizon)} onValueChange={(value) => setHorizon(Number(value) as PaywallHorizon)}>
-              <SelectTrigger aria-label="APPU observation window" className={`${DASHBOARD_PICKER_TRIGGER_CLASS} w-[140px]`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper" align="end" className={DASHBOARD_POPOVER_CLASS}>
-                {PAYWALL_HORIZONS.map((days) => <SelectItem key={days} value={String(days)} className={DASHBOARD_POPOVER_ITEM_CLASS}>D{days}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
       </div>
       <div className={cn(DASHBOARD_SURFACE_CLASS, "space-y-4 p-5")}>
         <div className="flex flex-wrap gap-2" role="group" aria-label="Language audience">
           {availableLanguages.map((code) => <button type="button" key={code} aria-pressed={code === selectedLanguage} onClick={() => setLanguage(code)} className={cn(DASHBOARD_TAB_CLASS, "h-8 px-3", code === selectedLanguage ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS)}><span aria-hidden="true" className="mr-1.5">{languageFlags[code] ?? "🌐"}</span>{languages[code] ?? code.toUpperCase()}</button>)}
         </div>
-        <p className="text-xs leading-relaxed text-muted-foreground">The date filter selects when users joined. Proceeds follow those users through today. Estimated APPU uses only users with a full {horizon} days of observation, including those who never pay; it is not a lifetime forecast.</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">The date filter selects when users joined. Total APPU includes every assigned user and all proceeds, renewals and refunds attributed to their paywall through today.</p>
         {report?.warnings.map((warning) => <p role="status" key={warning} className="text-xs text-amber-700">{warning}</p>)}
       </div>
     </section>
@@ -92,8 +78,8 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
       : !groups.length ? <Empty>No native paywall tracking yet for this cohort. Results will appear after users run the instrumented app release.</Empty>
       : groups.map((group) => <div key={group.experiment} className="space-y-4">
         {groups.length > 1 ? <h2 className="px-1 pt-2 text-sm font-semibold">{group.name}</h2> : null}
-        <ResultsTable title="Paywalls" rows={group.paywalls} horizon={horizon} experiment={group.experiment} language={group.language} weightedFunnel={group.paywallRevenueScope === "weighted_funnel"} />
-        <ResultsTable title="Placements" rows={group.placements} horizon={horizon} placement />
+        <ResultsTable title="Paywalls" rows={group.paywalls} experiment={group.experiment} language={group.language} />
+        <ResultsTable title="Placements" rows={group.placements} placement />
       </div>)}
   </div>;
 }
@@ -102,50 +88,49 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <div className={cn(DASHBOARD_SURFACE_CLASS, "flex min-h-48 items-center justify-center p-8 text-center text-sm text-muted-foreground")}>{children}</div>;
 }
 
-function ResultsTable({ title, rows, horizon, experiment, language, placement = false, weightedFunnel = false }: { title: string; rows: NativePaywallRow[]; horizon: PaywallHorizon; experiment?: string; language?: string; placement?: boolean; weightedFunnel?: boolean }) {
+function ResultsTable({ title, rows, experiment, language, placement = false }: { title: string; rows: NativePaywallRow[]; experiment?: string; language?: string; placement?: boolean }) {
   const sortedRows = [...rows].sort((a, b) => {
-    const appuA = a.funnelAppu ?? (a.users ? a.proceeds / a.users : Number.NEGATIVE_INFINITY);
-    const appuB = b.funnelAppu ?? (b.users ? b.proceeds / b.users : Number.NEGATIVE_INFINITY);
+    const appuA = a.users ? a.proceeds / a.users : Number.NEGATIVE_INFINITY;
+    const appuB = b.users ? b.proceeds / b.users : Number.NEGATIVE_INFINITY;
     return appuB - appuA || b.users - a.users;
   });
   const conversionDomain = makeConversionDomain(sortedRows);
   const chances = placement ? [] : sortedRows.flatMap((row) => {
-    const chance = row.estimates[horizon].chanceBest;
+    const chance = row.estimate.chanceBest;
     return chance == null ? [] : [chance];
   });
   const highestChance = chances.length ? Math.max(...chances) : null;
   const uniqueHighestChance = highestChance != null && chances.filter((chance) => chance === highestChance).length === 1 ? highestChance : null;
   const probabilityBound = sortedRows.reduce((bound, row) => {
-    const estimate = row.estimates[horizon];
+    const estimate = row.estimate;
     const interval = estimate.credibleInterval;
     return Math.max(bound, Math.abs(estimate.relativeDelta ?? 0), ...(interval ? interval.map(Math.abs) : [0]));
   }, 0.25);
+  const readiness = placement ? null : sortedRows.find((row) => row.estimate.readiness)?.estimate.readiness ?? null;
   const columns = [
-    ["APPU", weightedFunnel ? "Weighted funnel APPU: No recovery is regular paywall proceeds / users. Recovery combines regular and recovery proceeds / users." : "Net proceeds divided by every assigned user in this row."],
-    ["Probability best", placement ? "Placements have different audiences and are not randomized." : `Approximate probability of the highest D${horizon} APPU. Requires all variants, 50 mature users and 5 paid users per variant.`],
+    ["Total APPU", "All net proceeds attributed to this paywall through today, including renewals and refunds, divided by every assigned user."],
+    ["Probability best", placement ? "Placements have different audiences and are not randomized." : "Approximate probability of the highest total APPU. Shown early; treat it as unstable until every variant has 20 users and 3 paid users. The bar is the 95% confidence interval for APPU lift versus the first paywall."],
     ["Conv. rate", "Conversions divided by unique viewers. The bar is a 95% confidence interval for the true conversion rate, not a daily high/low range."],
     ["Users", placement ? "Assigned users who reached this placement. A user may reach several placements." : "All users assigned to this variant, including non-viewers and non-payers."],
     ["Views", "Unique users who actually saw the native paywall; repeat openings count once."],
     ["Conversions", "Unique users with a verified purchase, including free trial starts. Restores and renewals are not new conversions."],
     ["Proceeds", "Attributed proceeds after store fees/taxes and refunded proceeds, including renewals. USD."],
-    [`Estimated APPU D${horizon}`, `Average net proceeds during the first ${horizon} days after assignment, using only mature users. Not a lifetime projection.`],
     ["Refunds", "Refunded customer revenue in USD, attributed back to the original purchase."],
     ["Refund rate", "Refunded customer revenue divided by gross customer revenue before refunds; not divided by proceeds."],
   ];
   const columnWidth = (label: string) => {
     if (label === "Conv. rate") return "min-w-[260px]";
-    if (label.startsWith("Estimated APPU")) return "min-w-[150px]";
     if (label === "Probability best") return "min-w-[220px]";
     return "min-w-24";
   };
   return <section className="space-y-2 pt-2">
-    <div className="flex flex-wrap items-baseline justify-between gap-2 px-1"><h3 className="text-sm font-semibold">{title}</h3>{weightedFunnel ? <p className="text-[11px] text-muted-foreground">Weighted funnel: paywall + recovery vs paywall only</p> : null}</div>
+    <div className="flex flex-wrap items-center justify-between gap-2 px-1"><div className="flex items-center gap-2"><h3 className="text-sm font-semibold">{title}</h3>{readiness ? <ReadinessIndicator readiness={readiness} /> : null}</div></div>
     <div className={cn(DASHBOARD_SURFACE_CLASS, "overflow-hidden")}>
       <div className="overflow-x-auto scrollbar-none">
-        <table className="w-full min-w-[1380px] text-left text-xs">
+        <table className="w-full min-w-[1220px] text-left text-xs">
           <thead><tr className="border-b border-black/[0.06] text-muted-foreground"><th className="min-w-[180px] px-5 py-3 font-medium">{placement ? "Placement" : "Paywall"}</th>{columns.map(([label, hint]) => <th key={label} className={cn(columnWidth(label), "px-3 py-3 text-right font-medium")}><abbr title={hint} className="cursor-help whitespace-nowrap no-underline">{label}</abbr></th>)}</tr></thead>
         <tbody>{sortedRows.map((row) => {
-          const estimate = row.estimates[horizon];
+          const estimate = row.estimate;
           const allocation = !placement && experiment ? nativePaywallAllocation(experiment, row.id, row.paywall, language) : null;
           const refundRate = row.grossRevenue > 0 ? row.refunds / row.grossRevenue : null;
           const highRefundRate = refundRate != null && refundRate > 0.1;
@@ -158,7 +143,7 @@ function ResultsTable({ title, rows, horizon, experiment, language, placement = 
               title="Hardcoded allocation in the app, not observed traffic or confirmation of App Store rollout."
               aria-label={`${formatPaywallAllocation(allocation)} configured allocation`}
             >{formatPaywallAllocation(allocation)}</span>}</div>{row.paywall && <div className="mt-1 text-[10px] text-muted-foreground">{row.paywall}</div>}</td>
-            <Cell>{row.funnelAppu != null ? currency(row.funnelAppu) : row.users ? currency(row.proceeds / row.users) : "—"}</Cell>
+            <Cell>{row.users ? currency(row.proceeds / row.users) : "—"}</Cell>
             <ProbabilityBestCell
               chance={placement ? null : estimate.chanceBest}
               isLeader={!placement && estimate.chanceBest != null && estimate.chanceBest === uniqueHighestChance}
@@ -171,14 +156,13 @@ function ResultsTable({ title, rows, horizon, experiment, language, placement = 
             <Cell>{count(row.users)}</Cell><Cell>{count(row.views)}</Cell>
             <Cell><span title={`${count(row.paid)} users have paid`}>{count(row.conversions)}</span></Cell>
             <Cell>{currency(row.proceeds)}</Cell>
-            <Cell><div>{estimate.appu == null ? "—" : currency(estimate.appu)}</div><div className="mt-1 text-[10px] text-muted-foreground">{count(estimate.users)} mature users</div></Cell>
             <Cell>{currency(row.refunds)}</Cell><Cell>{percent(refundRate)}</Cell>
           </tr>;
         })}</tbody>
         </table>
         {!rows.length && <p className="p-6 text-sm text-muted-foreground">No {title.toLowerCase()} recorded yet.</p>}
       </div>
-      {!placement && sortedRows.some((r) => r.estimates[horizon].reason) && <p className="px-5 py-3 text-xs text-muted-foreground">{sortedRows.find((r) => r.estimates[horizon].reason)?.estimates[horizon].reason}</p>}
+      {!placement && sortedRows.some((r) => r.estimate.reason) && <p className="px-5 py-3 text-xs text-muted-foreground">{sortedRows.find((r) => r.estimate.reason)?.estimate.reason}</p>}
     </div>
   </section>;
 }
@@ -195,7 +179,7 @@ function ProbabilityBestCell({ chance, isLeader, relativeDelta, interval, bound,
           style={{ color: relativeDelta >= 0 ? WIN_COLOR : LOSE_COLOR, backgroundColor: relativeDelta >= 0 ? WIN_SOFT : LOSE_SOFT }}
         >{formatDelta(relativeDelta)}</span> : null}
         <span
-          title={reason ?? "Approximate probability of the highest fixed-age APPU."}
+          title={reason ?? "Approximate probability of the highest total APPU."}
           className="text-xs font-medium"
           style={isLeader ? { color: WIN_COLOR } : undefined}
         >
@@ -216,11 +200,12 @@ function ProbabilityIntervalBar({ interval, bound, isLeader }: { interval: [numb
   const left = position(Math.min(start, 0));
   const right = position(Math.max(end, 0));
   const range = `${formatDelta(start)} – ${formatDelta(end)}`;
-  return <div className="group relative h-2 w-40 cursor-default rounded-full bg-foreground/[0.06] outline-none" tabIndex={0} aria-label={`APPU lift range ${range}`}>
+  const explanation = "95% confidence interval for total APPU lift versus the first paywall. If the range crosses 0%, either paywall could still be better.";
+  return <div className="group relative h-2 w-40 cursor-default rounded-full bg-foreground/[0.06] outline-none" tabIndex={0} aria-label={`APPU lift range ${range}. ${explanation}`}>
     {start < 0 ? <span className="absolute inset-y-0 rounded-l-full bg-[#f97316]" style={{ left: `${left}%`, width: `${zero - left}%`, opacity: isLeader ? 0.88 : 0.5 }} /> : null}
     {end > 0 ? <span className="absolute inset-y-0 rounded-r-full bg-[#1d4ed8]" style={{ left: `${zero}%`, width: `${right - zero}%`, opacity: isLeader ? 0.88 : 0.5 }} /> : null}
     <span className="absolute top-[-3px] h-3.5 w-px bg-foreground/40" style={{ left: `${zero}%` }} />
-    <span role="tooltip" className="dashboard-tooltip-shadow pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden rounded-lg bg-[#f7f7f7] px-3 py-2 text-xs font-semibold text-black group-hover:block group-focus:block">{range}</span>
+    <span role="tooltip" className="dashboard-tooltip-shadow pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden w-72 rounded-lg bg-[#f7f7f7] px-3 py-2 text-left text-xs text-black group-hover:block group-focus:block"><span className="font-semibold">{range}</span><span className="mt-1 block font-normal text-muted-foreground">{explanation}</span></span>
   </div>;
 }
 

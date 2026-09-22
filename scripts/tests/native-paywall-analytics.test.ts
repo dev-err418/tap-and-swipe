@@ -26,7 +26,7 @@ test("APPU includes non-viewers/non-payers; views are unique; language is frozen
   assert.equal(all.conversions, 2); // Verified purchases include trials / pending server delivery.
   assert.equal(all.paid, 1);
   assert.equal(all.proceeds, 8.5);
-  assert.equal(all.estimates[7].appu, 8.5 / 3);
+  assert.equal(all.estimate.appu, 8.5 / 3);
   assert.equal(result.groups.find((g) => g.language === "es")!.paywalls[0].users, 1);
 });
 
@@ -44,7 +44,7 @@ test("renewals and cancellation refunds stay on the originating placement and de
   assert.equal(row.conversions, 1);
   assert.equal(group.placements.find((p) => p.id === "themes_upgrade")!.proceeds, 8.5);
   assert.equal(group.placements.find((p) => p.id === "settings_upgrade")!.proceeds, 0);
-  assert.equal(group.placements[0].estimates[7].chanceBest, null);
+  assert.equal(group.placements[0].estimate.chanceBest, null);
 });
 
 test("refund of an older charge does not move to a later resubscription", () => {
@@ -59,14 +59,13 @@ test("refund of an older charge does not move to a later resubscription", () => 
   assert.equal(group.placements.find((r) => r.id === "settings_upgrade")!.refunds, 0);
 });
 
-test("cohort filter and fixed-age estimates exclude immature users and later money", () => {
+test("cohort filter excludes outside users while total APPU includes later renewals", () => {
   const result = report([...fixture("u1"), ...fixture("u2", { assignedAt: start - DAY }, "200")], [money(), money({ id: "later", name: "renewal", transactionId: "101", ts: iso(9), purchasedAt: iso(9) })]);
   const row = result.groups.find((g) => g.language === "all")!.paywalls[0];
   assert.equal(row.users, 1);
   assert.equal(row.proceeds, 17);
-  assert.equal(row.estimates[7].appu, 8.5);
-  assert.equal(row.estimates[14].appu, null);
-  assert.equal(row.estimates[14].users, 0);
+  assert.equal(row.estimate.appu, 17);
+  assert.equal(row.estimate.users, 1);
 });
 
 test("malformed and development attributes never enter production results", () => {
@@ -75,7 +74,7 @@ test("malformed and development attributes never enter production results", () =
   assert.match(result.warnings[0], /1 malformed/);
 });
 
-test("probability uses mature per-user proceeds and is suppressed for inherited assignments", () => {
+test("probability uses total per-user proceeds and is suppressed for inherited assignments", () => {
   const attrs: PaywallAttribute[] = [];
   const events: PaywallRevenue[] = [];
   for (const variant of ["a", "b"]) for (let i = 0; i < 60; i++) {
@@ -86,15 +85,42 @@ test("probability uses mature per-user proceeds and is suppressed for inherited 
     if (i < 10) events.push(money({ id: tx, originalTransactionId: tx, transactionId: tx, price: variant === "a" ? 10 : 20, proceeds: variant === "a" ? 8.5 : 17 }));
   }
   const rows = report(attrs, events).groups.find((g) => g.language === "all")!.paywalls;
-  assert.ok(rows[1].estimates[7].chanceBest! > 0.5);
-  assert.ok(Math.abs(rows.reduce((sum, r) => sum + r.estimates[7].chanceBest!, 0) - 1) < 1e-6);
-  assert.ok(rows[1].estimates[7].relativeDelta! > 0);
-  assert.ok(rows[1].estimates[7].credibleInterval![0] < rows[1].estimates[7].relativeDelta!);
-  assert.ok(rows[1].estimates[7].credibleInterval![1] > rows[1].estimates[7].relativeDelta!);
+  assert.ok(rows[1].estimate.chanceBest! > 0.5);
+  assert.ok(Math.abs(rows.reduce((sum, r) => sum + r.estimate.chanceBest!, 0) - 1) < 1e-6);
+  assert.ok(rows[1].estimate.relativeDelta! > 0);
+  assert.ok(rows[1].estimate.credibleInterval![0] < rows[1].estimate.relativeDelta!);
+  assert.ok(rows[1].estimate.credibleInterval![1] > rows[1].estimate.relativeDelta!);
+  assert.equal(rows[0].estimate.readiness?.status, "collecting");
+  assert.ok((rows[0].estimate.readiness?.required ?? 0) > 120);
   const a = JSON.parse(attrs[0].value); a.randomized = false; attrs[0].value = JSON.stringify(a);
-  const suppressed = report(attrs, events).groups[0].paywalls[0].estimates[7];
+  const suppressed = report(attrs, events).groups[0].paywalls[0].estimate;
   assert.equal(suppressed.chanceBest, null);
   assert.equal(suppressed.credibleInterval, null);
+  assert.equal(suppressed.readiness, null);
+});
+
+test("early paywall estimates stay visible and readiness uses a revenue-producing reference arm", () => {
+  const attrs: PaywallAttribute[] = [];
+  for (const variant of ["high", "name"]) for (let i = 0; i < 10; i++) {
+    const owner = `${variant}_${i}`;
+    const tx = String((variant === "high" ? 3000 : 4000) + i);
+    const values = fixture(owner, { variant, variantName: variant, paywall: variant }, tx);
+    attrs.push(...(variant === "name" && i === 0 ? values : values.slice(0, 2)));
+  }
+  const result = report(attrs, [money({
+    id: "4000",
+    originalTransactionId: "4000",
+    transactionId: "4000",
+  })]);
+  const rows = result.groups.find((group) => group.language === "all")!.paywalls;
+  const estimate = rows[0].estimate;
+
+  assert.notEqual(estimate.chanceBest, null);
+  assert.notEqual(estimate.credibleInterval, null);
+  assert.match(estimate.reason ?? "", /20 users and 3 paid users/);
+  assert.notEqual(estimate.readiness?.required, null);
+  assert.notEqual(estimate.readiness?.status, "unavailable");
+  assert.equal(estimate.readiness?.minimumDetectableEffect, 0.5);
 });
 
 test("query failures are unavailable, never a misleading zero", async () => {
@@ -139,8 +165,8 @@ test("v2 separates the same-SKU designs and Weekly is a valid package purchase",
     assert.equal(row.users, 60);
     assert.equal(row.conversions, 10);
     assert.equal(row.proceeds, 85);
-    assert.equal(row.estimates[7].reason, null);
-    assert.notEqual(row.estimates[7].chanceBest, null);
+    assert.equal(row.estimate.reason, null);
+    assert.notEqual(row.estimate.chanceBest, null);
   }
   assert.equal(group.placements[0].proceeds, 255);
   assert.equal(result.groups.find((g) => g.language === "all" && g.experiment === "price_v1")!.paywalls.length, 1);
@@ -193,18 +219,18 @@ test("v3 reports five designs separately, including both Weekly packages, withou
     assert.equal(row.users, 60);
     assert.equal(row.conversions, 10);
     assert.equal(row.proceeds, 85);
-    assert.equal(row.estimates[7].reason, null);
-    assert.notEqual(row.estimates[7].chanceBest, null);
+    assert.equal(row.estimate.reason, null);
+    assert.notEqual(row.estimate.chanceBest, null);
   }
   assert.equal(group.placements[0].proceeds, 425);
   assert.equal(result.groups.find((g) => g.language === "all" && g.experiment === "native_paywalls_v2")!.paywalls[0].proceeds, 0);
   // No winner claim while even one of the five randomized arms is missing.
   const partial = report(attrs.filter((a) => !a.appUserId.startsWith("yr_wk_34_")), events.slice(0, 40));
   const partialGroup = partial.groups.find((g) => g.language === "all" && g.experiment === "native_paywalls_v3")!;
-  assert.ok(partialGroup.paywalls.every((row) => row.estimates[7].chanceBest == null));
+  assert.ok(partialGroup.paywalls.every((row) => row.estimate.chanceBest == null));
 });
 
-test("recovery APPU is the weighted combination of regular and recovery stages", () => {
+test("recovery paywalls use only their directly attributed total APPU", () => {
   const attrs: PaywallAttribute[] = [];
   for (const [index, [owner, variant]] of ([["control", "holdout"], ["offer", "recovery"]] as const).entries()) {
     const mainAssignment = record({ experiment: "native_main_v1_en", experimentName: "Main",
@@ -232,10 +258,9 @@ test("recovery APPU is the weighted combination of regular and recovery stages",
     money({ id: "recovery-offer", originalTransactionId: "301", transactionId: "301", proceeds: 4, price: 5, ts: iso(3) }),
   ]);
   const group = result.groups.find((g) => g.language === "en" && g.experiment === "native_recovery_v1_en")!;
-  assert.equal(group.paywallRevenueScope, "weighted_funnel");
-  assert.equal(group.paywalls.find((row) => row.id.startsWith("holdout"))!.funnelAppu, 8);
-  assert.equal(group.paywalls.find((row) => row.id.startsWith("recovery"))!.funnelAppu, 20 / 3);
-  assert.equal(group.paywalls.find((row) => row.id.startsWith("holdout"))!.proceeds, 0);
-  assert.equal(group.paywalls.find((row) => row.id.startsWith("recovery"))!.proceeds, 4);
+  const holdout = group.paywalls.find((row) => row.id.startsWith("holdout"))!;
+  const recovery = group.paywalls.find((row) => row.id.startsWith("recovery"))!;
+  assert.equal(holdout.proceeds / holdout.users, 0);
+  assert.equal(recovery.proceeds / recovery.users, 4);
   assert.equal(group.placements[0].proceeds, 4);
 });

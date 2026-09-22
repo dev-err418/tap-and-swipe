@@ -62,6 +62,22 @@ test("one comparison card renders both language APPUs and an empty arm honestly"
   assert.match(markup, /Spanish total APPU/);
   assert.match(markup, /English total APPU/);
   assert.match(markup, /Superwall vs native/);
-  assert.match(markup, /historical cohorts, not randomized/);
+  assert.match(markup, /Historical cohorts, not randomized/);
+  assert.match(markup, /Planning pending/);
   assert.match(markup, /—/);
+});
+
+test("expanded legacy baseline includes older installs and revenue without expanding native cohort", () => {
+  const input = { ...facts([
+    { ...install("old", "es", "1.1.1"), installedAt: start - 20 * DAY },
+    { ...install("too-old", "en", "1.1.1"), installedAt: start - 31 * DAY },
+    { ...install("early-native"), installedAt: start - DAY },
+    install("new-native"),
+  ], [event("old", 200, -19), event("old", 20, 1, "renewal", "renewal"), event("new-native", 10), event("early-native", 100)]), legacyStartMs: start - 30 * DAY };
+  const report = pokyPaywallMigrationExperiment(input, start + 3 * DAY);
+  assert.equal(report.variants[0].installs, 1);
+  assert.equal(report.variants[0].proceeds, 220);
+  assert.equal(report.languageComparisons![0].variants[0].proceeds, 220);
+  assert.equal(report.variants[1].installs, 1);
+  assert.equal(report.variants[1].proceeds, 10);
 });
