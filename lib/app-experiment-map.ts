@@ -7,6 +7,7 @@ export type ExperimentMapTest = {
   scope: string;
   tone: "blue" | "orange";
   branches: ExperimentMapBranch[];
+  planned?: boolean;
 };
 export type AppExperimentMapDefinition = {
   tests: ExperimentMapTest[];
@@ -107,9 +108,29 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
     };
   }
 
+  if (appId === "versy") {
+    return {
+      tests: [{
+        id: "versy-bible-wdiget-v1",
+        label: "Onboarding",
+        scope: "Prepared · treatment screens pending",
+        tone: "blue",
+        planned: true,
+        branches: [
+          { id: "short-1-prayer", label: "Prayer journey", percent: 50 },
+          { id: "bible_wdiget", label: "Bible widget", percent: 50 },
+        ],
+      }],
+      notes: [
+        "The bible_wdiget treatment is not assigned in production until its separate screens ship. The 50/50 split is the planned allocation, not observed traffic.",
+        "Only new installs tagged bible_wdiget_v1 will enter the comparison; historical Versy onboarding users are excluded.",
+      ],
+    };
+  }
+
   return null;
 }
 
 export function activeABTestCount(appId: string) {
-  return appExperimentMap(appId)?.tests.filter((experiment) => experiment.branches.length > 1).length ?? 0;
+  return appExperimentMap(appId)?.tests.filter((experiment) => !experiment.planned && experiment.branches.length > 1).length ?? 0;
 }

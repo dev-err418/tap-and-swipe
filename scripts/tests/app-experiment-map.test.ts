@@ -27,7 +27,7 @@ test("Poky experiment data begins at Sep 20, 2026 16:00 GMT+2", () => {
 });
 
 test("every configured audience has a complete, valid allocation", () => {
-  for (const app of ["glow", "poky"]) {
+  for (const app of ["glow", "poky", "versy"]) {
     const map = appExperimentMap(app);
     assert.ok(map);
     assert.equal(new Set(map.tests.map((experiment) => experiment.id)).size, map.tests.length);
@@ -64,8 +64,16 @@ test("Poky shows a 90/10 experience split, 50/50 plan split and four joint combi
   assert.match(map.tests.find((row) => row.id === "poky-native-recovery-holdout")!.scope, /any origin placement/);
 });
 
+test("Versy shows the prepared split without claiming it is active", () => {
+  const map = appExperimentMap("versy")!;
+  assert.deepEqual(map.tests.map((row) => row.id), ["versy-bible-wdiget-v1"]);
+  assert.deepEqual(map.tests[0].branches.map((branch) => branch.id), ["short-1-prayer", "bible_wdiget"]);
+  assert.deepEqual(map.tests[0].branches.map((branch) => branch.percent), [50, 50]);
+  assert.equal(map.tests[0].planned, true);
+  assert.equal(activeABTestCount("versy"), 0);
+});
+
 test("unsupported apps do not show invented experiments", () => {
-  assert.equal(appExperimentMap("versy"), null);
   assert.equal(appExperimentMap("unknown"), null);
 });
 
@@ -95,8 +103,8 @@ test("recovery map uses native assignment identities, never legacy Superwall var
   assert.deepEqual(nodes.map((node) => node.variantId), ["recovery", "holdout"]);
 });
 
-test("both maps render their percentage badges without analytics data", () => {
-  for (const app of ["glow", "poky"]) {
+test("configured maps render their percentage badges without analytics data", () => {
+  for (const app of ["glow", "poky", "versy"]) {
     const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: app }));
     assert.match(markup, /Experiment map/);
     assert.match(markup, /Configured allocation/);
@@ -105,7 +113,7 @@ test("both maps render their percentage badges without analytics data", () => {
     assert.match(markup, /Start/);
     assert.match(markup, /onboarding/);
   }
-  assert.equal(renderToStaticMarkup(createElement(AppExperimentMap, { appId: "versy" })), "");
+  assert.equal(renderToStaticMarkup(createElement(AppExperimentMap, { appId: "unknown" })), "");
 });
 
 test("the map shows APPU for every experiment step and marks the current leader", () => {
@@ -321,7 +329,7 @@ test("the map language picker scopes every experiment APPU to the selected audie
 });
 
 test("flows have one onboarding origin, valid left-to-right edges and no disconnected nodes", () => {
-  for (const app of ["glow", "poky"]) {
+  for (const app of ["glow", "poky", "versy"]) {
     const flow = appExperimentFlow(app)!;
     const nodes = new Map(flow.nodes.map((node) => [node.id, node]));
     assert.equal(nodes.size, flow.nodes.length);
@@ -342,7 +350,7 @@ test("flows have one onboarding origin, valid left-to-right edges and no disconn
       assert.ok(node.y - 26 >= 0 && node.y + 26 <= flow.height);
     }
   }
-  assert.equal(appExperimentFlow("versy"), null);
+  assert.equal(appExperimentFlow("unknown"), null);
 });
 
 test("Poky branches through background, four plan combinations and all paywalls before conditional recovery", () => {

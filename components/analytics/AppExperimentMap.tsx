@@ -105,7 +105,7 @@ export default function AppExperimentMap({
         className="overflow-x-auto rounded-xl scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         tabIndex={0}
         role="region"
-        aria-label={`${appId === "glow" ? "Glow" : "Poky"} onboarding to paywall progression; scroll horizontally to follow the flow`}
+        aria-label={`${appId === "glow" ? "Glow" : appId === "versy" ? "Versy" : "Poky"} onboarding experiment progression; scroll horizontally to follow the flow`}
       >
         <svg
           viewBox={`0 0 ${flow.width} ${flow.height}`}

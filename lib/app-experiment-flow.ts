@@ -26,7 +26,31 @@ export type ExperimentFlow = {
 export function appExperimentFlow(appId: string, selectedLanguage?: string): ExperimentFlow | null {
   const map = appExperimentMap(appId);
   if (!map) return null;
-  return appId === "glow" ? glowFlow(map) : pokyFlow(map, selectedLanguage);
+  if (appId === "glow") return glowFlow(map);
+  if (appId === "versy") return versyFlow(map);
+  return pokyFlow(map, selectedLanguage);
+}
+
+function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
+  const experiment = map.tests[0];
+  const nodes: ExperimentFlowNode[] = [
+    { id: "start", x: 36, y: 200, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
+    { id: "completion", x: 470, y: 200, width: 170, label: "Widget screen reached", tone: "neutral",
+      statsTarget: { experimentId: experiment.id } },
+  ];
+  const edges: ExperimentFlowEdge[] = [];
+  experiment.branches.forEach((branch, index) => {
+    nodes.push({ id: branch.id, x: 168, y: 144 + index * 112, width: 170,
+      label: branch.label, tone: "blue", experimentId: experiment.id, variantId: branch.id });
+    edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` });
+    edges.push({ from: branch.id, to: "completion" });
+  });
+  return {
+    width: 680, height: 400, nodes, edges,
+    stages: [{ x: 36, label: "Assignment" }, { x: 168, label: "Onboarding flow" },
+      { x: 470, label: "Completion" }],
+    notes: map.notes,
+  };
 }
 
 function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {

@@ -168,6 +168,7 @@ const GLOW_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/19/20/0e/19200e98-f11f-8ab4-850a-81a2a45122e0/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg";
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen"] as const;
+const VERSY_ATTRIBUTE_KEYS = ["onboarding_experiment_id", "onboarding_variant", "widget_screen_seen"] as const;
 const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "onboarding_plan_allocation", "home_experience_variant", "home_experience_allocation", "poky_tracking_environment", ...POKY_NATIVE_RECOVERY_KEYS] as const;
 
 type SuperwallAppConfig = {
@@ -466,7 +467,7 @@ async function loadSuperwallAppAnalytics(
       ? glowExperiments(facts)
       : app.id === "poky"
         ? pokyExperiments(facts)
-        : []
+        : versyExperiments(facts)
     : [];
   const trialCancelTiming = facts && app.id === "glow" ? trialCancelFromFacts(facts) : null;
 
@@ -551,7 +552,7 @@ async function loadAppFacts(
 function attributeKeysFor(id: SuperwallAppConfig["id"]) {
   if (id === "glow") return [...GLOW_ATTRIBUTE_KEYS];
   if (id === "poky") return [...POKY_ATTRIBUTE_KEYS];
-  return [];
+  return [...VERSY_ATTRIBUTE_KEYS];
 }
 
 async function fetchInstallCohort(app: SuperwallAppConfig, start: string, end: string): Promise<InstallRow[]> {
@@ -928,6 +929,24 @@ function glowOnboardingExperiment(facts: AppFacts): MobileAppExperiment {
     showTrials: true,
     showCompletion: true,
   });
+}
+
+function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
+  return [attributeExperiment(facts, {
+    id: "versy-bible-wdiget-v1",
+    title: "Onboarding A/B test",
+    subtitle: "Prayer journey vs Bible widget · prepared",
+    attributeKeys: ["onboarding_experiment_id", "onboarding_variant"],
+    variants: [
+      { key: "short-1-prayer", label: "Prayer journey",
+        attributes: { onboarding_experiment_id: "bible_wdiget_v1", onboarding_variant: "short-1-prayer" } },
+      { key: "bible_wdiget", label: "Bible widget",
+        attributes: { onboarding_experiment_id: "bible_wdiget_v1", onboarding_variant: "bible_wdiget" } },
+    ],
+    scoreMetrics: ["appu", "download_paid"],
+    showTrials: true,
+    showCompletion: true,
+  })];
 }
 
 function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
