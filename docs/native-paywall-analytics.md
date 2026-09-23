@@ -82,11 +82,12 @@ wins across language changes within each version, before filtering cohort dates.
 Missing money blocks winner estimates, including verified regular purchases
 awaiting Apple revenue for a recovery-cohort user.
 
-Fresh onboarding/background assignments publish `onboarding_plan_allocation`
-and `home_experience_allocation` as `50_50`. Inherited assignments are `legacy`.
-The current plan/home tests require their fresh marker, and the four-way table
-requires both. Old assignments remain sticky but are excluded from these new
-cohorts; missing markers are never inferred to mean 50/50. Historical raw
+Fresh plan assignments publish `onboarding_plan_allocation=50_50`. New home
+assignments publish `home_experience_allocation=90_10`; earlier 50/50 home
+assignments retain their original marker. Inherited assignments are `legacy`.
+The current plan/home tests require a recognized fresh marker, and the four-way
+table requires both. Old assignments remain sticky but legacy assignments are
+excluded from these new cohorts; missing markers are never inferred. Historical raw
 attributes remain stored. Do not lowercase attribute JSON during parsing.
 Current Poky onboarding reports also require `poky_tracking_environment=production`,
 so Debug overrides cannot contaminate them even before the SDK labels a user sandbox.
@@ -162,7 +163,9 @@ September 19, 2026 validation: live Glow data contains original transaction IDs 
 
 ## Metric definitions
 
-Poky's App experience A/B test uses only users with a positive server purchase or renewal after their cohort install. Free users and unconverted trials are excluded consistently from users, sessions, revenue, fixed-age APPU, retention, country/language slices and readiness. Previous payers remain included after expiry/refund; this measures the paying cohort rather than current subscription entitlement. Session totals cover the selected session window for those users, including sessions before their first payment. Other experiments keep their original populations.
+Poky's App experience comparison uses only users with a positive server purchase or renewal after their cohort install. Free users and unconverted trials are excluded consistently from users, sessions, revenue, fixed-age APPU, retention, country/language slices and readiness. Previous payers remain included after expiry/refund; this measures the paying cohort rather than current subscription entitlement. Session totals cover the selected session window for those users, including sessions before their first payment. Other experiments keep their original populations.
+
+The App experience comparison also includes Poky installs from the fixed 30 days before the September 20 AI Chat split in Original, since that was the only available experience. Their purchases, renewals, refunds and sessions are counted only before the split. New Original users continue to count in the live arm. The dashboard recognizes saved 50/50 assignments and new 90/10 assignments without relabeling either cohort. This merged historical and randomized comparison is observational, so the card explains the cohort difference and cannot report a decisive A/B winner. The historical addition is isolated from the four-way onboarding experiment, experiment map cohorts and overview totals.
 
 The **Experiment map's onboarding tree** uses a different, consistent population:
 the four `poky-onboarding-abcd` joint experience × plan cohorts, including

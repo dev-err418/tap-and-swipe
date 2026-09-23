@@ -52,13 +52,14 @@ test("Glow includes configured onboarding, paywall and Journal VS Practice assig
   }
 });
 
-test("Poky shows independent 50/50 tests, four 25% combinations, and localized single offers", () => {
+test("Poky shows a 90/10 experience split, 50/50 plan split and four joint combinations", () => {
   const map = appExperimentMap("poky")!;
-  for (const experiment of map.tests.filter((row) => row.id !== "poky-localized-paywalls")) {
+  for (const experiment of map.tests.filter((row) => row.id !== "poky-localized-paywalls" && row.id !== "poky-app-experience")) {
     assert.deepEqual(experiment.branches.map((branch) => branch.percent), [50, 50]);
   }
+  assert.deepEqual(map.tests.find((row) => row.id === "poky-app-experience")?.branches.map((branch) => branch.percent), [10, 90]);
   assert.deepEqual(map.tests.find((row) => row.id === "poky-localized-paywalls")?.branches.map((branch) => branch.percent), [100]);
-  assert.deepEqual(map.combinations?.map((branch) => branch.percent), [25, 25, 25, 25]);
+  assert.deepEqual(map.combinations?.map((branch) => branch.percent), [5, 45, 5, 45]);
   assert.match(map.tests.find((row) => row.id === "poky-app-experience")!.scope, /next app release/);
   assert.match(map.tests.find((row) => row.id === "poky-native-recovery-holdout")!.scope, /any origin placement/);
 });

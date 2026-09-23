@@ -67,8 +67,8 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
     const experience: ExperimentMapTest = {
       id: "poky-app-experience", label: "App experience", scope: "Background · next app release", tone: "blue",
       branches: [
-        { id: "control", label: "Original", percent: 50 },
-        { id: "new_experience", label: "New experience · warm", percent: 50 },
+        { id: "control", label: "Original", percent: 10 },
+        { id: "new_experience", label: "New experience · warm", percent: 90 },
       ],
     };
     return {
@@ -100,8 +100,8 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         percent: p.percent * e.percent / 100,
       }))),
       notes: [
-        "Results start September 20, 2026 at 16:00 GMT+2; earlier cohorts and proceeds are excluded.",
-        "Background 50/50 applies to new assignments in the next release. Earlier builds use 70/30; saved assignments are unchanged.",
+        "Results start September 20, 2026 at 16:00 GMT+2. The App experience card also includes a fixed 30-day pre-split Original baseline.",
+        "Background 90/10 applies to new assignments in the next release. Earlier builds use 70/30 or 50/50; saved assignments are unchanged.",
         "The recovery group is assigned before onboarding. All subsequent proceeds count in that group, including immediate regular-paywall purchases. The offer appears after purchase cancellation, at most once; the home-screen shortcut remains available to both groups.",
       ],
     };

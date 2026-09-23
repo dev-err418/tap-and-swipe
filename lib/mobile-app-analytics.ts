@@ -6,7 +6,7 @@ import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
 import { loadNativePaywalls } from "./native-paywall-queries";
 import { glowExperimentStart } from "./glow-experiment-window";
-import { pokyExperimentStart } from "./poky-experiment-window";
+import { POKY_EXPERIMENT_START_MS, pokyExperimentStart } from "./poky-experiment-window";
 import { loadJournalPractice } from "./journal-practice-queries";
 import type { JournalPracticeReport } from "./journal-practice-analytics";
 import type { NativePaywallReport } from "./native-paywall-analytics";
@@ -212,6 +212,7 @@ type SessionRow = {
 
 type AppFacts = {
   migrationHistory?: { installs: InstallRow[]; events: AttributedRow[]; startMs: number };
+  historicalExperienceSessions?: SessionRow[];
   startMs: number;
   endMs: number;
   sessionDays: number;
@@ -227,7 +228,7 @@ type AttributeExperimentDefinition = {
   title: string;
   subtitle: string;
   attributeKeys: string[];
-  variants: { key: string; label: string; attributes: Record<string, string> }[];
+  variants: { key: string; label: string; attributes: Record<string, string | string[]> }[];
   scoreMetrics: MobileAppExperimentScoreMetric[];
   showRetention?: boolean;
   showTrials?: boolean;
@@ -239,6 +240,8 @@ type AttributeExperimentDefinition = {
   showInstalls?: boolean;
   showPaid?: boolean;
   showDownloadPaid?: boolean;
+  historicalControl?: boolean;
+  asOfMs?: number;
 };
 
 type CacheEntry<T> = { expiresAt: number; value: T };
@@ -503,11 +506,16 @@ async function loadAppFacts(
     : app.id === "glow" ? GLOW_SUPERWALL_HISTORY_START_MS : startMs;
   const fetchStart = hasMigrationHistory ? clickhouseDate(new Date(Math.min(startMs, historyStartMs))) : start;
   const sessionRange = sessionWindow(startMs, endMs);
-  const [installResult, attributeResult, eventResult, sessionResult] = await Promise.allSettled([
+  const [installResult, attributeResult, eventResult, sessionResult, historicalSessionResult] = await Promise.allSettled([
     fetchInstallCohort(app, fetchStart, end),
     keys.length ? fetchUserAttributes(app, keys) : Promise.resolve([]),
     fetchAttributedEvents(app, fetchStart),
     app.id === "poky" ? fetchSessionStarts(app, sessionRange.from, sessionRange.to) : Promise.resolve([]),
+    app.id === "poky" ? fetchSessionStarts(
+      app,
+      POKY_EXPERIMENT_START_MS - 30 * DAY_MS,
+      POKY_EXPERIMENT_START_MS,
+    ) : Promise.resolve([]),
   ]);
 
   for (const [label, result] of [
@@ -515,6 +523,7 @@ async function loadAppFacts(
     ["attributes", attributeResult],
     ["events", eventResult],
     ["sessions", sessionResult],
+    ["historical sessions", historicalSessionResult],
   ] as const) {
     if (result.status === "rejected") {
       logAnalytics("tap_and_swipe.mobile_app_facts_partial", {
@@ -531,6 +540,7 @@ async function loadAppFacts(
     startMs,
     endMs,
     sessionDays: sessionRange.days,
+    historicalExperienceSessions: historicalSessionResult.status === "fulfilled" ? historicalSessionResult.value : [],
     installs: installResult.status === "fulfilled" ? installResult.value.filter((row) => row.installedAt >= startMs) : [],
     attributes: attributeResult.status === "fulfilled" ? attributeMap(attributeResult.value) : new Map(),
     events: eventResult.status === "fulfilled" ? eventResult.value.filter((row) => row.eventTs >= startMs) : [],
@@ -947,57 +957,99 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
       scoreMetrics: ["appu_d7", "appu_d14"],
       showRetention: true,
     }),
-    attributeExperiment(paidExperienceCohort(scopedFacts), {
-      id: "poky-app-experience",
-      paidUsersOnly: true,
-      title: "App experience A/B test",
-      subtitle: "Original vs AI Chat · fresh 50/50 assignments",
-      attributeKeys: ["home_experience_variant"],
-      variants: [
-        { key: "control", label: "Original", attributes: { home_experience_variant: "control", home_experience_allocation: "50_50" } },
-        { key: "new_experience", label: "AI Chat", attributes: { home_experience_variant: "new_experience", home_experience_allocation: "50_50" } },
-      ],
-      scoreMetrics: ["sessions_per_day", "appu_d7", "appu_d14"],
-      showRetention: true,
-      countAssignedUsers: true,
-      includeSessions: true,
-      showUsers: true,
-      showSessions: true,
-      showInstalls: false,
-      showPaid: false,
-      showDownloadPaid: false,
-    }),
+    pokyAppExperienceExperiment(scopedFacts),
     attributeExperiment(scopedFacts, {
       id: "poky-onboarding-abcd",
       title: "Onboarding A/B/C/D test",
-      subtitle: "Extra animation × AI Chat · fresh 25/25/25/25 assignments",
+      subtitle: "Extra animation × AI Chat · new 5/45/5/45 assignments",
       attributeKeys: ["onboarding_plan_variant", "home_experience_variant"],
       variants: [
         {
           key: "extra_original",
           label: "Extra animation + original",
-          attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", home_experience_variant: "control", home_experience_allocation: "50_50" },
+          attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", home_experience_variant: "control", home_experience_allocation: ["50_50", "90_10"] },
         },
         {
           key: "extra_chat",
           label: "Extra animation + AI chat",
-          attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", home_experience_variant: "new_experience", home_experience_allocation: "50_50" },
+          attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", home_experience_variant: "new_experience", home_experience_allocation: ["50_50", "90_10"] },
         },
         {
           key: "intro_original",
           label: "Animated intro + original",
-          attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", home_experience_variant: "control", home_experience_allocation: "50_50" },
+          attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", home_experience_variant: "control", home_experience_allocation: ["50_50", "90_10"] },
         },
         {
           key: "intro_chat",
           label: "Animated intro + AI chat",
-          attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", home_experience_variant: "new_experience", home_experience_allocation: "50_50" },
+          attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", home_experience_variant: "new_experience", home_experience_allocation: ["50_50", "90_10"] },
         },
       ],
       scoreMetrics: ["appu_d7", "appu_d14"],
       showRetention: true,
     }),
   ];
+}
+
+const pokyExperienceDefinition: AttributeExperimentDefinition = {
+  id: "poky-app-experience",
+  paidUsersOnly: true,
+  title: "App experience comparison",
+  subtitle: "Original (including the prior 30 days) vs AI Chat",
+  attributeKeys: ["home_experience_variant"],
+  variants: [
+    { key: "control", label: "Original", attributes: { home_experience_variant: "control", home_experience_allocation: ["50_50", "90_10"] } },
+    { key: "new_experience", label: "AI Chat", attributes: { home_experience_variant: "new_experience", home_experience_allocation: ["50_50", "90_10"] } },
+  ],
+  scoreMetrics: ["sessions_per_day", "appu_d7", "appu_d14"],
+  showRetention: true,
+  countAssignedUsers: true,
+  includeSessions: true,
+  showUsers: true,
+  showSessions: true,
+  showInstalls: false,
+  showPaid: false,
+  showDownloadPaid: false,
+};
+
+function pokyAppExperienceExperiment(facts: AppFacts): MobileAppExperiment {
+  const current = attributeExperiment(paidExperienceCohort(facts), pokyExperienceDefinition);
+  const history = facts.migrationHistory;
+  if (!history) return current;
+
+  // Before the split, every install used Original. Keep its outcomes and activity
+  // before the cutoff so later upgrades cannot make AI Chat usage look like Original.
+  const historicalFacts: AppFacts = {
+    ...facts,
+    startMs: history.startMs,
+    endMs: POKY_EXPERIMENT_START_MS,
+    installs: history.installs.filter((row) => inRange(row.installedAt, history.startMs, POKY_EXPERIMENT_START_MS)),
+    events: history.events.filter((row) => inRange(row.eventTs, history.startMs, POKY_EXPERIMENT_START_MS)),
+    sessions: facts.historicalExperienceSessions ?? [],
+  };
+  const historical = attributeExperiment(paidExperienceCohort(historicalFacts, POKY_EXPERIMENT_START_MS), {
+    ...pokyExperienceDefinition,
+    historicalControl: true,
+    asOfMs: POKY_EXPERIMENT_START_MS,
+  });
+  mergeExperimentVariant(current.variants[0], historical.variants[0]);
+  for (const language of Object.keys(current.languageVariants ?? {})) {
+    mergeExperimentVariant(current.languageVariants![language][0], historical.languageVariants![language][0]);
+  }
+  return {
+    ...current,
+    randomized: false,
+    planningNote: "Original includes a fixed 30-day baseline before the AI Chat split plus newly assigned Original users. Historical outcomes stop at the split; new 90/10 and earlier 50/50 assignments keep their original labels. The combined comparison is observational, so a winner is not a causal A/B result.",
+  };
+}
+
+function mergeExperimentVariant(target: MobileAppExperimentVariant, source: MobileAppExperimentVariant) {
+  addExperimentMetricsToSlice(target, source);
+  for (const [country, slice] of Object.entries(source.countries)) {
+    const bucket = target.countries[country] ?? emptyExperimentSlice();
+    addExperimentMetricsToSlice(bucket, slice);
+    target.countries[country] = bucket;
+  }
 }
 
 function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDefinition): MobileAppExperiment {
@@ -1007,16 +1059,21 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     definition.variants.map((variant) => emptyExperimentVariant(variant.key, variant.label)),
   ]));
   const variantIndexFor = (attrs: Record<string, string> | undefined) => {
+    if (definition.historicalControl) {
+      const environment = attrs?.poky_tracking_environment?.trim().toLowerCase();
+      return environment && environment !== "production" ? null : 0;
+    }
     if (!attrs) return null;
     if (definition.id.startsWith("poky-") && attrs.poky_tracking_environment !== "production") return null;
     const matched = definition.variants.find((variant) =>
-      Object.entries(variant.attributes).every(
-        ([key, value]) => (attrs[key] ?? "").trim().toLowerCase() === value,
-      ),
+      Object.entries(variant.attributes).every(([key, value]) => {
+        const actual = (attrs[key] ?? "").trim().toLowerCase();
+        return Array.isArray(value) ? value.includes(actual) : actual === value;
+      }),
     );
     return matched ? definition.variants.indexOf(matched) : null;
   };
-  const now = Date.now();
+  const now = definition.asOfMs ?? Date.now();
   const cohortStartMs = definition.id.startsWith("glow-") ? glowExperimentStart(facts.startMs) : facts.startMs;
   const eligibleAppUserIds = new Set(
     facts.installs
@@ -1043,7 +1100,10 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   };
 
   if (definition.countAssignedUsers) {
-    for (const [appUserId, attrs] of facts.attributes) {
+    const assignedUsers: [string, Record<string, string> | undefined][] = definition.historicalControl
+      ? [...eligibleAppUserIds].map((appUserId) => [appUserId, facts.attributes.get(appUserId)])
+      : [...facts.attributes];
+    for (const [appUserId, attrs] of assignedUsers) {
       if (!eligibleAppUserIds.has(appUserId)) continue;
       addForUser(appUserId, attrs, {
         country: countryByUser.get(appUserId) ?? "unknown",
