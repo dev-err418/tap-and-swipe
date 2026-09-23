@@ -141,9 +141,9 @@ test("the map shows APPU for every experiment step and marks the current leader"
   assert.doesNotMatch(markup, /% conf|% better|50\/50 in next release|25% of new assignments/);
   assert.match(markup, /APPU \$0\.12/);
   assert.match(markup, /APPU \$0\.18/);
-  assert.match(markup, /APPU \$0\.20/);
+  assert.match(markup, /APPU \$0\.06/);
   assert.match(markup, /APPU \$0\.30/);
-  assert.match(markup, /APPU \$0\.10/);
+  assert.match(markup, /APPU — · CR —/); // Recovery waits for the shared Paywalls report.
   assert.match(markup, /stroke-width="3"/);
 });
 

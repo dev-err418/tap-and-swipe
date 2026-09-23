@@ -57,7 +57,13 @@ The underlying historical source records are not deleted.
 Result cards follow the flow map from top to bottom (`lib/app-experiment-order.ts`):
 Glow onboarding → paywall comparison → yearly price; Poky app experience → plan
 flow → combined onboarding results → native recovery. Recovery nodes use the
-native experiment's `recovery` / `holdout` assignments for their result badges.
+native experiment's `recovery` / `holdout` rows from the same report as Paywalls
+for their badges, highlights and stats dialog. APPU uses all post-assignment
+proceeds / assigned users; CR uses conversions / assigned users, including
+holdouts with zero recovery views. Within the selected language, the map uses
+v2 once it has enrolled users. Until then it shows v1 with a visible legacy-cohort
+label and the historical experiment name in the dialog. Versions and languages
+are never combined, and explicit home-shortcut groups are excluded.
 
 The Paywalls tab uses direct purchase attribution for ordinary paywalls and all
 placement rows. **Recovery offer · 50/50 is a flow comparison:** regular flow vs
@@ -180,6 +186,14 @@ each sibling pair. The subsequent merged paywall stages retain their separate
 paywall-assignment populations and direct purchase attribution; they are not
 further subdivisions of the four onboarding cohorts. Poky's map has no footer
 notes; hovering a populated onboarding node shows its users and net proceeds.
+
+Every map card opens a stats dialog on click, Enter or Space. It reuses the current
+loaded A/B card or native paywall results table, scoped to the map language without
+additional queries. Joint-cohort branch summaries use the same weighted totals as
+the map and show total APPU in the comparison. Structural cards open the relevant
+next-stage test. Journal/Practice opens the activity report labelled All languages
+because that report is not language-segmented. Missing results stay unavailable;
+closing the dialog returns keyboard focus to the map card.
 
 Most A/B result cards display APPU D7 and D14; the full-flow Recovery card uses total APPU. D30 APPU remains available in the underlying data. Glow and Poky's historical Superwall-vs-native comparisons load Superwall installs from 30 days before their September 20 experiment cutoffs (August 21), while native installs retain the selected, cutoff-clamped cohort window. This expanded history is isolated from other experiment and dashboard totals. Their planning panels are indicative, with no completion-date projection or decisive verdict for these non-randomized cohorts. Glow classifies the earliest observed install version as Superwall before 1.7.0 and native from 1.7.0; upgrades do not move that user. All linked outcomes are followed through now, including historical trial starts/conversions, renewals and refunds; revenue is deduplicated and trial/paid counts are unique users.
 

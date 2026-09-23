@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import ExperimentMapDetails from "./ExperimentMapDetails";
+import { experimentMapDetailTarget, experimentMapPaywallGroup, experimentMapRecoveryGroup } from "@/lib/experiment-map-details";
+import type { JournalPracticeReport } from "@/lib/journal-practice-analytics";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import { appExperimentFlow, type ExperimentFlowEdge, type ExperimentFlowNode } from "@/lib/app-experiment-flow";
 import type {
@@ -34,12 +38,17 @@ export default function AppExperimentMap({
   appId,
   experiments = [],
   nativePaywalls = null,
+  journalPractice = null,
 }: {
   appId: string;
   experiments?: MobileAppExperiment[];
   nativePaywalls?: NativePaywallReport | null;
+  journalPractice?: JournalPracticeReport | null;
 }) {
   const [language, setLanguage] = useState("en");
+  const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
+  const triggerRef = useRef<SVGGElement | null>(null);
+  const dialogContentRef = useRef<HTMLDivElement | null>(null);
   const availableLanguages = [...new Set(
     nativePaywalls?.groups.filter((group) => group.language !== "all").map((group) => group.language) ?? [],
   )].sort((a, b) => a === b ? 0 : a === "en" ? -1 : b === "en" ? 1 : 0);
@@ -47,6 +56,9 @@ export default function AppExperimentMap({
   const flow = appExperimentFlow(appId, selectedLanguage);
   if (!flow) return null;
   const nodes = new Map(flow.nodes.map((node) => [node.id, node]));
+  const activeNode = activeNodeId ? nodes.get(activeNodeId) : undefined;
+  const activeTarget = activeNode ? experimentMapDetailTarget(activeNode, selectedLanguage, nativePaywalls) : null;
+  const recoveryGroup = appId === "poky" ? experimentMapRecoveryGroup(nativePaywalls, selectedLanguage) : null;
   const visibleExperiments = experimentsForLanguage(experiments, selectedLanguage);
   const bestVariants = currentBestVariantResults(visibleExperiments);
   const experimentAppu = currentExperimentAppu(visibleExperiments);
@@ -54,7 +66,7 @@ export default function AppExperimentMap({
   const paywallMetrics = currentPaywallMetrics(flow.nodes, nativePaywalls, selectedLanguage);
   const candidateBestNodeIds = new Set(flow.nodes.flatMap((node) => {
     const experimentBest = node.experimentId ? bestVariants.get(node.experimentId) : null;
-    const isExperimentBest = node.paywallMetric == null
+    const isExperimentBest = !paywallMetrics.has(node.id)
       && node.experimentId != null
       && node.variantId != null
       && node.variantId === experimentBest?.key;
@@ -63,20 +75,20 @@ export default function AppExperimentMap({
   }));
   const bestPathNodeIds = currentBestPathNodeIds(flow.nodes, flow.edges, candidateBestNodeIds);
 
-  return (
+  return (<>
     <DashboardCard
       title="Experiment map"
       action={<span className="text-xs text-muted-foreground">Configured allocation · not observed traffic</span>}
-      contentClassName="px-4 pb-4 pt-1"
+      contentClassName="pb-4 pt-1"
     >
       {availableLanguages.length > 0 ? (
-        <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Experiment map language audience">
+        <div className="mb-3 flex flex-wrap gap-2 px-4" role="group" aria-label="Experiment map language audience">
           {availableLanguages.map((code) => (
             <button
               type="button"
               key={code}
               aria-pressed={code === selectedLanguage}
-              onClick={() => setLanguage(code)}
+              onClick={() => { setLanguage(code); setActiveNodeId(null); }}
               className={cn(
                 DASHBOARD_TAB_CLASS,
                 "h-8 px-3",
@@ -99,12 +111,13 @@ export default function AppExperimentMap({
           viewBox={`0 0 ${flow.width} ${flow.height}`}
           className="block w-full"
           style={{ minWidth: flow.width }}
-          role="img"
+          role="group"
           aria-label="Start onboarding, then follow the branches left to right. Percentage badges show the allocation at each split."
         >
           <desc>{flow.edges.map((edge) => `${nodes.get(edge.from)!.label} to ${nodes.get(edge.to)!.label}${edge.label ? `: ${edge.label}` : ""}${edge.conditional ? " only on cancel or dismissal" : ""}.`).join(" ")}</desc>
           {flow.stages.map((stage) => (
-            <text key={stage.label} x={stage.x} y={20} fill="#717171" fontSize={12}>{stage.label}</text>
+            <text key={stage.label} x={stage.x} y={20} fill="#717171" fontSize={12}>{stage.label === "Recovery test" && recoveryGroup?.outcomeScope === "recovery_eligibility"
+              ? "Recovery · legacy cohort" : stage.label}</text>
           ))}
           {flow.edges.map((edge) => {
             const from = nodes.get(edge.from)!;
@@ -144,12 +157,12 @@ export default function AppExperimentMap({
               : null;
             const experimentAppuValue = experimentMetricKey ? experimentAppu.get(experimentMetricKey) : undefined;
             const isExperimentBest = bestPathNodeIds.has(node.id)
-              && node.paywallMetric == null
+              && !paywallMetrics.has(node.id)
               && node.experimentId != null
               && node.variantId === bestResult?.key;
             const paywallMetric = paywallMetrics.get(node.id);
             const cohortMetric = cohortMetrics.get(node.id);
-            const showsPaywallMetrics = node.paywallMetric != null;
+            const showsPaywallMetrics = paywallMetrics.has(node.id);
             const showsExperimentAppu = experimentMetricKey != null || node.cohortMetric != null;
             const isBest = isExperimentBest || (bestPathNodeIds.has(node.id) && (paywallMetric?.isBest === true || cohortMetric?.isBest === true));
             const cardDetail = node.cohortMetric
@@ -159,6 +172,7 @@ export default function AppExperimentMap({
                 : showsExperimentAppu
                   ? `APPU ${formatAppu(experimentAppuValue)}`
                 : node.detail;
+            const interactive = experimentMapDetailTarget(node, selectedLanguage) != null;
             if (node.kind === "start") {
               return (
                 <g key={node.id}>
@@ -169,13 +183,29 @@ export default function AppExperimentMap({
               );
             }
             return (
-              <g key={node.id}>
+              <g key={node.id}
+                role={interactive ? "button" : undefined}
+                tabIndex={interactive ? 0 : undefined}
+                aria-label={interactive ? `${node.label}: view test stats` : undefined}
+                aria-haspopup={interactive ? "dialog" : undefined}
+                aria-expanded={interactive ? activeNodeId === node.id : undefined}
+                className={interactive ? "group cursor-pointer outline-none" : undefined}
+                onClick={interactive ? (event) => { triggerRef.current = event.currentTarget; setActiveNodeId(node.id); } : undefined}
+                onKeyDown={interactive ? (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    triggerRef.current = event.currentTarget;
+                    setActiveNodeId(node.id);
+                  }
+                } : undefined}
+              >
                 {cohortMetric?.appu != null && <title>{`${cohortMetric.users.toLocaleString("en-US")} users · ${formatAppu(cohortMetric.proceeds)} net proceeds, including non-payers`}</title>}
                 <rect
                   x={node.x} y={node.y - 26} width={node.width} height={52} rx={13}
                   fill={isBest ? bestTone.fill : tone.fill}
                   stroke={isBest ? bestTone.line : tone.border}
                   strokeWidth={isBest ? 2 : 1}
+                  className={interactive ? "transition-[filter,stroke-width] duration-150 group-hover:brightness-95 group-focus-visible:[stroke:#1d4ed8] group-focus-visible:[stroke-width:3] motion-reduce:transition-none" : undefined}
                 />
                 <text x={node.x + 12} y={node.y + (cardDetail ? -4 : 4)} fill="#252525" fontSize={13}>{node.label}</text>
                 {cardDetail ? (
@@ -195,7 +225,19 @@ export default function AppExperimentMap({
         </svg>
       </div>
     </DashboardCard>
-  );
+    <Dialog open={Boolean(activeNode)} onOpenChange={(open) => { if (!open) setActiveNodeId(null); }}>
+      <DialogContent ref={dialogContentRef} className="flex max-h-[88dvh] flex-col gap-0 overflow-hidden rounded-3xl bg-[#f5f5f5] p-0 sm:max-w-5xl motion-reduce:animate-none"
+        onOpenAutoFocus={(event) => { event.preventDefault(); dialogContentRef.current?.focus(); }}
+        onCloseAutoFocus={(event) => { event.preventDefault(); triggerRef.current?.focus(); }}>
+        <DialogTitle className="sr-only">{activeNode?.label}</DialogTitle>
+        <DialogDescription className="sr-only">{activeTarget?.language === "all" ? "All languages" : LANGUAGE_LABELS[activeTarget?.language ?? ""] ?? activeTarget?.language}</DialogDescription>
+        <div className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-4 pt-10 scrollbar-none [&_.overflow-x-auto]:scrollbar-none">
+          {activeNode && <ExperimentMapDetails key={`${activeNode.id}-${selectedLanguage}`} node={activeNode} language={selectedLanguage}
+            experiments={visibleExperiments} nativePaywalls={nativePaywalls} journalPractice={journalPractice} />}
+        </div>
+      </DialogContent>
+    </Dialog>
+  </>);
 }
 
 /** Keep repeated downstream variants on one winning route. Neutral merge points
@@ -246,28 +288,19 @@ export function currentCohortMetrics(nodes: ExperimentFlowNode[], edges: Experim
   return metrics;
 }
 
-type PaywallMetricNode = {
-  id: string;
-  paywallMetric?: { experiment: string; variant: string; language: string };
-};
-
 export function currentPaywallMetrics(
-  nodes: PaywallMetricNode[],
+  nodes: ExperimentFlowNode[],
   report: NativePaywallReport | null,
   selectedLanguage?: string,
 ) {
   const metrics = new Map<string, { appu: number | null; conversionRate: number | null; isBest: boolean }>();
   for (const node of nodes) {
-    if (!node.paywallMetric) continue;
-    const source = node.paywallMetric;
-    const language = source.language === "all" && selectedLanguage ? selectedLanguage : source.language;
-    const isSelectedAudience = !selectedLanguage || source.language === "all" || source.language === selectedLanguage;
-    const group = report?.status === "ready"
-      ? report.groups.find((candidate) => isSelectedAudience
-        && candidate.experiment === source.experiment
-        && candidate.language === language)
-      : null;
-    const row = group?.paywalls.find((candidate) => matchesPaywallVariant(candidate, source.variant));
+    const target = experimentMapDetailTarget(node, selectedLanguage, report);
+    const variant = node.paywallMetric?.variant ?? node.variantId;
+    if (target?.kind !== "paywalls" || !variant) continue;
+    const isSelectedAudience = !selectedLanguage || target.language === selectedLanguage;
+    const group = isSelectedAudience ? experimentMapPaywallGroup(node, report, selectedLanguage) : null;
+    const row = group?.paywalls.find((candidate) => matchesPaywallVariant(candidate, variant));
     const appu = row && row.users > 0 ? row.proceeds / row.users : null;
     const ranked = group?.paywalls.flatMap((candidate) => candidate.users > 0
       ? [{ id: candidate.id, appu: candidate.proceeds / candidate.users }]
@@ -276,7 +309,8 @@ export function currentPaywallMetrics(
     const leaders = maximum == null ? [] : ranked.filter((candidate) => candidate.appu === maximum);
     metrics.set(node.id, {
       appu,
-      conversionRate: row && row.views > 0 ? row.conversions / row.views : null,
+      conversionRate: row && (group?.outcomeScope ? row.users : row.views) > 0
+        ? row.conversions / (group?.outcomeScope ? row.users : row.views) : null,
       isBest: row != null && leaders.length === 1 && leaders[0].id === row.id,
     });
   }

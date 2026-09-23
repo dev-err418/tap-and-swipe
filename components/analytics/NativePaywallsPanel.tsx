@@ -75,8 +75,8 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
       : !groups.length ? <Empty>No native paywall tracking yet for this cohort. Results will appear after users run the instrumented app release.</Empty>
       : groups.map((group) => <div key={group.experiment} className="space-y-4">
         {groups.length > 1 ? <h2 className="px-1 pt-2 text-sm font-semibold">{group.name}</h2> : null}
-        <ResultsTable title={group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} />
-        <ResultsTable title="Placements" rows={group.placements} placement />
+        <NativePaywallResultsTable title={group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} />
+        <NativePaywallResultsTable title="Placements" rows={group.placements} placement />
       </div>)}
   </div>;
 }
@@ -85,7 +85,7 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <div className={cn(DASHBOARD_SURFACE_CLASS, "flex min-h-48 items-center justify-center p-8 text-center text-sm text-muted-foreground")}>{children}</div>;
 }
 
-function ResultsTable({ title, rows, experiment, language, placement = false, flow = false }: { title: string; rows: NativePaywallRow[]; experiment?: string; language?: string; placement?: boolean; flow?: boolean }) {
+export function NativePaywallResultsTable({ title, rows, experiment, language, placement = false, flow = false }: { title: string; rows: NativePaywallRow[]; experiment?: string; language?: string; placement?: boolean; flow?: boolean }) {
   const sortedRows = [...rows].sort((a, b) => {
     const appuA = a.users ? a.proceeds / a.users : Number.NEGATIVE_INFINITY;
     const appuB = b.users ? b.proceeds / b.users : Number.NEGATIVE_INFINITY;

@@ -50,6 +50,9 @@ export function VisitorsRevenueChart({
   revenueLabel = "Revenue",
   rateLabel,
   averageRateLabel,
+  rateScaleMax = 1,
+  averageRateScaleMax = 1,
+  showRateScales = false,
   timeZone = "UTC",
   notes = [],
   action,
@@ -62,6 +65,9 @@ export function VisitorsRevenueChart({
   revenueLabel?: string;
   rateLabel?: string;
   averageRateLabel?: string;
+  rateScaleMax?: number;
+  averageRateScaleMax?: number;
+  showRateScales?: boolean;
   timeZone?: string;
   notes?: AnalyticsChartNote[];
   action?: ReactNode;
@@ -71,6 +77,12 @@ export function VisitorsRevenueChart({
 }) {
   const hasRate = Boolean(rateLabel) && data.some((point) => point.rate !== undefined);
   const hasAverageRate = Boolean(averageRateLabel) && data.some((point) => point.averageRate !== undefined);
+  const rateValues = data.map((point) => point.rate).filter((value): value is number => value !== undefined && Number.isFinite(value));
+  const averageRateValues = data.map((point) => point.averageRate).filter((value): value is number => value !== undefined && Number.isFinite(value));
+  const highestRate = Math.max(0, ...rateValues);
+  const highestAverageRate = Math.max(0, ...averageRateValues);
+  const rateDomainMax = Math.max(rateScaleMax, Math.ceil(highestRate * 20) / 20);
+  const averageRateDomainMax = Math.max(averageRateScaleMax, Math.ceil(highestAverageRate * 20) / 20);
   const hasData = data.some((point) => point.visits > 0 || point.revenue > 0 || (point.rate ?? 0) > 0 || (point.averageRate ?? 0) > 0);
   const chartData = data.map((point) => ({
     ...point,
@@ -123,8 +135,8 @@ export function VisitorsRevenueChart({
         >
           <LegendItem label={visitLabel} color={VISIT_COLOR} />
           <LegendItem label={revenueLabel} color={REVENUE_COLOR} />
-          {hasRate && rateLabel ? <LegendItem label={rateLabel} color={RATE_COLOR} /> : null}
-          {hasAverageRate && averageRateLabel ? <LegendItem label={averageRateLabel} color={RATE_COLOR} dashed /> : null}
+          {hasRate && rateLabel ? <LegendItem label={showRateScales ? `${rateLabel} · 0–${Math.round(rateDomainMax * 100)}%` : rateLabel} color={RATE_COLOR} /> : null}
+          {hasAverageRate && averageRateLabel ? <LegendItem label={showRateScales ? `${averageRateLabel} · 0–${Math.round(averageRateDomainMax * 100)}%` : averageRateLabel} color={RATE_COLOR} dashed /> : null}
           {visibleNotes.length > 0 ? <LegendItem label="Notes" color={NOTE_COLOR} /> : null}
         </div>
         <div className="flex justify-end">{action}</div>
@@ -174,7 +186,8 @@ export function VisitorsRevenueChart({
               tick={{ fontSize: 12 }}
               tickFormatter={formatCompactCurrency}
             />
-            {hasRate || hasAverageRate ? <YAxis yAxisId="rate" domain={[0, 1]} hide /> : null}
+            {hasRate ? <YAxis yAxisId="rate" domain={[0, rateDomainMax]} hide /> : null}
+            {hasAverageRate ? <YAxis yAxisId="averageRate" domain={[0, averageRateDomainMax]} hide /> : null}
             <Tooltip
               content={<TrendTooltip visitLabel={visitLabel} revenueLabel={revenueLabel} rateLabel={rateLabel} averageRateLabel={averageRateLabel} timeZone={timeZone} />}
               cursor={{ stroke: "var(--border)", strokeDasharray: "3 3" }}
@@ -232,14 +245,13 @@ export function VisitorsRevenueChart({
             />
             {hasAverageRate ? (
               <Line
-                yAxisId="rate"
+                yAxisId="averageRate"
                 type="stepAfter"
                 dataKey="averageRate"
                 name={averageRateLabel}
                 stroke={RATE_COLOR}
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                strokeOpacity={0.72}
+                strokeWidth={3}
+                strokeDasharray="7 5"
                 dot={false}
                 activeDot={false}
                 connectNulls

@@ -11,6 +11,8 @@ export type ExperimentFlowNode = {
   /** Disjoint joint-assignment cohorts; parents sum the same leaves as their children. */
   cohortMetric?: { experiment: string; variants: string[] };
   paywallMetric?: { experiment: string; variant: string; language: string };
+  /** Structural cards open the comparison at the next stage. */
+  statsTarget?: { experimentId?: string; paywallExperiment?: string; language?: string };
 };
 export type ExperimentFlowEdge = { from: string; to: string; label?: string; conditional?: boolean };
 export type ExperimentFlow = {
@@ -32,7 +34,8 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   const centerY = 64 + (paywalls.branches.length - 1) * 52;
   const nodes: ExperimentFlowNode[] = [
     { id: "start", x: 36, y: centerY, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
-    { id: "placements", x: 390, y: centerY, width: 162, label: "Paywall entry", detail: "Same variant everywhere", tone: "neutral" },
+    { id: "placements", x: 390, y: centerY, width: 162, label: "Paywall entry", detail: "Same variant everywhere", tone: "neutral",
+      statsTarget: { paywallExperiment: paywalls.id, language: "all" } },
   ];
   const edges: ExperimentFlowEdge[] = [];
   onboarding.branches.forEach((branch, index) => {
@@ -49,7 +52,8 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
     });
     edges.push({ from: "placements", to: branch.id, label: formatPaywallAllocation(branch.percent) });
   });
-  nodes.push({ id: "home", x: 960, y: centerY, width: 140, label: "Home button", detail: "Next app release", tone: "neutral" });
+  nodes.push({ id: "home", x: 960, y: centerY, width: 140, label: "Home button", detail: "Next app release", tone: "neutral",
+    statsTarget: { experimentId: journalPractice.id } });
   paywalls.branches.forEach((branch) => edges.push({ from: branch.id, to: "home" }));
   journalPractice.branches.forEach((branch, index) => {
     nodes.push({ id: `home-${branch.id}`, x: 1210, y: centerY - 56 + index * 112, width: 150,
@@ -67,8 +71,10 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
   const [plan, background, english, localized, recovery] = map.tests;
   const nodes: ExperimentFlowNode[] = [
     { id: "start", x: 36, y: 268, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
-    { id: "language", x: 618, y: 268, width: 144, label: "Paywall language", detail: "English is the fallback", tone: "neutral" },
-    { id: "cancel", x: 1166, y: 268, width: 160, label: "Cancel / dismiss", detail: "Any origin placement", tone: "neutral" },
+    { id: "language", x: 618, y: 268, width: 144, label: "Paywall language", detail: "English is the fallback", tone: "neutral",
+      statsTarget: { paywallExperiment: `poky_native_main_v1_${selectedLanguage ?? "en"}`, language: selectedLanguage ?? "en" } },
+    { id: "cancel", x: 1166, y: 268, width: 160, label: "Cancel / dismiss", detail: "Any origin placement", tone: "neutral",
+      statsTarget: { experimentId: recovery.id } },
   ];
   const edges: ExperimentFlowEdge[] = [];
   background.branches.forEach((bg, bgIndex) => {

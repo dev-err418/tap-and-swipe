@@ -73,6 +73,9 @@ export default function AppExperimentCard({
       {scored.map((item) => (
         <ExperimentStats key={item.key} analysis={item.analysis} title={item.title} titleClassName="font-bold" showReadiness={experiment.randomized !== false || !!experiment.planningNote} historical={experiment.randomized === false} />
       ))}
+      {experiment.id === "poky-app-experience" && experiment.planningNote ? (
+        <p className="border-b border-black/[0.08] px-4 py-3 text-xs text-black/55">{experiment.planningNote}</p>
+      ) : null}
       <ExperimentTable headings={<>
               <Th>Variant</Th>
               {languages.map((comparison) => <Th key={comparison.language} right>{comparison.label}</Th>)}

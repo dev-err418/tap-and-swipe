@@ -135,6 +135,9 @@ export default function AppNotesChart({ appId, data }: { appId: AppId; data: Fun
         revenueLabel="Proceeds"
         rateLabel={appId === "glow" ? "Install → trial" : "Install → paid"}
         averageRateLabel="Daily average"
+        rateScaleMax={appId === "versy" ? 1 : 0.3}
+        averageRateScaleMax={appId === "versy" ? 1 : 0.2}
+        showRateScales={appId !== "versy"}
         notes={notes}
         onAddNote={openComposer}
         onNoteClick={(note) => {
