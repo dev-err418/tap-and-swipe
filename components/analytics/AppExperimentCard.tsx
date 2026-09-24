@@ -86,7 +86,7 @@ export default function AppExperimentCard({
               <Th right>Proceeds</Th>
               {showSessions ? (
                 <Th right className={scoreSessions ? "font-bold text-black" : undefined}>
-                  Avg sessions / day
+                  Sessions / subscribed day
                 </Th>
               ) : null}
               {experiment.showCompletion ? <Th right>Onboarding completion</Th> : null}
@@ -253,8 +253,8 @@ function scoredAnalysis(
   if (metric === "sessions_per_day") {
     return {
       key: metric,
-      title: "Avg sessions / day",
-      analysis: analyzeExperiment(toSessionsArms(variants, sessionDays), "revenue_per_visitor", "Avg sessions / day", { elapsedDays }),
+      title: "Sessions / subscribed day",
+      analysis: analyzeExperiment(toSessionsArms(variants, sessionDays), "revenue_per_visitor", "Sessions / subscribed day", { elapsedDays }),
     };
   }
   if (metric === "appu") {

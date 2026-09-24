@@ -158,8 +158,7 @@ async function WebsiteDirectory({
     getCommunityFunnelAnalytics(period),
     getMobileAppAnalytics(period),
   ]);
-  const liveApps = mobileApps.filter((app) => app.id !== "versy");
-  const deadApps = mobileApps.filter((app) => app.id === "versy");
+  const liveApps = mobileApps;
   const liveWebsites = [
     appSprintAnalytics
       ? websiteData("appsprint", "appsprint.app", appSprintAnalytics)
@@ -229,12 +228,9 @@ async function WebsiteDirectory({
             Check the AppSprint, Postback, and Grew It analytics endpoints and database configuration.
           </div>
         )}
-        {deadApps.length > 0 || deadWebsites.length > 0 ? (
+        {deadWebsites.length > 0 ? (
           <DeadProjectsDisclosure>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {deadApps.map((app) => (
-                <MobileAppCard key={app.id} app={app} period={period} />
-              ))}
               {deadWebsites.map((website) => (
                 <WebsiteCard key={website.site} period={period} {...website} />
               ))}
@@ -356,8 +352,8 @@ function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Perio
           <strong className="font-bold text-black">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
           proceeds
           <span className="mx-2 text-black/35">•</span>
-          <strong className="font-bold text-black">{formatAppu(app.revenueCents, app.downloads)}</strong>{" "}
-          APPU
+          <strong className="font-bold text-black">{formatNumber(app.downloads)}</strong>{" "}
+          installs
         </p>
       </div>
     </Link>
@@ -720,7 +716,6 @@ async function AppDetail({
         appId={app.id}
         installs={app.downloads}
         proceeds={proceeds}
-        paid={app.paid}
         windowLabel={windowLabel}
         trend={trend}
         countries={app.countries}
@@ -833,14 +828,4 @@ function formatCompactNumber(value: number | bigint) {
 
 function formatCompactRevenue(cents: number) {
   return `$${formatCompactNumber(cents / 100)}`;
-}
-
-function formatAppu(revenueCents: number, users: number) {
-  if (users <= 0) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(revenueCents / 100 / users);
 }

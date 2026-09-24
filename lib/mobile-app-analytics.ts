@@ -13,7 +13,8 @@ import type { NativePaywallReport } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_NATIVE_RECOVERY_KEYS, pokyNativeRecoveryExperiment } from "./poky-native-recovery";
 import { pokyPaywallMigrationExperiment } from "./poky-paywall-migration";
-import { observedSessionDays } from "./experiment-session-rate";
+import { paidSubscriptionActivity } from "./paid-subscription-activity";
+import { installCohortCountries } from "./install-cohort-countries";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -200,6 +201,7 @@ type AttributedRow = {
   productId: string;
   periodType: string;
   isTrialConversion: boolean;
+  isRefund: boolean;
   netProceeds: number | null;
   eventTs: number;
   attributionTs: number;
@@ -208,14 +210,16 @@ type AttributedRow = {
 };
 
 type SessionRow = {
+  id: string;
   appUserId: string;
-  country: string;
-  sessions: number;
+  eventTs: number;
 };
 
 type AppFacts = {
   migrationHistory?: { installs: InstallRow[]; events: AttributedRow[]; startMs: number };
   historicalExperienceSessions?: SessionRow[];
+  sessionDataAvailable: boolean;
+  historicalSessionDataAvailable: boolean;
   startMs: number;
   endMs: number;
   sessionDays: number;
@@ -463,6 +467,7 @@ async function loadSuperwallAppAnalytics(
     facts ? paidTrendFromFacts(facts, period) : [],
   );
   const countries = facts ? countriesFromFacts(facts) : [];
+  const dataCountries = facts ? app.id === "glow" ? glowMatureCountries(facts) : installCohortCountries(facts) : [];
   const includePlanCards = Boolean(facts) && app.id !== "glow";
   const plans = includePlanCards && facts ? plansFromFacts(facts) : [];
   const retention = includePlanCards && facts ? retentionFromFacts(facts) : [];
@@ -484,7 +489,7 @@ async function loadSuperwallAppAnalytics(
     paid: countries.reduce((sum, row) => sum + row.paid, 0),
     trend,
     countries,
-    dataCountries: facts && app.id === "glow" ? glowMatureCountries(facts) : countries,
+    dataCountries,
     plans,
     retention,
     experiments: orderAppExperiments(app.id, experiments),
@@ -547,6 +552,8 @@ async function loadAppFacts(
     sessionDays: sessionRange.days,
     sessionFromMs: sessionRange.from,
     sessionToMs: sessionRange.to,
+    sessionDataAvailable: sessionResult.status === "fulfilled",
+    historicalSessionDataAvailable: historicalSessionResult.status === "fulfilled",
     historicalExperienceSessions: historicalSessionResult.status === "fulfilled" ? historicalSessionResult.value : [],
     installs: installResult.status === "fulfilled" ? installResult.value.filter((row) => row.installedAt >= startMs) : [],
     attributes: attributeResult.status === "fulfilled" ? attributeMap(attributeResult.value) : new Map(),
@@ -707,6 +714,7 @@ FORMAT JSON
         productId: row.sku ?? "",
         periodType: (row.period ?? "").toLowerCase(),
         isTrialConversion: Number(row.isTrialConversion) === 1,
+        isRefund,
         netProceeds: proceeds == null || !Number.isFinite(proceeds) ? null : isRefund ? -Math.abs(proceeds) : proceeds,
         eventTs,
         attributionTs: parseTs(row.attributionTs),
@@ -719,7 +727,7 @@ FORMAT JSON
 
 function sessionWindow(startMs: number, endMs: number) {
   const to = Math.min(endMs, Date.now());
-  const from = Math.max(startMs, to - 7 * DAY_MS);
+  const from = Math.max(startMs, to - 30 * DAY_MS);
   return {
     from,
     to,
@@ -732,12 +740,12 @@ async function fetchSessionStarts(app: SuperwallAppConfig, fromMs: number, toMs:
   const windows = eventRepWindows(fromMs, toMs);
   const chunks = await Promise.allSettled(
     windows.map(([winStart, winEnd]) =>
-      querySuperwall<{ appUserId: string; country: string; sessions: string | number }>(
+      querySuperwall<{ id: string; appUserId: string; ts: string }>(
         `
 SELECT
+  id,
   appUserId,
-  upper(ifNull(nullIf(JSONExtractString(headers, 'Cf-Ipcountry'), ''), 'unknown')) AS country,
-  uniqExact(id) AS sessions
+  ts
 FROM sw.events_rep
 WHERE applicationId = ${app.applicationId}
   AND isSandbox = 0
@@ -746,8 +754,7 @@ WHERE applicationId = ${app.applicationId}
   AND ts >= toDateTime64('${winStart}', 6, 'UTC')
   AND ts < toDateTime64('${winEnd}', 6, 'UTC')
   AND ts < now()
-GROUP BY appUserId, country
-LIMIT 20000
+LIMIT 50001
 FORMAT JSON
 `.trim(),
         app.organizationId,
@@ -755,21 +762,16 @@ FORMAT JSON
       ),
     ),
   );
-  const byUser = new Map<string, SessionRow>();
+  const byId = new Map<string, SessionRow>();
   for (const chunk of chunks) {
-    if (chunk.status !== "fulfilled") continue;
+    if (chunk.status !== "fulfilled") throw chunk.reason;
+    if (chunk.value.length > 50000) throw new Error("Session data exceeds the current reporting limit.");
     for (const row of chunk.value) {
-      if (!row.appUserId) continue;
-      const current = byUser.get(row.appUserId) ?? {
-        appUserId: row.appUserId,
-        country: normalizeCountry(row.country),
-        sessions: 0,
-      };
-      current.sessions += Number(row.sessions ?? 0);
-      byUser.set(row.appUserId, current);
+      const eventTs = parseTs(row.ts);
+      if (row.id && row.appUserId && Number.isFinite(eventTs)) byId.set(row.id, { id: row.id, appUserId: row.appUserId, eventTs });
     }
   }
-  return [...byUser.values()];
+  return [...byId.values()];
 }
 
 function attributeMap(rows: { appUserId: string; key: string; value: string }[]) {
@@ -822,33 +824,34 @@ function countriesFromFacts(facts: AppFacts): MobileAppCountryRow[] {
 
 function plansFromFacts(facts: AppFacts): MobileAppPlanCountryRow[] {
   const points = new Map<string, MobileAppPlanCountryRow>();
+  const installs = new Map(facts.installs
+    .filter((row) => row.appUserId && inRange(row.installedAt, facts.startMs, facts.endMs))
+    .map((row) => [row.appUserId, row]));
+  for (const install of installs.values()) {
+    const point = points.get(install.country) ?? {
+      country: install.country, installs: 0, yearlySubs: 0, weeklySubs: 0,
+      yearlyProceeds: 0, weeklyProceeds: 0,
+    };
+    point.installs++;
+    points.set(install.country, point);
+  }
   const seen = new Set<string>();
   for (const event of facts.events) {
-    if (event.eventTs < facts.startMs || event.eventTs >= facts.endMs) continue;
+    const install = installs.get(event.appUserId);
+    if (!install || event.eventTs < install.installedAt) continue;
     if (event.netProceeds == null) continue;
     if (!isMobileMoneyEvent(event)) continue;
     const plan = planFromProductId(event.productId);
     if (plan !== "yearly" && plan !== "weekly") continue;
-    const country = normalizeCountry(event.country);
-    const point = points.get(country) ?? {
-      country,
-      installs: 0,
-      yearlySubs: 0,
-      weeklySubs: 0,
-      yearlyProceeds: 0,
-      weeklyProceeds: 0,
-    };
-    const id = `${country}|${plan}|${event.originalTransactionId}`;
-    const startsPaidSubscription =
-      (event.name === "initial_purchase" && event.periodType !== "trial") || event.name === "renewal";
-    if (startsPaidSubscription && !seen.has(id)) {
+    const point = points.get(install.country)!;
+    const id = `${event.appUserId}|${plan}`;
+    if (event.netProceeds > 0 && !seen.has(id)) {
       seen.add(id);
       if (plan === "yearly") point.yearlySubs += 1;
       else point.weeklySubs += 1;
     }
     if (plan === "yearly") point.yearlyProceeds = roundMoney(point.yearlyProceeds + event.netProceeds);
     else point.weeklyProceeds = roundMoney(point.weeklyProceeds + event.netProceeds);
-    points.set(country, point);
   }
   return [...points.values()].sort(
     (a, b) => b.yearlySubs + b.weeklySubs - (a.yearlySubs + a.weeklySubs),
@@ -857,37 +860,53 @@ function plansFromFacts(facts: AppFacts): MobileAppPlanCountryRow[] {
 
 function retentionFromFacts(facts: AppFacts): MobileAppRetentionCountryRow[] {
   const now = Date.now();
-  const byTxn = new Map<
-    string,
-    { country: string; productId: string; startedAt: number; expiresAt: number }
-  >();
+  const installs = new Map(facts.installs
+    .filter((row) => row.appUserId && inRange(row.installedAt, facts.startMs, facts.endMs))
+    .map((row) => [row.appUserId, row]));
+  const points = new Map<string, MobileAppRetentionCountryRow>();
+  for (const install of installs.values()) {
+    const point = points.get(install.country) ?? emptyRetentionRow(install.country);
+    point.installs++;
+    points.set(install.country, point);
+  }
+  const byTxn = new Map<string, { user: string; startedAt: number; productId: string; events: AttributedRow[] }>();
   for (const event of facts.events) {
-    if (!["initial_purchase", "renewal", "cancellation"].includes(event.name)) continue;
+    const install = installs.get(event.appUserId);
+    if (!install || !event.originalTransactionId || event.eventTs < install.installedAt) continue;
+    if (!["initial_purchase", "renewal", "cancellation"].includes(event.name) && !event.isRefund) continue;
     const current = byTxn.get(event.originalTransactionId) ?? {
-      country: event.country,
+      user: event.appUserId,
       productId: event.productId,
       startedAt: Number.POSITIVE_INFINITY,
-      expiresAt: Number.NaN,
+      events: [],
     };
-    if (event.name === "initial_purchase") current.startedAt = Math.min(current.startedAt, event.eventTs);
-    if (Number.isFinite(event.expiresAt)) {
-      current.expiresAt = Number.isFinite(current.expiresAt)
-        ? Math.max(current.expiresAt, event.expiresAt)
-        : event.expiresAt;
+    if (event.name === "initial_purchase") {
+      current.startedAt = Math.min(current.startedAt, event.eventTs);
+      current.productId = event.productId;
     }
+    current.events.push(event);
     byTxn.set(event.originalTransactionId, current);
   }
-
-  const points = new Map<string, MobileAppRetentionCountryRow>();
   for (const row of byTxn.values()) {
-    if (row.startedAt < facts.startMs || row.startedAt >= facts.endMs) continue;
-    const country = normalizeCountry(row.country);
+    if (!Number.isFinite(row.startedAt)) continue;
+    const country = installs.get(row.user)!.country;
     const plan = planFromProductId(row.productId);
-    const point = points.get(country) ?? emptyRetentionRow(country);
-    addRetention(point.overall, row.startedAt, row.expiresAt, now);
-    if (plan === "yearly") addRetention(point.yearly, row.startedAt, row.expiresAt, now);
-    if (plan === "weekly") addRetention(point.weekly, row.startedAt, row.expiresAt, now);
-    points.set(country, point);
+    const point = points.get(country)!;
+    for (const [key, days] of [["d1", 1], ["d7", 7], ["d30", 30]] as const) {
+      const checkpoint = row.startedAt + days * DAY_MS;
+      if (checkpoint > now) continue;
+      const groups = [point.overall, ...(plan === "yearly" ? [point.yearly] : plan === "weekly" ? [point.weekly] : [])];
+      const lastStop = Math.max(Number.NEGATIVE_INFINITY, ...row.events
+        .filter((event) => event.eventTs <= checkpoint && (event.name === "cancellation" || event.isRefund))
+        .map((event) => event.eventTs));
+      const retained = row.events.some((event) =>
+        (event.name === "initial_purchase" || event.name === "renewal") && !event.isRefund
+        && event.eventTs <= checkpoint && event.eventTs > lastStop && event.expiresAt > checkpoint);
+      for (const group of groups) {
+        group[key].eligible++;
+        if (retained) group[key].retained++;
+      }
+    }
   }
   return [...points.values()].sort((a, b) => b.overall.d1.eligible - a.overall.d1.eligible);
 }
@@ -1039,7 +1058,21 @@ const pokyExperienceDefinition: AttributeExperimentDefinition = {
 };
 
 function pokyAppExperienceExperiment(facts: AppFacts): MobileAppExperiment {
-  const current = attributeExperiment(paidExperienceCohort(facts), pokyExperienceDefinition);
+  const sessionsAvailable = facts.sessionDataAvailable && facts.historicalSessionDataAvailable;
+  const definition = { ...pokyExperienceDefinition, includeSessions: sessionsAvailable,
+    showSessions: sessionsAvailable,
+    scoreMetrics: sessionsAvailable ? pokyExperienceDefinition.scoreMetrics : ["appu_d7", "appu_d14"] as MobileAppExperimentScoreMetric[] };
+  const currentStartMs = Math.max(facts.startMs, POKY_EXPERIMENT_START_MS);
+  const currentFacts: AppFacts = {
+    ...facts,
+    startMs: currentStartMs,
+    installs: facts.installs.filter((row) => row.installedAt >= currentStartMs),
+    events: facts.events.filter((row) => row.eventTs >= currentStartMs),
+    sessions: facts.sessions.filter((row) => row.eventTs >= currentStartMs),
+    sessionFromMs: Math.max(facts.sessionFromMs, currentStartMs),
+    sessionDays: Math.max(0, (facts.sessionToMs - Math.max(facts.sessionFromMs, currentStartMs)) / DAY_MS),
+  };
+  const current = attributeExperiment(paidExperienceCohort(currentFacts), definition);
   const history = facts.migrationHistory;
   if (!history) return current;
 
@@ -1057,7 +1090,7 @@ function pokyAppExperienceExperiment(facts: AppFacts): MobileAppExperiment {
     sessionDays: (POKY_EXPERIMENT_START_MS - history.startMs) / DAY_MS,
   };
   const historical = attributeExperiment(paidExperienceCohort(historicalFacts, POKY_EXPERIMENT_START_MS), {
-    ...pokyExperienceDefinition,
+    ...definition,
     historicalControl: true,
     asOfMs: POKY_EXPERIMENT_START_MS,
   });
@@ -1068,7 +1101,7 @@ function pokyAppExperienceExperiment(facts: AppFacts): MobileAppExperiment {
   return {
     ...current,
     randomized: false,
-    planningNote: "Original includes a fixed 30-day baseline before the AI Chat split plus newly assigned Original users. Sessions per day is unique session starts divided by total calendar days since install in each measurement window, summed across paying users. It includes sessions before payment and past payers. Historical outcomes stop at the split; new 90/10 and earlier 50/50 assignments keep their original labels. The cohorts have different ages, so this comparison cannot establish an AI Chat winner.",
+    planningNote: `Original includes a fixed 30-day baseline before the AI Chat split plus newly assigned Original users. ${sessionsAvailable ? "Sessions per day counts unique session starts during paid subscription coverage in each observation window, divided by covered paid user-days. Coverage stops at cancellation, refund or expiry and resumes with a later paid renewal. The current window follows the selected period, up to 30 days; the historical window is the fixed 30 days before the split. Free-trial time is excluded." : "Session activity is unavailable because a session query failed; refresh to retry."} Historical outcomes stop at the split; new 90/10 and earlier 50/50 assignments keep their original labels. The cohorts have different ages, so this comparison cannot establish an AI Chat winner.`,
   };
 }
 
@@ -1111,14 +1144,12 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   );
   const countryByUser = new Map<string, string>();
   const languageByUser = new Map<string, string>();
-  const installedAtByUser = new Map<string, number>();
+  const activity = definition.includeSessions
+    ? paidSubscriptionActivity(facts.events, facts.sessions, facts.sessionFromMs, facts.sessionToMs)
+    : null;
   for (const row of facts.installs) {
     countryByUser.set(row.appUserId, row.country);
     languageByUser.set(row.appUserId, experimentLanguage(row.language));
-    installedAtByUser.set(row.appUserId, row.installedAt);
-  }
-  for (const row of facts.sessions) {
-    if (!countryByUser.has(row.appUserId)) countryByUser.set(row.appUserId, row.country);
   }
   const targetsFor = (appUserId: string, attrs: Record<string, string> | undefined) => {
     const index = variantIndexFor(attrs);
@@ -1139,9 +1170,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
       addForUser(appUserId, attrs, {
         country: countryByUser.get(appUserId) ?? "unknown",
         users: 1,
-        sessionUserDays: definition.includeSessions
-          ? observedSessionDays(installedAtByUser.get(appUserId) ?? facts.sessionToMs, facts.sessionFromMs, facts.sessionToMs)
-          : 0,
+        sessionUserDays: activity?.get(appUserId)?.sessionUserDays ?? 0,
       });
     }
   }
@@ -1160,10 +1189,10 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   }
 
   if (definition.includeSessions) {
-    for (const row of facts.sessions) {
-      if (!eligibleAppUserIds.has(row.appUserId)) continue;
-      addForUser(row.appUserId, facts.attributes.get(row.appUserId), {
-        country: countryByUser.get(row.appUserId) ?? row.country,
+    for (const [appUserId, row] of activity ?? []) {
+      if (!eligibleAppUserIds.has(appUserId)) continue;
+      addForUser(appUserId, facts.attributes.get(appUserId), {
+        country: countryByUser.get(appUserId) ?? "unknown",
         sessions: row.sessions,
       });
     }
@@ -1385,24 +1414,6 @@ function emptyRetentionRow(country: string): MobileAppRetentionCountryRow {
     yearly: { d1: slice(), d7: slice(), d30: slice() },
     weekly: { d1: slice(), d7: slice(), d30: slice() },
   };
-}
-
-function addRetention(
-  group: MobileAppRetentionCountryRow["overall"],
-  startedAt: number,
-  expiresAt: number,
-  now: number,
-) {
-  for (const [key, days] of [
-    ["d1", 1],
-    ["d7", 7],
-    ["d30", 30],
-  ] as const) {
-    const checkpoint = startedAt + days * DAY_MS;
-    if (checkpoint > now) continue;
-    group[key].eligible += 1;
-    if (Number.isFinite(expiresAt) && expiresAt > checkpoint) group[key].retained += 1;
-  }
 }
 
 function planFromProductId(productId: string | null) {

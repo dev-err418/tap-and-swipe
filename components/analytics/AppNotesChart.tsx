@@ -133,7 +133,7 @@ export default function AppNotesChart({ appId, data }: { appId: AppId; data: Fun
         action={<span className="text-[11px] text-muted-foreground" title="Europe/Paris · daylight saving adjusts automatically">Paris time</span>}
         visitLabel="Installs"
         revenueLabel="Proceeds"
-        rateLabel={appId === "glow" ? "Install → trial" : "Install → paid"}
+        rateLabel={appId === "glow" ? "Trial starts / installs · same time" : "Paid / installs · same time"}
         averageRateLabel="Daily average"
         rateScaleMax={appId === "versy" ? 1 : 0.3}
         averageRateScaleMax={appId === "versy" ? 1 : 0.2}

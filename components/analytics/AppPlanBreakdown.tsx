@@ -103,8 +103,6 @@ type PlanTooltipState = {
 
 function PlanTable({ rows, metric }: { rows: MobileAppPlanCountryRow[]; metric: PlanMetric }) {
   const [tooltip, setTooltip] = useState<PlanTooltipState | null>(null);
-  const maxYearly = Math.max(0, ...rows.map((row) => row.yearlySubs));
-  const maxWeekly = Math.max(0, ...rows.map((row) => row.weeklySubs));
   if (rows.length === 0) {
     return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No plan mix yet.</div>;
   }
@@ -117,8 +115,6 @@ function PlanTable({ rows, metric }: { rows: MobileAppPlanCountryRow[]; metric: 
             key={row.country}
             row={row}
             metric={metric}
-            maxYearly={maxYearly}
-            maxWeekly={maxWeekly}
             onTooltipChange={setTooltip}
           />
         ))}
@@ -133,14 +129,10 @@ function PlanTable({ rows, metric }: { rows: MobileAppPlanCountryRow[]; metric: 
 function PlanRow({
   row,
   metric,
-  maxYearly,
-  maxWeekly,
   onTooltipChange,
 }: {
   row: MobileAppPlanCountryRow;
   metric: PlanMetric;
-  maxYearly: number;
-  maxWeekly: number;
   onTooltipChange: (tooltip: PlanTooltipState | null) => void;
 }) {
   const total = totalSubs(row);
@@ -256,11 +248,11 @@ function weeklyShare(row: MobileAppPlanCountryRow) {
 }
 
 function yearlyAppu(row: MobileAppPlanCountryRow) {
-  return row.yearlySubs > 0 ? row.yearlyProceeds / row.yearlySubs : 0;
+  return row.installs > 0 ? row.yearlyProceeds / row.installs : 0;
 }
 
 function weeklyAppu(row: MobileAppPlanCountryRow) {
-  return row.weeklySubs > 0 ? row.weeklyProceeds / row.weeklySubs : 0;
+  return row.installs > 0 ? row.weeklyProceeds / row.installs : 0;
 }
 
 function metricValue(row: MobileAppPlanCountryRow, metric: PlanMetric) {
@@ -274,6 +266,7 @@ function metricValue(row: MobileAppPlanCountryRow, metric: PlanMetric) {
 }
 
 function formatMetric(row: MobileAppPlanCountryRow, metric: PlanMetric) {
+  if (metric === "installs") return formatInt(row.installs);
   if (metric === "weekly_share") return formatRate(weeklyShare(row));
   if (metric === "yearly_appu") return formatPreciseCurrency(yearlyAppu(row));
   if (metric === "weekly_appu") return formatPreciseCurrency(weeklyAppu(row));

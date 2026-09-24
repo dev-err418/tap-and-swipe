@@ -42,7 +42,6 @@ export default function AppOverviewPanel({
   appId,
   installs,
   proceeds,
-  paid,
   windowLabel,
   trend,
   countries,
@@ -58,7 +57,6 @@ export default function AppOverviewPanel({
   appId: "glow" | "poky" | "versy";
   installs: number;
   proceeds: number;
-  paid: number;
   windowLabel: string;
   trend: FunnelTrendPoint[];
   countries: MobileAppCountryRow[];
@@ -72,18 +70,19 @@ export default function AppOverviewPanel({
   journalPractice?: JournalPracticeReport | null;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
-  const appu = installs > 0 ? proceeds / installs : 0;
-  const installToPaid = installs > 0 ? paid / installs : 0;
+  const cohort = dataCountries.reduce((total, row) => ({
+    installs: total.installs + row.installs,
+    proceeds: total.proceeds + row.proceeds,
+    paid: total.paid + row.paid,
+  }), { installs: 0, proceeds: 0, paid: 0 });
+  const appu = cohort.installs > 0 ? cohort.proceeds / cohort.installs : null;
+  const installToPaid = cohort.installs > 0 ? cohort.paid / cohort.installs : null;
   const showPlans = plans.some((row) => row.yearlySubs + row.weeklySubs > 0);
-  const showRetention = retention.length > 0;
+  const showRetention = retention.some((row) => row.overall.d1.eligible > 0);
   const topCountries = experimentCountries
     .map((row) => row.country)
     .filter((country) => country !== "unknown")
     .slice(0, 5);
-  const plansWithInstalls = plans.map((plan) => ({
-    ...plan,
-    installs: countries.find((row) => row.country === plan.country)?.installs ?? plan.installs,
-  }));
 
   return (
     <section className="space-y-4">
@@ -92,11 +91,11 @@ export default function AppOverviewPanel({
           <div className="grid min-w-[48rem] grid-cols-4 divide-x divide-black/[0.08]">
             <MetricSummary label="Installs" value={formatInt(installs)} detail={windowLabel} />
             <MetricSummary label="Proceeds" value={formatCurrency(proceeds)} detail={windowLabel} />
-            <MetricSummary label="APPU" value={formatPreciseCurrency(appu)} detail="Proceeds / installs" />
+            <MetricSummary label="Cohort APPU" value={appu == null ? "—" : formatPreciseCurrency(appu)} detail={`${formatInt(cohort.installs)} ${appId === "glow" ? "mature installs" : "tracked installs"} · through today`} />
             <MetricSummary
               label="Install → paid"
-              value={formatRate(installToPaid)}
-              detail={`${formatInt(paid)} paid / ${formatInt(installs)} installs`}
+              value={installToPaid == null ? "—" : formatRate(installToPaid)}
+              detail={`${formatInt(cohort.paid)} paid / ${formatInt(cohort.installs)} cohort installs`}
             />
           </div>
         </div>
@@ -142,13 +141,10 @@ export default function AppOverviewPanel({
           </div>
           {showPlans || showRetention ? (
             <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-              {showPlans ? <AppPlanBreakdown plans={plansWithInstalls} /> : null}
+              {showPlans ? <AppPlanBreakdown plans={plans} /> : null}
               {showRetention ? (
                 <AppRetentionBreakdown
-                  rows={retention.map((row) => ({
-                    ...row,
-                    installs: countries.find((country) => country.country === row.country)?.installs ?? row.installs,
-                  }))}
+                  rows={retention}
                 />
               ) : null}
             </div>
