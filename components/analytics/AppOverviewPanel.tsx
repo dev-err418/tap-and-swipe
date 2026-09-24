@@ -46,6 +46,7 @@ export default function AppOverviewPanel({
   trend,
   countries,
   dataCountries = countries,
+  cohortDataAvailable = true,
   experimentCountries = countries,
   plans,
   retention,
@@ -61,6 +62,7 @@ export default function AppOverviewPanel({
   trend: FunnelTrendPoint[];
   countries: MobileAppCountryRow[];
   dataCountries?: MobileAppCountryRow[];
+  cohortDataAvailable?: boolean;
   experimentCountries?: MobileAppCountryRow[];
   plans: MobileAppPlanCountryRow[];
   retention: MobileAppRetentionCountryRow[];
@@ -91,11 +93,11 @@ export default function AppOverviewPanel({
           <div className="grid min-w-[48rem] grid-cols-4 divide-x divide-black/[0.08]">
             <MetricSummary label="Installs" value={formatInt(installs)} detail={windowLabel} />
             <MetricSummary label="Proceeds" value={formatCurrency(proceeds)} detail={windowLabel} />
-            <MetricSummary label="Cohort APPU" value={appu == null ? "—" : formatPreciseCurrency(appu)} detail={`${formatInt(cohort.installs)} ${appId === "glow" ? "mature installs" : "tracked installs"} · through today`} />
+            <MetricSummary label="Cohort APPU" value={!cohortDataAvailable || appu == null ? "—" : formatPreciseCurrency(appu)} detail={cohortDataAvailable ? `${formatInt(cohort.installs)} ${appId === "glow" ? "mature installs" : "tracked installs"} · through today` : "Cohort data unavailable"} />
             <MetricSummary
               label="Install → paid"
-              value={installToPaid == null ? "—" : formatRate(installToPaid)}
-              detail={`${formatInt(cohort.paid)} paid / ${formatInt(cohort.installs)} cohort installs`}
+              value={!cohortDataAvailable || installToPaid == null ? "—" : formatRate(installToPaid)}
+              detail={cohortDataAvailable ? `${formatInt(cohort.paid)} paid / ${formatInt(cohort.installs)} cohort installs` : "Cohort data unavailable"}
             />
           </div>
         </div>

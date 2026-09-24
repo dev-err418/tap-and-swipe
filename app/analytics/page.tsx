@@ -673,10 +673,10 @@ async function AppDetail({
     visits: point.downloads,
     revenue: point.revenue,
     trialStarts: point.trials,
-    rate: point.downloads > 0
+    rate: app.cohortDataAvailable && point.downloads > 0
       ? (app.id === "glow" ? point.trials : point.paid) / point.downloads
       : undefined,
-    averageRate: dailyRate(dailyConversions.get(appDayKey(point.bucket))),
+    averageRate: app.cohortDataAvailable ? dailyRate(dailyConversions.get(appDayKey(point.bucket))) : undefined,
   }));
 
   return (
@@ -720,6 +720,7 @@ async function AppDetail({
         trend={trend}
         countries={app.countries}
         dataCountries={app.dataCountries}
+        cohortDataAvailable={app.cohortDataAvailable}
         experimentCountries={experimentApp?.countries ?? app.countries}
         plans={app.plans}
         retention={app.retention}

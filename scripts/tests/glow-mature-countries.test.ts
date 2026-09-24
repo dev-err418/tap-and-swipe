@@ -79,4 +79,9 @@ test("APPU and install-to-paid CR use mature data while overview totals retain a
   const unchanged = renderToStaticMarkup(createElement(AppOverviewPanel, { ...props, appId: "poky" })).split('id="app-analytics-panel-data"')[1];
   assert.equal(unchanged.match(/United States/g)?.length, 4);
   assert.doesNotMatch(unchanged, /10\.1%/);
+  const unavailable = renderToStaticMarkup(createElement(AppOverviewPanel, {
+    ...props, dataCountries: [], cohortDataAvailable: false,
+  }));
+  assert.match(unavailable, /Cohort data unavailable/);
+  assert.doesNotMatch(unavailable, /0 paid \/ 0 cohort installs/);
 });
