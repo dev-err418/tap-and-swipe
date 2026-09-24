@@ -49,5 +49,7 @@ export function pokyNativeRecoveryExperiment(attributes: PaywallAttribute[], eve
       for (const days of [7, 14, 30] as const) if (a.at + days * DAY <= asOf && e.eventTs < a.at + days * DAY) s[`proceedsD${days}`] += e.netProceeds;
     }
   }
-  return { id: "poky-native-recovery-holdout", title: "Regular flow vs recovery", subtitle: "Hardcoded paywalls · upfront 50/50 assignment · all proceeds, including immediate purchases", planningNote: "Users are assigned before onboarding; all proceeds count toward their group, including immediate purchases and non-payers. This full-flow test starts with the updated app release. The older cancellation-only test remains separate in Paywalls.", variants, languageVariants, scoreMetrics: ["appu"], showUsers: true, showInstalls: false, showDownloadPaid: false, elapsedDays: Math.max(1, (Math.min(asOf, end) - start) / DAY) };
+  const enrolled = variants.reduce((total, variant) => total + variant.users, 0);
+  const readiness = variants.some((variant) => variant.users < 50) ? "Too few users are enrolled to identify a leading flow. " : "";
+  return { id: "poky-native-recovery-holdout", title: "Regular flow vs recovery", subtitle: "Complete onboarding flow · upfront 50/50 assignment", planningNote: `${enrolled} users have an upfront recovery assignment in this date range. ${readiness}APPU is all net proceeds, including regular and recovery purchases, divided by every assigned user, including non-payers. Earlier cancellation-only assignments cannot answer this full-flow comparison.`, variants, languageVariants, scoreMetrics: ["appu"], showUsers: true, showInstalls: false, showDownloadPaid: false, elapsedDays: Math.max(1, (Math.min(asOf, end) - start) / DAY) };
 }

@@ -55,7 +55,7 @@ test("legacy campaign attributes never populate the hardcoded recovery test", ()
     assignment("native", "holdout", "fr"),
   ], [event("old", 100, 2)], new Map(), start, start + DAY, start + 10 * DAY);
   assert.equal(result.id, "poky-native-recovery-holdout");
-  assert.match(result.subtitle, /Hardcoded paywalls/);
+  assert.match(result.subtitle, /Complete onboarding flow/);
   assert.deepEqual(result.variants.map((variant) => variant.users), [1, 0]);
   assert.equal(result.variants.reduce((sum, variant) => sum + variant.proceeds, 0), 0);
 });
@@ -71,4 +71,6 @@ test("upfront groups include immediate regular buyers and non-viewers, excluding
   assert.equal(result.variants[0].proceeds / result.variants[0].users, 20);
   assert.equal(result.variants[1].proceeds / result.variants[1].users, 30);
   assert.deepEqual(result.scoreMetrics, ["appu"]);
+  assert.match(result.planningNote ?? "", /4 users have an upfront recovery assignment/);
+  assert.match(result.planningNote ?? "", /including non-payers/);
 });

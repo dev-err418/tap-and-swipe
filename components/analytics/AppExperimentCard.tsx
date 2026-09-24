@@ -73,7 +73,7 @@ export default function AppExperimentCard({
       {scored.map((item) => (
         <ExperimentStats key={item.key} analysis={item.analysis} title={item.title} titleClassName="font-bold" showReadiness={experiment.randomized !== false || !!experiment.planningNote} historical={experiment.randomized === false} />
       ))}
-      {experiment.id === "poky-app-experience" && experiment.planningNote ? (
+      {experiment.planningNote && (experiment.id === "poky-app-experience" || experiment.id === "poky-native-recovery-holdout") ? (
         <p className="border-b border-black/[0.08] px-4 py-3 text-xs text-black/55">{experiment.planningNote}</p>
       ) : null}
       <ExperimentTable headings={<>

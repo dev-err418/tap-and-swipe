@@ -61,9 +61,10 @@ native experiment's `recovery` / `holdout` rows from the same report as Paywalls
 for their badges, highlights and stats dialog. APPU uses all post-assignment
 proceeds / assigned users; CR uses conversions / assigned users, including
 holdouts with zero recovery views. Within the selected language, the map uses
-v2 once it has enrolled users. Until then it shows v1 with a visible legacy-cohort
-label and the historical experiment name in the dialog. Versions and languages
-are never combined, and explicit home-shortcut groups are excluded.
+only v2 upfront assignments. If there are no v2 users yet, it shows no result
+rather than substituting v1's cancellation-only cohort. Versions and languages
+are never combined, and explicit home-shortcut groups are excluded. The map
+does not mark an APPU leader until both v2 arms contain at least 50 assigned users.
 
 The Paywalls tab uses direct purchase attribution for ordinary paywalls and all
 placement rows. **Recovery offer · 50/50 is a flow comparison:** regular flow vs

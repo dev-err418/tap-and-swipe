@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import ExperimentMapDetails from "./ExperimentMapDetails";
-import { experimentMapDetailTarget, experimentMapPaywallGroup, experimentMapRecoveryGroup } from "@/lib/experiment-map-details";
+import { experimentMapDetailTarget, experimentMapPaywallGroup } from "@/lib/experiment-map-details";
 import type { JournalPracticeReport } from "@/lib/journal-practice-analytics";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import { appExperimentFlow, type ExperimentFlowEdge, type ExperimentFlowNode } from "@/lib/app-experiment-flow";
@@ -58,7 +58,6 @@ export default function AppExperimentMap({
   const nodes = new Map(flow.nodes.map((node) => [node.id, node]));
   const activeNode = activeNodeId ? nodes.get(activeNodeId) : undefined;
   const activeTarget = activeNode ? experimentMapDetailTarget(activeNode, selectedLanguage, nativePaywalls) : null;
-  const recoveryGroup = appId === "poky" ? experimentMapRecoveryGroup(nativePaywalls, selectedLanguage) : null;
   const visibleExperiments = experimentsForLanguage(experiments, selectedLanguage);
   const bestVariants = currentBestVariantResults(visibleExperiments);
   const experimentAppu = currentExperimentAppu(visibleExperiments);
@@ -116,8 +115,7 @@ export default function AppExperimentMap({
         >
           <desc>{flow.edges.map((edge) => `${nodes.get(edge.from)!.label} to ${nodes.get(edge.to)!.label}${edge.label ? `: ${edge.label}` : ""}${edge.conditional ? " only on cancel or dismissal" : ""}.`).join(" ")}</desc>
           {flow.stages.map((stage) => (
-            <text key={stage.label} x={stage.x} y={20} fill="#717171" fontSize={12}>{stage.label === "Recovery test" && recoveryGroup?.outcomeScope === "recovery_eligibility"
-              ? "Recovery · legacy cohort" : stage.label}</text>
+            <text key={stage.label} x={stage.x} y={20} fill="#717171" fontSize={12}>{stage.label}</text>
           ))}
           {flow.edges.map((edge) => {
             const from = nodes.get(edge.from)!;
@@ -302,9 +300,11 @@ export function currentPaywallMetrics(
     const group = isSelectedAudience ? experimentMapPaywallGroup(node, report, selectedLanguage) : null;
     const row = group?.paywalls.find((candidate) => matchesPaywallVariant(candidate, variant));
     const appu = row && row.users > 0 ? row.proceeds / row.users : null;
-    const ranked = group?.paywalls.flatMap((candidate) => candidate.users > 0
+    const enoughRecoveryUsers = group?.outcomeScope !== "recovery_flow"
+      || group.paywalls.every((candidate) => candidate.users >= 50);
+    const ranked = enoughRecoveryUsers ? group?.paywalls.flatMap((candidate) => candidate.users > 0
       ? [{ id: candidate.id, appu: candidate.proceeds / candidate.users }]
-      : []) ?? [];
+      : []) ?? [] : [];
     const maximum = ranked.length > 1 ? Math.max(...ranked.map((candidate) => candidate.appu)) : null;
     const leaders = maximum == null ? [] : ranked.filter((candidate) => candidate.appu === maximum);
     metrics.set(node.id, {

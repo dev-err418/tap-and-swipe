@@ -91,8 +91,8 @@ function variant(key: string, installs: number, proceeds: number): MobileAppExpe
 }
 
 test("recovery map and modal reuse Paywalls proceeds and assigned-user CR even with zero holdout views", () => {
-  const legacy = recoveryGroup(1, "es");
-  const report: NativePaywallReport = { status: "ready", asOf: Date.now(), warnings: [], groups: [legacy] };
+  const current = recoveryGroup(2, "es");
+  const report: NativePaywallReport = { status: "ready", asOf: Date.now(), warnings: [], groups: [current] };
   const flow = appExperimentFlow("poky", "es")!;
   const holdout = flow.nodes.find((node) => node.id === "holdout")!;
   const metrics = currentPaywallMetrics(flow.nodes, report, "es");
@@ -101,15 +101,15 @@ test("recovery map and modal reuse Paywalls proceeds and assigned-user CR even w
   assert.equal(metrics.get("holdout")!.isBest, true);
   assert.equal(metrics.get("recovery")!.appu, 43.88 / 52);
   assert.equal(metrics.get("recovery")!.conversionRate, 5 / 52);
-  assert.equal(experimentMapPaywallGroup(holdout, report, "es"), legacy);
+  assert.equal(experimentMapPaywallGroup(holdout, report, "es"), current);
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "poky", nativePaywalls: report }));
   assert.match(markup, /APPU \$0\.98 · CR 10%/);
-  assert.match(markup, /Recovery · legacy cohort/);
+  assert.doesNotMatch(markup, /Recovery · legacy cohort/);
   const detail = renderToStaticMarkup(createElement(ExperimentMapDetails, {
     node: holdout, language: "es", experiments: [], nativePaywalls: report, journalPractice: null,
   }));
   assert.match(detail, /58\.63/);
-  assert.match(detail, /legacy/);
+  assert.match(detail, /Regular flow vs recovery/);
 });
 
 test("recovery chooses enrolled v2 as a separate cohort, never sums v1 or another language", () => {
@@ -120,9 +120,12 @@ test("recovery chooses enrolled v2 as a separate cohort, never sums v1 or anothe
   const flow = appExperimentFlow("poky", "es")!;
   assert.equal(experimentMapRecoveryGroup(report, "es"), current);
   assert.equal(currentPaywallMetrics(flow.nodes, report, "es").get("holdout")!.appu, 20);
+  assert.equal(currentPaywallMetrics(flow.nodes, report, "es").get("holdout")!.isBest, false);
   assert.equal(experimentMapRecoveryGroup(report, "fr"), null);
   assert.equal(experimentMapRecoveryGroup({ ...report, status: "unavailable" }, "es"), null);
-  assert.equal(experimentMapRecoveryGroup({ ...report, groups: [legacy, { ...current, paywalls: [] }] }, "es"), legacy);
+  assert.equal(experimentMapRecoveryGroup({ ...report, groups: [legacy, { ...current, paywalls: [] }] }, "es"), null);
+  assert.equal(experimentMapRecoveryGroup({ ...report, groups: [legacy] }, "es"), null);
+  assert.equal(currentPaywallMetrics(flow.nodes, { ...report, groups: [legacy] }, "es").get("holdout")!.appu, null);
 });
 
 function recoveryGroup(version: 1 | 2, language: string): NativePaywallGroup {

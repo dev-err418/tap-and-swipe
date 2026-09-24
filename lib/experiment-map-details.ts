@@ -5,13 +5,11 @@ import { JOURNAL_PRACTICE_ID } from "./journal-practice-analytics";
 
 const RECOVERY_COMPARISON_ID = "poky-native-recovery-holdout";
 
-/** Prefer the upfront experiment when enrolled; never add historical users to it. */
+/** Only the upfront assignment compares complete onboarding flows. */
 export function experimentMapRecoveryGroup(report: NativePaywallReport | null, language = "en") {
   if (report?.status !== "ready") return null;
-  const forVersion = (version: number) => report.groups.find((group) =>
-    group.experiment === `poky_native_recovery_v${version}_${language}` && group.language === language
-    && group.paywalls.some((row) => row.users > 0));
-  return forVersion(2) ?? forVersion(1) ?? null;
+  return report.groups.find((group) => group.experiment === `poky_native_recovery_v2_${language}`
+    && group.language === language && group.paywalls.some((row) => row.users > 0)) ?? null;
 }
 
 export function experimentMapDetailTarget(node: ExperimentFlowNode, language?: string, report: NativePaywallReport | null = null) {
