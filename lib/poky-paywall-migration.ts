@@ -80,15 +80,29 @@ export function pokyPaywallMigrationExperiment(facts: Facts, asOf = Date.now()):
     if ((unique.get(key)?.attributionTs ?? -Infinity) < event.attributionTs) unique.set(key, event);
   }
   const paid = new Set<string>();
+  const userProceeds = new Map<string, number>();
   for (const event of unique.values()) {
     const user = cohort.get(event.appUserId);
     if (!user || event.netProceeds == null || !Number.isFinite(event.netProceeds)) continue;
+    userProceeds.set(event.appUserId, (userProceeds.get(event.appUserId) ?? 0) + event.netProceeds);
     const firstPaid = event.netProceeds > 0 && !paid.has(event.appUserId);
     if (firstPaid) paid.add(event.appUserId);
     for (const slice of user.slices) {
       slice.proceeds += event.netProceeds;
       if (firstPaid) slice.paid++;
     }
+  }
+  const squaredProceeds = new Map<MobileAppExperimentSlice, number>();
+  for (const [appUserId, user] of cohort) {
+    const value = userProceeds.get(appUserId) ?? 0;
+    for (const slice of user.slices) {
+      squaredProceeds.set(slice, (squaredProceeds.get(slice) ?? 0) + value * value);
+    }
+  }
+  for (const [slice, sumOfSquares] of squaredProceeds) {
+    slice.proceedsVariance = slice.users > 1
+      ? Math.max(0, (sumOfSquares - slice.proceeds * slice.proceeds / slice.users) / (slice.users - 1))
+      : 0;
   }
   return {
     id: "poky-superwall-vs-native",

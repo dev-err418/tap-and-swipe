@@ -296,6 +296,7 @@ function toAppuArms(variants: MobileAppExperimentVariant[]): ExperimentArm[] {
     exposures: row.installs,
     conversions: row.paid,
     revenue: row.proceeds,
+    variance: row.proceedsVariance,
   }));
 }
 

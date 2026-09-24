@@ -54,6 +54,23 @@ test("trial renewal and refund follow a new original purchase, with one paid use
   assert.equal(report.variants[0].users, 2);
   assert.equal(report.variants[0].paid, 1);
   assert.equal(report.variants[0].proceeds, 15);
+  assert.equal(report.variants[0].proceedsVariance, 112.5);
+});
+
+test("APPU uncertainty uses net proceeds per assigned user, including nonpayers", () => {
+  const input = facts([
+    ["refund", assignment("native")],
+    ["nonpayer", assignment("native")],
+    ["payer", assignment("native")],
+  ], [
+    event("refund", "one", "one", "initial_purchase", 20),
+    event("refund", "one", "refund", "refund", -5, START + 3000, true),
+    event("payer", "two", "two", "initial_purchase", 30),
+  ]);
+  const report = pokyPaywallMigrationExperiment(input, START + DAY);
+  assert.equal(report.variants[1].proceeds, 45);
+  assert.equal(report.variants[1].proceedsVariance, 225);
+  assert.equal(report.languageVariants?.en?.[1].proceedsVariance, 225);
 });
 
 test("date picker filters assignment cohort while following eligible revenue to date", () => {

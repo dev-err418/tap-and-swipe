@@ -69,6 +69,7 @@ export type MobileAppExperimentSlice = {
   converted: number;
   paid: number;
   proceeds: number;
+  proceedsVariance?: number;
   installsD7: number;
   proceedsD7: number;
   eligibleD7: number;
