@@ -21,19 +21,21 @@ test("native starts at 1.1.2; semantic versions and unknown values are handled s
   assert.equal(pokyPaywallEngine("unknown"), null);
 });
 
-test("Spanish is a language, not Spain; English includes known unsupported-language fallback", () => {
+test("Spanish and German use device language, while English includes known unsupported-language fallback", () => {
   assert.equal(pokyComparisonLanguage("es-MX"), "es");
+  assert.equal(pokyComparisonLanguage("de-DE"), "de");
+  assert.equal(pokyComparisonLanguage("de-AT"), "de");
   assert.equal(pokyComparisonLanguage("EN_us"), "en");
   assert.equal(pokyComparisonLanguage("it-IT"), "en");
-  for (const locale of ["", "unknown", "und", "de-DE", "fr-FR"]) assert.equal(pokyComparisonLanguage(locale), null);
+  for (const locale of ["", "unknown", "und", "fr-FR"]) assert.equal(pokyComparisonLanguage(locale), null);
 });
 
 test("APPU uses all cohort installs and total proceeds, including later renewals and refunds", () => {
   const report = pokyPaywallMigrationExperiment(facts(
-    [install("es1", "es-MX", "1.1.1", "MX"), install("es2", "es", "1.1.1", "US"), install("en1", "en", "1.1.2", "ES"), install("en2")],
-    [event("es1", 20), event("es1", 20), event("es1", 10, 8, "renewal", "renewal"), event("es1", -5, 9, "renewal", "cancellation"), event("en1", 60), event("en1", 20, 2, "second-subscription"), event("en1", 500, 99)]
+    [install("es1", "es-MX", "1.1.1", "MX"), install("es2", "es", "1.1.1", "US"), install("en1", "en", "1.1.2", "ES"), install("en2"), install("de1", "de-AT", "1.1.1", "AT"), install("de2", "de-DE", "1.1.2", "DE")],
+    [event("es1", 20), event("es1", 20), event("es1", 10, 8, "renewal", "renewal"), event("es1", -5, 9, "renewal", "cancellation"), event("en1", 60), event("en1", 20, 2, "second-subscription"), event("en1", 500, 99), event("de1", 15), event("de2", 25)]
   ), start + 10 * DAY);
-  const [es, en] = report.languageComparisons!;
+  const [es, en, de] = report.languageComparisons!;
   assert.equal(es.variants[0].installs, 2);
   assert.equal(es.variants[0].proceeds, 25);
   assert.equal(es.variants[0].paid, 1);
@@ -41,14 +43,18 @@ test("APPU uses all cohort installs and total proceeds, including later renewals
   assert.equal(en.variants[1].proceeds / en.variants[1].installs, 40);
   assert.equal(en.variants[1].paid, 1); // Paying users, not transactions/subscriptions.
   assert.equal(report.variants[1].countries.ES.proceeds, 80); // English speaker in Spain.
+  assert.equal(de.variants[0].countries.AT.proceeds, 15); // German speaker outside Germany.
+  assert.equal(de.variants[1].countries.DE.proceeds, 25);
+  assert.equal(de.variants[0].installs, 1);
+  assert.equal(de.variants[1].paid, 1);
 });
 
 test("upgrades stay in their install cohort; missing, unrelated, debug and out-of-cohort data are excluded", () => {
   const input = facts([
     install("old", "en", "1.1.1"), { ...install("old"), installedAt: start + 1 },
-    install("german", "de"), install("unknown", ""), install("bad-version", "en", ""), install("debug"),
+    install("french", "fr"), install("unknown", ""), install("bad-version", "en", ""), install("debug"),
     { ...install("outside"), installedAt: start - DAY },
-  ], [event("old", 30), event("german", 90), event("missing-install", 80), event("old", 10, -1)]);
+  ], [event("old", 30), event("french", 90), event("missing-install", 80), event("old", 10, -1)]);
   input.attributes.set("debug", { poky_tracking_environment: "sandbox" });
   const result = pokyPaywallMigrationExperiment(input, start + 10 * DAY);
   assert.equal(result.variants[0].installs, 1);
@@ -56,11 +62,12 @@ test("upgrades stay in their install cohort; missing, unrelated, debug and out-o
   assert.equal(result.variants[1].installs, 0);
 });
 
-test("one comparison card renders both language APPUs and an empty arm honestly", () => {
+test("one comparison card renders all three language APPUs and an empty arm honestly", () => {
   const result = pokyPaywallMigrationExperiment(facts([install("a", "es", "1.1.1")], [event("a", 20)]), start + 3 * DAY);
   const markup = renderToStaticMarkup(createElement(AppExperimentCard, { experiment: result, topCountries: ["US"] }));
   assert.match(markup, /Spanish total APPU/);
   assert.match(markup, /English total APPU/);
+  assert.match(markup, /German total APPU/);
   assert.match(markup, /Superwall vs native/);
   assert.equal(result.randomized, false);
   assert.match(result.planningNote!, /Historical cohorts, not randomized/);

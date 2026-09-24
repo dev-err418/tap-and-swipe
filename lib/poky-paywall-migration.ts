@@ -25,10 +25,10 @@ export function pokyPaywallEngine(version: string): "legacy" | "native" | null {
 /** Language, never country. Known unsupported locales use Poky's English fallback.
  * Missing/malformed telemetry is unknown, not an invented English install.
  */
-export function pokyComparisonLanguage(value: string): "en" | "es" | null {
+export function pokyComparisonLanguage(value: string): "en" | "es" | "de" | null {
   const code = value.trim().toLowerCase().split(/[-_]/)[0];
-  if (!/^[a-z]{2,3}$/.test(code) || ["und", "fr", "de"].includes(code)) return null;
-  return code === "es" ? "es" : "en";
+  if (!/^[a-z]{2,3}$/.test(code) || ["und", "fr"].includes(code)) return null;
+  return code === "es" || code === "de" ? code : "en";
 }
 
 /** Historical version cohorts, not a randomized assignment. Total APPU includes
@@ -39,6 +39,7 @@ export function pokyPaywallMigrationExperiment(facts: Facts, asOf = Date.now()):
   const languageComparisons = [
     { language: "es", label: "🇪🇸 Spanish total APPU", variants: variants() },
     { language: "en", label: "🇬🇧 English total APPU", variants: variants() },
+    { language: "de", label: "🇩🇪 German total APPU", variants: variants() },
   ];
   const cohort = new Map<string, { install: Install; arm: number; language: string }>();
   // Resolve first before filtering, so duplicate/later install telemetry cannot move a user.
@@ -86,7 +87,7 @@ export function pokyPaywallMigrationExperiment(facts: Facts, asOf = Date.now()):
   return {
     id: "poky-superwall-vs-native",
     title: "Conversion rate · Superwall vs native",
-    subtitle: "EN + ES · installs on 1.1.2+ vs earlier · historical cohorts, not randomized · total proceeds to date",
+    subtitle: "EN + ES + DE · installs on 1.1.2+ vs earlier · historical cohorts, not randomized · total proceeds to date",
     variants: overall, languageComparisons, scoreMetrics: ["download_paid"], randomized: false,
     planningNote: `Historical cohorts, not randomized. Superwall installs from ${new Date(facts.legacyStartMs ?? facts.startMs).toISOString().slice(0, 10)}; native installs from ${new Date(facts.startMs).toISOString().slice(0, 10)}. Proceeds follow each cohort through today, so older users have more time to pay. Planning is an indicative sample estimate, not proof of a causal winner.`,
   };
