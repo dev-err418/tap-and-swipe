@@ -3,6 +3,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import AppExperimentMap, { currentBestPathNodeIds, currentBestVariants, currentCohortMetrics, currentPaywallMetrics } from "../../components/analytics/AppExperimentMap";
+import AppExperimentCard from "../../components/analytics/AppExperimentCard";
 import { activeABTestCount, appExperimentMap } from "../../lib/app-experiment-map";
 import { appExperimentFlow } from "../../lib/app-experiment-flow";
 import type { MobileAppExperiment, MobileAppExperimentVariant } from "../../lib/mobile-app-analytics";
@@ -24,6 +25,20 @@ test("Poky experiment data begins at Sep 20, 2026 16:00 GMT+2", () => {
   assert.equal(pokyExperimentStart(Date.parse("2026-09-01T00:00:00.000Z")), POKY_EXPERIMENT_START_MS);
   assert.equal(pokyExperimentStart(Date.parse("2026-09-21T00:00:00.000Z")), Date.parse("2026-09-21T00:00:00.000Z"));
   assert.match(appExperimentMap("poky")!.notes[0], /September 20, 2026 at 16:00 GMT\+2/);
+});
+
+test("paid-user activity uses each cohort's observed days across old and new windows", () => {
+  const comparison = experiment("poky-app-experience", "sessions_per_day", [
+    variant("control", { users: 10, sessions: 40, sessionUserDays: 200 }),
+    variant("new_experience", { users: 10, sessions: 10, sessionUserDays: 20 }),
+  ]);
+  comparison.sessionDays = 7;
+  comparison.showSessions = true;
+  comparison.showUsers = true;
+  assert.equal(currentBestVariants([comparison]).get(comparison.id), "new_experience");
+  const markup = renderToStaticMarkup(createElement(AppExperimentCard, { experiment: comparison }));
+  assert.match(markup, /0\.20/);
+  assert.match(markup, /0\.50/);
 });
 
 test("every configured audience has a complete, valid allocation", () => {

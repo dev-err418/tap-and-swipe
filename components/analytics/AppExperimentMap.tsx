@@ -14,6 +14,7 @@ import type {
 } from "@/lib/mobile-app-analytics";
 import type { NativePaywallReport, NativePaywallRow } from "@/lib/native-paywall-analytics";
 import { analyzeExperiment, type ExperimentArm } from "@/lib/experiment-stats";
+import { normalizedSessions, sessionsPerUserDay } from "@/lib/experiment-session-rate";
 import {
   DASHBOARD_TAB_ACTIVE_CLASS,
   DASHBOARD_TAB_CLASS,
@@ -405,7 +406,7 @@ function scoreExposure(variant: MobileAppExperimentVariant, metric: MobileAppExp
 }
 
 function scoreRevenue(variant: MobileAppExperimentVariant, metric: MobileAppExperimentScoreMetric, sessionDays = 1) {
-  if (metric === "sessions_per_day") return variant.sessions / Math.max(1, sessionDays);
+  if (metric === "sessions_per_day") return normalizedSessions(variant, sessionDays);
   if (metric === "download_paid") return 0;
   if (metric === "appu_d7") return variant.proceedsD7;
   if (metric === "appu_d14") return variant.proceedsD14;
@@ -418,7 +419,7 @@ function scoreValue(
   metric: MobileAppExperimentScoreMetric,
   sessionDays = 1,
 ) {
-  if (metric === "sessions_per_day") return ratioOrNull(variant.sessions, variant.users * Math.max(1, sessionDays));
+  if (metric === "sessions_per_day") return variant.users > 0 ? sessionsPerUserDay(variant, sessionDays) : null;
   if (metric === "download_paid") return ratioOrNull(variant.paid, variant.installs);
   if (metric === "appu_d7") return ratioOrNull(variant.proceedsD7, variant.installsD7);
   if (metric === "appu_d14") return ratioOrNull(variant.proceedsD14, variant.installsD14);

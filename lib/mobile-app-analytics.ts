@@ -13,6 +13,7 @@ import type { NativePaywallReport } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_NATIVE_RECOVERY_KEYS, pokyNativeRecoveryExperiment } from "./poky-native-recovery";
 import { pokyPaywallMigrationExperiment } from "./poky-paywall-migration";
+import { observedSessionDays } from "./experiment-session-rate";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -58,6 +59,7 @@ export type MobileAppRetentionCountryRow = {
 export type MobileAppExperimentSlice = {
   users: number;
   sessions: number;
+  sessionUserDays?: number;
   installs: number;
   completed: number;
   trials: number;
@@ -217,6 +219,8 @@ type AppFacts = {
   startMs: number;
   endMs: number;
   sessionDays: number;
+  sessionFromMs: number;
+  sessionToMs: number;
   installs: InstallRow[];
   attributes: Map<string, Record<string, string>>;
   events: AttributedRow[];
@@ -541,6 +545,8 @@ async function loadAppFacts(
     startMs,
     endMs,
     sessionDays: sessionRange.days,
+    sessionFromMs: sessionRange.from,
+    sessionToMs: sessionRange.to,
     historicalExperienceSessions: historicalSessionResult.status === "fulfilled" ? historicalSessionResult.value : [],
     installs: installResult.status === "fulfilled" ? installResult.value.filter((row) => row.installedAt >= startMs) : [],
     attributes: attributeResult.status === "fulfilled" ? attributeMap(attributeResult.value) : new Map(),
@@ -736,7 +742,7 @@ FROM sw.events_rep
 WHERE applicationId = ${app.applicationId}
   AND isSandbox = 0
   AND name = 'session_start'
-  AND ts > toStartOfHour(toDateTime64('${winStart}', 6, 'UTC'))
+  AND ts >= toDateTime64('${winStart}', 6, 'UTC')
   AND ts < toDateTime64('${winEnd}', 6, 'UTC')
   AND ts < now()
 GROUP BY appUserId, country
@@ -1045,6 +1051,9 @@ function pokyAppExperienceExperiment(facts: AppFacts): MobileAppExperiment {
     installs: history.installs.filter((row) => inRange(row.installedAt, history.startMs, POKY_EXPERIMENT_START_MS)),
     events: history.events.filter((row) => inRange(row.eventTs, history.startMs, POKY_EXPERIMENT_START_MS)),
     sessions: facts.historicalExperienceSessions ?? [],
+    sessionFromMs: history.startMs,
+    sessionToMs: POKY_EXPERIMENT_START_MS,
+    sessionDays: (POKY_EXPERIMENT_START_MS - history.startMs) / DAY_MS,
   };
   const historical = attributeExperiment(paidExperienceCohort(historicalFacts, POKY_EXPERIMENT_START_MS), {
     ...pokyExperienceDefinition,
@@ -1058,7 +1067,7 @@ function pokyAppExperienceExperiment(facts: AppFacts): MobileAppExperiment {
   return {
     ...current,
     randomized: false,
-    planningNote: "Original includes a fixed 30-day baseline before the AI Chat split plus newly assigned Original users. Historical outcomes stop at the split; new 90/10 and earlier 50/50 assignments keep their original labels. The combined comparison is observational, so a winner is not a causal A/B result.",
+    planningNote: "Original includes a fixed 30-day baseline before the AI Chat split plus newly assigned Original users. Sessions per day divide total sessions by each paying user's observed days since install, summed across both windows. Historical outcomes stop at the split; new 90/10 and earlier 50/50 assignments keep their original labels. The combined comparison is observational, so a winner is not a causal A/B result.",
   };
 }
 
@@ -1101,9 +1110,11 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   );
   const countryByUser = new Map<string, string>();
   const languageByUser = new Map<string, string>();
+  const installedAtByUser = new Map<string, number>();
   for (const row of facts.installs) {
     countryByUser.set(row.appUserId, row.country);
     languageByUser.set(row.appUserId, experimentLanguage(row.language));
+    installedAtByUser.set(row.appUserId, row.installedAt);
   }
   for (const row of facts.sessions) {
     if (!countryByUser.has(row.appUserId)) countryByUser.set(row.appUserId, row.country);
@@ -1127,6 +1138,9 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
       addForUser(appUserId, attrs, {
         country: countryByUser.get(appUserId) ?? "unknown",
         users: 1,
+        sessionUserDays: definition.includeSessions
+          ? observedSessionDays(installedAtByUser.get(appUserId) ?? facts.sessionToMs, facts.sessionFromMs, facts.sessionToMs)
+          : 0,
       });
     }
   }
@@ -1405,6 +1419,7 @@ function emptyExperimentSlice(): MobileAppExperimentSlice {
   return {
     users: 0,
     sessions: 0,
+    sessionUserDays: 0,
     installs: 0,
     completed: 0,
     trials: 0,
@@ -1436,6 +1451,7 @@ function addExperimentMetrics(
   }
   target.users += next.users;
   target.sessions += next.sessions;
+  target.sessionUserDays = (target.sessionUserDays ?? 0) + (next.sessionUserDays ?? 0);
   target.installs += next.installs;
   target.completed += next.completed;
   target.trials += next.trials;
@@ -1463,6 +1479,7 @@ function addExperimentMetrics(
 function addExperimentMetricsToSlice(target: MobileAppExperimentSlice, next: MobileAppExperimentSlice) {
   target.users += next.users;
   target.sessions += next.sessions;
+  target.sessionUserDays = (target.sessionUserDays ?? 0) + (next.sessionUserDays ?? 0);
   target.installs += next.installs;
   target.completed += next.completed;
   target.trials += next.trials;

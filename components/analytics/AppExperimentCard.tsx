@@ -13,6 +13,7 @@ import {
   DASHBOARD_POPOVER_ITEM_CLASS,
 } from "@/components/analytics/dashboard-surface";
 import { analyzeExperiment, type ExperimentAnalysis, type ExperimentArm } from "@/lib/experiment-stats";
+import { normalizedSessions, sessionsPerUserDay } from "@/lib/experiment-session-rate";
 import {
   Select,
   SelectContent,
@@ -49,7 +50,7 @@ export default function AppExperimentCard({
   const bestAppuKey = bestVariantKey(variants, (row) => ratio(row.proceeds, row.installs));
   const bestAppuD7Key = bestVariantKey(variants, (row) => ratio(row.proceedsD7, row.installsD7));
   const bestAppuD14Key = bestVariantKey(variants, (row) => ratio(row.proceedsD14, row.installsD14));
-  const bestSessionsKey = bestVariantKey(variants, (row) => ratio(row.sessions, row.users * sessionDays));
+  const bestSessionsKey = bestVariantKey(variants, (row) => sessionsPerUserDay(row, sessionDays));
   const showTrials = experiment.showTrials === true;
   const showRetention = experiment.showRetention === true;
   const showUsers = experiment.showUsers === true;
@@ -131,7 +132,7 @@ export default function AppExperimentCard({
                 <NumberTd>{formatPreciseCurrency(row.proceeds)}</NumberTd>
                 {showSessions ? (
                   <NumberTd className={scoreSessions && row.key === bestSessionsKey ? "font-bold" : undefined}>
-                    {formatAvg(ratio(row.sessions, row.users * sessionDays))}
+                    {formatAvg(sessionsPerUserDay(row, sessionDays))}
                   </NumberTd>
                 ) : null}
                 {experiment.showCompletion ? (
@@ -318,15 +319,14 @@ function toCohortAppuArms(variants: MobileAppExperimentVariant[], days: 7 | 14 |
 }
 
 function toSessionsArms(variants: MobileAppExperimentVariant[], sessionDays: number): ExperimentArm[] {
-  const days = sessionDays > 0 ? sessionDays : 1;
   return variants.map((row) => {
-    const mean = row.users > 0 ? row.sessions / days / row.users : 0;
+    const mean = sessionsPerUserDay(row, sessionDays);
     return {
       key: row.key,
       label: row.label,
       exposures: row.users,
       conversions: Math.min(row.users, row.sessions),
-      revenue: row.sessions / days,
+      revenue: normalizedSessions(row, sessionDays),
       // Aggregate session rows do not retain squared values; use a Poisson planning approximation.
       variance: mean,
     };
