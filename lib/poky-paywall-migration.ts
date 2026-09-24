@@ -1,94 +1,103 @@
 import type { MobileAppExperiment, MobileAppExperimentSlice, MobileAppExperimentVariant } from "./mobile-app-analytics";
 
-type Install = { appUserId: string; country: string; appVersion: string; language: string; installedAt: number };
-type Outcome = { appUserId: string; eventTs: number; name: string; netProceeds: number | null; originalTransactionId: string; transactionId: string; attributionTs: number };
-type Facts = { startMs: number; endMs: number; legacyStartMs?: number; installs: Install[]; events: Outcome[]; attributes: Map<string, Record<string, string>> };
+export const POKY_PAYWALL_ENGINE_START_MS = Date.parse("2026-09-24T11:37:23.000Z");
+export const POKY_PAYWALL_ENGINE_ATTRIBUTE = "poky_paywall_engine_assignment_v1";
+
+type Install = { appUserId: string; country: string; installedAt: number };
+type Outcome = { appUserId: string; eventTs: number; name: string; netProceeds: number | null; originalTransactionId: string; transactionId: string; attributionTs: number; isRefund?: boolean };
+type Facts = { startMs: number; endMs: number; installs: Install[]; events: Outcome[]; attributes: Map<string, Record<string, string>> };
+type Engine = "superwall" | "native";
+type Language = "en" | "es" | "de" | "fr";
+type Assignment = { schema: 1; experiment: "poky_paywall_engine_v1"; variant: Engine; assignedAt: number; language: Language; environment: "production" };
 
 const empty = (): MobileAppExperimentSlice => ({ users: 0, sessions: 0, installs: 0, completed: 0, trials: 0, converted: 0, paid: 0, proceeds: 0, installsD7: 0, proceedsD7: 0, eligibleD7: 0, retainedD7: 0, installsD14: 0, proceedsD14: 0, eligibleD14: 0, retainedD14: 0, installsD30: 0, proceedsD30: 0, eligibleD30: 0, retainedD30: 0 });
 const variants = (): MobileAppExperimentVariant[] => [
-  { ...empty(), key: "legacy", label: "Superwall", countries: {} },
+  { ...empty(), key: "superwall", label: "Superwall", countries: {} },
   { ...empty(), key: "native", label: "Native", countries: {} },
 ];
 
-/** Native UI shipped in Poky 1.1.2. Keep the install cohort stable after upgrades. */
-export function pokyPaywallEngine(version: string): "legacy" | "native" | null {
-  const match = version.trim().match(/^(\d+)\.(\d+)(?:\.(\d+))?(?:[+\-].*)?$/);
-  if (!match) return null;
-  const value = [Number(match[1]), Number(match[2]), Number(match[3] ?? 0)];
-  const native = [1, 1, 2];
-  for (let i = 0; i < native.length; i++) {
-    if (value[i] !== native[i]) return value[i] > native[i] ? "native" : "legacy";
-  }
-  return "native";
+function assignment(value: string | undefined): Assignment | null {
+  if (!value) return null;
+  let raw: Record<string, unknown>;
+  try { raw = JSON.parse(value) as Record<string, unknown>; } catch { return null; }
+  if (raw.schema !== 1 || raw.experiment !== "poky_paywall_engine_v1" ||
+      (raw.variant !== "superwall" && raw.variant !== "native") ||
+      !["en", "es", "de", "fr"].includes(String(raw.language)) ||
+      raw.environment !== "production" || typeof raw.assignedAt !== "number" ||
+      !Number.isFinite(raw.assignedAt)) return null;
+  return raw as Assignment;
 }
 
-/** Language, never country. Known unsupported locales use Poky's English fallback.
- * Missing/malformed telemetry is unknown, not an invented English install.
- */
-export function pokyComparisonLanguage(value: string): "en" | "es" | "de" | null {
-  const code = value.trim().toLowerCase().split(/[-_]/)[0];
-  if (!/^[a-z]{2,3}$/.test(code) || ["und", "fr"].includes(code)) return null;
-  return code === "es" || code === "de" ? code : "en";
-}
-
-/** Historical version cohorts, not a randomized assignment. Total APPU includes
- * all observed proceeds (main/recovery, renewals, refunds) per installed user.
+/** The date picker selects new randomized assignments. Old version cohorts and
+ * subscriptions that started before assignment never enter this experiment.
  */
 export function pokyPaywallMigrationExperiment(facts: Facts, asOf = Date.now()): MobileAppExperiment {
   const overall = variants();
   const languageComparisons = [
-    { language: "es", label: "🇪🇸 Spanish total APPU", variants: variants() },
-    { language: "en", label: "🇬🇧 English total APPU", variants: variants() },
-    { language: "de", label: "🇩🇪 German total APPU", variants: variants() },
+    { language: "es", label: "🇪🇸 Spanish APPU", variants: variants() },
+    { language: "en", label: "🇬🇧 English APPU", variants: variants() },
+    { language: "de", label: "🇩🇪 German APPU", variants: variants() },
+    { language: "fr", label: "🇫🇷 French APPU", variants: variants() },
   ];
-  const cohort = new Map<string, { install: Install; arm: number; language: string }>();
-  // Resolve first before filtering, so duplicate/later install telemetry cannot move a user.
-  const firstInstalls = new Map<string, Install>();
+  const installs = new Map<string, Install>();
   for (const install of facts.installs) {
     if (!install.appUserId || !Number.isFinite(install.installedAt)) continue;
-    if ((firstInstalls.get(install.appUserId)?.installedAt ?? Infinity) > install.installedAt) firstInstalls.set(install.appUserId, install);
+    if ((installs.get(install.appUserId)?.installedAt ?? Infinity) > install.installedAt) installs.set(install.appUserId, install);
   }
-  for (const install of firstInstalls.values()) {
-    if (install.installedAt >= facts.endMs || install.installedAt > asOf) continue;
-    const environment = facts.attributes.get(install.appUserId)?.poky_tracking_environment?.trim().toLowerCase();
-    if (environment && environment !== "production") continue;
-    const engine = pokyPaywallEngine(install.appVersion);
-    const language = pokyComparisonLanguage(install.language);
-    if (!engine || !language) continue;
-    if (install.installedAt < (engine === "legacy" ? facts.legacyStartMs ?? facts.startMs : facts.startMs)) continue;
-    cohort.set(install.appUserId, { install, arm: engine === "native" ? 1 : 0, language });
+  const cohort = new Map<string, { assignment: Assignment; slices: MobileAppExperimentSlice[] }>();
+  for (const [appUserId, attributes] of facts.attributes) {
+    const assigned = assignment(attributes[POKY_PAYWALL_ENGINE_ATTRIBUTE]);
+    if (!assigned || assigned.assignedAt < Math.max(facts.startMs, POKY_PAYWALL_ENGINE_START_MS) ||
+        assigned.assignedAt >= facts.endMs || assigned.assignedAt > asOf) continue;
+    const arm = assigned.variant === "superwall" ? 0 : 1;
+    const country = installs.get(appUserId)?.country ?? "unknown";
+    const language = languageComparisons.find((row) => row.language === assigned.language)!;
+    const slices = [overall[arm], language.variants[arm]].flatMap((row) => [row, row.countries[country] ??= empty()]);
+    for (const slice of slices) { slice.users++; slice.installs++; }
+    cohort.set(appUserId, { assignment: assigned, slices });
   }
-  const slices = (user: NonNullable<ReturnType<typeof cohort.get>>) => {
-    const rows = [overall[user.arm], languageComparisons.find((row) => row.language === user.language)!.variants[user.arm]];
-    return rows.flatMap((row) => [row, row.countries[user.install.country] ??= empty()]);
-  };
-  for (const user of cohort.values()) for (const slice of slices(user)) { slice.users++; slice.installs++; }
 
+  // A renewal or refund belongs to this test only when its original purchase
+  // began after this user's assignment. This excludes old Superwall conversions.
+  const eligibleOriginals = new Set<string>();
+  for (const event of facts.events) {
+    const user = cohort.get(event.appUserId);
+    if (!user || !event.originalTransactionId || !Number.isFinite(event.eventTs) ||
+        event.eventTs < user.assignment.assignedAt || event.eventTs > asOf) continue;
+    if (!event.isRefund && (event.name === "initial_purchase" || event.name === "non_renewing_purchase")) {
+      eligibleOriginals.add(`${event.appUserId}|${event.originalTransactionId}`);
+    }
+  }
   const unique = new Map<string, Outcome>();
   for (const event of facts.events) {
     const user = cohort.get(event.appUserId);
-    if (!user || !Number.isFinite(event.eventTs) || event.eventTs < user.install.installedAt || event.eventTs > asOf) continue;
-    if (!event.transactionId || !["initial_purchase", "renewal", "non_renewing_purchase", "cancellation"].includes(event.name)) continue;
+    if (!user || !eligibleOriginals.has(`${event.appUserId}|${event.originalTransactionId}`) ||
+        !event.transactionId || !Number.isFinite(event.eventTs) ||
+        event.eventTs < user.assignment.assignedAt || event.eventTs > asOf) continue;
+    if (!event.isRefund && !["initial_purchase", "renewal", "non_renewing_purchase", "cancellation"].includes(event.name)) continue;
     if (event.name === "cancellation" && (event.netProceeds ?? 0) >= 0) continue;
-    const key = `${event.originalTransactionId}|${event.transactionId}|${(event.netProceeds ?? 0) < 0}`;
+    const key = `${event.appUserId}|${event.originalTransactionId}|${event.transactionId}|${event.name}|${(event.netProceeds ?? 0) < 0}`;
     if ((unique.get(key)?.attributionTs ?? -Infinity) < event.attributionTs) unique.set(key, event);
   }
   const paid = new Set<string>();
   for (const event of unique.values()) {
     const user = cohort.get(event.appUserId);
-    if (!user || event.eventTs < user.install.installedAt || event.eventTs > asOf || event.netProceeds == null || !Number.isFinite(event.netProceeds)) continue;
+    if (!user || event.netProceeds == null || !Number.isFinite(event.netProceeds)) continue;
     const firstPaid = event.netProceeds > 0 && !paid.has(event.appUserId);
     if (firstPaid) paid.add(event.appUserId);
-    for (const slice of slices(user)) {
+    for (const slice of user.slices) {
       slice.proceeds += event.netProceeds;
       if (firstPaid) slice.paid++;
     }
   }
   return {
     id: "poky-superwall-vs-native",
-    title: "Conversion rate · Superwall vs native",
-    subtitle: "EN + ES + DE · installs on 1.1.2+ vs earlier · historical cohorts, not randomized · total proceeds to date",
-    variants: overall, languageComparisons, scoreMetrics: ["download_paid"], randomized: false,
-    planningNote: `Historical cohorts, not randomized. Superwall installs from ${new Date(facts.legacyStartMs ?? facts.startMs).toISOString().slice(0, 10)}; native installs from ${new Date(facts.startMs).toISOString().slice(0, 10)}. Proceeds follow each cohort through today, so older users have more time to pay. Planning is an indicative sample estimate, not proof of a causal winner.`,
+    title: "Paywalls · Superwall vs native",
+    subtitle: "Fresh 50/50 assignment · all four languages · new subscriptions only",
+    variants: overall, languageComparisons,
+    languageVariants: Object.fromEntries(languageComparisons.map((row) => [row.language, row.variants])),
+    scoreMetrics: ["appu", "download_paid"],
+    randomized: true, showUsers: true, showInstalls: false,
+    paidRateLabel: "Assigned → paid",
   };
 }

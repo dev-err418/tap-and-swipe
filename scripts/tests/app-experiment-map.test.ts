@@ -92,9 +92,9 @@ test("unsupported apps do not show invented experiments", () => {
   assert.equal(appExperimentMap("unknown"), null);
 });
 
-test("active A/B counts exclude historical comparisons and single-offer allocations", () => {
+test("active A/B counts include the new paywall engine assignment", () => {
   assert.equal(activeABTestCount("glow"), 3);
-  assert.equal(activeABTestCount("poky"), 4);
+  assert.equal(activeABTestCount("poky"), 5);
   assert.equal(activeABTestCount("versy"), 0);
 });
 
@@ -316,6 +316,8 @@ test("Poky flow only includes main paywalls for the selected language", () => {
   assert.deepEqual(englishPaywalls.map((node) => node.id), ["624224", "624761"]);
   assert.ok(englishPaywalls.every((node) => node.paywallMetric?.language === "en"));
   assert.equal(english.edges.filter((edge) => edge.from === "language").length, 2);
+  assert.deepEqual(english.edges.filter((edge) => edge.from === "language").map((edge) => edge.to), ["superwall", "native"]);
+  assert.equal(english.edges.filter((edge) => edge.from === "native").length, 2);
   assert.equal(english.edges.filter((edge) => edge.to === "cancel").length, 2);
 
   const spanish = appExperimentFlow("poky", "es")!;
@@ -376,7 +378,9 @@ test("Poky branches through background, four plan combinations and all paywalls 
     assert.ok(flow.edges.some((edge) => edge.to === plan.id && edge.label === "50%"));
     assert.ok(flow.edges.some((edge) => edge.from === plan.id && edge.to === "language"));
   }
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "language").map((edge) => edge.label), ["50%", "50%", "100%", "100%", "100%"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "language").map((edge) => edge.label), ["50%", "50%"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "native").map((edge) => edge.label), ["50%", "50%", "100%", "100%", "100%"]);
+  assert.ok(flow.edges.some((edge) => edge.from === "superwall" && edge.to === "superwall-recovery"));
   const triggers = flow.edges.filter((edge) => edge.to === "cancel");
   assert.equal(triggers.length, 5);
   assert.ok(triggers.every((edge) => edge.conditional && edge.label === undefined));

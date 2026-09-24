@@ -92,13 +92,15 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
 }
 
 function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): ExperimentFlow {
-  const [plan, background, english, localized, recovery] = map.tests;
+  const [plan, background, engine, english, localized, recovery] = map.tests;
   const nodes: ExperimentFlowNode[] = [
     { id: "start", x: 36, y: 268, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
     { id: "language", x: 618, y: 268, width: 144, label: "Paywall language", detail: "English is the fallback", tone: "neutral",
-      statsTarget: { paywallExperiment: `poky_native_main_v1_${selectedLanguage ?? "en"}`, language: selectedLanguage ?? "en" } },
-    { id: "cancel", x: 1166, y: 268, width: 160, label: "Cancel / dismiss", detail: "Any origin placement", tone: "neutral",
+      statsTarget: { experimentId: engine.id } },
+    { id: "cancel", x: 1320, y: 268, width: 160, label: "Native purchase cancelled", detail: "Any origin placement", tone: "neutral",
       statsTarget: { experimentId: recovery.id } },
+    { id: "superwall-recovery", x: 1540, y: 76, width: 164, label: "Superwall recovery", detail: "Campaign managed", tone: "orange",
+      statsTarget: { experimentId: engine.id } },
   ];
   const edges: ExperimentFlowEdge[] = [];
   background.branches.forEach((bg, bgIndex) => {
@@ -131,31 +133,37 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
   const visibleOffers = selectedLanguage
     ? offers.filter((offer) => offer.languageCode === selectedLanguage)
     : offers;
+  engine.branches.forEach((branch, index) => {
+    nodes.push({ id: branch.id, x: 814, y: index === 0 ? 76 : 328, width: 160,
+      label: branch.label, tone: "orange", experimentId: engine.id, variantId: branch.id });
+    edges.push({ from: "language", to: branch.id, label: `${branch.percent}%` });
+  });
+  edges.push({ from: "superwall", to: "superwall-recovery", conditional: true });
   const firstOfferY = 268 - (visibleOffers.length - 1) * 50;
   visibleOffers.forEach((offer, index) => {
     nodes.push({
-      id: offer.id, x: 902, y: firstOfferY + index * 100, width: 176, label: offer.label, detail: offer.language, tone: "orange",
+      id: offer.id, x: 1054, y: firstOfferY + index * 100, width: 176, label: offer.label, detail: offer.language, tone: "orange",
       paywallMetric: {
         experiment: `poky_native_main_v1_${offer.languageCode}`,
         variant: offer.metricVariant,
         language: offer.languageCode,
       },
     });
-    edges.push({ from: "language", to: offer.id, label: `${offer.percent}%` }, { from: offer.id, to: "cancel", conditional: true });
+    edges.push({ from: "native", to: offer.id, label: `${offer.percent}%` }, { from: offer.id, to: "cancel", conditional: true });
   });
   recovery.branches.forEach((branch, index) => {
-    nodes.push({ id: branch.id, x: 1418, y: 208 + index * 120, width: 164, label: branch.label,
+    nodes.push({ id: branch.id, x: 1540, y: 208 + index * 120, width: 164, label: branch.label,
       tone: "orange",
       experimentId: recovery.id, variantId: branch.id });
     edges.push({ from: "cancel", to: branch.id, label: `${branch.percent}%` });
   });
   return {
-    width: 1608, height: 522, nodes, edges,
+    width: 1730, height: 522, nodes, edges,
     stages: [
       { x: 160, label: "App experience" }, { x: 398, label: "Plan flow" },
-      { x: 618, label: "Audience" }, { x: 902, label: "Main paywalls" },
-      { x: 1166, label: "Recovery trigger" }, { x: 1418, label: "Recovery test" },
+      { x: 618, label: "Audience" }, { x: 814, label: "Engine" }, { x: 1054, label: "Native paywalls" },
+      { x: 1320, label: "Native recovery trigger" }, { x: 1540, label: "Recovery" },
     ],
-    notes: [],
+    notes: map.notes,
   };
 }

@@ -43,7 +43,7 @@ export default function AppExperimentCard({
       key: `language-${comparison.language}`, title: comparison.label,
       analysis: analyzeExperiment(toAppuArms(comparison.variants), "revenue_per_visitor", comparison.label, { elapsedDays }),
     })),
-    ...scoreMetrics.map((metric) => scoredAnalysis(metric, variants, sessionDays, elapsedDays)),
+    ...scoreMetrics.map((metric) => scoredAnalysis(metric, variants, sessionDays, elapsedDays, experiment.paidRateLabel)),
   ];
   const warningAnalysis = firstInsufficient(scored.map((item) => item.analysis)) ?? scored[0]?.analysis;
   const bestDownloadPaidKey = bestVariantKey(variants, (row) => ratio(row.paid, row.installs));
@@ -107,7 +107,7 @@ export default function AppExperimentCard({
               {showRetention ? <Th right>D30 subscribed</Th> : null}
               {showDownloadPaid ? (
                 <Th right className={scoreDownloadPaid ? "font-bold text-black" : undefined}>
-                  Download → paid
+                  {experiment.paidRateLabel ?? "Download → paid"}
                 </Th>
               ) : null}
               {scoreAppu ? (
@@ -249,6 +249,7 @@ function scoredAnalysis(
   variants: MobileAppExperimentVariant[],
   sessionDays = 1,
   elapsedDays = sessionDays,
+  paidRateLabel = "Download → paid",
 ) {
   if (metric === "sessions_per_day") {
     return {
@@ -263,8 +264,8 @@ function scoredAnalysis(
   if (metric === "download_paid") {
     return {
       key: metric,
-      title: "Download → paid",
-      analysis: analyzeExperiment(toDownloadPaidArms(variants), "conversion_rate", "Download → paid", { elapsedDays }),
+      title: paidRateLabel,
+      analysis: analyzeExperiment(toDownloadPaidArms(variants), "conversion_rate", paidRateLabel, { elapsedDays }),
     };
   }
   if (metric === "appu_d7") {

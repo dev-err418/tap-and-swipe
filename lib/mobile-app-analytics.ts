@@ -12,7 +12,7 @@ import type { JournalPracticeReport } from "./journal-practice-analytics";
 import type { NativePaywallReport } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_NATIVE_RECOVERY_KEYS, pokyNativeRecoveryExperiment } from "./poky-native-recovery";
-import { pokyPaywallMigrationExperiment } from "./poky-paywall-migration";
+import { POKY_PAYWALL_ENGINE_ATTRIBUTE, pokyPaywallMigrationExperiment } from "./poky-paywall-migration";
 import { paidSubscriptionActivity } from "./paid-subscription-activity";
 import { installCohortCountries } from "./install-cohort-countries";
 import { subscriptionActiveAt } from "./subscription-retention";
@@ -112,6 +112,7 @@ export type MobileAppExperiment = {
   showInstalls?: boolean;
   showPaid?: boolean;
   showDownloadPaid?: boolean;
+  paidRateLabel?: string;
   sessionDays?: number;
   elapsedDays?: number;
   /** False for descriptive version/cohort comparisons that are not randomized trials. */
@@ -175,7 +176,7 @@ const GLOW_ICON_URL =
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen"] as const;
 const VERSY_ATTRIBUTE_KEYS = ["onboarding_experiment_id", "onboarding_variant", "widget_screen_seen"] as const;
-const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "onboarding_plan_allocation", "home_experience_variant", "home_experience_allocation", "poky_tracking_environment", ...POKY_NATIVE_RECOVERY_KEYS] as const;
+const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "onboarding_plan_allocation", "home_experience_variant", "home_experience_allocation", "poky_tracking_environment", POKY_PAYWALL_ENGINE_ATTRIBUTE, ...POKY_NATIVE_RECOVERY_KEYS] as const;
 
 type SuperwallAppConfig = {
   id: MobileAppAnalytics["id"];
@@ -988,7 +989,6 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
     pokyPaywallMigrationExperiment({ ...scopedFacts,
       installs: facts.migrationHistory?.installs ?? scopedFacts.installs,
       events: facts.migrationHistory?.events ?? scopedFacts.events,
-      legacyStartMs: facts.migrationHistory?.startMs,
     }),
     pokyNativeRecoveryExperiment(
       [...scopedFacts.attributes].flatMap(([appUserId, attrs]) => Object.entries(attrs).map(([key, value]) => ({ appUserId, key, value }))),

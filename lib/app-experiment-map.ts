@@ -77,18 +77,25 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         plan,
         experience,
         {
-          id: "poky-english-paywalls", label: "Main paywalls", scope: "🇬🇧 English / fallback", tone: "orange",
+          id: "poky-superwall-vs-native", label: "Paywall engine", scope: "New assignment · all supported languages", tone: "orange",
+          branches: [
+            { id: "superwall", label: "Superwall paywall", percent: 50 },
+            { id: "native", label: "Native paywall", percent: 50 },
+          ],
+        },
+        {
+          id: "poky-english-paywalls", label: "Native main paywalls", scope: "Native arm · 🇬🇧 English / fallback", tone: "orange",
           branches: [
             { id: "624224", label: "Onboarding · High - 1", percent: 50 },
             { id: "624761", label: "Onboarding Name - 2", percent: 50 },
           ],
         },
         {
-          id: "poky-localized-paywalls", label: "Localized paywalls", scope: "🇪🇸 Spanish · 🇩🇪 German · 🇫🇷 French", tone: "orange",
+          id: "poky-localized-paywalls", label: "Native localized paywalls", scope: "Native arm · 🇪🇸 Spanish · 🇩🇪 German · 🇫🇷 French", tone: "orange",
           branches: [{ id: "name-2", label: "Name - 2 · each language", percent: 100 }],
         },
         {
-          id: "poky-native-recovery-holdout", label: "Recovery", scope: "Hardcoded paywalls · upfront 50/50 · any origin placement", tone: "orange",
+          id: "poky-native-recovery-holdout", label: "Native recovery", scope: "Native arm · upfront 50/50 · any origin placement", tone: "orange",
           branches: [
             { id: "recovery", label: "Recovery paywall", percent: 50 },
             { id: "holdout", label: "No recovery", percent: 50 },
@@ -102,8 +109,9 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       }))),
       notes: [
         "Results start September 20, 2026 at 16:00 GMT+2. The App experience card also includes a fixed 30-day pre-split Original baseline.",
+        "Paywall engine results start September 24, 2026 at 13:37 GMT+2. Each eligible user receives one saved 50/50 assignment. Earlier Superwall conversions and subscriptions are excluded from this new test.",
         "Background 90/10 applies to new assignments in the next release. Earlier builds use 70/30 or 50/50; saved assignments are unchanged.",
-        "The recovery group is assigned before onboarding. All subsequent proceeds count in that group, including immediate regular-paywall purchases. The offer appears after purchase cancellation, at most once; the home-screen shortcut remains available to both groups.",
+        "The native recovery group is assigned before onboarding within the native paywall arm. Superwall uses its configured campaign and recovery flow. The home-screen shortcut remains available in both arms.",
       ],
     };
   }

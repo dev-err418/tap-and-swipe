@@ -3,89 +3,84 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import AppExperimentCard from "../../components/analytics/AppExperimentCard";
-import { pokyComparisonLanguage, pokyPaywallEngine, pokyPaywallMigrationExperiment } from "../../lib/poky-paywall-migration";
+import { POKY_PAYWALL_ENGINE_ATTRIBUTE, POKY_PAYWALL_ENGINE_START_MS as START, pokyPaywallMigrationExperiment } from "../../lib/poky-paywall-migration";
 
-const DAY = 86400000;
-const start = Date.parse("2026-09-01T00:00:00Z");
-const install = (appUserId: string, language = "en", appVersion = "1.1.2", country = "US") => ({ appUserId, language, appVersion, country, installedAt: start });
-const event = (appUserId: string, netProceeds: number, day = 1, transactionId = appUserId, name = "initial_purchase") => ({ appUserId, netProceeds, eventTs: start + day * DAY, name, transactionId, originalTransactionId: appUserId, attributionTs: start + day * DAY });
-const facts = (installs: ReturnType<typeof install>[], events: ReturnType<typeof event>[] = []) => ({ installs, events, startMs: start, endMs: start + DAY, attributes: new Map<string, Record<string, string>>() });
-
-test("native starts at 1.1.2; semantic versions and unknown values are handled safely", () => {
-  assert.equal(pokyPaywallEngine("1.1.1"), "legacy");
-  assert.equal(pokyPaywallEngine("1.1"), "legacy");
-  assert.equal(pokyPaywallEngine("1.1.2"), "native");
-  assert.equal(pokyPaywallEngine("1.1.10"), "native");
-  assert.equal(pokyPaywallEngine("2.0.0"), "native");
-  assert.equal(pokyPaywallEngine(""), null);
-  assert.equal(pokyPaywallEngine("unknown"), null);
+const DAY = 86_400_000;
+const assignment = (variant: "superwall" | "native", assignedAt = START + 1000, language = "en", environment = "production") => JSON.stringify({
+  schema: 1, experiment: "poky_paywall_engine_v1", variant, assignedAt, language, environment,
 });
-
-test("Spanish and German use device language, while English includes known unsupported-language fallback", () => {
-  assert.equal(pokyComparisonLanguage("es-MX"), "es");
-  assert.equal(pokyComparisonLanguage("de-DE"), "de");
-  assert.equal(pokyComparisonLanguage("de-AT"), "de");
-  assert.equal(pokyComparisonLanguage("EN_us"), "en");
-  assert.equal(pokyComparisonLanguage("it-IT"), "en");
-  for (const locale of ["", "unknown", "und", "fr-FR"]) assert.equal(pokyComparisonLanguage(locale), null);
+const install = (appUserId: string, country = "US", installedAt = START - 60 * DAY) => ({ appUserId, country, installedAt });
+const event = (appUserId: string, originalTransactionId: string, transactionId: string, name: string, netProceeds: number, eventTs = START + 2000, isRefund = false) => ({
+  appUserId, originalTransactionId, transactionId, name, netProceeds, eventTs, attributionTs: eventTs + 1, isRefund,
 });
+function facts(attrs: [string, string][], events: ReturnType<typeof event>[] = [], startMs = START - DAY, endMs = START + 10 * DAY) {
+  return { startMs, endMs, installs: attrs.map(([id]) => install(id)), events, attributes: new Map(attrs.map(([id, value]) => [id, { [POKY_PAYWALL_ENGINE_ATTRIBUTE]: value }])) };
+}
 
-test("APPU uses all cohort installs and total proceeds, including later renewals and refunds", () => {
-  const report = pokyPaywallMigrationExperiment(facts(
-    [install("es1", "es-MX", "1.1.1", "MX"), install("es2", "es", "1.1.1", "US"), install("en1", "en", "1.1.2", "ES"), install("en2"), install("de1", "de-AT", "1.1.1", "AT"), install("de2", "de-DE", "1.1.2", "DE")],
-    [event("es1", 20), event("es1", 20), event("es1", 10, 8, "renewal", "renewal"), event("es1", -5, 9, "renewal", "cancellation"), event("en1", 60), event("en1", 20, 2, "second-subscription"), event("en1", 500, 99), event("de1", 15), event("de2", 25)]
-  ), start + 10 * DAY);
-  const [es, en, de] = report.languageComparisons!;
-  assert.equal(es.variants[0].installs, 2);
-  assert.equal(es.variants[0].proceeds, 25);
-  assert.equal(es.variants[0].paid, 1);
-  assert.equal(es.variants[0].countries.MX.proceeds, 25);
-  assert.equal(en.variants[1].proceeds / en.variants[1].installs, 40);
-  assert.equal(en.variants[1].paid, 1); // Paying users, not transactions/subscriptions.
-  assert.equal(report.variants[1].countries.ES.proceeds, 80); // English speaker in Spain.
-  assert.equal(de.variants[0].countries.AT.proceeds, 15); // German speaker outside Germany.
-  assert.equal(de.variants[1].countries.DE.proceeds, 25);
-  assert.equal(de.variants[0].installs, 1);
-  assert.equal(de.variants[1].paid, 1);
-});
-
-test("upgrades stay in their install cohort; missing, unrelated, debug and out-of-cohort data are excluded", () => {
+test("new assignment, not install version, determines arm and old conversions never enter", () => {
   const input = facts([
-    install("old", "en", "1.1.1"), { ...install("old"), installedAt: start + 1 },
-    install("french", "fr"), install("unknown", ""), install("bad-version", "en", ""), install("debug"),
-    { ...install("outside"), installedAt: start - DAY },
-  ], [event("old", 30), event("french", 90), event("missing-install", 80), event("old", 10, -1)]);
-  input.attributes.set("debug", { poky_tracking_environment: "sandbox" });
-  const result = pokyPaywallMigrationExperiment(input, start + 10 * DAY);
-  assert.equal(result.variants[0].installs, 1);
-  assert.equal(result.variants[0].proceeds, 30);
-  assert.equal(result.variants[1].installs, 0);
+    ["old-user", assignment("superwall")],
+    ["native-user", assignment("native", START + 1000, "fr")],
+    ["past", assignment("superwall", START - 1)],
+    ["sandbox", assignment("native", START + 1000, "en", "sandbox")],
+  ], [
+    event("old-user", "legacy", "legacy", "initial_purchase", 60, START - DAY),
+    event("old-user", "legacy", "legacy-renewal", "renewal", 20, START + 3000),
+    event("old-user", "fresh", "fresh", "initial_purchase", 40),
+    event("native-user", "native", "native", "initial_purchase", 30),
+    event("past", "past", "past", "initial_purchase", 100),
+    event("sandbox", "sandbox", "sandbox", "initial_purchase", 100),
+  ]);
+  const report = pokyPaywallMigrationExperiment(input, START + DAY);
+  assert.equal(report.variants[0].users, 1);
+  assert.equal(report.variants[0].paid, 1);
+  assert.equal(report.variants[0].proceeds, 40);
+  assert.equal(report.variants[1].users, 1);
+  assert.equal(report.variants[1].proceeds, 30);
+  assert.equal(report.languageComparisons?.find((row) => row.language === "fr")?.variants[1].proceeds, 30);
+  assert.equal(report.languageVariants?.fr?.[1].proceeds, 30);
+  assert.equal(report.randomized, true);
 });
 
-test("one comparison card renders all three language APPUs and an empty arm honestly", () => {
-  const result = pokyPaywallMigrationExperiment(facts([install("a", "es", "1.1.1")], [event("a", 20)]), start + 3 * DAY);
-  const markup = renderToStaticMarkup(createElement(AppExperimentCard, { experiment: result, topCountries: ["US"] }));
-  assert.match(markup, /Spanish total APPU/);
-  assert.match(markup, /English total APPU/);
-  assert.match(markup, /German total APPU/);
-  assert.match(markup, /Superwall vs native/);
-  assert.equal(result.randomized, false);
-  assert.match(result.planningNote!, /Historical cohorts, not randomized/);
-  assert.match(markup, /Planning pending/);
-  assert.match(markup, /—/);
+test("trial renewal and refund follow a new original purchase, with one paid user", () => {
+  const input = facts([["payer", assignment("superwall")], ["nonpayer", assignment("superwall")]], [
+    event("payer", "new", "new", "initial_purchase", 0),
+    event("payer", "new", "renewal", "renewal", 20, START + 3 * DAY),
+    event("payer", "new", "renewal", "renewal", 20, START + 3 * DAY),
+    event("payer", "new", "refund", "refund", -5, START + 4 * DAY, true),
+    event("payer", "old", "old-renewal", "renewal", 99, START + 5 * DAY),
+  ]);
+  const report = pokyPaywallMigrationExperiment(input, START + 7 * DAY);
+  assert.equal(report.variants[0].users, 2);
+  assert.equal(report.variants[0].paid, 1);
+  assert.equal(report.variants[0].proceeds, 15);
 });
 
-test("expanded legacy baseline includes older installs and revenue without expanding native cohort", () => {
-  const input = { ...facts([
-    { ...install("old", "es", "1.1.1"), installedAt: start - 20 * DAY },
-    { ...install("too-old", "en", "1.1.1"), installedAt: start - 31 * DAY },
-    { ...install("early-native"), installedAt: start - DAY },
-    install("new-native"),
-  ], [event("old", 200, -19), event("old", 20, 1, "renewal", "renewal"), event("new-native", 10), event("early-native", 100)]), legacyStartMs: start - 30 * DAY };
-  const report = pokyPaywallMigrationExperiment(input, start + 3 * DAY);
-  assert.equal(report.variants[0].installs, 1);
-  assert.equal(report.variants[0].proceeds, 220);
-  assert.equal(report.languageComparisons![0].variants[0].proceeds, 220);
-  assert.equal(report.variants[1].installs, 1);
-  assert.equal(report.variants[1].proceeds, 10);
+test("date picker filters assignment cohort while following eligible revenue to date", () => {
+  const input = facts([
+    ["one", assignment("native", START + 1000)],
+    ["two", assignment("native", START + 2 * DAY)],
+  ], [
+    event("one", "one", "one", "initial_purchase", 10),
+    event("one", "one", "later", "renewal", 5, START + 5 * DAY),
+    event("two", "two", "two", "initial_purchase", 100, START + 3 * DAY),
+  ], START, START + DAY);
+  const report = pokyPaywallMigrationExperiment(input, START + 6 * DAY);
+  assert.equal(report.variants[1].users, 1);
+  assert.equal(report.variants[1].proceeds, 15);
+});
+
+test("malformed, future and missing assignments are excluded; card labels the assigned cohort", () => {
+  const input = facts([
+    ["good", assignment("native")],
+    ["future", assignment("native", START + 5 * DAY)],
+    ["bad", "not-json"],
+  ]);
+  const report = pokyPaywallMigrationExperiment(input, START + DAY);
+  assert.equal(report.variants[1].users, 1);
+  const markup = renderToStaticMarkup(createElement(AppExperimentCard, { experiment: report, topCountries: [] }));
+  assert.match(markup, /Assigned → paid/);
+  assert.match(markup, /French APPU/);
+  assert.doesNotMatch(markup, /Historical cohorts/);
+  assert.doesNotMatch(markup, /<th[^>]*>Installs<\/th>/);
 });
