@@ -737,10 +737,11 @@ async function fetchSessionStarts(app: SuperwallAppConfig, fromMs: number, toMs:
 SELECT
   appUserId,
   upper(ifNull(nullIf(JSONExtractString(headers, 'Cf-Ipcountry'), ''), 'unknown')) AS country,
-  count() AS sessions
+  uniqExact(id) AS sessions
 FROM sw.events_rep
 WHERE applicationId = ${app.applicationId}
   AND isSandbox = 0
+  AND isDeleted = 0
   AND name = 'session_start'
   AND ts >= toDateTime64('${winStart}', 6, 'UTC')
   AND ts < toDateTime64('${winEnd}', 6, 'UTC')
@@ -1067,7 +1068,7 @@ function pokyAppExperienceExperiment(facts: AppFacts): MobileAppExperiment {
   return {
     ...current,
     randomized: false,
-    planningNote: "Original includes a fixed 30-day baseline before the AI Chat split plus newly assigned Original users. Sessions per day divide total sessions by each paying user's observed days since install, summed across both windows. Historical outcomes stop at the split; new 90/10 and earlier 50/50 assignments keep their original labels. The combined comparison is observational, so a winner is not a causal A/B result.",
+    planningNote: "Original includes a fixed 30-day baseline before the AI Chat split plus newly assigned Original users. Sessions per day is unique session starts divided by total calendar days since install in each measurement window, summed across paying users. It includes sessions before payment and past payers. Historical outcomes stop at the split; new 90/10 and earlier 50/50 assignments keep their original labels. The cohorts have different ages, so this comparison cannot establish an AI Chat winner.",
   };
 }
 
