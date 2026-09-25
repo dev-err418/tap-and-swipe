@@ -173,8 +173,7 @@ const DAY_MS = 86_400_000;
 
 const POKY_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/5e/46/3f/5e463fde-45e6-7fdc-ce5a-bb5b73af405d/AppIcon-0-0-1x_U007ephone-0-1-sRGB-85-220.png/512x512bb.jpg";
-const VERSY_ICON_URL =
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/a6/20/46/a6204617-8071-fad1-c8b2-fb6dc8ea300b/AppIcon-0-0-1x_U007ephone-0-1-85-220.png/512x512bb.jpg";
+const VERSY_ICON_URL = "/community-icons/versy.png";
 const GLOW_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/19/20/0e/19200e98-f11f-8ab4-850a-81a2a45122e0/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg";
 
@@ -272,10 +271,15 @@ const analyticsInflight = new Map<string, Promise<MobileAppAnalytics>>();
 let activeQueries = 0;
 const queryWaiters: Array<() => void> = [];
 
-export async function getMobileAppById(period: Period, id: MobileAppAnalytics["id"]) {
-  if (id === "poky") return getPokyAnalytics(period, true);
-  if (id === "glow") return getGlowAnalytics(period, true);
-  return getVersyAnalytics(period, true);
+export async function getMobileAppById(
+  period: Period,
+  id: MobileAppAnalytics["id"],
+  options?: { sessions?: boolean },
+) {
+  const sessions = options?.sessions !== false;
+  if (id === "poky") return getPokyAnalytics(period, true, sessions);
+  if (id === "glow") return getGlowAnalytics(period, true, sessions);
+  return getVersyAnalytics(period, true, sessions);
 }
 
 export async function getMobileAppAnalytics(period: Period) {
@@ -294,7 +298,7 @@ export async function getMobileAppAnalytics(period: Period) {
   });
 }
 
-async function getGlowAnalytics(period: Period, includeCountries = false): Promise<MobileAppAnalytics> {
+async function getGlowAnalytics(period: Period, includeCountries = false, sessions = true): Promise<MobileAppAnalytics> {
   const apiKey = process.env.SUPERWALL_GLOW_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_GLOW_API_KEY is not configured");
 
@@ -309,10 +313,11 @@ async function getGlowAnalytics(period: Period, includeCountries = false): Promi
       apiKey,
     },
     includeCountries,
+    sessions,
   );
 }
 
-async function getPokyAnalytics(period: Period, includeCountries = false): Promise<MobileAppAnalytics> {
+async function getPokyAnalytics(period: Period, includeCountries = false, sessions = true): Promise<MobileAppAnalytics> {
   const apiKey = process.env.SUPERWALL_POKY_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_POKY_API_KEY is not configured");
 
@@ -327,10 +332,11 @@ async function getPokyAnalytics(period: Period, includeCountries = false): Promi
       apiKey,
     },
     includeCountries,
+    sessions,
   );
 }
 
-async function getVersyAnalytics(period: Period, includeCountries = false): Promise<MobileAppAnalytics> {
+async function getVersyAnalytics(period: Period, includeCountries = false, sessions = true): Promise<MobileAppAnalytics> {
   const apiKey = process.env.SUPERWALL_VERSY_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_VERSY_API_KEY is not configured");
 
@@ -345,6 +351,7 @@ async function getVersyAnalytics(period: Period, includeCountries = false): Prom
       apiKey,
     },
     includeCountries,
+    sessions,
   );
 }
 
@@ -352,14 +359,15 @@ async function getSuperwallAppAnalytics(
   period: Period,
   app: SuperwallAppConfig,
   includeCountries = false,
+  sessions = true,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}`;
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}`;
   const hit = analyticsCache.get(cacheKey);
   if (hit && hit.expiresAt > Date.now()) return hit.value;
   const pending = analyticsInflight.get(cacheKey);
   if (pending) return pending;
 
-  const promise = loadSuperwallAppAnalytics(period, app, includeCountries).then(
+  const promise = loadSuperwallAppAnalytics(period, app, includeCountries, sessions).then(
     (value) => {
       analyticsCache.set(cacheKey, { expiresAt: Date.now() + ANALYTICS_CACHE_MS, value });
       analyticsInflight.delete(cacheKey);
@@ -378,6 +386,7 @@ async function loadSuperwallAppAnalytics(
   period: Period,
   app: SuperwallAppConfig,
   includeCountries: boolean,
+  sessions: boolean,
 ): Promise<MobileAppAnalytics> {
   const { since, before } = periodRange(period);
   const bucketExpression = superwallBucketExpression(period);
@@ -440,7 +449,7 @@ async function loadSuperwallAppAnalytics(
       app.organizationId,
       app.apiKey,
     ),
-    includeCountries ? loadAppFacts(app, start, end, startMs, endMs) : Promise.resolve(null),
+    includeCountries ? loadAppFacts(app, start, end, startMs, endMs, sessions) : Promise.resolve(null),
     includeCountries && (app.id === "glow" || app.id === "poky")
       ? loadNativePaywalls(
           <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
@@ -532,6 +541,7 @@ async function loadAppFacts(
   end: string,
   startMs: number,
   endMs: number,
+  includeSessions: boolean,
 ): Promise<AppFacts> {
   const keys = attributeKeysFor(app.id);
   const hasMigrationHistory = app.id === "poky" || app.id === "glow";
@@ -543,8 +553,8 @@ async function loadAppFacts(
     fetchInstallCohort(app, fetchStart, end),
     keys.length ? fetchUserAttributes(app, keys) : Promise.resolve([]),
     fetchAttributedEvents(app, fetchStart),
-    app.id === "poky" ? fetchSessionStarts(app, sessionRange.from, sessionRange.to) : Promise.resolve([]),
-    app.id === "poky" ? fetchSessionStarts(
+    app.id === "poky" && includeSessions ? fetchSessionStarts(app, sessionRange.from, sessionRange.to) : Promise.resolve([]),
+    app.id === "poky" && includeSessions ? fetchSessionStarts(
       app,
       POKY_EXPERIMENT_START_MS - 30 * DAY_MS,
       POKY_EXPERIMENT_START_MS,
@@ -579,8 +589,8 @@ async function loadAppFacts(
     sessionDays: sessionRange.days,
     sessionFromMs: sessionRange.from,
     sessionToMs: sessionRange.to,
-    sessionDataAvailable: sessionResult.status === "fulfilled",
-    historicalSessionDataAvailable: historicalSessionResult.status === "fulfilled",
+    sessionDataAvailable: includeSessions && sessionResult.status === "fulfilled",
+    historicalSessionDataAvailable: includeSessions && historicalSessionResult.status === "fulfilled",
     historicalExperienceSessions: historicalSessionResult.status === "fulfilled" ? historicalSessionResult.value : [],
     installs: installResult.value.filter((row) => row.installedAt >= startMs),
     attributes: attributeMap(attributeResult.value),

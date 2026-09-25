@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
 import AppCountryBreakdown from "@/components/analytics/AppCountryBreakdown";
 import AppConversionBreakdown from "@/components/analytics/AppConversionBreakdown";
@@ -14,6 +14,9 @@ import type {
 import AppExperimentCard from "@/components/analytics/AppExperimentCard";
 import AppExperimentMap from "@/components/analytics/AppExperimentMap";
 import TrialCancelChart from "@/components/analytics/TrialCancelChart";
+import GlowProductPanel from "@/components/analytics/GlowProductPanel";
+import type { GlowProductReport } from "@/lib/glow-product-analytics";
+import type { GlowProductPeriod } from "@/lib/glow-product-queries";
 import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
 import AppNotesChart from "@/components/analytics/AppNotesChart";
@@ -40,8 +43,16 @@ const ANALYTICS_TABS: { id: AnalyticsTab; label: string }[] = [
   { id: "paywalls", label: "Paywalls" },
 ];
 
+type MonthExperimentBundle = {
+  experiments: MobileAppExperiment[];
+  countries: MobileAppCountryRow[];
+  nativePaywalls: NativePaywallReport | null;
+  journalPractice: JournalPracticeReport | null;
+};
+
 export default function AppOverviewPanel({
   appId,
+  period = "week",
   installs,
   proceeds,
   windowLabel,
@@ -57,8 +68,10 @@ export default function AppOverviewPanel({
   nativePaywalls = null,
   journalPractice = null,
   userJourney = null,
+  deferExperiments = false,
 }: {
   appId: "glow" | "poky" | "versy";
+  period?: GlowProductPeriod;
   installs: number;
   proceeds: number;
   windowLabel: string;
@@ -74,8 +87,50 @@ export default function AppOverviewPanel({
   nativePaywalls?: NativePaywallReport | null;
   journalPractice?: JournalPracticeReport | null;
   userJourney?: UserJourneyReport | null;
+  deferExperiments?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
+  const [monthBundle, setMonthBundle] = useState<{ appId: string; bundle: MonthExperimentBundle } | null>(null);
+  const [monthFailedAppId, setMonthFailedAppId] = useState<string | null>(null);
+  const [glowProduct, setGlowProduct] = useState<{ period: GlowProductPeriod; report: GlowProductReport } | null>(null);
+  const [glowProductFailedPeriod, setGlowProductFailedPeriod] = useState<GlowProductPeriod | null>(null);
+  useEffect(() => {
+    if (appId !== "glow") return;
+    const controller = new AbortController();
+    fetch(`/api/analytics/glow-product?period=${period}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Glow product analytics failed to load");
+        return response.json() as Promise<GlowProductReport>;
+      })
+      .then((report) => setGlowProduct({ period, report }))
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setGlowProductFailedPeriod(period);
+      });
+    return () => controller.abort();
+  }, [appId, period]);
+  useEffect(() => {
+    if (!deferExperiments) return;
+    const controller = new AbortController();
+    fetch(`/api/analytics/mobile-app?appId=${appId}&period=month`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("App experiments failed to load");
+        return response.json() as Promise<MonthExperimentBundle>;
+      })
+      .then((bundle) => setMonthBundle({ appId, bundle }))
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setMonthFailedAppId(appId);
+      });
+    return () => controller.abort();
+  }, [appId, deferExperiments]);
+  const loadedBundle = monthBundle?.appId === appId ? monthBundle.bundle : null;
+  const monthFailed = monthFailedAppId === appId;
+  const resolvedExperiments = deferExperiments ? loadedBundle?.experiments ?? experiments : experiments;
+  const resolvedPaywalls = deferExperiments ? loadedBundle?.nativePaywalls ?? nativePaywalls : nativePaywalls;
+  const resolvedJournal = deferExperiments ? loadedBundle?.journalPractice ?? journalPractice : journalPractice;
+  const resolvedExperimentCountries = deferExperiments ? loadedBundle?.countries ?? experimentCountries : experimentCountries;
+  const experimentsLoading = deferExperiments && !loadedBundle && !monthFailed;
   const cohort = dataCountries.reduce((total, row) => ({
     installs: total.installs + row.installs,
     proceeds: total.proceeds + row.proceeds,
@@ -85,7 +140,7 @@ export default function AppOverviewPanel({
   const installToPaid = cohort.installs > 0 ? cohort.paid / cohort.installs : null;
   const showPlans = plans.some((row) => row.yearlySubs + row.weeklySubs > 0);
   const showRetention = retention.some((row) => row.overall.d1.eligible > 0);
-  const topCountries = experimentCountries
+  const topCountries = resolvedExperimentCountries
     .map((row) => row.country)
     .filter((country) => country !== "unknown")
     .slice(0, 5);
@@ -142,6 +197,10 @@ export default function AppOverviewPanel({
         >
           <UserJourneyFunnel report={userJourney} windowLabel={windowLabel} />
           {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
+          {appId === "glow" ? glowProduct?.period === period
+            ? <GlowProductPanel report={glowProduct.report} />
+            : <div role="status" className="px-4 py-6 text-sm text-muted-foreground">{glowProductFailedPeriod === period ? "Glow product analytics could not be loaded." : "Loading Glow product analytics…"}</div>
+            : null}
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">
             <AppCountryBreakdown countries={dataCountries} />
             <AppConversionBreakdown countries={dataCountries} conversion="paid" />
@@ -166,15 +225,17 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-experiments"
           className="space-y-4"
         >
-          <AppExperimentMap appId={appId} experiments={experiments} nativePaywalls={nativePaywalls} journalPractice={journalPractice} />
-          {appId === "glow" && <JournalPracticePanel report={journalPractice} />}
-          {experiments.length > 0 ? experiments.map((experiment) => (
-            <AppExperimentCard
-              key={experiment.id}
-              experiment={experiment}
-              topCountries={topCountries}
-            />
-          )) : <TabEmptyState>No AB test data yet.</TabEmptyState>}
+          {experimentsLoading ? <TabEmptyState>Loading the last 30 days of A/B tests…</TabEmptyState> : monthFailed ? <TabEmptyState>A/B tests could not be loaded.</TabEmptyState> : <>
+            <AppExperimentMap appId={appId} experiments={resolvedExperiments} nativePaywalls={resolvedPaywalls ?? null} journalPractice={resolvedJournal ?? null} />
+            {appId === "glow" && <JournalPracticePanel report={resolvedJournal ?? null} />}
+            {resolvedExperiments.length > 0 ? resolvedExperiments.map((experiment) => (
+              <AppExperimentCard
+                key={experiment.id}
+                experiment={experiment}
+                topCountries={topCountries}
+              />
+            )) : <TabEmptyState>No AB test data yet.</TabEmptyState>}
+          </>}
         </div>
       ) : null}
 
@@ -185,8 +246,8 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-paywalls"
           className="min-w-0"
         >
-          {appId === "glow" || appId === "poky"
-            ? <NativePaywallsPanel appId={appId} report={nativePaywalls} />
+          {experimentsLoading ? <TabEmptyState>Loading paywalls…</TabEmptyState> : monthFailed ? <TabEmptyState>Paywalls could not be loaded.</TabEmptyState> : appId === "glow" || appId === "poky"
+            ? <NativePaywallsPanel appId={appId} report={resolvedPaywalls ?? null} />
             : <TabEmptyState>No paywall data yet.</TabEmptyState>}
         </div>
       ) : null}

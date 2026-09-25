@@ -5,7 +5,7 @@ const ALL_APPS = [
   { slug: "glp-1", name: "GLP-1", tagline: "Shot Tracker & Weight Journey", icon: "/community-icons/glp-1.png" },
   { slug: "divvy", name: "Divvy", tagline: "Bill Splitter & Tip Calculator", icon: "/community-icons/divvy.jpg" },
   { slug: "netpay", name: "NetPay", tagline: "Salary & Tax Calculator", icon: "/community-icons/netpay.jpg" },
-  { slug: "versy", name: "Versy", tagline: "Verse of the Day", icon: "/community-icons/versy.jpg" },
+  { slug: "versy", name: "Versy", tagline: "Verse of the Day", icon: "/community-icons/versy.png" },
   { slug: "lua", name: "Bump Chat", tagline: "Pregnancy Tracker & Kick Counter", icon: "/community-icons/bump-chat.jpg" },
   { slug: "glow", name: "Glow", tagline: "Daily Affirmations", icon: "/community-icons/glow.jpg" },
   { slug: "notify", name: "Notify", tagline: "Personal Push Webhook", icon: "/community-icons/notify.webp" },

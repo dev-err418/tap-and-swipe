@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Tap & Swipe",
-    images: [{ url: "/community-icons/versy.jpg", width: 512, height: 512 }],
+    images: [{ url: "/community-icons/versy.png", width: 1024, height: 1024 }],
   },
   twitter: {
     card: "summary",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     title: "Versy — Bible Verse Widget & Prayer",
     description:
       "Wake up to God's Word. Daily Bible verses, prayers, and devotionals on your lock screen and home screen. Download Versy on the App Store.",
-    images: ["/community-icons/versy.jpg"],
+    images: ["/community-icons/versy.png"],
   },
   alternates: {
     canonical: "/versy",
@@ -104,7 +104,7 @@ export default function VersyPage() {
         name="Versy"
         tagline="Daily Quote Lock Screen Widget"
         description="Versy puts scripture right on your phone. Add a widget to your lock screen or home screen and you'll see a new Bible verse every time you pick up your device. There are animated, light, dark, and seasonal themes so it looks the way you want. Set morning reminders to build a daily devotional streak, keep a prayer journal, and share scripture images with friends and family on social media."
-        iconUrl="/community-icons/versy.jpg"
+        iconUrl="/community-icons/versy.png"
         appStoreUrl="https://apps.apple.com/app/id6756516842"
         rating={4.7}
         ratingCount={411}

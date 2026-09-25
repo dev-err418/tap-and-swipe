@@ -131,7 +131,7 @@ function JourneyVariant({ variant }: { variant: UserJourneyVariantResult }) {
                     style={{ height: `${height}%`, backgroundColor: steep ? DROP_COLOR : undefined }}
                   />
                 </span>
-                <span className="pt-1.5 text-center text-[11px] leading-tight text-black/80">{step.label}</span>
+                <span className="block w-full min-w-0 truncate pt-1.5 text-center text-[11px] text-black/80">{step.label}</span>
                 <span className="text-center text-[11px] tabular-nums text-muted-foreground">{step.users.toLocaleString("en-US")}</span>
               </li>
             );

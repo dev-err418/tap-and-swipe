@@ -119,7 +119,7 @@ export async function getAppSprintFunnelAnalytics(period?: string) {
 
   try {
     const response = await fetch(`${baseUrl}/api/internal/marketing-funnel${query}`, {
-      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
       headers: secret ? { Authorization: `Bearer ${secret}` } : undefined,
     });
 

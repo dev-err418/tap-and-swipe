@@ -70,7 +70,7 @@ export async function getPostbackFunnelAnalytics(period?: string) {
     const response = await fetch(
       `${baseUrl}/api/internal/marketing-funnel${query}`,
       {
-        cache: "no-store",
+        signal: AbortSignal.timeout(8_000),
         headers: secret ? { Authorization: `Bearer ${secret}` } : undefined,
       },
     );

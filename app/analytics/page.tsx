@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -19,7 +20,17 @@ import {
 } from "@/lib/mobile-app-analytics";
 import AppOverviewPanel from "@/components/analytics/AppOverviewPanel";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
+import { AppDirectorySkeleton, WebsiteDirectorySkeleton, AnalyticsDirectorySkeleton } from "@/components/analytics/AnalyticsDirectorySkeleton";
+import { AnalyticsDetailSkeleton } from "@/components/analytics/AnalyticsDetailSkeleton";
 import DeadProjectsDisclosure from "@/components/analytics/DeadProjectsDisclosure";
+import {
+  formatCompactRevenue,
+  ProjectExperimentBadge,
+  WebsiteFavicon,
+  WebsiteMiniChart,
+  WebsiteSummaryCard,
+  type WebsiteTrendPoint,
+} from "@/components/analytics/website-summary-card";
 import { DASHBOARD_SURFACE_CLASS } from "@/components/analytics/dashboard-surface";
 import AppSprintFunnelPanel from "@/components/analytics/AppSprintFunnelPanel";
 import LicensesModal from "@/components/aso-debug/LicensesModal";
@@ -67,12 +78,6 @@ const APP_DAY_FORMATTER = new Intl.DateTimeFormat("en-US", {
 type WebsiteMetricsRow = {
   visitors: number;
   revenue_cents: number;
-};
-
-type WebsiteTrendPoint = {
-  bucket: Date;
-  visitors: number;
-  revenue: number;
 };
 
 function normalizeTab(value: string | undefined): Tab {
@@ -123,16 +128,33 @@ export default async function AnalyticsPage({
       ? params.site
       : null;
 
+  const viewKey = detailApp ? `app:${detailApp}` : detailSite ? `site:${detailSite}` : "directory";
+
   return (
     <main className="min-h-screen px-4 py-6 text-black sm:px-6 sm:py-8">
       <div className="mx-auto max-w-6xl">
-        {detailApp ? (
-          <AppDetail period={period} appId={detailApp} />
-        ) : detailSite ? (
-          <WebsiteDetail period={period} site={detailSite} />
-        ) : (
-          <WebsiteDirectory period={period} />
-        )}
+        <Suspense key={`${viewKey}:${period}`} fallback={
+          detailApp ? (
+            <AnalyticsDetailSkeleton period={period} app={detailApp} />
+          ) : detailSite ? (
+            <AnalyticsDetailSkeleton period={period} site={detailSite} />
+          ) : (
+            <div className="space-y-12">
+              <div className="flex justify-end">
+                <AnalyticsPeriodSelect period={period} />
+              </div>
+              <AnalyticsDirectorySkeleton periodLabel={PERIOD_SUMMARY_LABELS[period]} />
+            </div>
+          )
+        }>
+          {detailApp ? (
+            <AppDetail period={period} appId={detailApp} />
+          ) : detailSite ? (
+            <WebsiteDetail period={period} site={detailSite} />
+          ) : (
+            <WebsiteDirectory period={period} />
+          )}
+        </Suspense>
       </div>
       <Link
         href="/analytics?tab=appsprint"
@@ -146,99 +168,92 @@ export default async function AnalyticsPage({
   );
 }
 
-async function WebsiteDirectory({
+function WebsiteDirectory({
   period,
 }: {
   period: Period;
 }) {
-  const [appSprintAnalytics, postbackAnalytics, grewItAnalytics, communityAnalytics, mobileApps] = await Promise.all([
+  return (
+    <div className="space-y-12">
+      <div className="flex justify-end">
+        <AnalyticsPeriodSelect period={period} />
+      </div>
+      <Suspense fallback={<AppDirectorySkeleton periodLabel={PERIOD_SUMMARY_LABELS[period]} />}>
+        <AppDirectory period={period} />
+      </Suspense>
+      <Suspense fallback={<WebsiteDirectorySkeleton periodLabel={PERIOD_SUMMARY_LABELS[period]} />}>
+        <LiveWebsiteDirectory period={period} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function AppDirectory({ period }: { period: Period }) {
+  const liveApps = await getMobileAppAnalytics(period);
+  if (liveApps.length === 0) return null;
+  const appDownloads = liveApps.reduce((sum, app) => sum + app.downloads, 0);
+  const appRevenueCents = liveApps.reduce((sum, app) => sum + app.revenueCents, 0);
+  const periodLabel = PERIOD_SUMMARY_LABELS[period];
+
+  return (
+    <section className="space-y-6">
+      <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+        Hey Arthur, you got{" "}
+        <strong className="font-semibold text-black">{formatNumber(appDownloads)} downloads</strong>
+        {" "}and{" "}
+        <strong className="font-semibold text-black">{formatRevenue(appRevenueCents)}</strong>
+        {" "}proceeds {periodLabel}.
+      </p>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {liveApps.map((app) => (
+          <MobileAppCard key={app.id} app={app} period={period} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+async function LiveWebsiteDirectory({ period }: { period: Period }) {
+  const [appSprintAnalytics, communityAnalytics] = await Promise.all([
     getAppSprintFunnelAnalytics(period),
-    getPostbackFunnelAnalytics(period),
-    getGrewItFunnelAnalytics(period),
     getCommunityFunnelAnalytics(period),
-    getMobileAppAnalytics(period),
   ]);
-  const liveApps = mobileApps;
   const liveWebsites = [
     appSprintAnalytics
       ? websiteData("appsprint", "appsprint.app", appSprintAnalytics)
       : null,
     websiteData("community", "community", communityAnalytics),
   ].filter((website) => website !== null);
-  const deadWebsites = [
-    postbackAnalytics
-      ? websiteData("postback", "postback.sh", postbackAnalytics)
-      : null,
-    grewItAnalytics
-      ? websiteData("grewit", "grewit.app", grewItAnalytics)
-      : null,
-  ].filter((website) => website !== null);
-
-  const appDownloads = liveApps.reduce((sum, app) => sum + app.downloads, 0);
-  const appRevenueCents = liveApps.reduce((sum, app) => sum + app.revenueCents, 0);
   const websiteVisitors = liveWebsites.reduce((sum, website) => sum + website.metrics.visitors, 0);
   const websiteRevenueCents = liveWebsites.reduce((sum, website) => sum + website.metrics.revenue_cents, 0);
   const periodLabel = PERIOD_SUMMARY_LABELS[period];
 
   return (
-    <div className="space-y-12">
-      {liveApps.length > 0 ? (
-        <section className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
-            <p className="min-w-0 text-lg text-black/55 sm:text-xl">
-              Hey Arthur, you got{" "}
-              <strong className="font-semibold text-black">{formatNumber(appDownloads)} downloads</strong>
-              {" "}and{" "}
-              <strong className="font-semibold text-black">{formatRevenue(appRevenueCents)}</strong>
-              {" "}proceeds {periodLabel}.
-            </p>
-            <AnalyticsPeriodSelect period={period} />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {liveApps.map((app) => (
-              <MobileAppCard key={app.id} app={app} period={period} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          {liveWebsites.length > 0 ? (
-            <p className="min-w-0 text-lg text-black/55 sm:text-xl">
-              Hey Arthur, you got{" "}
-              <strong className="font-semibold text-black">{formatNumber(websiteVisitors)} visitors</strong>
-              {" "}and made{" "}
-              <strong className="font-semibold text-black">{formatRevenue(websiteRevenueCents)}</strong>{" "}
-              {periodLabel}.
-            </p>
-          ) : (
-            <p className="text-lg text-black/55 sm:text-xl">Website analytics could not be loaded.</p>
-          )}
-          {liveApps.length === 0 ? <AnalyticsPeriodSelect period={period} /> : null}
+    <section className="space-y-6">
+      {liveWebsites.length > 0 ? (
+        <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+          Hey Arthur, you got{" "}
+          <strong className="font-semibold text-black">{formatNumber(websiteVisitors)} visitors</strong>
+          {" "}and made{" "}
+          <strong className="font-semibold text-black">{formatRevenue(websiteRevenueCents)}</strong>{" "}
+          {periodLabel}.
+        </p>
+      ) : (
+        <p className="text-lg text-black/55 sm:text-xl">Website analytics could not be loaded.</p>
+      )}
+      {liveWebsites.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {liveWebsites.map((website) => (
+            <WebsiteSummaryCard key={website.site} period={period} {...website} />
+          ))}
         </div>
-        {liveWebsites.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {liveWebsites.map((website) => (
-              <WebsiteCard key={website.site} period={period} {...website} />
-            ))}
-          </div>
-        ) : (
-          <div className={`px-6 py-14 text-center text-sm text-black/45 ${DASHBOARD_SURFACE_CLASS}`}>
-            Check the AppSprint, Postback, and Grew It analytics endpoints and database configuration.
-          </div>
-        )}
-        {deadWebsites.length > 0 ? (
-          <DeadProjectsDisclosure>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {deadWebsites.map((website) => (
-                <WebsiteCard key={website.site} period={period} {...website} />
-              ))}
-            </div>
-          </DeadProjectsDisclosure>
-        ) : null}
-      </section>
-    </div>
+      ) : (
+        <div className={`px-6 py-14 text-center text-sm text-black/45 ${DASHBOARD_SURFACE_CLASS}`}>
+          Check the AppSprint and community analytics endpoints and database configuration.
+        </div>
+      )}
+      <DeadProjectsDisclosure period={period} />
+    </section>
   );
 }
 
@@ -274,49 +289,6 @@ function activeWebsiteABTestCount(analytics: AppSprintFunnelAnalytics) {
     analytics.trialExperiment,
     analytics.onboardingExperiment,
   ].filter((rows) => new Set(rows?.map((row) => row.variant) ?? []).size > 1).length;
-}
-
-function WebsiteCard({
-  period,
-  site,
-  domain,
-  metrics,
-  trend,
-  activeTests,
-}: {
-  period: Period;
-  site: WebsiteSite;
-  domain: string;
-  metrics: WebsiteMetricsRow;
-  trend: WebsiteTrendPoint[];
-  activeTests: number;
-}) {
-  const href = buildAnalyticsUrl({ period, site });
-
-  return (
-    <Link
-      href={href}
-      className={`relative block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${DASHBOARD_SURFACE_CLASS}`}
-    >
-      <div className="pointer-events-none select-none">
-        <ProjectExperimentBadge count={activeTests} />
-        <div className="flex items-center gap-3 pr-8">
-          <WebsiteFavicon domain={domain} size="small" />
-          <h2 className="truncate text-xl font-semibold tracking-tight">{domain}</h2>
-        </div>
-
-        <WebsiteMiniChart points={trend} />
-
-        <p className="text-base text-black/55">
-          <strong className="font-bold text-black">{formatCompactNumber(metrics.visitors)}</strong>{" "}
-          visitors
-          <span className="mx-2 text-black/35">•</span>
-          <strong className="font-bold text-black">{formatCompactRevenue(metrics.revenue_cents)}</strong>{" "}
-          revenue
-        </p>
-      </div>
-    </Link>
-  );
 }
 
 function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Period }) {
@@ -359,123 +331,6 @@ function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Perio
       </div>
     </Link>
   );
-}
-
-function ProjectExperimentBadge({ count }: { count: number }) {
-  if (count <= 0) return null;
-  const label = `${count} A/B ${count === 1 ? "test" : "tests"} running`;
-  return (
-    <span
-      aria-label={label}
-      title={label}
-      className="absolute top-4 right-4 inline-flex size-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold leading-none tabular-nums text-white shadow-sm ring-2 ring-white"
-    >
-      {count}
-    </span>
-  );
-}
-
-const VISITOR_CHART_COLOR = "#1d4ed8";
-const POSTBACK_ORANGE = "#f97316";
-
-function WebsiteMiniChart({
-  points,
-  ariaLabel = "Visitor trend line and revenue bars",
-}: {
-  points: WebsiteTrendPoint[];
-  ariaLabel?: string;
-}) {
-  const width = 520;
-  const height = 150;
-  const left = 8;
-  const right = width - 8;
-  const top = 14;
-  const bottom = height - 10;
-  const chartHeight = bottom - top;
-  const values = points.length > 0 ? points : [{ bucket: new Date(0), visitors: 0, revenue: 0 }];
-  const maxVisitors = Math.max(...values.map((point) => point.visitors));
-  const minVisitors = Math.min(...values.map((point) => point.visitors));
-  const maxRevenue = Math.max(...values.map((point) => point.revenue), 1);
-  const spacing = values.length > 1 ? (right - left) / (values.length - 1) : right - left;
-  const coordinates = values.map((point, index) => ({
-    x: values.length > 1 ? left + index * spacing : width / 2,
-    y:
-      maxVisitors === minVisitors
-        ? top + chartHeight * 0.42
-        : top + ((maxVisitors - point.visitors) / (maxVisitors - minVisitors)) * chartHeight * 0.72,
-  }));
-  const linePath = buildSmoothLinePath(coordinates, left, right);
-  const barWidth = Math.min(22, Math.max(6, spacing * 0.78));
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="pointer-events-none my-3 h-32 w-full overflow-visible"
-      role="img"
-      aria-label={ariaLabel}
-    >
-      <defs>
-        <linearGradient id="postback-orange-glass" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={`color-mix(in oklch, ${POSTBACK_ORANGE}, white 15%)`} />
-          <stop offset="1" stopColor={POSTBACK_ORANGE} />
-        </linearGradient>
-        <filter id="postback-orange-shadow" x="-30%" y="-15%" width="160%" height="140%">
-          <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity="0.08" />
-        </filter>
-      </defs>
-      {values.map((point, index) => {
-        if (point.revenue <= 0) return null;
-        const barHeight = Math.max(7, (point.revenue / maxRevenue) * chartHeight * 0.62);
-        const x = values.length > 1 ? left + index * spacing : width / 2;
-        return (
-          <g key={`${point.bucket.toISOString()}-conversion`} filter="url(#postback-orange-shadow)">
-            <rect
-              x={x - barWidth / 2}
-              y={bottom - barHeight}
-              width={barWidth}
-              height={barHeight}
-              rx="4"
-              fill="url(#postback-orange-glass)"
-              stroke={`color-mix(in oklch, ${POSTBACK_ORANGE}, black 10%)`}
-              strokeWidth="1"
-            />
-            <path
-              d={`M ${x - barWidth / 2 + 4} ${bottom - barHeight + 1.5} H ${x + barWidth / 2 - 4}`}
-              fill="none"
-              stroke={`color-mix(in oklch, ${POSTBACK_ORANGE}, white 30%)`}
-              strokeWidth="1"
-              strokeLinecap="round"
-            />
-          </g>
-        );
-      })}
-      <path
-        d={linePath}
-        fill="none"
-        stroke={VISITOR_CHART_COLOR}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function buildSmoothLinePath(
-  points: { x: number; y: number }[],
-  left: number,
-  right: number,
-) {
-  if (points.length === 1) return `M ${left},${points[0].y} L ${right},${points[0].y}`;
-
-  let path = `M ${points[0].x},${points[0].y}`;
-  for (let index = 0; index < points.length - 1; index += 1) {
-    const current = points[index];
-    const next = points[index + 1];
-    const controlX = (current.x + next.x) / 2;
-    path += ` C ${controlX},${current.y} ${controlX},${next.y} ${next.x},${next.y}`;
-  }
-  return path;
 }
 
 async function WebsiteDetail({
@@ -626,16 +481,10 @@ async function AppDetail({
   appId: AppId;
 }) {
   let app: MobileAppAnalytics | null = null;
-  let experimentApp: MobileAppAnalytics | null = null;
   try {
-    const appPromise = getMobileAppById(period, appId);
-    const experimentAppPromise = period === "month"
-      ? appPromise
-      : getMobileAppById("month", appId);
-    const [appResult, experimentResult] = await Promise.allSettled([appPromise, experimentAppPromise]);
-    if (appResult.status === "rejected") throw appResult.reason;
-    app = appResult.value;
-    experimentApp = experimentResult.status === "fulfilled" ? experimentResult.value : app;
+    // A/B tests stay on the 30-day window and load after this render, so they
+    // don't compete with the selected period for Superwall query slots.
+    app = await getMobileAppById(period, appId, { sessions: period === "month" });
   } catch (error) {
     const log = process.env.NODE_ENV === "development" ? console.warn : console.error;
     log("tap_and_swipe.mobile_app_detail_failed", {
@@ -715,6 +564,7 @@ async function AppDetail({
 
       <AppOverviewPanel
         appId={app.id}
+        period={period}
         installs={app.downloads}
         proceeds={proceeds}
         windowLabel={windowLabel}
@@ -722,14 +572,15 @@ async function AppDetail({
         countries={app.countries}
         dataCountries={app.dataCountries}
         cohortDataAvailable={app.cohortDataAvailable}
-        experimentCountries={experimentApp?.countries ?? app.countries}
+        experimentCountries={app.countries}
         plans={app.plans}
         retention={app.retention}
-        experiments={experimentApp?.experiments ?? app.experiments}
+        experiments={period === "month" ? app.experiments : []}
         trialCancelTiming={app.trialCancelTiming}
-        nativePaywalls={experimentApp?.nativePaywalls ?? app.nativePaywalls}
-        journalPractice={experimentApp?.journalPractice ?? app.journalPractice}
+        nativePaywalls={period === "month" ? app.nativePaywalls : null}
+        journalPractice={period === "month" ? app.journalPractice : null}
         userJourney={app.userJourney}
+        deferExperiments={period !== "month"}
       />
     </div>
   );
@@ -748,69 +599,7 @@ function dailyRate(totals: { installs: number; conversions: number } | undefined
   return totals && totals.installs > 0 ? totals.conversions / totals.installs : undefined;
 }
 
-function websiteFaviconUrl(domain: string) {
-  if (domain === "appsprint.app") return "https://appsprint.app/app-icon.png";
-  if (domain === "postback.sh") return "https://postback.sh/icon.png";
-  if (domain === "grewit.app") return "/icons/grewit.png";
-  return "/icon.png";
-}
 
-function WebsiteFavicon({
-  domain,
-  size,
-}: {
-  domain: string;
-  size: "small" | "large";
-}) {
-  const isPostback = domain === "postback.sh";
-  const sizeClass = size === "small" ? "size-6 rounded-md" : "size-10 rounded-[10px]";
-  const imageSize = size === "small" ? 24 : 40;
-
-  if (isPostback) {
-    return (
-      <span
-        className={`flex shrink-0 items-center justify-center bg-black ${sizeClass}`}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={websiteFaviconUrl(domain)}
-          alt=""
-          width={imageSize}
-          height={imageSize}
-          className="size-full invert"
-        />
-      </span>
-    );
-  }
-
-  if (domain === "community") {
-    return (
-      <span
-        className={`block shrink-0 overflow-hidden ${sizeClass}`}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={websiteFaviconUrl(domain)}
-          alt=""
-          width={imageSize}
-          height={imageSize}
-          className="size-full invert"
-        />
-      </span>
-    );
-  }
-
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={websiteFaviconUrl(domain)}
-      alt=""
-      width={imageSize}
-      height={imageSize}
-      className={`shrink-0 ${sizeClass}`}
-    />
-  );
-}
 
 function formatRevenue(cents: number) {
   return new Intl.NumberFormat("en-US", {
@@ -827,17 +616,4 @@ function formatPreciseCurrency(value: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
-}
-
-function formatCompactNumber(value: number | bigint) {
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  })
-    .format(Number(value))
-    .replace("K", "k");
-}
-
-function formatCompactRevenue(cents: number) {
-  return `$${formatCompactNumber(cents / 100)}`;
 }
