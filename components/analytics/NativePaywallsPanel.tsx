@@ -51,13 +51,14 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
 
   return <div className="space-y-4">
     {appId === "glow" && <section aria-label="Configured paywall allocation" className="space-y-2 pt-2">
-      <h2 className="px-1 text-sm font-semibold">Next-release allocation</h2>
+      <h2 className="px-1 text-sm font-semibold">Glow 1.7.2 paywall allocation</h2>
       <div className={cn(DASHBOARD_SURFACE_CLASS, "space-y-3 p-5")}>
         <div className="flex flex-wrap gap-2">
           {GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => <span key={id} className="rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-2 py-1 text-xs text-[#1d4ed8]">
             {id} <span className="ml-1 font-semibold tabular-nums">{formatPaywallAllocation(percent)}</span>
           </span>)}
         </div>
+        <p className="text-xs text-muted-foreground">English paywall views before September 27 use the yearly-only yr_59 offer and are reported separately. The five-way v3 assignment stays saved for later presentations.</p>
       </div>
     </section>}
     <section className="space-y-2 pt-2">
@@ -72,7 +73,7 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
       </div>
     </section>
     {report?.status === "unavailable" || !report ? <Empty>Paywall data could not be loaded. Refresh to retry.</Empty>
-      : !groups.length ? <Empty>No native paywall tracking yet for this cohort. Results will appear after users run the instrumented app release.</Empty>
+      : !groups.length ? <Empty>No production paywall records for this audience and date range yet.</Empty>
       : groups.map((group) => <div key={group.experiment} className="space-y-4">
         {groups.length > 1 ? <h2 className="px-1 pt-2 text-sm font-semibold">{group.name}</h2> : null}
         <NativePaywallResultsTable title={group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} />

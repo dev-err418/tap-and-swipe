@@ -34,7 +34,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
         {
-          id: GLOW_PAYWALL_EXPERIMENT.id, label: "Native paywalls", scope: "Next app release · English / fallback · Spanish · German", tone: "orange",
+          id: GLOW_PAYWALL_EXPERIMENT.id, label: "Native paywalls", scope: "Glow 1.7.2 · English / fallback · Spanish · German", tone: "orange",
           branches: GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => ({
             id,
             label: id,
@@ -42,7 +42,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           })),
         },
         {
-          id: "journal_vs_practice_v1", label: "Journal VS Practice", scope: "Home button · enabled in next app release", tone: "blue",
+          id: "journal_vs_practice_v1", label: "Journal VS Practice", scope: "Home button · Glow 1.7.2", tone: "blue",
           branches: [
             { id: "journal", label: "Journal", percent: 30 },
             { id: "practice", label: "Practice", percent: 70 },
@@ -52,7 +52,8 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       notes: [
         "Results start September 20, 2026 at 08:00 GMT+2; earlier cohorts and proceeds are excluded.",
         "V3 starts a new sticky paywall assignment on upgrade; v1/v2 results and pending purchases stay separate. Onboarding assignments are unchanged.",
-        "The $34.99 Yearly subscription must be approved before production rollout. This map shows next-release app configuration, not live rollout.",
+        "Glow 1.7.2 is live. English paywall presentations before September 27 use the yearly-only yr_59 offer under a separate legacy experiment; saved v3 assignments resume September 27 (device local time).",
+        "The split shows app configuration, not observed traffic. StoreKit determines which subscriptions are available and their displayed prices.",
       ],
     };
   }

@@ -58,8 +58,9 @@ test("Glow includes configured onboarding, paywall and Journal VS Practice assig
   const map = appExperimentMap("glow")!;
   assert.deepEqual(map.tests.map((experiment) => experiment.id), ["glow-onboarding-copy", "native_paywalls_v3", "journal_vs_practice_v1"]);
   assert.deepEqual(map.tests[2].branches.map((branch) => [branch.id, branch.percent]), [["journal", 30], ["practice", 70]]);
-  assert.match(map.tests[2].scope, /enabled in next app release/);
-  assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.detail, "Next app release");
+  assert.match(map.tests[2].scope, /Glow 1\.7\.2/);
+  assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.detail, "Glow 1.7.2");
+  assert.ok(map.notes.some((note) => note.includes("English paywall presentations before September 27 use the yearly-only yr_59")));
   assert.deepEqual(map.tests[0].branches.map((branch) => branch.percent), [50, 50]);
   assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [100 / 6, 100 / 6, 100 / 6, 25, 25]);
   for (const branch of map.tests[1].branches) {

@@ -91,7 +91,7 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
     });
     edges.push({ from: "placements", to: branch.id, label: formatPaywallAllocation(branch.percent) });
   });
-  nodes.push({ id: "home", x: 960, y: centerY, width: 140, label: "Home button", detail: "Next app release", tone: "neutral",
+  nodes.push({ id: "home", x: 960, y: centerY, width: 140, label: "Home button", detail: "Glow 1.7.2", tone: "neutral",
     statsTarget: { experimentId: journalPractice.id } });
   paywalls.branches.forEach((branch) => edges.push({ from: branch.id, to: "home" }));
   journalPractice.branches.forEach((branch, index) => {

@@ -1,6 +1,7 @@
 /**
  * Mirrors the hardcoded Glow and Poky allocations in app code.
- * Not remote app config, observed traffic, or confirmation of App Store rollout.
+ * Not remote app config or observed traffic. Glow 1.7.2 ships the v3 split,
+ * with a temporary English presentation override through September 26, 2026.
  * Historical native_yearly_v1 retains its original 50/50 allocation.
  */
 export const GLOW_PAYWALL_EXPERIMENT = {
@@ -26,6 +27,7 @@ const allocations = [
   ...GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => ({
     experiment: GLOW_PAYWALL_EXPERIMENT.id, variant: id, paywall: id, percent,
   })),
+  { experiment: "native_paywall_legacy_en_sep2026", variant: "yr_59", paywall: "yr_59", language: "en", percent: 100 },
   { experiment: "native_yearly_v1", variant: "annual", paywall: "native_timeline_annual_v1", percent: 50 },
   { experiment: "native_yearly_v1", variant: "pro_yearly", paywall: "native_timeline_pro_yearly_v1", percent: 50 },
   { experiment: "native_paywalls_v2", variant: "yr_49", paywall: "yr_49", percent: 25 },

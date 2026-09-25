@@ -27,14 +27,21 @@ test("v3 composite rows use exact equal yearly weights and readable percentage l
   assert.equal(nativePaywallAllocation("native_paywalls_v3", "yr_wk_34", "yr_wk_59"), null);
 });
 
-test("the live paywall panel shows next-release allocations even before data arrives", () => {
+test("the live paywall panel shows the released allocation and English override even before data arrives", () => {
   const markup = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "glow", report: null }));
   for (const { id } of GLOW_PAYWALL_EXPERIMENT.variants) assert.ok(markup.includes(id));
   assert.match(markup, /~17%/);
   assert.match(markup, /25%/);
   assert.doesNotMatch(markup, /166666/);
+  assert.match(markup, /Glow 1\.7\.2 paywall allocation/);
+  assert.match(markup, /English paywall views before September 27 use the yearly-only yr_59 offer/);
   const poky = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "poky", report: null }));
   assert.doesNotMatch(poky, /yr_wk_34/);
+});
+
+test("the temporary English presentation is a separate single-offer experiment", () => {
+  assert.equal(nativePaywallAllocation("native_paywall_legacy_en_sep2026", "yr_59|yr_59", "yr_59", "en"), 100);
+  assert.equal(nativePaywallAllocation("native_paywall_legacy_en_sep2026", "yr_59", "yr_59", "es"), null);
 });
 
 test("the paywall panel uses one total APPU metric without fixed-day windows", () => {
