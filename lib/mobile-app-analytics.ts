@@ -2,6 +2,8 @@ import "server-only";
 import { paidExperienceCohort } from "./paid-experience-cohort";
 import { glowMatureCountries } from "./glow-mature-countries";
 import { GLOW_SUPERWALL_HISTORY_START_MS, glowPaywallMigrationExperiment } from "./glow-paywall-migration";
+import { loadUserJourney } from "./user-journey-queries";
+import type { UserJourneyReport } from "./user-journey";
 import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
 import { loadNativePaywalls } from "./native-paywall-queries";
@@ -155,6 +157,7 @@ export type MobileAppAnalytics = {
   trialCancelTiming?: TrialCancelTiming | null;
   nativePaywalls?: NativePaywallReport | null;
   journalPractice?: JournalPracticeReport | null;
+  userJourney?: UserJourneyReport | null;
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -426,7 +429,7 @@ async function loadSuperwallAppAnalytics(
     FORMAT JSON
   `;
 
-  const [downloadResult, revenueResult, factsResult, paywallResult, journalPracticeResult] = await Promise.allSettled([
+  const [downloadResult, revenueResult, factsResult, paywallResult, journalPracticeResult, journeyResult] = await Promise.allSettled([
     querySuperwall<{ bucket: string; downloads: string | number }>(
       downloadsQuery,
       app.organizationId,
@@ -450,6 +453,15 @@ async function loadSuperwallAppAnalytics(
       : Promise.resolve(null),
     includeCountries && app.id === "glow"
       ? loadJournalPractice(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
+      : Promise.resolve(null),
+    includeCountries
+      ? loadUserJourney(
+          <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
+          app.id,
+          app.applicationId,
+          start,
+          end,
+        )
       : Promise.resolve(null),
   ]);
 
@@ -510,6 +522,7 @@ async function loadSuperwallAppAnalytics(
     nativePaywalls: paywallResult.status === "fulfilled" ? paywallResult.value : {
       status: "unavailable", asOf: Date.now(), groups: [], warnings: ["Paywall reporting is temporarily unavailable."],
     },
+    userJourney: journeyResult.status === "fulfilled" ? journeyResult.value : null,
   };
 }
 

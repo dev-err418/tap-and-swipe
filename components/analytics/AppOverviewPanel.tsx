@@ -19,6 +19,8 @@ import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown"
 import AppNotesChart from "@/components/analytics/AppNotesChart";
 import NativePaywallsPanel from "@/components/analytics/NativePaywallsPanel";
 import JournalPracticePanel from "@/components/analytics/JournalPracticePanel";
+import UserJourneyFunnel from "@/components/analytics/UserJourneyFunnel";
+import type { UserJourneyReport } from "@/lib/user-journey";
 import type { JournalPracticeReport } from "@/lib/journal-practice-analytics";
 import type { NativePaywallReport } from "@/lib/native-paywall-analytics";
 import {
@@ -54,6 +56,7 @@ export default function AppOverviewPanel({
   trialCancelTiming = null,
   nativePaywalls = null,
   journalPractice = null,
+  userJourney = null,
 }: {
   appId: "glow" | "poky" | "versy";
   installs: number;
@@ -70,6 +73,7 @@ export default function AppOverviewPanel({
   trialCancelTiming?: TrialCancelTiming | null;
   nativePaywalls?: NativePaywallReport | null;
   journalPractice?: JournalPracticeReport | null;
+  userJourney?: UserJourneyReport | null;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
   const cohort = dataCountries.reduce((total, row) => ({
@@ -136,6 +140,7 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-data"
           className="space-y-4"
         >
+          <UserJourneyFunnel report={userJourney} windowLabel={windowLabel} />
           {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">
             <AppCountryBreakdown countries={dataCountries} />

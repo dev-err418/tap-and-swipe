@@ -729,6 +729,7 @@ async function AppDetail({
         trialCancelTiming={app.trialCancelTiming}
         nativePaywalls={experimentApp?.nativePaywalls ?? app.nativePaywalls}
         journalPractice={experimentApp?.journalPractice ?? app.journalPractice}
+        userJourney={app.userJourney}
       />
     </div>
   );
