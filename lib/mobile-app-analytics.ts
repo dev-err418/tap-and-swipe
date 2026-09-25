@@ -177,6 +177,7 @@ const GLOW_ICON_URL =
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen"] as const;
 const VERSY_ATTRIBUTE_KEYS = ["onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
+  "bible_widget_widget_screen_seen",
   "onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant", "onboarding_paywall_access_variant",
   "yearly_price_experiment_id", "yearly_price_product_id",
   "paywall_configuration_experiment_id", "paywall_configuration_variant", "versy_tracking_environment"] as const;
@@ -1595,8 +1596,8 @@ function isPaidEvent(event: AttributedRow) {
 }
 
 function isOnboardingComplete(attrs: Record<string, string> | undefined) {
-  const value = attrs?.widget_screen_seen;
-  return value === "true" || value === "1";
+  return [attrs?.widget_screen_seen, attrs?.bible_widget_widget_screen_seen]
+    .some((value) => value === "true" || value === "1");
 }
 
 function inRange(value: number, startMs: number, endMs: number) {
