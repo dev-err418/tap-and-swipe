@@ -4,13 +4,17 @@ import { appAnalyticsPeriodRange } from "./app-analytics-time";
 import {
   GLOW_FEATURES,
   cancellationJourneys,
+  emptyTrialComparison,
   emptyGlowProductReport,
   featureUsage,
   journeyEvents,
   rate,
+  trialComparison,
   type GlowCancellation,
   type GlowCancellationActivity,
   type GlowProductReport,
+  type GlowTrialEvent,
+  type GlowTrialStart,
 } from "./glow-product-analytics";
 
 export type GlowProductPeriod = "day" | "yesterday" | "3days" | "week" | "month" | "all";
@@ -22,11 +26,16 @@ export type GlowUserJourneyReport = {
   windowEnd: string;
   truncated: boolean;
   latestObservedAccess: boolean | null;
+  latestObservedPhase: string | null;
   accessObservedAt: string | null;
   totals: { quoteViews: number; quoteSwipes: number; quoteLikes: number; practiceStarts: number; widgetOpens: number; notificationOpens: number };
   events: { at: string; event: string; screen: string | null; category: string | null; source: string | null;
     isPremium: boolean | null; hasWidget: boolean | null; notificationPermission: string | null;
-    selectedCategories: string[]; cancelReason: string | null }[];
+    accessPhase: string | null; feedbackReason: string | null;
+    selectedCategories: string[]; cancelReason: string | null; inferredSource: string | null;
+    result: string | null; placement: string | null; variant: string | null;
+    quoteViews: number | null; quoteSwipes: number | null; durationSeconds: number | null;
+    appVersion: string | null; appBuild: string | null }[];
   note?: string;
 };
 
@@ -36,11 +45,15 @@ const CACHE_MS = 90_000;
 const MAX_RECENT_CANCELLATIONS = 25;
 const MAX_HISTORY_ROWS = 5_000;
 const MAX_USER_EVENTS = 250;
+const MAX_TRIAL_STARTS = 300;
+const MAX_TRIAL_ACTIVITY = 15_000;
 const USER_EVENTS = [...new Set([
   ...journeyEvents(), "app_state_snapshot", "notification_permission_requested", "widget_prompt_action",
   "widget_removed_detected", "quote_reading_session", "practice_session_ended", "premium_status_changed",
   "paywall_reached", "paywall_dismissed", "paywall_purchase_attempted", "paywall_purchase_result",
   "sw_trial_cancelled", "sw_trial_expired", "sw_subscription_cancelled", "sw_subscription_start",
+  "sw_intro_offer_cancelled", "subscription_feedback_opened", "subscription_feedback_submitted",
+  "access_phase_changed",
 ])];
 const cache = new Map<string, { expiresAt: number; report: GlowProductReport }>();
 const inflight = new Map<string, Promise<GlowProductReport>>();
@@ -60,6 +73,12 @@ function timeFilter(start: Date, end: Date): string {
 function toNumber(value: unknown): number {
   const number = Number(value);
   return Number.isFinite(number) && number >= 0 ? number : 0;
+}
+
+function nullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
 }
 
 function toTimestamp(value: unknown): string {
@@ -134,7 +153,7 @@ export async function getGlowUserJourney(period: GlowProductPeriod, userId: stri
   const base: GlowUserJourneyReport = {
     status: "empty", user: createHash("sha256").update(userId).digest("hex").slice(0, 12),
     windowStart: start.toISOString(), windowEnd: end.toISOString(), truncated: false,
-    latestObservedAccess: null, accessObservedAt: null,
+    latestObservedAccess: null, latestObservedPhase: null, accessObservedAt: null,
     totals: { quoteViews: 0, quoteSwipes: 0, quoteLikes: 0, practiceStarts: 0, widgetOpens: 0, notificationOpens: 0 },
     events: [],
   };
@@ -149,12 +168,19 @@ export async function getGlowUserJourney(period: GlowProductPeriod, userId: stri
         toString(properties.screen), toString(properties.category_id), toString(properties.source),
         toString(properties.is_premium), toString(properties.has_widget),
         toString(properties.notification_permission), toString(properties.selected_categories),
-        toString(properties.cancelReason)
+        toString(properties.cancelReason), toString(properties.inferred_source),
+        toString(properties.result), toString(properties.placement), toString(properties.variant),
+        toString(properties.quote_views), toString(properties.quote_swipes),
+        toString(properties.duration_seconds), toString(properties.app_version),
+        toString(properties.app_build), toString(properties.access_phase),
+        toString(properties.reason)
       FROM events WHERE ${timeFilter(start, end)} AND distinct_id = ${sqlQuote(userId)}
         AND event IN (${USER_EVENTS.map(sqlQuote).join(", ")})
-        AND (startsWith(event, 'sw_') OR properties.app_environment = 'production')
+        AND ((startsWith(event, 'sw_') AND lower(toString(properties.environment)) = 'production')
+          OR properties.app_environment = 'production')
       ORDER BY timestamp DESC LIMIT ${MAX_USER_EVENTS + 1}`, projectId, key),
-      queryPostHog(`SELECT toString(properties.is_premium), toUnixTimestamp(timestamp)
+      queryPostHog(`SELECT toString(properties.is_premium), toUnixTimestamp(timestamp),
+          toString(properties.access_phase)
         FROM events WHERE timestamp >= toDateTime('${sqlTime(FIRST_INSTRUMENTED_DAY)}', 'UTC')
           AND timestamp < toDateTime('${sqlTime(end)}', 'UTC') AND distinct_id = ${sqlQuote(userId)}
           AND event = 'app_state_snapshot' AND properties.app_environment = 'production'
@@ -172,8 +198,15 @@ export async function getGlowUserJourney(period: GlowProductPeriod, userId: stri
       category: safeToken(row[3]), source: safeToken(row[4]), isPremium: boolOrNull(row[5]),
       hasWidget: boolOrNull(row[6]), notificationPermission: safeToken(row[7]),
       selectedCategories: safeCategories(row[8]), cancelReason: safeToken(row[9]),
+      inferredSource: safeToken(row[10]), result: safeToken(row[11]),
+      placement: safeToken(row[12]), variant: safeToken(row[13]),
+      quoteViews: nullableNumber(row[14]), quoteSwipes: nullableNumber(row[15]),
+      durationSeconds: nullableNumber(row[16]),
+      appVersion: safeToken(row[17]), appBuild: safeToken(row[18]),
+      accessPhase: safeToken(row[19]), feedbackReason: safeToken(row[20]),
     })).filter((event) => event.at);
     base.latestObservedAccess = boolOrNull(premiumSnapshots[0]?.[0]);
+    base.latestObservedPhase = safeToken(premiumSnapshots[0]?.[2]);
     base.accessObservedAt = premiumSnapshots[0]?.[1] == null ? null : toTimestamp(premiumSnapshots[0][1]);
     const totalKeys = {
       quote_viewed: "quoteViews", quote_swiped: "quoteSwipes", quote_liked: "quoteLikes",
@@ -199,7 +232,7 @@ async function loadGlowProductReport(start: Date, end: Date, projectId: string, 
   const window = timeFilter(start, end);
   const production = "properties.app_environment = 'production'";
   try {
-    const [permissions, notificationSnapshots, widgetSnapshots, widgetAdds, widgetPrompts, features, reading, favorites, screens, categories, premiumUse, recentTrialCancels, recentPaidCancels] = await Promise.all([
+    const [permissions, notificationSnapshots, widgetSnapshots, widgetAdds, widgetPrompts, features, reading, favorites, screens, categories, premiumUse, feedback, recentTrialCancels, recentPaidCancels] = await Promise.all([
       queryPostHog(`SELECT
           uniqExactIf(distinct_id, event = 'notification_permission_requested'),
           uniqExactIf(distinct_id, event = 'notification_permission_resolved'
@@ -251,17 +284,21 @@ async function loadGlowProductReport(start: Date, end: Date, projectId: string, 
           uniqExact(distinct_id)
         FROM events WHERE ${window} AND ${production} AND event = 'app_state_snapshot'
         GROUP BY 1 ORDER BY uniqExact(distinct_id) DESC LIMIT 25`, projectId, key),
-      queryPostHog(`SELECT toString(properties.is_premium), event, uniqExact(distinct_id), count()
+      queryPostHog(`SELECT toString(properties.access_phase), event, uniqExact(distinct_id), count()
         FROM events WHERE ${window} AND ${production}
           AND event IN (${GLOW_FEATURES.map((feature) => sqlQuote(feature.event)).join(", ")})
-        GROUP BY toString(properties.is_premium), event LIMIT 50`, projectId, key),
+        GROUP BY toString(properties.access_phase), event LIMIT 100`, projectId, key),
+      queryPostHog(`SELECT toString(properties.reason), uniqExact(distinct_id)
+        FROM events WHERE ${window} AND ${production}
+          AND event = 'subscription_feedback_submitted'
+        GROUP BY toString(properties.reason) LIMIT 20`, projectId, key),
       queryPostHog(`SELECT distinct_id, toUnixTimestamp(timestamp), toString(properties.cancelReason)
         FROM events WHERE ${window} AND event = 'sw_trial_cancelled'
-          AND toString(properties.environment) = 'PRODUCTION'
+          AND lower(toString(properties.environment)) = 'production'
         ORDER BY timestamp DESC LIMIT ${MAX_RECENT_CANCELLATIONS}`, projectId, key),
       queryPostHog(`SELECT distinct_id, toUnixTimestamp(timestamp), toString(properties.cancelReason)
-        FROM events WHERE ${window} AND event = 'sw_subscription_cancelled'
-          AND toString(properties.environment) = 'PRODUCTION'
+        FROM events WHERE ${window} AND event IN ('sw_subscription_cancelled', 'sw_intro_offer_cancelled')
+          AND lower(toString(properties.environment)) = 'production'
         ORDER BY timestamp DESC LIMIT ${MAX_RECENT_CANCELLATIONS}`, projectId, key),
     ]);
 
@@ -312,11 +349,25 @@ async function loadGlowProductReport(start: Date, end: Date, projectId: string, 
     }).filter((row) => /^[a-z_]{1,50}$/.test(row.screen));
     report.categories = categories.map((row) => ({ category: String(row[0] ?? ""), users: toNumber(row[1]) }))
       .filter((row) => /^[a-z0-9_-]{1,50}$/.test(row.category));
-    report.premiumUse = (["premium", "free"] as const).map((status) => ({
+    report.premiumUse = (["trial", "paid", "free", "unknown"] as const).map((status) => ({
       status,
-      features: featureUsage(premiumUse.filter((row) => String(row[0]) === (status === "premium" ? "true" : "false"))
+      features: featureUsage(premiumUse.filter((row) => {
+        const phase = String(row[0] ?? "");
+        return phase === status || (status === "unknown" && !["trial", "paid", "free"].includes(phase));
+      })
         .map((row) => ({ event: String(row[1] ?? ""), users: toNumber(row[2]), events: toNumber(row[3]) }))),
     }));
+    report.feedback = feedback.map((row) => ({ reason: String(row[0] ?? ""), users: toNumber(row[1]) }))
+      .filter((row) => ["price", "not_enough_use", "content_fit", "notifications", "widget", "technical_issue", "other"].includes(row.reason))
+      .sort((a, b) => b.users - a.users);
+    try {
+      report.trialComparison = await loadTrialComparison(start, end, projectId, key);
+    } catch (error) {
+      console.error("tap_and_swipe.glow_trial_comparison_failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      report.trialComparison = emptyTrialComparison("unavailable");
+    }
 
     const cancellations = (rows: unknown[][]): GlowCancellation[] => rows.map((row) => ({
       distinctId: String(row[0] ?? ""), timestamp: toTimestamp(row[1]), reason: String(row[2] ?? "") || null,
@@ -328,16 +379,21 @@ async function loadGlowProductReport(start: Date, end: Date, projectId: string, 
       const earliest = Math.min(...allCancellations.map((row) => Date.parse(row.timestamp)));
       const historyStart = new Date(earliest - 7 * 86_400_000);
       const ids = [...new Set(allCancellations.map((row) => row.distinctId))];
-      const history = await queryPostHog(`SELECT distinct_id, event, toUnixTimestamp(timestamp), toString(properties.screen)
+      const history = await queryPostHog(`SELECT distinct_id, event, toUnixTimestamp(timestamp),
+          toString(properties.screen), toString(properties.app_version),
+          toString(properties.reason)
         FROM events WHERE ${timeFilter(historyStart, end)}
           AND distinct_id IN (${ids.map(sqlQuote).join(", ")})
           AND event IN (${journeyEvents().map(sqlQuote).join(", ")})
-          AND (event = 'sw_trial_start' OR ${production})
+          AND ((event = 'sw_trial_start' AND lower(toString(properties.environment)) = 'production')
+            OR ${production})
         ORDER BY timestamp DESC LIMIT ${MAX_HISTORY_ROWS}`, projectId, key);
       if (history.length >= MAX_HISTORY_ROWS) throw new Error("Cancellation activity exceeded the safe query limit");
       const activity: GlowCancellationActivity[] = history.map((row) => ({
         distinctId: String(row[0] ?? ""), event: String(row[1] ?? ""),
         timestamp: toTimestamp(row[2]), screen: String(row[3] ?? "") || null,
+        appVersion: String(row[4] ?? "") || null,
+        reason: safeToken(row[5]),
       }));
       report.cancellations = cancellationJourneys(
         trialCancellations, activity,
@@ -351,6 +407,7 @@ async function loadGlowProductReport(start: Date, end: Date, projectId: string, 
     report.status = report.notifications.resolvedUsers || report.notifications.observedUsers || report.widgets.checkedUsers
       || report.features.some((feature) => feature.events > 0)
       || report.reading.sessions || report.screens.length || report.categories.length
+      || report.feedback.length || report.trialComparison.sampledStarts
       || report.cancellations.recentCount || report.paidCancellations.recentCount ? "ready" : "empty";
     return report;
   } catch (error) {
@@ -359,4 +416,34 @@ async function loadGlowProductReport(start: Date, end: Date, projectId: string, 
     });
     return emptyGlowProductReport("unavailable", start, end, "PostHog product analytics is unavailable. Refresh to retry.");
   }
+}
+
+async function loadTrialComparison(start: Date, end: Date, projectId: string, key: string) {
+  const maturityEnd = new Date(end.getTime() - 96 * 3_600_000);
+  if (maturityEnd <= start) return emptyTrialComparison();
+  const startsRows = await queryPostHog(`SELECT distinct_id, toUnixTimestamp(timestamp),
+      toString(properties.productId)
+    FROM events WHERE ${timeFilter(start, maturityEnd)} AND event = 'sw_trial_start'
+      AND lower(toString(properties.environment)) = 'production'
+    ORDER BY timestamp DESC LIMIT ${MAX_TRIAL_STARTS + 1}`, projectId, key);
+  if (startsRows.length > MAX_TRIAL_STARTS) return emptyTrialComparison("truncated");
+  const starts: GlowTrialStart[] = startsRows.map((row) => {
+    const productId = safeToken(row[2]);
+    return { distinctId: String(row[0] ?? ""), timestamp: toTimestamp(row[1]),
+      productId: productId && productId.toLowerCase() !== "none" ? productId : "unknown" };
+  }).filter((row) => row.distinctId && row.timestamp);
+  if (!starts.length) return emptyTrialComparison();
+  const ids = [...new Set(starts.map((row) => row.distinctId))];
+  const earliest = new Date(Math.min(...starts.map((row) => Date.parse(row.timestamp))));
+  const activityRows = await queryPostHog(`SELECT distinct_id, event, toUnixTimestamp(timestamp)
+    FROM events WHERE ${timeFilter(earliest, end)} AND distinct_id IN (${ids.map(sqlQuote).join(", ")})
+      AND event IN ('sw_trial_cancelled', ${GLOW_FEATURES.map((feature) => sqlQuote(feature.event)).join(", ")})
+      AND ((event = 'sw_trial_cancelled' AND lower(toString(properties.environment)) = 'production')
+        OR properties.app_environment = 'production')
+    ORDER BY timestamp DESC LIMIT ${MAX_TRIAL_ACTIVITY + 1}`, projectId, key);
+  if (activityRows.length > MAX_TRIAL_ACTIVITY) return emptyTrialComparison("truncated");
+  const activity: GlowTrialEvent[] = activityRows.map((row) => ({
+    distinctId: String(row[0] ?? ""), event: String(row[1] ?? ""), timestamp: toTimestamp(row[2]),
+  })).filter((row) => row.distinctId && row.timestamp);
+  return trialComparison(starts, activity, end);
 }

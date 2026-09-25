@@ -122,11 +122,11 @@ export default function GlowProductPanel({ report }: { report: GlowProductReport
       ) : null}
 
       {report.status === "ready" ? (
-        <DashboardCard title="Active access versus free use" action={<span className="text-xs text-muted-foreground">Trial and paid access are combined</span>}>
-          <div className="grid gap-5 sm:grid-cols-2">
+        <DashboardCard title="What people use by access phase" action={<span className="text-xs text-muted-foreground">Phase at the time of each action</span>}>
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {report.premiumUse.map((cohort) => (
               <div key={cohort.status}>
-                <h4 className="mb-2 text-sm font-semibold">{cohort.status === "premium" ? "With access" : "Without access"}</h4>
+                <h4 className="mb-2 text-sm font-semibold">{{ trial: "Trial", paid: "Paid", free: "Free", unknown: "Unknown" }[cohort.status]}</h4>
                 <div className="space-y-1.5">
                   {cohort.features.filter((feature) => feature.users > 0).slice(0, 6).map((feature) => (
                     <div key={feature.event} className="flex justify-between gap-3 text-xs">
@@ -138,6 +138,42 @@ export default function GlowProductPanel({ report }: { report: GlowProductReport
               </div>
             ))}
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">A user can appear in multiple phases over time. Unknown includes Superwall access without a verified StoreKit transaction and events before phase tracking began.</p>
+        </DashboardCard>
+      ) : null}
+
+      {report.status === "ready" ? (
+        <DashboardCard title="Early trial use and later cancellation" action={<span className="text-xs text-muted-foreground">First 12h use · cancellation in hours 12–72</span>}>
+          {report.trialComparison.status === "ready" ? <>
+            <p className="mb-3 text-xs text-muted-foreground">
+              {number(report.trialComparison.matchedCancelled)} cancelled and {number(report.trialComparison.matchedContinued)} did not cancel within 72 hours. Compared only within the same trial start week and product. {number(report.trialComparison.earlyCancelled)} people who cancelled in the first 12 hours were excluded. This is an association, not a causal test.
+            </p>
+            <div className="space-y-2">
+              {report.trialComparison.features.map((feature) => (
+                <div key={feature.event} className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-3 text-xs">
+                  <span className="truncate">{feature.label}</span>
+                  <span className="tabular-nums">Cancelled {percent(feature.cancelledAdoption)}</span>
+                  <span className="tabular-nums">Continued {percent(feature.continuedAdoption)}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">Percentages show the share who tried each feature at least once in their first 12 hours. The 72 hour outcome means no cancellation was observed by then, not that a subscription was ultimately retained.</p>
+          </> : <p className="text-sm text-muted-foreground">
+            {report.trialComparison.status === "truncated" ? "The trial sample exceeded the safe query limit; widen the data pipeline before interpreting this comparison."
+              : report.trialComparison.status === "unavailable" ? "The trial comparison is temporarily unavailable."
+                : `Waiting for comparable mature trial starts. ${number(report.trialComparison.eligibleStarts)} eligible starts observed.`}
+          </p>}
+        </DashboardCard>
+      ) : null}
+
+      {report.status === "ready" ? (
+        <DashboardCard title="Reasons people shared" action={<span className="text-xs text-muted-foreground">Optional Settings feedback</span>}>
+          {report.feedback.length ? <div className="flex flex-wrap gap-2">
+            {report.feedback.map((item) => <span key={item.reason} className="rounded-full bg-black/[0.05] px-3 py-1 text-xs text-black/70">
+              {item.reason.replaceAll("_", " ")}: {number(item.users)}
+            </span>)}
+          </div> : <p className="text-sm text-muted-foreground">No subscription feedback submitted in this period.</p>}
+          <p className="mt-3 text-xs text-muted-foreground">This is an optional self report from people who opened the feedback sheet. It is not a representative cancellation survey.</p>
         </DashboardCard>
       ) : null}
 
@@ -172,8 +208,10 @@ function CancellationPanel({ kind, report }: { kind: "trial" | "paid"; report: G
             <div className="mt-3 grid gap-4 text-xs sm:grid-cols-2">
               <div className="space-y-1.5 text-muted-foreground">
                 <p>Superwall reason: {journey.reason ?? "Unavailable"}</p>
+                <p>Reason shared in Glow: {journey.selfReportedReason?.replaceAll("_", " ") ?? "Not shared"}</p>
                 {kind === "trial" ? <p>Trial started: {journey.trialStartedAt ? date(journey.trialStartedAt) : "Not linked"}</p> : null}
                 <p>Last app activity: {journey.lastAppActivityAt ? date(journey.lastAppActivityAt) : "Not linked"}</p>
+                {journey.lastAppVersion ? <p>Last app version: {journey.lastAppVersion}</p> : null}
               </div>
               <ol className="space-y-1.5">
                 {journey.recentActions.map((action, index) => <li key={`${action.at}-${index}`} className="flex justify-between gap-3">

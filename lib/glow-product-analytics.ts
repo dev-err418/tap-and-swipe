@@ -25,6 +25,8 @@ export type GlowCancellationActivity = {
   event: string;
   timestamp: string;
   screen?: string | null;
+  appVersion?: string | null;
+  reason?: string | null;
 };
 
 export type GlowCancellation = {
@@ -37,8 +39,10 @@ export type GlowCancellationJourney = {
   user: string;
   cancelledAt: string;
   reason: string | null;
+  selfReportedReason: string | null;
   trialStartedAt: string | null;
   lastAppActivityAt: string | null;
+  lastAppVersion: string | null;
   activity: { event: string; label: string; count: number }[];
   recentActions: { at: string; label: string }[];
 };
@@ -49,6 +53,87 @@ export type GlowCancellationReport = {
   journeys: GlowCancellationJourney[];
   topPriorActions: GlowFeature[];
 };
+
+export const TRIAL_COMPARISON_EVENTS = [
+  "quote_viewed", "quote_swiped", "quote_liked", "practice_session_started",
+  "widget_installed_detected", "app_opened_from_widget", "app_opened_from_notification",
+] as const;
+
+export type GlowTrialStart = { distinctId: string; timestamp: string; productId: string };
+export type GlowTrialEvent = { distinctId: string; timestamp: string; event: string };
+export type GlowTrialComparison = {
+  status: "waiting" | "ready" | "truncated" | "unavailable";
+  sampledStarts: number;
+  eligibleStarts: number;
+  earlyCancelled: number;
+  matchedCancelled: number;
+  matchedContinued: number;
+  features: { event: string; label: string; cancelledAdoption: number | null;
+    continuedAdoption: number | null; cancelledPerStarter: number | null;
+    continuedPerStarter: number | null }[];
+};
+
+export function emptyTrialComparison(status: GlowTrialComparison["status"] = "waiting"): GlowTrialComparison {
+  return { status, sampledStarts: 0, eligibleStarts: 0, earlyCancelled: 0,
+    matchedCancelled: 0, matchedContinued: 0, features: [] };
+}
+
+/** Compare fixed early exposure, then a later cancellation outcome, within start week and product. */
+export function trialComparison(starts: GlowTrialStart[], events: GlowTrialEvent[], asOf: Date): GlowTrialComparison {
+  const result = emptyTrialComparison();
+  const latest = new Map<string, GlowTrialStart>();
+  for (const start of starts) {
+    const at = Date.parse(start.timestamp);
+    if (!start.distinctId || !Number.isFinite(at) || at > asOf.getTime() - 96 * 3_600_000) continue;
+    const prior = latest.get(start.distinctId);
+    if (!prior || at > Date.parse(prior.timestamp)) latest.set(start.distinctId, start);
+  }
+  result.sampledStarts = latest.size;
+  const rows = [...latest.values()].map((start) => {
+    const at = Date.parse(start.timestamp);
+    const week = new Date(at);
+    week.setUTCHours(0, 0, 0, 0);
+    week.setUTCDate(week.getUTCDate() - ((week.getUTCDay() + 6) % 7));
+    const activity = events.filter((event) => event.distinctId === start.distinctId);
+    const earlyCancelled = activity.some((event) => event.event === "sw_trial_cancelled"
+      && Date.parse(event.timestamp) >= at && Date.parse(event.timestamp) < at + 12 * 3_600_000);
+    const cancelled = activity.some((event) => event.event === "sw_trial_cancelled"
+      && Date.parse(event.timestamp) >= at + 12 * 3_600_000
+      && Date.parse(event.timestamp) < at + 72 * 3_600_000);
+    const counts = new Map<string, number>();
+    for (const event of activity) {
+      const time = Date.parse(event.timestamp);
+      if (time < at || time >= at + 12 * 3_600_000 || !TRIAL_COMPARISON_EVENTS.includes(event.event as typeof TRIAL_COMPARISON_EVENTS[number])) continue;
+      counts.set(event.event, (counts.get(event.event) ?? 0) + 1);
+    }
+    return { stratum: `${week.toISOString().slice(0, 10)}:${start.productId}`,
+      productId: start.productId, earlyCancelled, cancelled, counts };
+  });
+  result.earlyCancelled = rows.filter((row) => row.earlyCancelled).length;
+  const eligible = rows.filter((row) => !row.earlyCancelled && row.productId !== "unknown");
+  result.eligibleStarts = eligible.length;
+  const groups = new Map<string, typeof rows>();
+  for (const row of eligible) groups.set(row.stratum, [...(groups.get(row.stratum) ?? []), row]);
+  const matched = [...groups.values()].filter((group) => group.some((row) => row.cancelled)
+    && group.some((row) => !row.cancelled)).flat();
+  const cancelled = matched.filter((row) => row.cancelled);
+  const continued = matched.filter((row) => !row.cancelled);
+  result.matchedCancelled = cancelled.length;
+  result.matchedContinued = continued.length;
+  result.status = cancelled.length && continued.length ? "ready" : "waiting";
+  if (result.status === "ready") {
+    result.features = TRIAL_COMPARISON_EVENTS.map((event) => {
+      const label = GLOW_FEATURES.find((feature) => feature.event === event)?.label ?? event;
+      const count = (rows: typeof cancelled) => rows.reduce((sum, row) => sum + (row.counts.get(event) ?? 0), 0);
+      const users = (rows: typeof cancelled) => rows.filter((row) => (row.counts.get(event) ?? 0) > 0).length;
+      return { event, label, cancelledAdoption: rate(users(cancelled), cancelled.length),
+        continuedAdoption: rate(users(continued), continued.length),
+        cancelledPerStarter: rate(count(cancelled), cancelled.length),
+        continuedPerStarter: rate(count(continued), continued.length) };
+    });
+  }
+  return result;
+}
 
 export type GlowProductReport = {
   status: "ready" | "empty" | "unavailable" | "setup_required";
@@ -82,7 +167,9 @@ export type GlowProductReport = {
     adoptionRate: number | null };
   screens: { screen: string; users: number; totalSeconds: number; secondsPerUser: number | null }[];
   categories: { category: string; users: number }[];
-  premiumUse: { status: "premium" | "free"; features: GlowFeature[] }[];
+  premiumUse: { status: "trial" | "paid" | "free" | "unknown"; features: GlowFeature[] }[];
+  feedback: { reason: string; users: number }[];
+  trialComparison: GlowTrialComparison;
   cancellations: GlowCancellationReport;
   paidCancellations: GlowCancellationReport;
   note?: string;
@@ -106,6 +193,8 @@ export function emptyGlowProductReport(
     screens: [],
     categories: [],
     premiumUse: [],
+    feedback: [],
+    trialComparison: emptyTrialComparison(),
     cancellations: { recentCount: 0, matchedCount: 0, journeys: [], topPriorActions: [] },
     paidCancellations: { recentCount: 0, matchedCount: 0, journeys: [], topPriorActions: [] },
     note,
@@ -135,6 +224,7 @@ const JOURNEY_EVENTS = new Set<string>([
   "premium_status_changed", "widget_removed_detected",
   "screen_time",
   "sw_trial_start",
+  "subscription_feedback_submitted",
 ]);
 
 const JOURNEY_LABELS: Record<string, string> = {
@@ -144,6 +234,7 @@ const JOURNEY_LABELS: Record<string, string> = {
   quote_reading_session: "Quote reading session", quote_unliked: "Quote unliked",
   premium_status_changed: "Access status changed", widget_removed_detected: "Widget removed",
   notification_permission_resolved: "Notification permission answered",
+  subscription_feedback_submitted: "Subscription feedback shared",
 };
 
 export function journeyEvents(): string[] { return [...JOURNEY_EVENTS]; }
@@ -162,6 +253,17 @@ export function cancellationJourneys(
     if (!existing || at > Date.parse(existing.timestamp)) latest.set(cancellation.distinctId, cancellation);
   }
   const selected = [...latest.values()].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+  const feedback = new Map<string, GlowCancellationActivity>();
+  for (const event of events) {
+    const cancellation = latest.get(event.distinctId);
+    if (!cancellation || event.event !== "subscription_feedback_submitted" || !event.reason) continue;
+    const delta = Date.parse(event.timestamp) - Date.parse(cancellation.timestamp);
+    if (!Number.isFinite(delta) || delta < -7 * 86_400_000 || delta > 14 * 86_400_000) continue;
+    const prior = feedback.get(event.distinctId);
+    if (!prior || Math.abs(delta) < Math.abs(Date.parse(prior.timestamp) - Date.parse(cancellation.timestamp))) {
+      feedback.set(event.distinctId, event);
+    }
+  }
   const byUser = new Map<string, GlowCancellationActivity[]>();
   for (const event of events) {
     if (!JOURNEY_EVENTS.has(event.event)) continue;
@@ -193,8 +295,11 @@ export function cancellationJourneys(
       user: pseudonym(cancellation.distinctId),
       cancelledAt: cancellation.timestamp,
       reason: cancellation.reason || null,
+      selfReportedReason: feedback.get(cancellation.distinctId)?.reason ?? null,
       trialStartedAt: trialStart?.timestamp ?? null,
       lastAppActivityAt: appActions.at(-1)?.timestamp ?? null,
+      lastAppVersion: /^[a-zA-Z0-9._-]{1,40}$/.test(appActions.at(-1)?.appVersion ?? "")
+        ? appActions.at(-1)!.appVersion! : null,
       activity: featureUsage([...counts].map(([event, events]) => ({ event, users: 1, events })))
         .filter((feature) => feature.events > 0)
         .map(({ event, label, events }) => ({ event, label, count: events })),
