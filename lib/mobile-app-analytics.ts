@@ -176,7 +176,10 @@ const GLOW_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/19/20/0e/19200e98-f11f-8ab4-850a-81a2a45122e0/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg";
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen"] as const;
-const VERSY_ATTRIBUTE_KEYS = ["onboarding_experiment_id", "onboarding_variant", "widget_screen_seen"] as const;
+const VERSY_ATTRIBUTE_KEYS = ["onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
+  "onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant", "onboarding_paywall_access_variant",
+  "yearly_price_experiment_id", "yearly_price_product_id",
+  "paywall_configuration_experiment_id", "paywall_configuration_variant", "versy_tracking_environment"] as const;
 const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "onboarding_plan_allocation", "home_experience_variant", "home_experience_allocation", "poky_tracking_environment", POKY_PAYWALL_ENGINE_ATTRIBUTE, ...POKY_NATIVE_RECOVERY_KEYS] as const;
 
 type SuperwallAppConfig = {
@@ -967,21 +970,85 @@ function glowOnboardingExperiment(facts: AppFacts): MobileAppExperiment {
 }
 
 function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
-  return [attributeExperiment(facts, {
-    id: "versy-bible-wdiget-v1",
-    title: "Onboarding A/B test",
-    subtitle: "Prayer journey vs Bible widget · prepared",
-    attributeKeys: ["onboarding_experiment_id", "onboarding_variant"],
-    variants: [
-      { key: "short-1-prayer", label: "Prayer journey",
-        attributes: { onboarding_experiment_id: "bible_wdiget_v1", onboarding_variant: "short-1-prayer" } },
-      { key: "bible_wdiget", label: "Bible widget",
-        attributes: { onboarding_experiment_id: "bible_wdiget_v1", onboarding_variant: "bible_wdiget" } },
-    ],
-    scoreMetrics: ["appu", "download_paid"],
-    showTrials: true,
-    showCompletion: true,
-  })];
+  const yearlyPrices = [
+    { key: "yearly_3999_80", label: "$39.99", productID: "com.arthurbuildsstuff.bible.yearly_3999_80" },
+    { key: "yearly_2999_80", label: "$29.99", productID: "com.arthurbuildsstuff.bible.yearly_2999_80" },
+    { key: "yearly_4999_80", label: "$49.99", productID: "com.arthurbuildsstuff.bible.yearly_4999_80" },
+  ];
+  return [
+    attributeExperiment(facts, {
+      id: "versy-bible-widget-v1",
+      title: "Onboarding A/B test",
+      subtitle: "Prayer journey vs Bible widget · 50/50",
+      attributeKeys: ["onboarding_experiment_id", "onboarding_variant"],
+      variants: [
+        { key: "short-1-prayer", label: "Prayer journey",
+          attributes: { onboarding_experiment_id: "bible_widget_v1", onboarding_variant: "short-1-prayer" } },
+        { key: "bible_widget", label: "Bible widget",
+          attributes: { onboarding_experiment_id: "bible_widget_v1", onboarding_variant: "bible_widget" } },
+      ],
+      scoreMetrics: ["appu", "download_paid"],
+      showTrials: true,
+      showCompletion: true,
+    }),
+    attributeExperiment(facts, {
+      id: "versy-paywall-layout-v1",
+      title: "Paywall plans A/B test",
+      subtitle: "Yearly only vs Yearly + Weekly · 50/50",
+      attributeKeys: ["onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant"],
+      variants: [
+        { key: "yearly_only", label: "Yearly only",
+          attributes: { onboarding_paywall_experiment_id: "versy_onboarding_paywalls_v1", onboarding_paywall_layout_variant: "yearly_only" } },
+        { key: "yearly_weekly", label: "Yearly + Weekly",
+          attributes: { onboarding_paywall_experiment_id: "versy_onboarding_paywalls_v1", onboarding_paywall_layout_variant: "yearly_weekly" } },
+      ],
+      scoreMetrics: ["appu", "download_paid"],
+      showTrials: true,
+      showCompletion: true,
+    }),
+    attributeExperiment(facts, {
+      id: "versy-paywall-access-v1",
+      title: "Hard paywall A/B test",
+      subtitle: "Dismissible vs Hard · 50/50",
+      attributeKeys: ["onboarding_paywall_experiment_id", "onboarding_paywall_access_variant"],
+      variants: [
+        { key: "dismissible", label: "Dismissible",
+          attributes: { onboarding_paywall_experiment_id: "versy_onboarding_paywalls_v1", onboarding_paywall_access_variant: "dismissible" } },
+        { key: "hard", label: "Hard paywall",
+          attributes: { onboarding_paywall_experiment_id: "versy_onboarding_paywalls_v1", onboarding_paywall_access_variant: "hard" } },
+      ],
+      scoreMetrics: ["appu", "download_paid"],
+      showTrials: true,
+      showCompletion: true,
+    }),
+    attributeExperiment(facts, {
+      id: "versy-yearly-price-v1",
+      title: "Yearly price A/B test",
+      subtitle: "$29.99 vs $39.99 vs $49.99 · one price per user",
+      attributeKeys: ["yearly_price_experiment_id", "yearly_price_product_id"],
+      variants: yearlyPrices.map(({ key, label, productID }) => ({
+        key, label,
+        attributes: { yearly_price_experiment_id: "versy_yearly_price_v1", yearly_price_product_id: productID },
+      })),
+      scoreMetrics: ["appu", "download_paid"],
+      showTrials: true,
+    }),
+    attributeExperiment(facts, {
+      id: "versy-paywall-configuration-v1",
+      title: "Paywall combinations",
+      subtitle: "Plan layout × access × yearly price · 12 cohorts",
+      attributeKeys: ["paywall_configuration_experiment_id", "paywall_configuration_variant"],
+      variants: ["yearly_only", "yearly_weekly"].flatMap((layout) =>
+        ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ key, label, productID }) => ({
+          key: `${layout}|${access}|${key}`,
+          label: `${layout === "yearly_only" ? "Yearly" : "Yearly + Weekly"} · ${access === "hard" ? "Hard" : "Dismissible"} · ${label}`,
+          attributes: { paywall_configuration_experiment_id: "versy_paywall_configuration_v1",
+            paywall_configuration_variant: `${layout}|${access}|${productID}` },
+        })))),
+      scoreMetrics: ["appu", "download_paid"],
+      showTrials: true,
+    }),
+  ];
 }
 
 function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
@@ -1134,6 +1201,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     }
     if (!attrs) return null;
     if (definition.id.startsWith("poky-") && attrs.poky_tracking_environment !== "production") return null;
+    if (definition.id.startsWith("versy-") && attrs.versy_tracking_environment === "development") return null;
     const matched = definition.variants.find((variant) =>
       Object.entries(variant.attributes).every(([key, value]) => {
         const actual = (attrs[key] ?? "").trim().toLowerCase();

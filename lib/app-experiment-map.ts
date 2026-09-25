@@ -117,21 +117,49 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
   }
 
   if (appId === "versy") {
+    const yearlyPrices = [
+      { id: "com.arthurbuildsstuff.bible.yearly_3999_80", label: "$39.99 Yearly" },
+      { id: "com.arthurbuildsstuff.bible.yearly_2999_80", label: "$29.99 Yearly" },
+      { id: "com.arthurbuildsstuff.bible.yearly_4999_80", label: "$49.99 Yearly" },
+    ];
     return {
-      tests: [{
-        id: "versy-bible-wdiget-v1",
-        label: "Onboarding",
-        scope: "Prepared · treatment screens pending",
-        tone: "blue",
-        planned: true,
-        branches: [
-          { id: "short-1-prayer", label: "Prayer journey", percent: 50 },
-          { id: "bible_wdiget", label: "Bible widget", percent: 50 },
-        ],
-      }],
+      tests: [
+        {
+          id: "versy-bible-widget-v1", label: "Onboarding", scope: "New onboarding assignments · next app release", tone: "blue",
+          branches: [
+            { id: "short-1-prayer", label: "Prayer journey", percent: 50 },
+            { id: "bible_widget", label: "Bible widget", percent: 50 },
+          ],
+        },
+        {
+          id: "versy-paywall-layout-v1", label: "Paywall plans", scope: "All paywall placements · independent 50/50 assignment · next app release", tone: "orange",
+          branches: [
+            { id: "yearly_only", label: "Yearly only", percent: 50 },
+            { id: "yearly_weekly", label: "Yearly + Weekly", percent: 50 },
+          ],
+        },
+        {
+          id: "versy-paywall-access-v1", label: "Paywall access", scope: "All paywall placements · independent 50/50 assignment · next app release", tone: "orange",
+          branches: [
+            { id: "dismissible", label: "Dismissible", percent: 50 },
+            { id: "hard", label: "Hard paywall", percent: 50 },
+          ],
+        },
+        {
+          id: "versy-yearly-price-v1", label: "Yearly price", scope: "All paywall placements · one saved price per user · next app release", tone: "orange",
+          branches: yearlyPrices.map(({ id, label }) => ({ id, label, percent: 100 / 3 })),
+        },
+      ],
+      combinations: ["yearly_only", "yearly_weekly"].flatMap((layout) =>
+        ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ id, label }) => ({
+          id: `${layout}|${access}|${id}`,
+          label: `${layout === "yearly_only" ? "Yearly only" : "Yearly + Weekly"} · ${access === "hard" ? "Hard" : "Dismissible"} · ${label}`,
+          percent: 100 / 12,
+        })))),
       notes: [
-        "The bible_wdiget treatment is not assigned in production until its separate screens ship. The 50/50 split is the planned allocation, not observed traffic.",
-        "Only new installs tagged bible_wdiget_v1 will enter the comparison; historical Versy onboarding users are excluded.",
+        "Onboarding, plan layout, access and yearly price are independent saved assignments. The twelve paywall configurations each receive 1/12 of new users; crossing onboarding creates twenty-four paths.",
+        "The same yearly product is shown at every paywall placement for a user. Yearly + Weekly also offers com.arthurbuildsstuff.bible.Weekly. The configuration result card compares layout, access and price together.",
+        "This map describes the next app release. Existing layout and access assignments remain sticky; existing users receive a yearly price once, and historical users without the new attributes are excluded from price results.",
       ],
     };
   }

@@ -321,6 +321,7 @@ function WebsiteCard({
 
 function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Period }) {
   const activeTests = activeABTestCount(app.id);
+  const appu = app.downloads > 0 ? app.revenueCents / 100 / app.downloads : null;
   const points: WebsiteTrendPoint[] = app.trend.map((point) => ({
     bucket: point.bucket,
     visitors: point.downloads,
@@ -352,8 +353,8 @@ function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Perio
           <strong className="font-bold text-black">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
           proceeds
           <span className="mx-2 text-black/35">•</span>
-          <strong className="font-bold text-black">{formatNumber(app.downloads)}</strong>{" "}
-          installs
+          <strong className="font-bold text-black">{appu === null ? "—" : formatPreciseCurrency(appu)}</strong>{" "}
+          APPU
         </p>
       </div>
     </Link>
@@ -816,6 +817,15 @@ function formatRevenue(cents: number) {
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(cents / 100);
+}
+
+function formatPreciseCurrency(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 function formatCompactNumber(value: number | bigint) {

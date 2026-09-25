@@ -79,13 +79,24 @@ test("Poky shows a 90/10 experience split, 50/50 plan split and four joint combi
   assert.match(map.tests.find((row) => row.id === "poky-native-recovery-holdout")!.scope, /any origin placement/);
 });
 
-test("Versy shows the prepared split without claiming it is active", () => {
+test("Versy shows independent onboarding, layout, access and three-way price assignments", () => {
   const map = appExperimentMap("versy")!;
-  assert.deepEqual(map.tests.map((row) => row.id), ["versy-bible-wdiget-v1"]);
-  assert.deepEqual(map.tests[0].branches.map((branch) => branch.id), ["short-1-prayer", "bible_wdiget"]);
-  assert.deepEqual(map.tests[0].branches.map((branch) => branch.percent), [50, 50]);
-  assert.equal(map.tests[0].planned, true);
-  assert.equal(activeABTestCount("versy"), 0);
+  assert.deepEqual(map.tests.map((row) => row.id), [
+    "versy-bible-widget-v1", "versy-paywall-layout-v1", "versy-paywall-access-v1", "versy-yearly-price-v1",
+  ]);
+  assert.deepEqual(map.tests.map((row) => row.branches.map((branch) => branch.percent)),
+    [[50, 50], [50, 50], [50, 50], [100 / 3, 100 / 3, 100 / 3]]);
+  assert.deepEqual(map.tests[0].branches.map((branch) => branch.id), ["short-1-prayer", "bible_widget"]);
+  assert.deepEqual(map.tests[1].branches.map((branch) => branch.id), ["yearly_only", "yearly_weekly"]);
+  assert.deepEqual(map.tests[2].branches.map((branch) => branch.id), ["dismissible", "hard"]);
+  assert.deepEqual(map.tests[3].branches.map((branch) => branch.id), [
+    "com.arthurbuildsstuff.bible.yearly_3999_80",
+    "com.arthurbuildsstuff.bible.yearly_2999_80",
+    "com.arthurbuildsstuff.bible.yearly_4999_80",
+  ]);
+  assert.equal(map.combinations?.length, 12);
+  assert.equal(appExperimentFlow("versy")?.nodes.filter((node) => node.experimentId).length, 9);
+  assert.equal(activeABTestCount("versy"), 4);
 });
 
 test("unsupported apps do not show invented experiments", () => {
@@ -95,13 +106,14 @@ test("unsupported apps do not show invented experiments", () => {
 test("active A/B counts include the new paywall engine assignment", () => {
   assert.equal(activeABTestCount("glow"), 3);
   assert.equal(activeABTestCount("poky"), 5);
-  assert.equal(activeABTestCount("versy"), 0);
+  assert.equal(activeABTestCount("versy"), 4);
 });
 
 test("result cards follow the onboarding-to-paywall progression without mutating inputs", () => {
   for (const [app, expected] of Object.entries({
     glow: ["glow-onboarding-copy", "glow-native-paywall", "glow-yearly-price"],
     poky: ["poky-app-experience", "poky-animated-plan", "poky-onboarding-abcd", "poky-superwall-vs-native", "poky-native-recovery-holdout"],
+    versy: ["versy-bible-widget-v1", "versy-paywall-layout-v1", "versy-paywall-access-v1", "versy-yearly-price-v1", "versy-paywall-configuration-v1"],
   })) {
     const input = [...expected].reverse().map((id) => ({ id }));
     assert.deepEqual(orderAppExperiments(app, input).map((row) => row.id), expected);

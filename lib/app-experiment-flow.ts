@@ -32,23 +32,38 @@ export function appExperimentFlow(appId: string, selectedLanguage?: string): Exp
 }
 
 function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
-  const experiment = map.tests[0];
+  const [onboarding, plans, access, price] = map.tests;
   const nodes: ExperimentFlowNode[] = [
-    { id: "start", x: 36, y: 200, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
-    { id: "completion", x: 470, y: 200, width: 170, label: "Widget screen reached", tone: "neutral",
-      statsTarget: { experimentId: experiment.id } },
+    { id: "start", x: 36, y: 212, width: 0, label: "New install", kind: "start", tone: "blue" },
   ];
   const edges: ExperimentFlowEdge[] = [];
-  experiment.branches.forEach((branch, index) => {
-    nodes.push({ id: branch.id, x: 168, y: 144 + index * 112, width: 170,
-      label: branch.label, tone: "blue", experimentId: experiment.id, variantId: branch.id });
+  onboarding.branches.forEach((branch, index) => {
+    nodes.push({ id: branch.id, x: 168, y: 144 + index * 136, width: 170,
+      label: branch.label, tone: "blue", experimentId: onboarding.id, variantId: branch.id });
     edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` });
-    edges.push({ from: branch.id, to: "completion" });
+  });
+  plans.branches.forEach((branch, index) => {
+    const id = `plans-${branch.id}`;
+    nodes.push({ id, x: 430, y: 144 + index * 136, width: 170,
+      label: branch.label, tone: "orange", experimentId: plans.id, variantId: branch.id });
+    onboarding.branches.forEach((parent) => edges.push({ from: parent.id, to: id, label: "50%" }));
+  });
+  access.branches.forEach((branch, index) => {
+    const id = `access-${branch.id}`;
+    nodes.push({ id, x: 692, y: 144 + index * 136, width: 170,
+      label: branch.label, tone: "orange", experimentId: access.id, variantId: branch.id });
+    plans.branches.forEach((parent) => edges.push({ from: `plans-${parent.id}`, to: id, label: "50%" }));
+  });
+  price.branches.forEach((branch, index) => {
+    const id = `price-${index}`;
+    nodes.push({ id, x: 954, y: 80 + index * 136, width: 190,
+      label: branch.label, tone: "orange", experimentId: price.id, variantId: branch.id });
+    access.branches.forEach((parent) => edges.push({ from: `access-${parent.id}`, to: id, label: "⅓" }));
   });
   return {
-    width: 680, height: 400, nodes, edges,
-    stages: [{ x: 36, label: "Assignment" }, { x: 168, label: "Onboarding flow" },
-      { x: 470, label: "Completion" }],
+    width: 1190, height: 424, nodes, edges,
+    stages: [{ x: 168, label: "Onboarding flow" }, { x: 430, label: "Plans" },
+      { x: 692, label: "Access" }, { x: 954, label: "Yearly price" }],
     notes: map.notes,
   };
 }
