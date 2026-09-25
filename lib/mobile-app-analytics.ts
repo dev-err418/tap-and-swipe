@@ -508,7 +508,7 @@ async function loadSuperwallAppAnalytics(
         ? pokyExperiments(facts)
         : versyExperiments(facts)
     : [];
-  const trialCancelTiming = facts && app.id === "glow" ? trialCancelFromFacts(facts) : null;
+  const trialCancelTiming = facts && (app.id === "glow" || app.id === "versy") ? trialCancelFromFacts(facts) : null;
 
   return {
     id: app.id,
