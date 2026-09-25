@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
 import AppCountryBreakdown from "@/components/analytics/AppCountryBreakdown";
 import AppConversionBreakdown from "@/components/analytics/AppConversionBreakdown";
@@ -14,9 +14,6 @@ import type {
 import AppExperimentCard from "@/components/analytics/AppExperimentCard";
 import AppExperimentMap from "@/components/analytics/AppExperimentMap";
 import TrialCancelChart from "@/components/analytics/TrialCancelChart";
-import GlowProductPanel from "@/components/analytics/GlowProductPanel";
-import type { GlowProductReport } from "@/lib/glow-product-analytics";
-import type { GlowProductPeriod } from "@/lib/glow-product-queries";
 import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
 import AppNotesChart from "@/components/analytics/AppNotesChart";
@@ -52,7 +49,6 @@ type MonthExperimentBundle = {
 
 export default function AppOverviewPanel({
   appId,
-  period = "week",
   installs,
   proceeds,
   windowLabel,
@@ -69,9 +65,9 @@ export default function AppOverviewPanel({
   journalPractice = null,
   userJourney = null,
   deferExperiments = false,
+  productSlot = null,
 }: {
   appId: "glow" | "poky" | "versy";
-  period?: GlowProductPeriod;
   installs: number;
   proceeds: number;
   windowLabel: string;
@@ -88,27 +84,11 @@ export default function AppOverviewPanel({
   journalPractice?: JournalPracticeReport | null;
   userJourney?: UserJourneyReport | null;
   deferExperiments?: boolean;
+  productSlot?: ReactNode;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
   const [monthBundle, setMonthBundle] = useState<{ appId: string; bundle: MonthExperimentBundle } | null>(null);
   const [monthFailedAppId, setMonthFailedAppId] = useState<string | null>(null);
-  const [glowProduct, setGlowProduct] = useState<{ period: GlowProductPeriod; report: GlowProductReport } | null>(null);
-  const [glowProductFailedPeriod, setGlowProductFailedPeriod] = useState<GlowProductPeriod | null>(null);
-  useEffect(() => {
-    if (appId !== "glow") return;
-    const controller = new AbortController();
-    fetch(`/api/analytics/glow-product?period=${period}`, { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Glow product analytics failed to load");
-        return response.json() as Promise<GlowProductReport>;
-      })
-      .then((report) => setGlowProduct({ period, report }))
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setGlowProductFailedPeriod(period);
-      });
-    return () => controller.abort();
-  }, [appId, period]);
   useEffect(() => {
     if (!deferExperiments) return;
     const controller = new AbortController();
@@ -146,8 +126,8 @@ export default function AppOverviewPanel({
     .slice(0, 5);
 
   return (
-    <section className="space-y-4">
-      <div className="min-w-0 overflow-visible rounded-[28px] border-0 bg-white shadow-none">
+    <section className="w-full min-w-0 space-y-4">
+      <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-[28px] border-0 bg-white shadow-none">
         <div className="min-w-0 overflow-x-auto border-b border-black/[0.08]">
           <div className="grid min-w-[48rem] grid-cols-4 divide-x divide-black/[0.08]">
             <MetricSummary label="Installs" value={formatInt(installs)} detail={windowLabel} />
@@ -197,10 +177,7 @@ export default function AppOverviewPanel({
         >
           <UserJourneyFunnel report={userJourney} windowLabel={windowLabel} />
           {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
-          {appId === "glow" ? glowProduct?.period === period
-            ? <GlowProductPanel report={glowProduct.report} />
-            : <div role="status" className="px-4 py-6 text-sm text-muted-foreground">{glowProductFailedPeriod === period ? "Glow product analytics could not be loaded." : "Loading Glow product analytics…"}</div>
-            : null}
+          {productSlot}
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">
             <AppCountryBreakdown countries={dataCountries} />
             <AppConversionBreakdown countries={dataCountries} conversion="paid" />

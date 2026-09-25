@@ -21,6 +21,7 @@ export default function AnalyticsLayout({
     <div
       className={`${saans.variable} ${saans.className} analytics-canvas min-h-dvh text-black antialiased`}
     >
+      <style>{`html { scrollbar-gutter: stable; }`}</style>
       {children}
     </div>
   );

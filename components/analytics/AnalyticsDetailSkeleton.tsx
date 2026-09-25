@@ -42,8 +42,8 @@ export function AnalyticsDetailSkeleton({
   const name = app ? APPS[app].name : site ? SITES[site] : "";
 
   return (
-    <div className="space-y-10" aria-busy="true" aria-label={`Loading ${name}`}>
-      <div className="space-y-5">
+    <div className="w-full min-w-0 space-y-10" aria-busy="true" aria-label={`Loading ${name}`}>
+      <div className="w-full min-w-0 space-y-5">
         <Link
           href={period === "week" ? "/analytics" : `/analytics?period=${period}`}
           className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-medium text-black/60 shadow-none ring-0 transition-all hover:text-black active:translate-y-px"
@@ -51,7 +51,7 @@ export function AnalyticsDetailSkeleton({
           <ArrowLeft className="size-4" />
           {backLabel}
         </Link>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex w-full min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             {app ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -67,8 +67,33 @@ export function AnalyticsDetailSkeleton({
           <AnalyticsPeriodSelect period={period} app={app} site={site} />
         </div>
       </div>
-      <div className={`h-[28rem] motion-safe:animate-pulse ${DASHBOARD_SURFACE_CLASS}`} />
+      {app ? <AppOverviewSkeleton /> : <div className={`h-[28rem] w-full min-w-0 ${DASHBOARD_SURFACE_CLASS}`} />}
     </div>
+  );
+}
+
+function AppOverviewSkeleton() {
+  const metrics = ["Installs", "Proceeds", "Cohort APPU", "Install → paid"];
+  return (
+    <section className="w-full min-w-0 space-y-4">
+      <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-[28px] border-0 bg-white shadow-none">
+        <div className="min-w-0 overflow-x-auto border-b border-black/[0.08]">
+          <div className="grid min-w-[48rem] grid-cols-4 divide-x divide-black/[0.08]">
+            {metrics.map((label) => (
+              <div key={label} className="min-w-0 px-4 py-4">
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="mt-1 h-8"><MetricBone wide /></p>
+                <p className="mt-1 h-4"><MetricBone /></p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="min-w-0 p-4">
+          <div className="mb-3 h-8" aria-hidden />
+          <div aria-hidden className="h-72 w-full rounded-xl bg-black/[0.04] motion-safe:animate-pulse" />
+        </div>
+      </div>
+    </section>
   );
 }
 

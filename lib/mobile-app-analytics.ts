@@ -282,20 +282,23 @@ export async function getMobileAppById(
   return getVersyAnalytics(period, true, sessions);
 }
 
-export async function getMobileAppAnalytics(period: Period) {
-  const results = await Promise.allSettled([
-    getPokyAnalytics(period),
-    getGlowAnalytics(period),
-    getVersyAnalytics(period),
-  ]);
-
-  return results.flatMap((result) => {
-    if (result.status === "fulfilled") return [result.value];
+export async function getMobileAppSummary(period: Period, id: MobileAppAnalytics["id"]) {
+  try {
+    if (id === "poky") return await getPokyAnalytics(period);
+    if (id === "glow") return await getGlowAnalytics(period);
+    return await getVersyAnalytics(period);
+  } catch (error) {
     logAnalytics("tap_and_swipe.mobile_app_analytics_failed", {
-      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+      app: id,
+      error: error instanceof Error ? error.message : String(error),
     });
-    return [];
-  });
+    return null;
+  }
+}
+
+export async function getMobileAppAnalytics(period: Period) {
+  const results = await Promise.all((["poky", "glow", "versy"] as const).map((id) => getMobileAppSummary(period, id)));
+  return results.filter((app) => app !== null);
 }
 
 async function getGlowAnalytics(period: Period, includeCountries = false, sessions = true): Promise<MobileAppAnalytics> {

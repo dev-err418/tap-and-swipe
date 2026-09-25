@@ -2,24 +2,24 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { appAnalyticsPeriodRange } from "./app-analytics-time";
 import {
-  GLOW_FEATURES,
+  VERSY_FEATURES,
   cancellationJourneys,
   emptyTrialComparison,
-  emptyGlowProductReport,
+  emptyVersyProductReport,
   featureUsage,
   journeyEvents,
   rate,
   trialComparison,
-  type GlowCancellation,
-  type GlowCancellationActivity,
-  type GlowProductReport,
-  type GlowTrialEvent,
-  type GlowTrialStart,
-} from "./glow-product-analytics";
+  type VersyCancellation,
+  type VersyCancellationActivity,
+  type VersyProductReport,
+  type VersyTrialEvent,
+  type VersyTrialStart,
+} from "./versy-product-analytics";
 
-export type GlowProductPeriod = "day" | "yesterday" | "3days" | "week" | "month" | "all";
+export type VersyProductPeriod = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
-export type GlowUserJourneyReport = {
+export type VersyUserJourneyReport = {
   status: "ready" | "empty" | "setup_required" | "unavailable";
   user: string;
   windowStart: string;
@@ -28,7 +28,7 @@ export type GlowUserJourneyReport = {
   latestObservedAccess: boolean | null;
   latestObservedPhase: string | null;
   accessObservedAt: string | null;
-  totals: { quoteViews: number; quoteSwipes: number; quoteLikes: number; practiceStarts: number; widgetOpens: number; notificationOpens: number };
+  totals: { quoteViews: number; quoteSwipes: number; quoteLikes: number; prayerStarts: number; widgetOpens: number; notificationOpens: number };
   events: { at: string; event: string; screen: string | null; category: string | null; source: string | null;
     isPremium: boolean | null; hasWidget: boolean | null; notificationPermission: string | null;
     accessPhase: string | null; feedbackReason: string | null;
@@ -39,7 +39,8 @@ export type GlowUserJourneyReport = {
   note?: string;
 };
 
-const POSTHOG_HOST = "https://eu.posthog.com";
+const POSTHOG_HOST = process.env.POSTHOG_VERSY_REGION === "us"
+  ? "https://us.posthog.com" : "https://eu.posthog.com";
 const FIRST_INSTRUMENTED_DAY = new Date("2026-09-25T00:00:00Z");
 const CACHE_MS = 90_000;
 const MAX_RECENT_CANCELLATIONS = 25;
@@ -49,14 +50,14 @@ const MAX_TRIAL_STARTS = 300;
 const MAX_TRIAL_ACTIVITY = 15_000;
 const USER_EVENTS = [...new Set([
   ...journeyEvents(), "app_state_snapshot", "notification_permission_requested", "widget_prompt_action",
-  "widget_removed_detected", "quote_reading_session", "practice_session_ended", "premium_status_changed",
+  "widget_removed_detected", "quote_reading_session", "prayer_session_ended", "premium_status_changed",
   "paywall_reached", "paywall_dismissed", "paywall_purchase_attempted", "paywall_purchase_result",
   "sw_trial_cancelled", "sw_trial_expired", "sw_subscription_cancelled", "sw_subscription_start",
   "sw_intro_offer_cancelled", "subscription_feedback_opened", "subscription_feedback_submitted",
   "access_phase_changed",
 ])];
-const cache = new Map<string, { expiresAt: number; report: GlowProductReport }>();
-const inflight = new Map<string, Promise<GlowProductReport>>();
+const cache = new Map<string, { expiresAt: number; report: VersyProductReport }>();
+const inflight = new Map<string, Promise<VersyProductReport>>();
 
 function sqlTime(date: Date): string {
   return date.toISOString().slice(0, 19).replace("T", " ");
@@ -119,21 +120,21 @@ async function queryPostHog(sql: string, projectId: string, key: string): Promis
   return (data as { results: unknown[][] }).results;
 }
 
-export async function getGlowProductReport(period: GlowProductPeriod): Promise<GlowProductReport> {
+export async function getVersyProductReport(period: VersyProductPeriod): Promise<VersyProductReport> {
   const window = appAnalyticsPeriodRange(period);
   const start = new Date(Math.max(window.since.getTime(), FIRST_INSTRUMENTED_DAY.getTime()));
   const end = window.before;
-  const key = process.env.POSTHOG_GLOW_READ_KEY?.trim();
-  const projectId = process.env.POSTHOG_GLOW_PROJECT_ID?.trim();
+  const key = process.env.POSTHOG_VERSY_READ_KEY?.trim();
+  const projectId = process.env.POSTHOG_VERSY_PROJECT_ID?.trim();
   if (!key || !projectId || !/^\d+$/.test(projectId)) {
-    return emptyGlowProductReport("setup_required", start, end, "Glow product analytics is waiting for PostHog read access.");
+    return emptyVersyProductReport("setup_required", start, end, "Versy product analytics is waiting for PostHog read access.");
   }
   const cacheKey = `${period}:${projectId}`;
   const cached = cache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return cached.report;
   const pending = inflight.get(cacheKey);
   if (pending) return pending;
-  const promise = loadGlowProductReport(start, end, projectId, key).then((report) => {
+  const promise = loadVersyProductReport(start, end, projectId, key).then((report) => {
     cache.set(cacheKey, { expiresAt: Date.now() + CACHE_MS, report });
     inflight.delete(cacheKey);
     return report;
@@ -146,21 +147,21 @@ export async function getGlowProductReport(period: GlowProductPeriod): Promise<G
 }
 
 /** Exact Superwall-ID lookup for an authenticated owner or trusted agent. */
-export async function getGlowUserJourney(period: GlowProductPeriod, userId: string): Promise<GlowUserJourneyReport> {
+export async function getVersyUserJourney(period: VersyProductPeriod, userId: string): Promise<VersyUserJourneyReport> {
   const window = appAnalyticsPeriodRange(period);
   const start = new Date(Math.max(window.since.getTime(), FIRST_INSTRUMENTED_DAY.getTime()));
   const end = window.before;
-  const base: GlowUserJourneyReport = {
+  const base: VersyUserJourneyReport = {
     status: "empty", user: createHash("sha256").update(userId).digest("hex").slice(0, 12),
     windowStart: start.toISOString(), windowEnd: end.toISOString(), truncated: false,
     latestObservedAccess: null, latestObservedPhase: null, accessObservedAt: null,
-    totals: { quoteViews: 0, quoteSwipes: 0, quoteLikes: 0, practiceStarts: 0, widgetOpens: 0, notificationOpens: 0 },
+    totals: { quoteViews: 0, quoteSwipes: 0, quoteLikes: 0, prayerStarts: 0, widgetOpens: 0, notificationOpens: 0 },
     events: [],
   };
-  const key = process.env.POSTHOG_GLOW_READ_KEY?.trim();
-  const projectId = process.env.POSTHOG_GLOW_PROJECT_ID?.trim();
+  const key = process.env.POSTHOG_VERSY_READ_KEY?.trim();
+  const projectId = process.env.POSTHOG_VERSY_PROJECT_ID?.trim();
   if (!key || !projectId || !/^\d+$/.test(projectId)) {
-    return { ...base, status: "setup_required", note: "Glow product analytics is waiting for PostHog read access." };
+    return { ...base, status: "setup_required", note: "Versy product analytics is waiting for PostHog read access." };
   }
   try {
     const [rows, premiumSnapshots, totals] = await Promise.all([
@@ -189,7 +190,7 @@ export async function getGlowUserJourney(period: GlowProductPeriod, userId: stri
         FROM events WHERE ${timeFilter(start, end)} AND distinct_id = ${sqlQuote(userId)}
           AND properties.app_environment = 'production'
           AND event IN ('quote_viewed', 'quote_swiped', 'quote_liked',
-            'practice_session_started', 'app_opened_from_widget', 'app_opened_from_notification')
+            'prayer_session_started', 'app_opened_from_widget', 'app_opened_from_notification')
         GROUP BY event LIMIT 6`, projectId, key),
     ]);
     base.truncated = rows.length > MAX_USER_EVENTS;
@@ -210,7 +211,7 @@ export async function getGlowUserJourney(period: GlowProductPeriod, userId: stri
     base.accessObservedAt = premiumSnapshots[0]?.[1] == null ? null : toTimestamp(premiumSnapshots[0][1]);
     const totalKeys = {
       quote_viewed: "quoteViews", quote_swiped: "quoteSwipes", quote_liked: "quoteLikes",
-      practice_session_started: "practiceStarts", app_opened_from_widget: "widgetOpens",
+      prayer_session_started: "prayerStarts", app_opened_from_widget: "widgetOpens",
       app_opened_from_notification: "notificationOpens",
     } as const;
     for (const row of totals) {
@@ -220,15 +221,15 @@ export async function getGlowUserJourney(period: GlowProductPeriod, userId: stri
     base.status = base.events.length ? "ready" : "empty";
     return base;
   } catch (error) {
-    console.error("tap_and_swipe.glow_user_journey_failed", {
+    console.error("tap_and_swipe.versy_user_journey_failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return { ...base, status: "unavailable", note: "PostHog user journey is unavailable. Refresh to retry." };
   }
 }
 
-async function loadGlowProductReport(start: Date, end: Date, projectId: string, key: string): Promise<GlowProductReport> {
-  const report = emptyGlowProductReport("empty", start, end);
+async function loadVersyProductReport(start: Date, end: Date, projectId: string, key: string): Promise<VersyProductReport> {
+  const report = emptyVersyProductReport("empty", start, end);
   const window = timeFilter(start, end);
   const production = "properties.app_environment = 'production'";
   try {
@@ -263,7 +264,7 @@ async function loadGlowProductReport(start: Date, end: Date, projectId: string, 
         GROUP BY toString(properties.source) LIMIT 20`, projectId, key),
       queryPostHog(`SELECT event, uniqExact(distinct_id), count()
         FROM events WHERE ${window} AND ${production}
-          AND event IN (${GLOW_FEATURES.map((feature) => sqlQuote(feature.event)).join(", ")})
+          AND event IN (${VERSY_FEATURES.map((feature) => sqlQuote(feature.event)).join(", ")})
         GROUP BY event LIMIT 20`, projectId, key),
       queryPostHog(`SELECT uniqExact(distinct_id), count(),
           sum(toFloatOrZero(toString(properties.quote_views))),
@@ -286,7 +287,7 @@ async function loadGlowProductReport(start: Date, end: Date, projectId: string, 
         GROUP BY 1 ORDER BY uniqExact(distinct_id) DESC LIMIT 25`, projectId, key),
       queryPostHog(`SELECT toString(properties.access_phase), event, uniqExact(distinct_id), count()
         FROM events WHERE ${window} AND ${production}
-          AND event IN (${GLOW_FEATURES.map((feature) => sqlQuote(feature.event)).join(", ")})
+          AND event IN (${VERSY_FEATURES.map((feature) => sqlQuote(feature.event)).join(", ")})
         GROUP BY toString(properties.access_phase), event LIMIT 100`, projectId, key),
       queryPostHog(`SELECT toString(properties.reason), uniqExact(distinct_id)
         FROM events WHERE ${window} AND ${production}
@@ -361,14 +362,14 @@ async function loadGlowProductReport(start: Date, end: Date, projectId: string, 
     report.feedback = feedback.map((row) => ({ reason: String(row[0] ?? ""), users: toNumber(row[1]) }))
       .filter((row) => ["price", "not_enough_use", "content_fit", "notifications", "widget", "technical_issue", "other"].includes(row.reason))
       .sort((a, b) => b.users - a.users);
-    const cancellations = (rows: unknown[][]): GlowCancellation[] => rows.map((row) => ({
+    const cancellations = (rows: unknown[][]): VersyCancellation[] => rows.map((row) => ({
       distinctId: String(row[0] ?? ""), timestamp: toTimestamp(row[1]), reason: String(row[2] ?? "") || null,
     })).filter((row) => row.distinctId && row.timestamp);
     const trialCancellations = cancellations(recentTrialCancels);
     const paidCancellations = cancellations(recentPaidCancels);
     const [trialComparisonResult, historyResult] = await Promise.all([
       loadTrialComparison(start, end, projectId, key, prefetchedTrialStarts).catch((error: unknown) => {
-        console.error("tap_and_swipe.glow_trial_comparison_failed", {
+        console.error("tap_and_swipe.versy_trial_comparison_failed", {
           error: error instanceof Error ? error.message : String(error),
         });
         return emptyTrialComparison("unavailable");
@@ -387,10 +388,10 @@ async function loadGlowProductReport(start: Date, end: Date, projectId: string, 
       || report.cancellations.recentCount || report.paidCancellations.recentCount ? "ready" : "empty";
     return report;
   } catch (error) {
-    console.error("tap_and_swipe.glow_product_analytics_failed", {
+    console.error("tap_and_swipe.versy_product_analytics_failed", {
       error: error instanceof Error ? error.message : String(error),
     });
-    return emptyGlowProductReport("unavailable", start, end, "PostHog product analytics is unavailable. Refresh to retry.");
+    return emptyVersyProductReport("unavailable", start, end, "PostHog product analytics is unavailable. Refresh to retry.");
   }
 }
 
@@ -405,8 +406,8 @@ function trialStartsQuery(start: Date, end: Date, projectId: string, key: string
 }
 
 async function cancellationHistory(
-  trialCancellations: GlowCancellation[],
-  paidCancellations: GlowCancellation[],
+  trialCancellations: VersyCancellation[],
+  paidCancellations: VersyCancellation[],
   end: Date,
   projectId: string,
   key: string,
@@ -428,7 +429,7 @@ async function cancellationHistory(
           OR ${production})
       ORDER BY timestamp DESC LIMIT ${MAX_HISTORY_ROWS}`, projectId, key);
     if (history.length >= MAX_HISTORY_ROWS) throw new Error("Cancellation activity exceeded the safe query limit");
-    const activity: GlowCancellationActivity[] = history.map((row) => ({
+    const activity: VersyCancellationActivity[] = history.map((row) => ({
       distinctId: String(row[0] ?? ""), event: String(row[1] ?? ""),
       timestamp: toTimestamp(row[2]), screen: String(row[3] ?? "") || null,
       appVersion: String(row[4] ?? "") || null,
@@ -440,7 +441,7 @@ async function cancellationHistory(
       paid: cancellationJourneys(paidCancellations, activity, hash),
     };
   } catch (error) {
-    console.error("tap_and_swipe.glow_cancellation_history_failed", {
+    console.error("tap_and_swipe.versy_cancellation_history_failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return null;
@@ -456,7 +457,7 @@ async function loadTrialComparison(
 ) {
   if (!startsRows) return emptyTrialComparison();
   if (startsRows.length > MAX_TRIAL_STARTS) return emptyTrialComparison("truncated");
-  const starts: GlowTrialStart[] = startsRows.map((row) => {
+  const starts: VersyTrialStart[] = startsRows.map((row) => {
     const productId = safeToken(row[2]);
     return { distinctId: String(row[0] ?? ""), timestamp: toTimestamp(row[1]),
       productId: productId && productId.toLowerCase() !== "none" ? productId : "unknown" };
@@ -466,12 +467,12 @@ async function loadTrialComparison(
   const earliest = new Date(Math.min(...starts.map((row) => Date.parse(row.timestamp))));
   const activityRows = await queryPostHog(`SELECT distinct_id, event, toUnixTimestamp(timestamp)
     FROM events WHERE ${timeFilter(earliest, end)} AND distinct_id IN (${ids.map(sqlQuote).join(", ")})
-      AND event IN ('sw_trial_cancelled', ${GLOW_FEATURES.map((feature) => sqlQuote(feature.event)).join(", ")})
+      AND event IN ('sw_trial_cancelled', ${VERSY_FEATURES.map((feature) => sqlQuote(feature.event)).join(", ")})
       AND ((event = 'sw_trial_cancelled' AND lower(toString(properties.environment)) = 'production')
         OR properties.app_environment = 'production')
     ORDER BY timestamp DESC LIMIT ${MAX_TRIAL_ACTIVITY + 1}`, projectId, key);
   if (activityRows.length > MAX_TRIAL_ACTIVITY) return emptyTrialComparison("truncated");
-  const activity: GlowTrialEvent[] = activityRows.map((row) => ({
+  const activity: VersyTrialEvent[] = activityRows.map((row) => ({
     distinctId: String(row[0] ?? ""), event: String(row[1] ?? ""), timestamp: toTimestamp(row[2]),
   })).filter((row) => row.distinctId && row.timestamp);
   return trialComparison(starts, activity, end);

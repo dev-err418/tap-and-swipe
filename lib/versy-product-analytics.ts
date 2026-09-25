@@ -1,9 +1,10 @@
-export const GLOW_FEATURES = [
-  { event: "quote_viewed", label: "Quotes viewed" },
-  { event: "quote_swiped", label: "Quotes swiped" },
-  { event: "quote_liked", label: "Quotes liked" },
-  { event: "practice_session_started", label: "Practice started" },
-  { event: "practice_session_completed", label: "Practice completed" },
+export const VERSY_FEATURES = [
+  { event: "quote_viewed", label: "Verses viewed" },
+  { event: "quote_swiped", label: "Verses swiped" },
+  { event: "quote_liked", label: "Verses liked" },
+  { event: "prayer_session_started", label: "Prayer started" },
+  { event: "prayer_session_ended", label: "Prayer ended" },
+  { event: "prayer_message_sent", label: "Prayer messages sent" },
   { event: "categories_changed", label: "Categories changed" },
   { event: "widget_prompt_viewed", label: "Widget prompt viewed" },
   { event: "widget_prompt_action", label: "Widget prompt tapped" },
@@ -12,7 +13,7 @@ export const GLOW_FEATURES = [
   { event: "app_opened_from_notification", label: "Notification opens" },
 ] as const;
 
-export type GlowFeature = {
+export type VersyFeature = {
   event: string;
   label: string;
   users: number;
@@ -20,7 +21,7 @@ export type GlowFeature = {
   eventsPerUser: number | null;
 };
 
-export type GlowCancellationActivity = {
+export type VersyCancellationActivity = {
   distinctId: string;
   event: string;
   timestamp: string;
@@ -29,13 +30,13 @@ export type GlowCancellationActivity = {
   reason?: string | null;
 };
 
-export type GlowCancellation = {
+export type VersyCancellation = {
   distinctId: string;
   timestamp: string;
   reason?: string | null;
 };
 
-export type GlowCancellationJourney = {
+export type VersyCancellationJourney = {
   user: string;
   cancelledAt: string;
   reason: string | null;
@@ -47,21 +48,21 @@ export type GlowCancellationJourney = {
   recentActions: { at: string; label: string }[];
 };
 
-export type GlowCancellationReport = {
+export type VersyCancellationReport = {
   recentCount: number;
   matchedCount: number;
-  journeys: GlowCancellationJourney[];
-  topPriorActions: GlowFeature[];
+  journeys: VersyCancellationJourney[];
+  topPriorActions: VersyFeature[];
 };
 
 export const TRIAL_COMPARISON_EVENTS = [
-  "quote_viewed", "quote_swiped", "quote_liked", "practice_session_started",
+  "quote_viewed", "quote_swiped", "quote_liked", "prayer_session_started",
   "widget_installed_detected", "app_opened_from_widget", "app_opened_from_notification",
 ] as const;
 
-export type GlowTrialStart = { distinctId: string; timestamp: string; productId: string };
-export type GlowTrialEvent = { distinctId: string; timestamp: string; event: string };
-export type GlowTrialComparison = {
+export type VersyTrialStart = { distinctId: string; timestamp: string; productId: string };
+export type VersyTrialEvent = { distinctId: string; timestamp: string; event: string };
+export type VersyTrialComparison = {
   status: "waiting" | "ready" | "truncated" | "unavailable";
   sampledStarts: number;
   eligibleStarts: number;
@@ -73,15 +74,15 @@ export type GlowTrialComparison = {
     continuedPerStarter: number | null }[];
 };
 
-export function emptyTrialComparison(status: GlowTrialComparison["status"] = "waiting"): GlowTrialComparison {
+export function emptyTrialComparison(status: VersyTrialComparison["status"] = "waiting"): VersyTrialComparison {
   return { status, sampledStarts: 0, eligibleStarts: 0, earlyCancelled: 0,
     matchedCancelled: 0, matchedContinued: 0, features: [] };
 }
 
 /** Compare fixed early exposure, then a later cancellation outcome, within start week and product. */
-export function trialComparison(starts: GlowTrialStart[], events: GlowTrialEvent[], asOf: Date): GlowTrialComparison {
+export function trialComparison(starts: VersyTrialStart[], events: VersyTrialEvent[], asOf: Date): VersyTrialComparison {
   const result = emptyTrialComparison();
-  const latest = new Map<string, GlowTrialStart>();
+  const latest = new Map<string, VersyTrialStart>();
   for (const start of starts) {
     const at = Date.parse(start.timestamp);
     if (!start.distinctId || !Number.isFinite(at) || at > asOf.getTime() - 96 * 3_600_000) continue;
@@ -123,7 +124,7 @@ export function trialComparison(starts: GlowTrialStart[], events: GlowTrialEvent
   result.status = cancelled.length && continued.length ? "ready" : "waiting";
   if (result.status === "ready") {
     result.features = TRIAL_COMPARISON_EVENTS.map((event) => {
-      const label = GLOW_FEATURES.find((feature) => feature.event === event)?.label ?? event;
+      const label = VERSY_FEATURES.find((feature) => feature.event === event)?.label ?? event;
       const count = (rows: typeof cancelled) => rows.reduce((sum, row) => sum + (row.counts.get(event) ?? 0), 0);
       const users = (rows: typeof cancelled) => rows.filter((row) => (row.counts.get(event) ?? 0) > 0).length;
       return { event, label, cancelledAdoption: rate(users(cancelled), cancelled.length),
@@ -135,7 +136,7 @@ export function trialComparison(starts: GlowTrialStart[], events: GlowTrialEvent
   return result;
 }
 
-export type GlowProductReport = {
+export type VersyProductReport = {
   status: "ready" | "empty" | "unavailable" | "setup_required";
   asOf: string;
   windowStart: string;
@@ -160,24 +161,24 @@ export type GlowProductReport = {
     detectedAdds: number;
     sources: { source: string; users: number; promptedUsers: number }[];
   };
-  features: GlowFeature[];
+  features: VersyFeature[];
   reading: { users: number; sessions: number; quoteViewsPerSession: number | null;
     swipesPerSession: number | null; secondsPerSession: number | null };
   favorites: { observedUsers: number; usersWithFavorites: number; averageSaved: number | null;
     adoptionRate: number | null };
   screens: { screen: string; users: number; totalSeconds: number; secondsPerUser: number | null }[];
   categories: { category: string; users: number }[];
-  premiumUse: { status: "trial" | "paid" | "free" | "unknown"; features: GlowFeature[] }[];
+  premiumUse: { status: "trial" | "paid" | "free" | "unknown"; features: VersyFeature[] }[];
   feedback: { reason: string; users: number }[];
-  trialComparison: GlowTrialComparison;
-  cancellations: GlowCancellationReport;
-  paidCancellations: GlowCancellationReport;
+  trialComparison: VersyTrialComparison;
+  cancellations: VersyCancellationReport;
+  paidCancellations: VersyCancellationReport;
   note?: string;
 };
 
-export function emptyGlowProductReport(
-  status: GlowProductReport["status"], windowStart: Date, windowEnd: Date, note?: string,
-): GlowProductReport {
+export function emptyVersyProductReport(
+  status: VersyProductReport["status"], windowStart: Date, windowEnd: Date, note?: string,
+): VersyProductReport {
   return {
     status,
     asOf: new Date().toISOString(),
@@ -205,9 +206,9 @@ export function rate(numerator: number, denominator: number): number | null {
   return denominator > 0 ? numerator / denominator : null;
 }
 
-export function featureUsage(rows: { event: string; users: number; events: number }[]): GlowFeature[] {
+export function featureUsage(rows: { event: string; users: number; events: number }[]): VersyFeature[] {
   const byEvent = new Map(rows.map((row) => [row.event, row]));
-  return GLOW_FEATURES.map(({ event, label }) => {
+  return VERSY_FEATURES.map(({ event, label }) => {
     const row = byEvent.get(event);
     const users = row?.users ?? 0;
     const events = row?.events ?? 0;
@@ -216,11 +217,11 @@ export function featureUsage(rows: { event: string; users: number; events: numbe
 }
 
 const JOURNEY_EVENTS = new Set<string>([
-  ...GLOW_FEATURES.map((feature) => feature.event),
+  ...VERSY_FEATURES.map((feature) => feature.event),
   "notification_permission_resolved",
   "paywall_reached", "paywall_viewed", "paywall_dismissed",
   "paywall_purchase_attempted", "paywall_purchase_result",
-  "practice_session_ended", "quote_reading_session", "quote_unliked",
+  "prayer_session_ended", "quote_reading_session", "quote_unliked",
   "premium_status_changed", "widget_removed_detected",
   "screen_time",
   "sw_trial_start",
@@ -230,8 +231,8 @@ const JOURNEY_EVENTS = new Set<string>([
 const JOURNEY_LABELS: Record<string, string> = {
   paywall_reached: "Paywall reached", paywall_viewed: "Paywall viewed",
   paywall_dismissed: "Paywall dismissed", paywall_purchase_attempted: "Purchase attempted",
-  paywall_purchase_result: "Purchase result", practice_session_ended: "Practice ended",
-  quote_reading_session: "Quote reading session", quote_unliked: "Quote unliked",
+  paywall_purchase_result: "Purchase result", prayer_session_ended: "Prayer ended",
+  quote_reading_session: "Verse reading session", quote_unliked: "Verse unliked",
   premium_status_changed: "Access status changed", widget_removed_detected: "Widget removed",
   notification_permission_resolved: "Notification permission answered",
   subscription_feedback_submitted: "Subscription feedback shared",
@@ -241,11 +242,11 @@ export function journeyEvents(): string[] { return [...JOURNEY_EVENTS]; }
 
 /** PostHog and Superwall use the same Superwall UUID when their identity join succeeds. */
 export function cancellationJourneys(
-  cancellations: GlowCancellation[],
-  events: GlowCancellationActivity[],
+  cancellations: VersyCancellation[],
+  events: VersyCancellationActivity[],
   pseudonym: (distinctId: string) => string,
-): GlowCancellationReport {
-  const latest = new Map<string, GlowCancellation>();
+): VersyCancellationReport {
+  const latest = new Map<string, VersyCancellation>();
   for (const cancellation of cancellations) {
     const at = Date.parse(cancellation.timestamp);
     if (!cancellation.distinctId || !Number.isFinite(at)) continue;
@@ -253,7 +254,7 @@ export function cancellationJourneys(
     if (!existing || at > Date.parse(existing.timestamp)) latest.set(cancellation.distinctId, cancellation);
   }
   const selected = [...latest.values()].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
-  const feedback = new Map<string, GlowCancellationActivity>();
+  const feedback = new Map<string, VersyCancellationActivity>();
   for (const event of events) {
     const cancellation = latest.get(event.distinctId);
     if (!cancellation || event.event !== "subscription_feedback_submitted" || !event.reason) continue;
@@ -264,7 +265,7 @@ export function cancellationJourneys(
       feedback.set(event.distinctId, event);
     }
   }
-  const byUser = new Map<string, GlowCancellationActivity[]>();
+  const byUser = new Map<string, VersyCancellationActivity[]>();
   for (const event of events) {
     if (!JOURNEY_EVENTS.has(event.event)) continue;
     const cancellation = latest.get(event.distinctId);
@@ -307,7 +308,7 @@ export function cancellationJourneys(
         at: event.timestamp,
         label: event.event === "screen_time" && /^[a-zA-Z_]{1,50}$/.test(event.screen ?? "")
           ? `Screen: ${event.screen!.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ")}`
-          : GLOW_FEATURES.find((feature) => feature.event === event.event)?.label
+          : VERSY_FEATURES.find((feature) => feature.event === event.event)?.label
             ?? JOURNEY_LABELS[event.event] ?? "App activity",
       })),
     };

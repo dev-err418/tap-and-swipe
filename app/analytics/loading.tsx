@@ -31,7 +31,7 @@ export default function AnalyticsLoading() {
       aria-busy="true"
       aria-label="Loading analytics"
     >
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto w-full min-w-0 max-w-6xl">
         {appId ? (
           <AnalyticsDetailSkeleton period={period} app={appId} />
         ) : siteId ? (

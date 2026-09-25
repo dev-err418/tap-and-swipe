@@ -11,15 +11,15 @@ function date(value: string) {
 }
 
 function sourceLabel(source: string) {
-  return ({ onboarding: "Onboarding", reminder_sheet: "Reminder sheet", settings: "Settings", unattributed: "No recent prompt" } as Record<string, string>)[source]
+  return ({ onboarding: "Onboarding", reminder_sheet: "Reminder sheet", home_widget_sheet: "Home widget sheet", settings: "Settings", unattributed: "No recent prompt" } as Record<string, string>)[source]
     ?? source.replaceAll("_", " ");
 }
 
-export default function GlowProductPanel({ report }: { report: GlowProductReport | null }) {
+export default function GlowProductPanel({ report, appName = "Glow" }: { report: GlowProductReport | null; appName?: "Glow" | "Versy" }) {
   if (!report) return null;
   return (
     <div className="space-y-4">
-      <DashboardCard title="Glow product use" action={<span className="text-xs text-muted-foreground">EU PostHog · native app</span>}>
+      <DashboardCard title={`${appName} product use`} action={<span className="text-xs text-muted-foreground">PostHog · native app</span>}>
         {report.status === "setup_required" || report.status === "unavailable" ? (
           <p role="status" className="py-5 text-sm text-muted-foreground">{report.note}</p>
         ) : report.status === "empty" ? (
@@ -31,7 +31,7 @@ export default function GlowProductPanel({ report }: { report: GlowProductReport
                 detail={`${number(report.notifications.allowedUsers)} allowed / ${number(report.notifications.resolvedUsers)} answered the iOS prompt`} />
               <Metric label="iOS permission allowed" value={percent(report.notifications.observedAllowRate)}
                 detail={`${number(report.notifications.observedAllowedUsers)} of ${number(report.notifications.observedDecidedUsers)} users with a latest allow/deny decision`} />
-              <Metric label="Glow reminders enabled" value={percent(report.notifications.remindersEnabledRate)}
+              <Metric label={`${appName} reminders enabled`} value={percent(report.notifications.remindersEnabledRate)}
                 detail={`${number(report.notifications.remindersEnabledUsers)} of ${number(report.notifications.observedUsers)} users with a state snapshot`} />
               <Metric label="Seen with a widget" value={percent(report.widgets.seenInstalledRate)}
                 detail={`${number(report.widgets.seenInstalledUsers)} of ${number(report.widgets.checkedUsers)} checked users in this period`} />
@@ -50,10 +50,10 @@ export default function GlowProductPanel({ report }: { report: GlowProductReport
       </DashboardCard>
 
       {report.status === "ready" ? (
-        <DashboardCard title="Quote reading sessions" action={<span className="text-xs text-muted-foreground">Completed feed visits</span>}>
+        <DashboardCard title={`${appName === "Versy" ? "Verse" : "Quote"} reading sessions`} action={<span className="text-xs text-muted-foreground">Completed feed visits</span>}>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric label="People who viewed quotes" value={number(report.reading.users)} detail={`${number(report.reading.sessions)} tracked sessions`} />
-            <Metric label="Quotes viewed / session" value={report.reading.quoteViewsPerSession?.toFixed(1) ?? "—"} detail="Visible quote pages per completed feed visit" />
+            <Metric label={`People who viewed ${appName === "Versy" ? "verses" : "quotes"}`} value={number(report.reading.users)} detail={`${number(report.reading.sessions)} tracked sessions`} />
+            <Metric label={`${appName === "Versy" ? "Verses" : "Quotes"} viewed / session`} value={report.reading.quoteViewsPerSession?.toFixed(1) ?? "—"} detail="Visible pages per completed feed visit" />
             <Metric label="Swipes / session" value={report.reading.swipesPerSession?.toFixed(1) ?? "—"} detail="Quote page changes per completed feed visit" />
             <Metric label="Time / session" value={duration(report.reading.secondsPerSession)} detail="Average completed feed visit" />
           </div>
@@ -100,7 +100,7 @@ export default function GlowProductPanel({ report }: { report: GlowProductReport
             <div className="space-y-2">
               {report.screens.slice(0, 8).map((screen) => (
                 <div key={screen.screen} className="flex justify-between gap-3 text-sm">
-                  <span className="text-black/75">{screen.screen.replaceAll("_", " ")}</span>
+                  <span className="text-black/75">{screen.screen.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ")}</span>
                   <span className="tabular-nums">{duration(screen.secondsPerUser)} · {number(screen.users)} users</span>
                 </div>
               ))}
@@ -208,7 +208,7 @@ function CancellationPanel({ kind, report }: { kind: "trial" | "paid"; report: G
             <div className="mt-3 grid gap-4 text-xs sm:grid-cols-2">
               <div className="space-y-1.5 text-muted-foreground">
                 <p>Superwall reason: {journey.reason ?? "Unavailable"}</p>
-                <p>Reason shared in Glow: {journey.selfReportedReason?.replaceAll("_", " ") ?? "Not shared"}</p>
+                <p>Reason shared in app: {journey.selfReportedReason?.replaceAll("_", " ") ?? "Not shared"}</p>
                 {kind === "trial" ? <p>Trial started: {journey.trialStartedAt ? date(journey.trialStartedAt) : "Not linked"}</p> : null}
                 <p>Last app activity: {journey.lastAppActivityAt ? date(journey.lastAppActivityAt) : "Not linked"}</p>
                 {journey.lastAppVersion ? <p>Last app version: {journey.lastAppVersion}</p> : null}

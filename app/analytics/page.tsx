@@ -14,13 +14,18 @@ import { getPostbackFunnelAnalytics } from "@/lib/postback-funnel";
 import { getGrewItFunnelAnalytics } from "@/lib/grew-it-funnel";
 import { getCommunityFunnelAnalytics } from "@/lib/community-funnel";
 import {
-  getMobileAppAnalytics,
+  getMobileAppSummary,
   getMobileAppById,
   type MobileAppAnalytics,
 } from "@/lib/mobile-app-analytics";
 import AppOverviewPanel from "@/components/analytics/AppOverviewPanel";
+import GlowProductPanel from "@/components/analytics/GlowProductPanel";
+import { getGlowProductReport } from "@/lib/glow-product-queries";
+import { getVersyProductReport } from "@/lib/versy-product-queries";
+import type { GlowProductReport } from "@/lib/glow-product-analytics";
+import type { VersyProductReport } from "@/lib/versy-product-analytics";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
-import { AppDirectorySkeleton, WebsiteDirectorySkeleton, AnalyticsDirectorySkeleton } from "@/components/analytics/AnalyticsDirectorySkeleton";
+import { AnalyticsDirectorySkeleton, AppCardSkeleton, AppTotalsSkeleton, WebsiteCardSkeleton, WebsiteTotalsSkeleton } from "@/components/analytics/AnalyticsDirectorySkeleton";
 import { AnalyticsDetailSkeleton } from "@/components/analytics/AnalyticsDetailSkeleton";
 import DeadProjectsDisclosure from "@/components/analytics/DeadProjectsDisclosure";
 import {
@@ -132,7 +137,7 @@ export default async function AnalyticsPage({
 
   return (
     <main className="min-h-screen px-4 py-6 text-black sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto w-full min-w-0 max-w-6xl">
         <Suspense key={`${viewKey}:${period}`} fallback={
           detailApp ? (
             <AnalyticsDetailSkeleton period={period} app={detailApp} />
@@ -178,83 +183,125 @@ function WebsiteDirectory({
       <div className="flex justify-end">
         <AnalyticsPeriodSelect period={period} />
       </div>
-      <Suspense fallback={<AppDirectorySkeleton periodLabel={PERIOD_SUMMARY_LABELS[period]} />}>
-        <AppDirectory period={period} />
-      </Suspense>
-      <Suspense fallback={<WebsiteDirectorySkeleton periodLabel={PERIOD_SUMMARY_LABELS[period]} />}>
-        <LiveWebsiteDirectory period={period} />
-      </Suspense>
+      <AppDirectory period={period} />
+      <LiveWebsiteDirectory period={period} />
     </div>
   );
 }
 
-async function AppDirectory({ period }: { period: Period }) {
-  const liveApps = await getMobileAppAnalytics(period);
-  if (liveApps.length === 0) return null;
-  const appDownloads = liveApps.reduce((sum, app) => sum + app.downloads, 0);
-  const appRevenueCents = liveApps.reduce((sum, app) => sum + app.revenueCents, 0);
-  const periodLabel = PERIOD_SUMMARY_LABELS[period];
+const APP_LOAD_ORDER = ["poky", "glow", "versy"] as const;
+const funnelInflight = new Map<string, Promise<AppSprintFunnelAnalytics | null>>();
 
+function loadWebsiteFunnel(period: Period, site: "appsprint" | "community") {
+  const key = `${site}:${period}`;
+  const pending = funnelInflight.get(key);
+  if (pending) return pending;
+  const promise = (site === "appsprint" ? getAppSprintFunnelAnalytics(period) : getCommunityFunnelAnalytics(period))
+    .finally(() => funnelInflight.delete(key));
+  funnelInflight.set(key, promise);
+  return promise;
+}
+
+
+
+function AppDirectory({ period }: { period: Period }) {
+  const periodLabel = PERIOD_SUMMARY_LABELS[period];
   return (
     <section className="space-y-6">
-      <p className="min-w-0 text-lg text-black/55 sm:text-xl">
-        Hey Arthur, you got{" "}
-        <strong className="font-semibold text-black">{formatNumber(appDownloads)} downloads</strong>
-        {" "}and{" "}
-        <strong className="font-semibold text-black">{formatRevenue(appRevenueCents)}</strong>
-        {" "}proceeds {periodLabel}.
-      </p>
+      <Suspense fallback={<AppTotalsSkeleton periodLabel={periodLabel} />}>
+        <AppTotals period={period} />
+      </Suspense>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {liveApps.map((app) => (
-          <MobileAppCard key={app.id} app={app} period={period} />
+        {APP_LOAD_ORDER.map((id) => (
+          <Suspense key={id} fallback={<AppCardSkeleton id={id} />}>
+            <AppDirectoryCard period={period} id={id} />
+          </Suspense>
         ))}
       </div>
     </section>
   );
 }
 
-async function LiveWebsiteDirectory({ period }: { period: Period }) {
-  const [appSprintAnalytics, communityAnalytics] = await Promise.all([
-    getAppSprintFunnelAnalytics(period),
-    getCommunityFunnelAnalytics(period),
-  ]);
-  const liveWebsites = [
-    appSprintAnalytics
-      ? websiteData("appsprint", "appsprint.app", appSprintAnalytics)
-      : null,
-    websiteData("community", "community", communityAnalytics),
-  ].filter((website) => website !== null);
-  const websiteVisitors = liveWebsites.reduce((sum, website) => sum + website.metrics.visitors, 0);
-  const websiteRevenueCents = liveWebsites.reduce((sum, website) => sum + website.metrics.revenue_cents, 0);
-  const periodLabel = PERIOD_SUMMARY_LABELS[period];
+async function AppTotals({ period }: { period: Period }) {
+  const apps = (await Promise.all(APP_LOAD_ORDER.map((id) => getMobileAppSummary(period, id))))
+    .filter((app) => app !== null);
+  if (apps.length === 0) return null;
+  const downloads = apps.reduce((sum, app) => sum + app.downloads, 0);
+  const revenueCents = apps.reduce((sum, app) => sum + app.revenueCents, 0);
+  return (
+    <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+      Hey Arthur, you got{" "}
+      <strong className="font-semibold text-black">{formatNumber(downloads)} downloads</strong>
+      {" "}and{" "}
+      <strong className="font-semibold text-black">{formatRevenue(revenueCents)}</strong>
+      {" "}proceeds {PERIOD_SUMMARY_LABELS[period]}.
+    </p>
+  );
+}
 
+async function AppDirectoryCard({ period, id }: { period: Period; id: (typeof APP_LOAD_ORDER)[number] }) {
+  const app = await getMobileAppSummary(period, id);
+  if (!app) return null;
+  return <MobileAppCard app={app} period={period} />;
+}
+
+function LiveWebsiteDirectory({ period }: { period: Period }) {
+  const periodLabel = PERIOD_SUMMARY_LABELS[period];
   return (
     <section className="space-y-6">
-      {liveWebsites.length > 0 ? (
-        <p className="min-w-0 text-lg text-black/55 sm:text-xl">
-          Hey Arthur, you got{" "}
-          <strong className="font-semibold text-black">{formatNumber(websiteVisitors)} visitors</strong>
-          {" "}and made{" "}
-          <strong className="font-semibold text-black">{formatRevenue(websiteRevenueCents)}</strong>{" "}
-          {periodLabel}.
-        </p>
-      ) : (
-        <p className="text-lg text-black/55 sm:text-xl">Website analytics could not be loaded.</p>
-      )}
-      {liveWebsites.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {liveWebsites.map((website) => (
-            <WebsiteSummaryCard key={website.site} period={period} {...website} />
-          ))}
-        </div>
-      ) : (
-        <div className={`px-6 py-14 text-center text-sm text-black/45 ${DASHBOARD_SURFACE_CLASS}`}>
-          Check the AppSprint and community analytics endpoints and database configuration.
-        </div>
-      )}
+      <Suspense fallback={<WebsiteTotalsSkeleton periodLabel={periodLabel} />}>
+        <WebsiteTotals period={period} />
+      </Suspense>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <Suspense fallback={<WebsiteCardSkeleton domain="appsprint.app" />}>
+          <WebsiteDirectoryCard period={period} site="appsprint" domain="appsprint.app" />
+        </Suspense>
+        <Suspense fallback={<WebsiteCardSkeleton domain="community" />}>
+          <WebsiteDirectoryCard period={period} site="community" domain="community" />
+        </Suspense>
+      </div>
       <DeadProjectsDisclosure period={period} />
     </section>
   );
+}
+
+async function WebsiteTotals({ period }: { period: Period }) {
+  const sites = await Promise.all([
+    loadWebsiteFunnel(period, "appsprint"),
+    loadWebsiteFunnel(period, "community"),
+  ]);
+  const cards = [
+    sites[0] ? websiteData("appsprint", "appsprint.app", sites[0]) : null,
+    sites[1] ? websiteData("community", "community", sites[1]) : null,
+  ].filter((site) => site !== null);
+  if (cards.length === 0) {
+    return <p className="text-lg text-black/55 sm:text-xl">Website analytics could not be loaded.</p>;
+  }
+  const visitors = cards.reduce((sum, site) => sum + site.metrics.visitors, 0);
+  const revenueCents = cards.reduce((sum, site) => sum + site.metrics.revenue_cents, 0);
+  return (
+    <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+      Hey Arthur, you got{" "}
+      <strong className="font-semibold text-black">{formatNumber(visitors)} visitors</strong>
+      {" "}and made{" "}
+      <strong className="font-semibold text-black">{formatRevenue(revenueCents)}</strong>{" "}
+      {PERIOD_SUMMARY_LABELS[period]}.
+    </p>
+  );
+}
+
+async function WebsiteDirectoryCard({
+  period,
+  site,
+  domain,
+}: {
+  period: Period;
+  site: "appsprint" | "community";
+  domain: string;
+}) {
+  const analytics = await loadWebsiteFunnel(period, site);
+  if (!analytics) return null;
+  return <WebsiteSummaryCard period={period} {...websiteData(site, domain, analytics)} />;
 }
 
 function websiteData(
@@ -423,7 +470,7 @@ function getWebsiteAnalytics(site: WebsiteSite, period: Period) {
 function AppSprintOperations() {
   return (
     <main className="min-h-screen bg-[#2a2725] px-4 py-6 text-[#f1ebe2] sm:px-8 sm:py-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto w-full min-w-0 max-w-6xl">
         <div className="mb-8 flex items-center justify-between gap-3">
           <Link
             href="/analytics"
@@ -480,6 +527,11 @@ async function AppDetail({
   period: Period;
   appId: AppId;
 }) {
+  const productPromise = appId === "glow"
+    ? getGlowProductReport(period)
+    : appId === "versy"
+      ? getVersyProductReport(period)
+      : null;
   let app: MobileAppAnalytics | null = null;
   try {
     // A/B tests stay on the 30-day window and load after this render, so they
@@ -530,8 +582,8 @@ async function AppDetail({
   }));
 
   return (
-    <div className="space-y-10">
-      <div className="space-y-5">
+    <div className="w-full min-w-0 space-y-10">
+      <div className="w-full min-w-0 space-y-5">
         <Link
           href={buildAnalyticsUrl({ period })}
           className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-medium text-black/60 shadow-none ring-0 transition-all hover:text-black active:translate-y-px"
@@ -564,7 +616,6 @@ async function AppDetail({
 
       <AppOverviewPanel
         appId={app.id}
-        period={period}
         installs={app.downloads}
         proceeds={proceeds}
         windowLabel={windowLabel}
@@ -581,9 +632,24 @@ async function AppDetail({
         journalPractice={period === "month" ? app.journalPractice : null}
         userJourney={app.userJourney}
         deferExperiments={period !== "month"}
+        productSlot={productPromise ? (
+          <Suspense fallback={<p role="status" className="px-4 py-6 text-sm text-muted-foreground">Loading {app.name} product analytics…</p>}>
+            <ProductReportReady promise={productPromise} appName={app.name === "Versy" ? "Versy" : "Glow"} />
+          </Suspense>
+        ) : null}
       />
     </div>
   );
+}
+
+async function ProductReportReady({
+  promise,
+  appName,
+}: {
+  promise: Promise<GlowProductReport | VersyProductReport>;
+  appName: "Glow" | "Versy";
+}) {
+  return <GlowProductPanel report={await promise} appName={appName} />;
 }
 
 function formatNumber(value: number | bigint) {
