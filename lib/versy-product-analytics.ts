@@ -11,6 +11,10 @@ export const VERSY_FEATURES = [
   { event: "widget_installed_detected", label: "Widget added" },
   { event: "app_opened_from_widget", label: "Widget opens" },
   { event: "app_opened_from_notification", label: "Notification opens" },
+  { event: "winback_notification_sent", label: "Win-back sent" },
+  { event: "winback_notification_opened", label: "Win-back opened" },
+  { event: "winback_paywall_viewed", label: "Win-back paywall" },
+  { event: "winback_purchase_completed", label: "Win-back purchase" },
 ] as const;
 
 export type VersyFeature = {

@@ -177,10 +177,30 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
         </DashboardCard>
       ) : null}
 
+      {report.status === "ready" ? <WinbackPanel features={report.features} /> : null}
       {report.status === "ready" ? <CancellationPanel kind="trial" report={report.cancellations} /> : null}
       {report.status === "ready" ? <CancellationPanel kind="paid" report={report.paidCancellations} /> : null}
     </div>
   );
+}
+
+function WinbackPanel({ features }: { features: GlowProductReport["features"] }) {
+  const count = (event: string) => features.find((feature) => feature.event === event);
+  const sent = count("winback_notification_sent");
+  const opened = count("winback_notification_opened");
+  const viewed = count("winback_paywall_viewed");
+  const purchased = count("winback_purchase_completed");
+  return <DashboardCard title="Win-back after cancellation" action={<span className="text-xs text-muted-foreground">Half-price yearly offer</span>}>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <Metric label="Notifications sent" value={number(sent?.events ?? 0)} detail={`${number(sent?.users ?? 0)} people`} />
+      <Metric label="Opened" value={number(opened?.events ?? 0)} detail={`${number(opened?.users ?? 0)} people`} />
+      <Metric label="Saw the offer" value={number(viewed?.events ?? 0)} detail={`${number(viewed?.users ?? 0)} people`} />
+      <Metric label="Bought the yearly" value={number(purchased?.events ?? 0)} detail={`${number(purchased?.users ?? 0)} people`} />
+    </div>
+    <p className="mt-3 text-xs text-muted-foreground">
+      Sent is recorded when Apple accepts the push. Opened, the offer sheet, and the purchase are recorded in the app. Debug opens are excluded from production.
+    </p>
+  </DashboardCard>;
 }
 
 function CancellationPanel({ kind, report }: { kind: "trial" | "paid"; report: GlowCancellationReport }) {
