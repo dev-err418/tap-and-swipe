@@ -8,9 +8,9 @@ Set these in the Tap & Swipe server environment (Coolify for production):
 
 | Name | Value |
 | --- | --- |
-| `POSTHOG_VERSY_PROJECT_ID` | Numeric ID of the new Versy PostHog project |
-| `POSTHOG_VERSY_REGION` | `eu` or `us` to match the new project; defaults to `eu`. |
-| `POSTHOG_VERSY_READ_KEY` | A PostHog **personal API key** (`phx_…`) with `query:read` for this project. Keep it server-side. A `phs_` project secret cannot read the Query API. |
+| `POSTHOG_VERSY_PROJECT_ID` | `92537` |
+| `POSTHOG_VERSY_REGION` | `eu` |
+| `POSTHOG_VERSY_READ_KEY` | The existing PostHog **personal API key** (`phx_…`) used for Glow, with `query:read` for project 92537. Keep it server-side. A `phs_` project secret cannot read the Query API. |
 | `VERSY_ANALYTICS_AGENT_TOKEN` | Optional, independent random bearer token for a trusted agent. Do not reuse the PostHog API key. |
 
 The route also accepts the signed-in owner's Discord admin session. A bearer token is needed only for an external agent such as a private Grok tool. The server returns `401` without either credential outside development. Give the agent only this route and token, never the PostHog key. Examples after deployment:
