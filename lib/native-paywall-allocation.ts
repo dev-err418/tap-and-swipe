@@ -1,7 +1,7 @@
 /**
  * Mirrors the hardcoded Glow and Poky allocations in app code.
  * Not remote app config or observed traffic. Glow 1.7.2 ships the v3 split,
- * with a temporary English presentation override through September 26, 2026.
+ * Glow 1.7.3 extends the English presentation override through September 28, 2026.
  * Historical native_yearly_v1 retains its original 50/50 allocation.
  */
 export const GLOW_PAYWALL_EXPERIMENT = {

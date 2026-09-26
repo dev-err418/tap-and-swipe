@@ -52,7 +52,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       notes: [
         "Results start September 20, 2026 at 08:00 GMT+2; earlier cohorts and proceeds are excluded.",
         "V3 starts a new sticky paywall assignment on upgrade; v1/v2 results and pending purchases stay separate. Onboarding assignments are unchanged.",
-        "Glow 1.7.2 is live. English paywall presentations before September 27 use the yearly-only yr_59 offer under a separate legacy experiment; saved v3 assignments resume September 27 (device local time).",
+        "Glow 1.7.3 extends English yearly-only yr_59 presentations through September 28 under the separate legacy experiment; saved v3 assignments resume September 29 (device local time).",
         "The split shows app configuration, not observed traffic. StoreKit determines which subscriptions are available and their displayed prices.",
       ],
     };

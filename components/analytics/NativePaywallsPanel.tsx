@@ -51,14 +51,14 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
 
   return <div className="space-y-4">
     {appId === "glow" && <section aria-label="Configured paywall allocation" className="space-y-2 pt-2">
-      <h2 className="px-1 text-sm font-semibold">Glow 1.7.2 paywall allocation</h2>
+      <h2 className="px-1 text-sm font-semibold">Glow paywall allocation</h2>
       <div className={cn(DASHBOARD_SURFACE_CLASS, "space-y-3 p-5")}>
         <div className="flex flex-wrap gap-2">
           {GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => <span key={id} className="rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-2 py-1 text-xs text-[#1d4ed8]">
             {id} <span className="ml-1 font-semibold tabular-nums">{formatPaywallAllocation(percent)}</span>
           </span>)}
         </div>
-        <p className="text-xs text-muted-foreground">English paywall views before September 27 use the yearly-only yr_59 offer and are reported separately. The five-way v3 assignment stays saved for later presentations.</p>
+        <p className="text-xs text-muted-foreground">Glow 1.7.3 English paywall views through September 28 use the yearly-only yr_59 offer and are reported separately. The five-way v3 assignment resumes presentations September 29.</p>
       </div>
     </section>}
     <section className="space-y-2 pt-2">

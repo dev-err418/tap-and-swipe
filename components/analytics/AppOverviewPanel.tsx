@@ -18,6 +18,7 @@ import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
 import AppNotesChart from "@/components/analytics/AppNotesChart";
 import NativePaywallsPanel from "@/components/analytics/NativePaywallsPanel";
+import WinbackPaywallPanel from "@/components/analytics/WinbackPaywallPanel";
 import JournalPracticePanel from "@/components/analytics/JournalPracticePanel";
 import UserJourneyFunnel from "@/components/analytics/UserJourneyFunnel";
 import type { UserJourneyReport } from "@/lib/user-journey";
@@ -221,11 +222,11 @@ export default function AppOverviewPanel({
           id="app-analytics-panel-paywalls"
           role="tabpanel"
           aria-labelledby="app-analytics-tab-paywalls"
-          className="min-w-0"
+          className="min-w-0 space-y-4"
         >
-          {experimentsLoading ? <TabEmptyState>Loading paywalls…</TabEmptyState> : monthFailed ? <TabEmptyState>Paywalls could not be loaded.</TabEmptyState> : appId === "glow" || appId === "poky"
-            ? <NativePaywallsPanel appId={appId} report={resolvedPaywalls ?? null} />
-            : <TabEmptyState>No paywall data yet.</TabEmptyState>}
+          {(appId === "glow" || appId === "versy") && <WinbackPaywallPanel appId={appId} />}
+          {appId === "versy" ? null : experimentsLoading ? <TabEmptyState>Loading paywalls…</TabEmptyState> : monthFailed ? <TabEmptyState>Paywalls could not be loaded.</TabEmptyState>
+            : <NativePaywallsPanel appId={appId} report={resolvedPaywalls ?? null} />}
         </div>
       ) : null}
     </section>
