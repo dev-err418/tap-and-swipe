@@ -90,8 +90,8 @@ export default function AppSprintFunnelPanel({
         </div>
       </div>
 
-      {showPricingExperiment ? <DashboardCard title="Pricing A/B/C test" titleAccessory={<ExperimentWarningBadge analysis={pricingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{experimentAnalytics.pricingExperiment?.some((row) => row.variant === "annual_108_eur") ? "40% $108 / 30% €108 / 30% $144 · " : ""}{experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
-        <ExperimentStats analysis={pricingAnalysis} />
+      {showPricingExperiment ? <DashboardCard title="Pricing A/B/C test" titleAccessory={!pricingAnalysis.sufficientData ? <span className="text-xs text-muted-foreground">Collecting data</span> : null} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{experimentAnalytics.pricingExperiment?.some((row) => row.variant === "annual_108_eur") ? "40% $108 / 30% €108 / 30% $144 · " : ""}{experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
+        {pricingAnalysis.sufficientData ? <ExperimentStats analysis={pricingAnalysis} /> : null}
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-black">Revenue / visitor</Th></tr></thead>
