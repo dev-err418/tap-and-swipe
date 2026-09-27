@@ -69,7 +69,8 @@ export default function AppSprintFunnelPanel({
         trialStarts: row.asoTrials,
       }));
   const readinessWindow = { elapsedDays: 30, asOfMs: Date.parse(experimentAnalytics.generatedAt) };
-  const pricingAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.pricingExperiment ?? []), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
+  // Pricing arms use different currencies, so compare paid conversion rather than raw revenue.
+  const pricingAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.pricingExperiment ?? []), "conversion_rate", "Paid conversion rate", readinessWindow);
   const heroAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.heroPreviewExperiment), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
   const trialAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.trialExperiment ?? []), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
   const onboardingAnalysis = analyzeExperiment((experimentAnalytics.onboardingExperiment ?? []).map((row) => ({ key: row.variant, label: row.label, exposures: row.visitors, conversions: row.completed, revenue: row.revenue })), "conversion_rate", "Completion rate", readinessWindow);
@@ -89,7 +90,7 @@ export default function AppSprintFunnelPanel({
         </div>
       </div>
 
-      {showPricingExperiment ? <DashboardCard title="Pricing A/B test" titleAccessory={<ExperimentWarningBadge analysis={pricingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">20% legacy / 80% $108 · {experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
+      {showPricingExperiment ? <DashboardCard title="Pricing A/B/C test" titleAccessory={<ExperimentWarningBadge analysis={pricingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{experimentAnalytics.pricingExperiment?.some((row) => row.variant === "annual_108_eur") ? "40% $108 / 30% €108 / 30% $144 · " : ""}{experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={pricingAnalysis} />
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
@@ -98,7 +99,7 @@ export default function AppSprintFunnelPanel({
               {(experimentAnalytics.pricingExperiment ?? []).map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
                   <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
-                  <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatPreciseCurrency(row.revenue)}</NumberTd><NumberTd className="font-bold">{formatPreciseCurrency(ratio(row.revenue, row.visitors))}</NumberTd>
+                  <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatPreciseCurrency(row.revenue, row.currency)}</NumberTd><NumberTd className="font-bold">{formatPreciseCurrency(ratio(row.revenue, row.visitors), row.currency)}</NumberTd>
                 </tr>
               ))}
               {!experimentAnalytics.pricingExperiment?.length ? <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Pricing experiment data is not available yet.</td></tr> : null}
@@ -552,7 +553,7 @@ function formatInt(value: number) { return finite(value).toLocaleString("en", { 
 function formatPercent(value: number) { return `${(finite(value) * 100).toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`; }
 function variantLetter(index: number) { return String.fromCharCode(65 + Math.max(0, index)); }
 function formatCurrency(value: number) { return new Intl.NumberFormat("en", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(finite(value)); }
-function formatPreciseCurrency(value: number) { return new Intl.NumberFormat("en", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(finite(value)); }
+function formatPreciseCurrency(value: number, currency = "USD") { return new Intl.NumberFormat("en", { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(finite(value)); }
 function finite(value: number) { return Number.isFinite(value) ? value : 0; }
 function countryFlag(code: string) { return code.toUpperCase().replace(/./g, (character) => String.fromCodePoint(127397 + character.charCodeAt(0))); }
 function countryName(code: string | null | undefined) { if (!code) return "Unknown"; try { return new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase()) ?? code; } catch { return code; } }
