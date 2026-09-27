@@ -69,8 +69,9 @@ export default function AppSprintFunnelPanel({
         trialStarts: row.asoTrials,
       }));
   const readinessWindow = { elapsedDays: 30, asOfMs: Date.parse(experimentAnalytics.generatedAt) };
-  // Pricing arms use different currencies, so compare paid conversion rather than raw revenue.
-  const pricingAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.pricingExperiment ?? []), "conversion_rate", "Paid conversion rate", readinessWindow);
+  const cumulativePricing = experimentAnalytics.pricingExperiment?.some((row) => row.variant === "annual_108_eur") ?? false;
+  // The current $108 arm includes another test's history, so only analyze standalone experiments.
+  const pricingAnalysis = cumulativePricing ? null : analyzeExperiment(toRevenueArms(experimentAnalytics.pricingExperiment ?? []), "conversion_rate", "Paid conversion rate", readinessWindow);
   const heroAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.heroPreviewExperiment), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
   const trialAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.trialExperiment ?? []), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
   const onboardingAnalysis = analyzeExperiment((experimentAnalytics.onboardingExperiment ?? []).map((row) => ({ key: row.variant, label: row.label, exposures: row.visitors, conversions: row.completed, revenue: row.revenue })), "conversion_rate", "Completion rate", readinessWindow);
@@ -90,8 +91,8 @@ export default function AppSprintFunnelPanel({
         </div>
       </div>
 
-      {showPricingExperiment ? <DashboardCard title="Pricing A/B/C test" titleAccessory={!pricingAnalysis.sufficientData ? <span className="text-xs text-muted-foreground">Collecting data</span> : null} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{experimentAnalytics.pricingExperiment?.some((row) => row.variant === "annual_108_eur") ? "40% $108 / 30% €108 / 30% $144 · " : ""}{experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
-        {pricingAnalysis.sufficientData ? <ExperimentStats analysis={pricingAnalysis} /> : null}
+      {showPricingExperiment ? <DashboardCard title={cumulativePricing ? "Pricing A/B/C test" : "Pricing A/B test"} titleAccessory={cumulativePricing ? <span className="text-xs text-muted-foreground">Prior $108/year data included</span> : !pricingAnalysis?.sufficientData ? <span className="text-xs text-muted-foreground">Collecting data</span> : null} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{cumulativePricing ? "40% $108 / 30% €108 / 30% $144 · Cumulative" : experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
+        {pricingAnalysis?.sufficientData ? <ExperimentStats analysis={pricingAnalysis} /> : null}
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-black">Revenue / visitor</Th></tr></thead>
