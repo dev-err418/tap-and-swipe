@@ -52,6 +52,7 @@ export type UserJourneyReport = {
   title: string;
   variants: UserJourneyVariantResult[];
   note?: string;
+  versionComparison?: { before: UserJourneyReport; after: UserJourneyReport };
 };
 
 const ASSIGNED_KEY = "__assigned__";
@@ -230,7 +231,7 @@ export function unsupportedUserJourney(appId: "glow" | "poky" | "versy"): UserJo
     title: "User journey",
     variants: [],
     note: appId === "poky"
-      ? "Poky records the plan and home-experience assignment in Superwall. It does not record which onboarding screen each install reached."
+      ? "Poky records intro and plan screen assignments in Superwall. It does not record which onboarding screen each install reached."
       : "This app has no screen-by-screen Superwall journey.",
   };
 }

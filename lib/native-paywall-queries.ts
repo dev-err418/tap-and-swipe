@@ -1,10 +1,12 @@
 import { buildNativePaywallReport, firstRecoveryAssignments, parsePaywallAttributes, type NativePaywallReport, type PaywallAttribute, type PaywallRevenue } from "./native-paywall-analytics";
+import { appVersionSide } from "./app-version-comparison";
+import { loadFirstInstalledVersions } from "./superwall-first-versions";
 
 type Query = <T>(sql: string) => Promise<T[]>;
 const quote = (s: string) => `'${s.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
 
 /** Read only; no ingestion endpoint, schema, campaign or Superwall placement is created. */
-export async function loadNativePaywalls(query: Query, applicationID: number, start: number, end: number): Promise<NativePaywallReport> {
+export async function loadNativePaywalls(query: Query, applicationID: number, start: number, end: number, compareVersion?: string): Promise<NativePaywallReport> {
   const asOf = Date.now();
   try {
     const attributes: PaywallAttribute[] = [];
@@ -56,7 +58,18 @@ LIMIT 50001 FORMAT JSON`);
       if (rows.length > 50000) throw new Error("Transaction data exceeds the current reporting limit.");
       events.push(...rows);
     }
-    return buildNativePaywallReport(attributes, events, start, end, asOf);
+    const report = buildNativePaywallReport(attributes, events, start, end, asOf);
+    if (!compareVersion) return report;
+    const owners = [...new Set([...parsed.assignments].filter(([, record]) => record.assignedAt >= start && record.assignedAt < end)
+      .map(([key]) => key.slice(0, key.lastIndexOf("|"))))];
+    const firstVersions = await loadFirstInstalledVersions(query, applicationID, owners);
+    const sideByOwner = new Map(owners.map((owner) => [owner, appVersionSide(firstVersions.get(owner) ?? "", compareVersion)]));
+    report.versionComparison = {
+      before: buildNativePaywallReport(attributes.filter((row) => sideByOwner.get(row.appUserId) === "before"), events, start, end, asOf),
+      after: buildNativePaywallReport(attributes.filter((row) => sideByOwner.get(row.appUserId) === "after"), events, start, end, asOf),
+      excludedUsers: owners.filter((owner) => sideByOwner.get(owner) == null).length,
+    };
+    return report;
   } catch (error) {
     console.error("native_paywall_report_failed", error instanceof Error ? error.message : "Unknown error");
     return { status: "unavailable", asOf, groups: [], warnings: ["Paywall reporting is temporarily unavailable. Refresh to retry."] };

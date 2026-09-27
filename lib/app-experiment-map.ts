@@ -18,8 +18,8 @@ export type AppExperimentMapDefinition = {
 /**
  * Configuration snapshot, not observed traffic or a remote app configuration.
  * Verified 2026-09-19 against Glow's OnboardingExperiment/GlowProductID,
- * Poky's OnboardingPlanVariant/HomeExperienceVariant, and Poky Superwall iOS
- * campaigns 94968 and 97721. Update this alongside app/campaign allocation changes.
+ * Poky's independent onboarding intro, plan screen, and paywall routing.
+ * Update this alongside app/campaign allocation changes.
  * Historical result cards are deliberately not the source of active tests.
  */
 export function appExperimentMap(appId: string): AppExperimentMapDefinition | null {
@@ -60,59 +60,67 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
 
   if (appId === "poky") {
     const plan: ExperimentMapTest = {
-      id: "poky-animated-plan", label: "Plan flow", scope: "New onboarding assignments", tone: "blue",
+      id: "poky-animated-plan", label: "Plan intro", scope: "New onboarding assignments", tone: "blue",
       branches: [
-        { id: "control", label: "Standard plan", percent: 50 },
-        { id: "animated_plan", label: "Animated plan", percent: 50 },
+        { id: "control", label: "No intro", percent: 50 },
+        { id: "animated_plan", label: "Animated plan intro", percent: 50 },
       ],
     };
-    const experience: ExperimentMapTest = {
-      id: "poky-app-experience", label: "App experience", scope: "Background · next app release", tone: "blue",
+    const planDesign: ExperimentMapTest = {
+      id: "poky-plan-design-combinations", label: "Plan A/B", scope: "New onboarding assignments · four intro × plan cohorts", tone: "blue",
       branches: [
-        { id: "control", label: "Original", percent: 10 },
-        { id: "new_experience", label: "New experience · warm", percent: 90 },
+        { id: "plan_a", label: "Plan A", percent: 50 },
+        { id: "plan_b", label: "Plan B · placeholder", percent: 50 },
       ],
     };
     return {
       tests: [
         plan,
-        experience,
+        planDesign,
         {
-          id: "poky-superwall-vs-native", label: "Paywall engine", scope: "New assignment · all supported languages", tone: "orange",
+          id: "poky-trial-vs-current", label: "Onboarding offer", scope: "New installs · saved 50/50 assignment", tone: "orange",
+          branches: [
+            { id: "current", label: "Current paywall flow", percent: 50 },
+            { id: "trial", label: "3-day trial · native", percent: 50 },
+          ],
+        },
+        {
+          id: "poky-superwall-vs-native", label: "Current-flow engine", scope: "Current arm only · all supported languages", tone: "orange",
           branches: [
             { id: "superwall", label: "Superwall paywall", percent: 50 },
             { id: "native", label: "Native paywall", percent: 50 },
           ],
         },
         {
-          id: "poky-english-paywalls", label: "Native main paywalls", scope: "Native arm · 🇬🇧 English / fallback", tone: "orange",
+          id: "poky-english-paywalls", label: "Native main paywalls", scope: "Current arm · native engine · 🇬🇧 English / fallback", tone: "orange",
           branches: [
             { id: "624224", label: "Onboarding · High - 1", percent: 50 },
             { id: "624761", label: "Onboarding Name - 2", percent: 50 },
           ],
         },
         {
-          id: "poky-localized-paywalls", label: "Native localized paywalls", scope: "Native arm · 🇪🇸 Spanish · 🇩🇪 German · 🇫🇷 French", tone: "orange",
+          id: "poky-localized-paywalls", label: "Native localized paywalls", scope: "Current arm · native engine · 🇪🇸 Spanish · 🇩🇪 German · 🇫🇷 French", tone: "orange",
           branches: [{ id: "name-2", label: "Name - 2 · each language", percent: 100 }],
         },
         {
-          id: "poky-native-recovery-holdout", label: "Native recovery", scope: "Native arm · upfront 50/50 · any origin placement", tone: "orange",
+          id: "poky-native-recovery-holdout", label: "Native recovery", scope: "Current arm · native engine · upfront 50/50 · any origin placement", tone: "orange",
           branches: [
             { id: "recovery", label: "Recovery paywall", percent: 50 },
             { id: "holdout", label: "No recovery", percent: 50 },
           ],
         },
       ],
-      combinations: plan.branches.flatMap((p) => experience.branches.map((e) => ({
-        id: `${p.id}-${e.id}`,
-        label: `${p.label} + ${e.id === "control" ? "original" : "warm"}`,
-        percent: p.percent * e.percent / 100,
+      combinations: plan.branches.flatMap((intro) => planDesign.branches.map((design) => ({
+        id: `${intro.id}-${design.id}`,
+        label: `${intro.label} + ${design.label}`,
+        percent: intro.percent * design.percent / 100,
       }))),
       notes: [
-        "Results start September 20, 2026 at 16:00 GMT+2. The App experience card also includes a fixed 30-day pre-split Original baseline.",
-        "Paywall engine results start September 24, 2026 at 13:37 GMT+2. Each eligible user receives one saved 50/50 assignment. Earlier Superwall conversions and subscriptions are excluded from this new test.",
-        "Background 90/10 applies to new assignments in the next release. Earlier builds use 70/30 or 50/50; saved assignments are unchanged.",
-        "The native recovery group is assigned before onboarding within the native paywall arm. Superwall uses its configured campaign and recovery flow. The home-screen shortcut remains available in both arms.",
+        "Results start September 20, 2026 at 16:00 GMT+2. Everyone now uses the Warm experience.",
+        "The new 50/50 onboarding offer assigns current paywall or a single hardcoded three-day trial paywall. The trial arm never registers a Superwall paywall placement or enters the older paywall engine and recovery tests.",
+        "The plan design draw is a new independent 50/50 assignment. Combined with the existing intro draw, it creates four 25% cohorts. Plan B currently displays a placeholder screen.",
+        "The older Superwall/native engine and native recovery tests continue only inside the current arm. Historical assignments remain separate.",
+        "The current native recovery group is assigned before onboarding within the current native engine. Superwall uses its configured campaign and recovery flow. The home-screen shortcut remains a separate entry point.",
       ],
     };
   }

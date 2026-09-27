@@ -1,18 +1,21 @@
 import "server-only";
 import { appAnalyticsPeriodRange } from "./app-analytics-time";
 import { summarizeWinbackPaywall, type WinbackPaywallReport } from "./winback-paywall-analytics";
+import { appVersionSide } from "./app-version-comparison";
+import { loadFirstInstalledVersions } from "./superwall-first-versions";
+import { querySuperwall } from "./mobile-app-analytics";
 
 type AppId = "glow" | "versy";
 const HOST = "https://eu.posthog.com";
 const MAX_GROUPS = 20_000;
-const cache = new Map<AppId, { expiresAt: number; report: WinbackPaywallReport }>();
-const inflight = new Map<AppId, Promise<WinbackPaywallReport>>();
+const cache = new Map<string, { expiresAt: number; report: WinbackPaywallReport }>();
+const inflight = new Map<string, Promise<WinbackPaywallReport>>();
 
 function sqlTime(date: Date): string { return date.toISOString().slice(0, 19).replace("T", " "); }
 function text(value: unknown): string { return String(value ?? ""); }
 function number(value: unknown): number { const n = Number(value); return Number.isFinite(n) && n >= 0 ? n : 0; }
 
-async function load(appId: AppId): Promise<WinbackPaywallReport> {
+async function load(appId: AppId, compareVersion?: string): Promise<WinbackPaywallReport> {
   const { since, before } = appAnalyticsPeriodRange("month");
   const base = summarizeWinbackPaywall([], since.toISOString(), before.toISOString());
   const prefix = appId === "glow" ? "GLOW" : "VERSY";
@@ -51,26 +54,46 @@ async function load(appId: AppId): Promise<WinbackPaywallReport> {
     if (!data || typeof data !== "object" || !Array.isArray((data as { results?: unknown }).results)) throw new Error("Invalid PostHog result");
     const results = (data as { results: unknown[][] }).results;
     if (results.length > MAX_GROUPS) return { ...base, status: "limited", note: "More than 20,000 viewer/product groups. Narrower reporting is needed before showing a reliable conversion rate." };
-    return summarizeWinbackPaywall(results.map((row) => ({
+    const groups = results.map((row) => ({
       userId: text(row[0]), source: text(row[1]).slice(0, 120), productId: text(row[2]).slice(0, 120),
       views: number(row[3]), purchases: number(row[4]), firstView: number(row[5]), lastPurchase: number(row[6]),
-    })), base.windowStart, base.windowEnd);
+    }));
+    const report = summarizeWinbackPaywall(groups, base.windowStart, base.windowEnd);
+    if (!compareVersion) return report;
+    const superwallKey = process.env[`SUPERWALL_${prefix}_API_KEY`]?.trim();
+    if (!superwallKey) return { ...report, versionComparisonError: "First-install version data is unavailable." };
+    try {
+      const applicationId = appId === "glow" ? 54736 : 51393;
+      const organizationId = appId === "glow" ? 27020 : 25476;
+      const owners = [...new Set(groups.filter((row) => row.views > 0).map((row) => row.userId))];
+      const versions = await loadFirstInstalledVersions(<T,>(sql: string) => querySuperwall<T>(sql, organizationId, superwallKey), applicationId, owners);
+      const side = new Map(owners.map((owner) => [owner, appVersionSide(versions.get(owner) ?? "", compareVersion)]));
+      report.versionComparison = {
+        before: summarizeWinbackPaywall(groups.filter((row) => side.get(row.userId) === "before"), base.windowStart, base.windowEnd),
+        after: summarizeWinbackPaywall(groups.filter((row) => side.get(row.userId) === "after"), base.windowStart, base.windowEnd),
+        excludedUsers: owners.filter((owner) => side.get(owner) == null).length,
+      };
+    } catch {
+      report.versionComparisonError = "First-install version data could not be loaded. Refresh to retry.";
+    }
+    return report;
   } catch (error) {
     console.error("tap_and_swipe.winback_paywall_query_failed", { appId, error: error instanceof Error ? error.message : String(error) });
     return { ...base, status: "unavailable", note: "Offer analytics could not be loaded. Refresh to retry." };
   }
 }
 
-export function getWinbackPaywallReport(appId: AppId): Promise<WinbackPaywallReport> {
-  const cached = cache.get(appId);
+export function getWinbackPaywallReport(appId: AppId, compareVersion?: string): Promise<WinbackPaywallReport> {
+  const cacheKey = `${appId}:${compareVersion ?? "all"}`;
+  const cached = cache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.report);
-  const pending = inflight.get(appId);
+  const pending = inflight.get(cacheKey);
   if (pending) return pending;
-  const promise = load(appId).then((report) => {
-    cache.set(appId, { report, expiresAt: Date.now() + 90_000 });
-    inflight.delete(appId);
+  const promise = load(appId, compareVersion).then((report) => {
+    cache.set(cacheKey, { report, expiresAt: Date.now() + 90_000 });
+    inflight.delete(cacheKey);
     return report;
-  }, (error) => { inflight.delete(appId); throw error; });
-  inflight.set(appId, promise);
+  }, (error) => { inflight.delete(cacheKey); throw error; });
+  inflight.set(cacheKey, promise);
   return promise;
 }

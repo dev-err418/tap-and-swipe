@@ -62,6 +62,7 @@ export default function AppExperimentMap({
   const visibleExperiments = experimentsForLanguage(experiments, selectedLanguage);
   const bestVariants = currentBestVariantResults(visibleExperiments);
   const experimentAppu = currentExperimentAppu(visibleExperiments);
+  const experimentUsers = currentExperimentUsers(visibleExperiments);
   const cohortMetrics = currentCohortMetrics(flow.nodes, flow.edges, visibleExperiments);
   const paywallMetrics = currentPaywallMetrics(flow.nodes, nativePaywalls, selectedLanguage);
   const candidateBestNodeIds = new Set(flow.nodes.flatMap((node) => {
@@ -163,6 +164,15 @@ export default function AppExperimentMap({
             const cohortMetric = cohortMetrics.get(node.id);
             const showsPaywallMetrics = paywallMetrics.has(node.id);
             const showsExperimentAppu = experimentMetricKey != null || node.cohortMetric != null;
+            const cohortSource = node.cohortMetric
+              ? visibleExperiments.find((experiment) => experiment.id === node.cohortMetric!.experiment)
+              : null;
+            const cohortComplete = cohortSource && !cohortSource.paidUsersOnly
+              && node.cohortMetric?.variants.every((key) => cohortSource.variants.some((variant) => variant.key === key));
+            const users = cohortComplete ? cohortMetric?.users
+              : showsPaywallMetrics ? paywallMetric?.users
+                : experimentMetricKey ? experimentUsers.get(experimentMetricKey) : undefined;
+            const label = users == null ? node.label : `${node.label} (${users.toLocaleString("en-US")})`;
             const isBest = isExperimentBest || (bestPathNodeIds.has(node.id) && (paywallMetric?.isBest === true || cohortMetric?.isBest === true));
             const cardDetail = node.cohortMetric
                 ? `APPU ${formatAppu(cohortMetric?.appu)}`
@@ -185,7 +195,7 @@ export default function AppExperimentMap({
               <g key={node.id}
                 role={interactive ? "button" : undefined}
                 tabIndex={interactive ? 0 : undefined}
-                aria-label={interactive ? `${node.label}: view test stats` : undefined}
+                aria-label={interactive ? `${label}: view test stats` : undefined}
                 aria-haspopup={interactive ? "dialog" : undefined}
                 aria-expanded={interactive ? activeNodeId === node.id : undefined}
                 className={interactive ? "group cursor-pointer outline-none" : undefined}
@@ -206,7 +216,7 @@ export default function AppExperimentMap({
                   strokeWidth={isBest ? 2 : 1}
                   className={interactive ? "transition-[filter,stroke-width] duration-150 group-hover:brightness-95 group-focus-visible:[stroke:#1d4ed8] group-focus-visible:[stroke-width:3] motion-reduce:transition-none" : undefined}
                 />
-                <text x={node.x + 12} y={node.y + (cardDetail ? -4 : 4)} fill="#252525" fontSize={13}>{node.label}</text>
+                <text x={node.x + 12} y={node.y + (cardDetail ? -4 : 4)} fill="#252525" fontSize={mapLabelFontSize(label, node.width)}>{label}</text>
                 {cardDetail ? (
                   <text
                     x={node.x + 12} y={node.y + 14}
@@ -292,7 +302,7 @@ export function currentPaywallMetrics(
   report: NativePaywallReport | null,
   selectedLanguage?: string,
 ) {
-  const metrics = new Map<string, { appu: number | null; conversionRate: number | null; isBest: boolean }>();
+  const metrics = new Map<string, { users: number | null; appu: number | null; conversionRate: number | null; isBest: boolean }>();
   for (const node of nodes) {
     const target = experimentMapDetailTarget(node, selectedLanguage, report);
     const variant = node.paywallMetric?.variant ?? node.variantId;
@@ -309,6 +319,7 @@ export function currentPaywallMetrics(
     const maximum = ranked.length > 1 ? Math.max(...ranked.map((candidate) => candidate.appu)) : null;
     const leaders = maximum == null ? [] : ranked.filter((candidate) => candidate.appu === maximum);
     metrics.set(node.id, {
+      users: row?.users ?? null,
       appu,
       conversionRate: row && (group?.outcomeScope ? row.users : row.views) > 0
         ? row.conversions / (group?.outcomeScope ? row.users : row.views) : null,
@@ -350,6 +361,18 @@ function currentExperimentAppu(experiments: MobileAppExperiment[]) {
     if (users > 0 && Number.isFinite(variant.proceeds)) values.set(`${experiment.id}|${variant.key}`, variant.proceeds / users);
   }
   return values;
+}
+
+function currentExperimentUsers(experiments: MobileAppExperiment[]) {
+  const users = new Map<string, number>();
+  for (const experiment of experiments) for (const variant of experiment.variants) {
+    users.set(`${experiment.id}|${variant.key}`, variant.users > 0 ? variant.users : variant.installs);
+  }
+  return users;
+}
+
+function mapLabelFontSize(label: string, width: number) {
+  return Math.min(13, Math.max(10, (width - 24) / (Array.from(label).length * 0.56)));
 }
 
 function experimentsForLanguage(experiments: MobileAppExperiment[], language: string | undefined) {

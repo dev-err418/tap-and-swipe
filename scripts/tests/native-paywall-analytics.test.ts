@@ -332,6 +332,24 @@ test("recovery loader follows transaction anchors even when main assignment pred
   assert.deepEqual(result.warnings, []);
 });
 
+test("paywall version comparison filters assignment owners while retaining attributed money", async () => {
+  const attrs = [...fixture("older", {}, "100"), ...fixture("newer", {}, "200")];
+  const result = await loadNativePaywalls(async <T>(sql: string) => {
+    if (sql.includes("sw.user_attributes_rep")) return attrs as T[];
+    if (sql.includes("sw.demand_score_events_rep")) return [
+      { appUserId: "older", ver: "1.6" }, { appUserId: "newer", ver: "1.7" },
+    ] as T[];
+    return [money(), money({ appUserId: "newer", originalTransactionId: "200", transactionId: "200", id: "200" })] as T[];
+  }, 54736, start, start + DAY, "1.7");
+  const before = result.versionComparison!.before.groups.find((group) => group.language === "all")!.paywalls[0];
+  const after = result.versionComparison!.after.groups.find((group) => group.language === "all")!.paywalls[0];
+  assert.equal(before.users, 1);
+  assert.equal(after.users, 1);
+  assert.equal(before.proceeds, 8.5);
+  assert.equal(after.proceeds, 8.5);
+  assert.equal(result.versionComparison!.excludedUsers, 0);
+});
+
 test("unavailable recovery amounts suppress winner estimates", () => {
   const result = report([recoveryAssignment("buyer"), recoveryAssignment("offer", "recovery")],
     [money({ appUserId: "buyer", proceeds: null })]);

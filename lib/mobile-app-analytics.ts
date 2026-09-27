@@ -1,5 +1,4 @@
 import "server-only";
-import { paidExperienceCohort } from "./paid-experience-cohort";
 import { glowMatureCountries } from "./glow-mature-countries";
 import { GLOW_SUPERWALL_HISTORY_START_MS, glowPaywallMigrationExperiment } from "./glow-paywall-migration";
 import { loadUserJourney } from "./user-journey-queries";
@@ -8,17 +7,19 @@ import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
 import { loadNativePaywalls } from "./native-paywall-queries";
 import { glowExperimentStart } from "./glow-experiment-window";
-import { POKY_EXPERIMENT_START_MS, pokyExperimentStart } from "./poky-experiment-window";
+import { pokyExperimentStart } from "./poky-experiment-window";
 import { loadJournalPractice } from "./journal-practice-queries";
 import type { JournalPracticeReport } from "./journal-practice-analytics";
 import type { NativePaywallReport } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_NATIVE_RECOVERY_KEYS, pokyNativeRecoveryExperiment } from "./poky-native-recovery";
 import { POKY_PAYWALL_ENGINE_ATTRIBUTE, pokyPaywallMigrationExperiment } from "./poky-paywall-migration";
+import { POKY_TRIAL_OFFER_ATTRIBUTE_KEYS, pokyTrialOfferExperiment } from "./poky-trial-offer";
 import { paidSubscriptionActivity } from "./paid-subscription-activity";
 import { installCohortCountries } from "./install-cohort-countries";
 import { subscriptionActiveAt } from "./subscription-retention";
 import { matchedCohortInstall } from "./experiment-install-cohort";
+import { appVersionSide, availableAppVersions } from "./app-version-comparison";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -109,6 +110,7 @@ export type MobileAppExperiment = {
   scoreMetrics?: MobileAppExperimentScoreMetric[];
   showCompletion?: boolean;
   showTrials?: boolean;
+  trialRateLabel?: string;
   showRetention?: boolean;
   showUsers?: boolean;
   showSessions?: boolean;
@@ -158,6 +160,30 @@ export type MobileAppAnalytics = {
   nativePaywalls?: NativePaywallReport | null;
   journalPractice?: JournalPracticeReport | null;
   userJourney?: UserJourneyReport | null;
+  appVersions?: string[];
+  versionComparison?: MobileAppVersionComparison | null;
+};
+
+export type MobileAppVersionMetrics = {
+  installs: number;
+  cohortInstalls: number;
+  cohortPaid: number;
+  cohortProceeds: number;
+  countries: MobileAppCountryRow[];
+  plans: MobileAppPlanCountryRow[];
+  retention: MobileAppRetentionCountryRow[];
+  trialCancelTiming: TrialCancelTiming | null;
+  experiments: MobileAppExperiment[];
+};
+
+export type MobileAppVersionComparison = {
+  cutoff: string;
+  before: MobileAppVersionMetrics;
+  after: MobileAppVersionMetrics;
+  excludedInstalls: number;
+  userJourney: { before: UserJourneyReport; after: UserJourneyReport } | null;
+  nativePaywalls: { before: NativePaywallReport; after: NativePaywallReport; excludedUsers: number } | null;
+  journalPractice: { before: JournalPracticeReport; after: JournalPracticeReport; excludedUsers: number } | null;
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -183,7 +209,7 @@ const VERSY_ATTRIBUTE_KEYS = ["onboarding_experiment_id", "onboarding_variant", 
   "onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant", "onboarding_paywall_access_variant",
   "yearly_price_experiment_id", "yearly_price_product_id",
   "paywall_configuration_experiment_id", "paywall_configuration_variant", "versy_tracking_environment"] as const;
-const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "onboarding_plan_allocation", "home_experience_variant", "home_experience_allocation", "poky_tracking_environment", POKY_PAYWALL_ENGINE_ATTRIBUTE, ...POKY_NATIVE_RECOVERY_KEYS] as const;
+const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "onboarding_plan_allocation", "onboarding_plan_design_variant", "onboarding_plan_design_allocation", "poky_tracking_environment", POKY_PAYWALL_ENGINE_ATTRIBUTE, ...POKY_TRIAL_OFFER_ATTRIBUTE_KEYS, ...POKY_NATIVE_RECOVERY_KEYS] as const;
 
 type SuperwallAppConfig = {
   id: MobileAppAnalytics["id"];
@@ -228,9 +254,7 @@ type SessionRow = {
 
 type AppFacts = {
   migrationHistory?: { installs: InstallRow[]; events: AttributedRow[]; startMs: number };
-  historicalExperienceSessions?: SessionRow[];
   sessionDataAvailable: boolean;
-  historicalSessionDataAvailable: boolean;
   startMs: number;
   endMs: number;
   sessionDays: number;
@@ -260,8 +284,6 @@ type AttributeExperimentDefinition = {
   showInstalls?: boolean;
   showPaid?: boolean;
   showDownloadPaid?: boolean;
-  historicalControl?: boolean;
-  asOfMs?: number;
 };
 
 type CacheEntry<T> = { expiresAt: number; value: T };
@@ -274,12 +296,12 @@ const queryWaiters: Array<() => void> = [];
 export async function getMobileAppById(
   period: Period,
   id: MobileAppAnalytics["id"],
-  options?: { sessions?: boolean },
+  options?: { sessions?: boolean; compareVersion?: string },
 ) {
   const sessions = options?.sessions !== false;
-  if (id === "poky") return getPokyAnalytics(period, true, sessions);
-  if (id === "glow") return getGlowAnalytics(period, true, sessions);
-  return getVersyAnalytics(period, true, sessions);
+  if (id === "poky") return getPokyAnalytics(period, true, false, options?.compareVersion);
+  if (id === "glow") return getGlowAnalytics(period, true, sessions, options?.compareVersion);
+  return getVersyAnalytics(period, true, sessions, options?.compareVersion);
 }
 
 export async function getMobileAppSummary(period: Period, id: MobileAppAnalytics["id"]) {
@@ -301,7 +323,7 @@ export async function getMobileAppAnalytics(period: Period) {
   return results.filter((app) => app !== null);
 }
 
-async function getGlowAnalytics(period: Period, includeCountries = false, sessions = true): Promise<MobileAppAnalytics> {
+async function getGlowAnalytics(period: Period, includeCountries = false, sessions = true, compareVersion?: string): Promise<MobileAppAnalytics> {
   const apiKey = process.env.SUPERWALL_GLOW_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_GLOW_API_KEY is not configured");
 
@@ -317,10 +339,11 @@ async function getGlowAnalytics(period: Period, includeCountries = false, sessio
     },
     includeCountries,
     sessions,
+    compareVersion,
   );
 }
 
-async function getPokyAnalytics(period: Period, includeCountries = false, sessions = true): Promise<MobileAppAnalytics> {
+async function getPokyAnalytics(period: Period, includeCountries = false, sessions = false, compareVersion?: string): Promise<MobileAppAnalytics> {
   const apiKey = process.env.SUPERWALL_POKY_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_POKY_API_KEY is not configured");
 
@@ -336,10 +359,11 @@ async function getPokyAnalytics(period: Period, includeCountries = false, sessio
     },
     includeCountries,
     sessions,
+    compareVersion,
   );
 }
 
-async function getVersyAnalytics(period: Period, includeCountries = false, sessions = true): Promise<MobileAppAnalytics> {
+async function getVersyAnalytics(period: Period, includeCountries = false, sessions = true, compareVersion?: string): Promise<MobileAppAnalytics> {
   const apiKey = process.env.SUPERWALL_VERSY_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_VERSY_API_KEY is not configured");
 
@@ -355,6 +379,7 @@ async function getVersyAnalytics(period: Period, includeCountries = false, sessi
     },
     includeCountries,
     sessions,
+    compareVersion,
   );
 }
 
@@ -363,14 +388,15 @@ async function getSuperwallAppAnalytics(
   app: SuperwallAppConfig,
   includeCountries = false,
   sessions = true,
+  compareVersion?: string,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}`;
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${compareVersion ? `:version:${compareVersion}` : ""}`;
   const hit = analyticsCache.get(cacheKey);
   if (hit && hit.expiresAt > Date.now()) return hit.value;
   const pending = analyticsInflight.get(cacheKey);
   if (pending) return pending;
 
-  const promise = loadSuperwallAppAnalytics(period, app, includeCountries, sessions).then(
+  const promise = loadSuperwallAppAnalytics(period, app, includeCountries, sessions, compareVersion).then(
     (value) => {
       analyticsCache.set(cacheKey, { expiresAt: Date.now() + ANALYTICS_CACHE_MS, value });
       analyticsInflight.delete(cacheKey);
@@ -390,6 +416,7 @@ async function loadSuperwallAppAnalytics(
   app: SuperwallAppConfig,
   includeCountries: boolean,
   sessions: boolean,
+  compareVersion?: string,
 ): Promise<MobileAppAnalytics> {
   const { since, before } = periodRange(period);
   const bucketExpression = superwallBucketExpression(period);
@@ -441,7 +468,7 @@ async function loadSuperwallAppAnalytics(
     FORMAT JSON
   `;
 
-  const [downloadResult, revenueResult, factsResult, paywallResult, journalPracticeResult, journeyResult] = await Promise.allSettled([
+  const [downloadResult, revenueResult, factsResult, paywallResult, journalPracticeResult, journeyResult, versionsResult] = await Promise.allSettled([
     querySuperwall<{ bucket: string; downloads: string | number }>(
       downloadsQuery,
       app.organizationId,
@@ -453,7 +480,7 @@ async function loadSuperwallAppAnalytics(
       app.apiKey,
     ),
     includeCountries ? loadAppFacts(app, start, end, startMs, endMs, sessions) : Promise.resolve(null),
-    includeCountries && (app.id === "glow" || app.id === "poky")
+    includeCountries && (app.id === "glow" || app.id === "poky") && (!compareVersion || period === "month")
       ? loadNativePaywalls(
           <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
           app.applicationId,
@@ -461,10 +488,11 @@ async function loadSuperwallAppAnalytics(
             ? glowExperimentStart(startMs)
             : pokyExperimentStart(startMs),
           endMs,
+          compareVersion,
         )
       : Promise.resolve(null),
-    includeCountries && app.id === "glow"
-      ? loadJournalPractice(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
+    includeCountries && app.id === "glow" && (!compareVersion || period === "month")
+      ? loadJournalPractice(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs, compareVersion)
       : Promise.resolve(null),
     includeCountries
       ? loadUserJourney(
@@ -473,8 +501,10 @@ async function loadSuperwallAppAnalytics(
           app.applicationId,
           start,
           end,
+          compareVersion,
         )
       : Promise.resolve(null),
+    includeCountries ? fetchAppVersions(app) : Promise.resolve([]),
   ]);
 
   if (downloadResult.status === "rejected") throw downloadResult.reason;
@@ -512,6 +542,12 @@ async function loadSuperwallAppAnalytics(
         : versyExperiments(facts)
     : [];
   const trialCancelTiming = facts && (app.id === "glow" || app.id === "versy") ? trialCancelFromFacts(facts) : null;
+  const versionComparison = facts && compareVersion ? compareFactsByVersion(app.id, facts, compareVersion) : null;
+  if (versionComparison) {
+    versionComparison.userJourney = journeyResult.status === "fulfilled" ? journeyResult.value?.versionComparison ?? null : null;
+    versionComparison.nativePaywalls = paywallResult.status === "fulfilled" ? paywallResult.value?.versionComparison ?? null : null;
+    versionComparison.journalPractice = journalPracticeResult.status === "fulfilled" ? journalPracticeResult.value?.versionComparison ?? null : null;
+  }
 
   return {
     id: app.id,
@@ -535,6 +571,67 @@ async function loadSuperwallAppAnalytics(
       status: "unavailable", asOf: Date.now(), groups: [], warnings: ["Paywall reporting is temporarily unavailable."],
     },
     userJourney: journeyResult.status === "fulfilled" ? journeyResult.value : null,
+    appVersions: availableAppVersions(versionsResult.status === "fulfilled" ? versionsResult.value : (facts?.migrationHistory?.installs ?? facts?.installs ?? []).map((row) => row.appVersion)),
+    versionComparison,
+  };
+}
+
+async function fetchAppVersions(app: SuperwallAppConfig): Promise<string[]> {
+  const rows = await querySuperwall<{ ver: string }>(`
+SELECT DISTINCT JSONExtractString(meta, 'appVersion') AS ver
+FROM sw.demand_score_events_rep
+WHERE applicationId = ${app.applicationId} AND isSandbox = 0 AND name = 'device_attributes' AND ts < now()
+  AND JSONExtractString(meta, 'appVersion') != ''
+LIMIT 200
+FORMAT JSON`, app.organizationId, app.apiKey);
+  return rows.map((row) => row.ver);
+}
+
+function compareFactsByVersion(appId: MobileAppAnalytics["id"], facts: AppFacts, cutoff: string): MobileAppVersionComparison {
+  const allInstalls = facts.migrationHistory?.installs ?? facts.installs;
+  const sideFor = new Map(allInstalls.map((row) => [row.appUserId, appVersionSide(row.appVersion, cutoff)]));
+  const metrics = (side: "before" | "after"): MobileAppVersionMetrics => {
+    const ids = new Set([...sideFor].filter(([, value]) => value === side).map(([id]) => id));
+    const scoped = filterAppFacts(facts, ids);
+    const currentInstallFacts = filterAppFacts(scoped, new Set(scoped.installs.map((row) => row.appUserId)));
+    const cohortCountries = appId === "glow" ? glowMatureCountries(scoped) : installCohortCountries(scoped);
+    const experiments = appId === "glow" ? glowExperiments(scoped) : appId === "poky" ? pokyExperiments(scoped) : versyExperiments(scoped);
+    return {
+      installs: scoped.installs.length,
+      cohortInstalls: cohortCountries.reduce((total, row) => total + row.installs, 0),
+      cohortPaid: cohortCountries.reduce((total, row) => total + row.paid, 0),
+      cohortProceeds: cohortCountries.reduce((total, row) => total + row.proceeds, 0),
+      countries: cohortCountries,
+      plans: appId === "glow" ? [] : plansFromFacts(scoped),
+      retention: appId === "glow" ? [] : retentionFromFacts(scoped),
+      trialCancelTiming: appId === "poky" ? null : trialCancelFromFacts(currentInstallFacts),
+      experiments: orderAppExperiments(appId, experiments),
+    };
+  };
+  return {
+    cutoff,
+    before: metrics("before"),
+    after: metrics("after"),
+    excludedInstalls: facts.installs.filter((row) => sideFor.get(row.appUserId) == null).length,
+    userJourney: null,
+    nativePaywalls: null,
+    journalPractice: null,
+  };
+}
+
+function filterAppFacts(facts: AppFacts, ids: Set<string>): AppFacts {
+  const filterRows = <T extends { appUserId: string }>(rows: T[]) => rows.filter((row) => ids.has(row.appUserId));
+  return {
+    ...facts,
+    installs: filterRows(facts.installs),
+    events: filterRows(facts.events),
+    sessions: filterRows(facts.sessions),
+    attributes: new Map([...facts.attributes].filter(([id]) => ids.has(id))),
+    migrationHistory: facts.migrationHistory ? {
+      ...facts.migrationHistory,
+      installs: filterRows(facts.migrationHistory.installs),
+      events: filterRows(facts.migrationHistory.events),
+    } : undefined,
   };
 }
 
@@ -552,16 +649,11 @@ async function loadAppFacts(
     : app.id === "glow" ? GLOW_SUPERWALL_HISTORY_START_MS : startMs;
   const fetchStart = hasMigrationHistory ? clickhouseDate(new Date(Math.min(startMs, historyStartMs))) : start;
   const sessionRange = sessionWindow(startMs, endMs);
-  const [installResult, attributeResult, eventResult, sessionResult, historicalSessionResult] = await Promise.allSettled([
+  const [installResult, attributeResult, eventResult, sessionResult] = await Promise.allSettled([
     fetchInstallCohort(app, fetchStart, end),
     keys.length ? fetchUserAttributes(app, keys) : Promise.resolve([]),
     fetchAttributedEvents(app, fetchStart),
     app.id === "poky" && includeSessions ? fetchSessionStarts(app, sessionRange.from, sessionRange.to) : Promise.resolve([]),
-    app.id === "poky" && includeSessions ? fetchSessionStarts(
-      app,
-      POKY_EXPERIMENT_START_MS - 30 * DAY_MS,
-      POKY_EXPERIMENT_START_MS,
-    ) : Promise.resolve([]),
   ]);
 
   for (const [label, result] of [
@@ -569,7 +661,6 @@ async function loadAppFacts(
     ["attributes", attributeResult],
     ["events", eventResult],
     ["sessions", sessionResult],
-    ["historical sessions", historicalSessionResult],
   ] as const) {
     if (result.status === "rejected") {
       logAnalytics("tap_and_swipe.mobile_app_facts_partial", {
@@ -593,8 +684,6 @@ async function loadAppFacts(
     sessionFromMs: sessionRange.from,
     sessionToMs: sessionRange.to,
     sessionDataAvailable: includeSessions && sessionResult.status === "fulfilled",
-    historicalSessionDataAvailable: includeSessions && historicalSessionResult.status === "fulfilled",
-    historicalExperienceSessions: historicalSessionResult.status === "fulfilled" ? historicalSessionResult.value : [],
     installs: installResult.value.filter((row) => row.installedAt >= startMs),
     attributes: attributeMap(attributeResult.value),
     events: eventResult.value.filter((row) => row.eventTs >= startMs),
@@ -1081,6 +1170,24 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
 function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
   const scopedFacts = { ...facts, startMs: pokyExperimentStart(facts.startMs) };
   return [
+    attributeExperiment(scopedFacts, {
+      id: "poky-plan-design-combinations",
+      title: "Plan intro × plan design",
+      subtitle: "Animated intro or no intro × Plan A or Plan B · four fresh 25% cohorts",
+      attributeKeys: ["onboarding_plan_variant", "onboarding_plan_design_variant"],
+      variants: [
+        { key: "animated_plan_a", label: "Animated plan intro + Plan A", attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", onboarding_plan_design_variant: "plan_a", onboarding_plan_design_allocation: "50_50" } },
+        { key: "animated_plan_b", label: "Animated plan intro + Plan B", attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", onboarding_plan_design_variant: "plan_b", onboarding_plan_design_allocation: "50_50" } },
+        { key: "no_intro_plan_a", label: "No intro + Plan A", attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", onboarding_plan_design_variant: "plan_a", onboarding_plan_design_allocation: "50_50" } },
+        { key: "no_intro_plan_b", label: "No intro + Plan B", attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", onboarding_plan_design_variant: "plan_b", onboarding_plan_design_allocation: "50_50" } },
+      ],
+      scoreMetrics: ["appu_d7", "appu_d14"],
+      showRetention: true,
+    }),
+    pokyTrialOfferExperiment({ ...scopedFacts,
+      installs: facts.migrationHistory?.installs ?? scopedFacts.installs,
+      events: facts.migrationHistory?.events ?? scopedFacts.events,
+    }),
     pokyPaywallMigrationExperiment({ ...scopedFacts,
       installs: facts.migrationHistory?.installs ?? scopedFacts.installs,
       events: facts.migrationHistory?.events ?? scopedFacts.events,
@@ -1104,115 +1211,7 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
       scoreMetrics: ["appu_d7", "appu_d14"],
       showRetention: true,
     }),
-    pokyAppExperienceExperiment(scopedFacts),
-    attributeExperiment(scopedFacts, {
-      id: "poky-onboarding-abcd",
-      title: "Onboarding A/B/C/D test",
-      subtitle: "Extra animation × AI Chat · new 5/45/5/45 assignments",
-      attributeKeys: ["onboarding_plan_variant", "home_experience_variant"],
-      variants: [
-        {
-          key: "extra_original",
-          label: "Extra animation + original",
-          attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", home_experience_variant: "control", home_experience_allocation: ["50_50", "90_10"] },
-        },
-        {
-          key: "extra_chat",
-          label: "Extra animation + AI chat",
-          attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", home_experience_variant: "new_experience", home_experience_allocation: ["50_50", "90_10"] },
-        },
-        {
-          key: "intro_original",
-          label: "Animated intro + original",
-          attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", home_experience_variant: "control", home_experience_allocation: ["50_50", "90_10"] },
-        },
-        {
-          key: "intro_chat",
-          label: "Animated intro + AI chat",
-          attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", home_experience_variant: "new_experience", home_experience_allocation: ["50_50", "90_10"] },
-        },
-      ],
-      scoreMetrics: ["appu_d7", "appu_d14"],
-      showRetention: true,
-    }),
   ];
-}
-
-const pokyExperienceDefinition: AttributeExperimentDefinition = {
-  id: "poky-app-experience",
-  paidUsersOnly: true,
-  title: "App experience comparison",
-  subtitle: "Original (including the prior 30 days) vs AI Chat",
-  attributeKeys: ["home_experience_variant"],
-  variants: [
-    { key: "control", label: "Original", attributes: { home_experience_variant: "control", home_experience_allocation: ["50_50", "90_10"] } },
-    { key: "new_experience", label: "AI Chat", attributes: { home_experience_variant: "new_experience", home_experience_allocation: ["50_50", "90_10"] } },
-  ],
-  scoreMetrics: ["appu_d7", "appu_d14"],
-  showRetention: true,
-  countAssignedUsers: true,
-  includeSessions: true,
-  showUsers: true,
-  showSessions: true,
-  showInstalls: false,
-  showPaid: false,
-  showDownloadPaid: false,
-};
-
-function pokyAppExperienceExperiment(facts: AppFacts): MobileAppExperiment {
-  const sessionsAvailable = facts.sessionDataAvailable && facts.historicalSessionDataAvailable;
-  const definition = { ...pokyExperienceDefinition, includeSessions: sessionsAvailable,
-    showSessions: sessionsAvailable };
-  const currentStartMs = Math.max(facts.startMs, POKY_EXPERIMENT_START_MS);
-  const currentFacts: AppFacts = {
-    ...facts,
-    startMs: currentStartMs,
-    installs: facts.installs.filter((row) => row.installedAt >= currentStartMs),
-    events: facts.events.filter((row) => row.eventTs >= currentStartMs),
-    sessions: facts.sessions.filter((row) => row.eventTs >= currentStartMs),
-    sessionFromMs: Math.max(facts.sessionFromMs, currentStartMs),
-    sessionDays: Math.max(0, (facts.sessionToMs - Math.max(facts.sessionFromMs, currentStartMs)) / DAY_MS),
-  };
-  const current = attributeExperiment(paidExperienceCohort(currentFacts), definition);
-  const history = facts.migrationHistory;
-  if (!history) return current;
-
-  // Before the split, every install used Original. Keep its outcomes and activity
-  // before the cutoff so later upgrades cannot make AI Chat usage look like Original.
-  const historicalFacts: AppFacts = {
-    ...facts,
-    startMs: history.startMs,
-    endMs: POKY_EXPERIMENT_START_MS,
-    installs: history.installs.filter((row) => inRange(row.installedAt, history.startMs, POKY_EXPERIMENT_START_MS)),
-    events: history.events.filter((row) => inRange(row.eventTs, history.startMs, POKY_EXPERIMENT_START_MS)),
-    sessions: facts.historicalExperienceSessions ?? [],
-    sessionFromMs: history.startMs,
-    sessionToMs: POKY_EXPERIMENT_START_MS,
-    sessionDays: (POKY_EXPERIMENT_START_MS - history.startMs) / DAY_MS,
-  };
-  const historical = attributeExperiment(paidExperienceCohort(historicalFacts, POKY_EXPERIMENT_START_MS), {
-    ...definition,
-    historicalControl: true,
-    asOfMs: POKY_EXPERIMENT_START_MS,
-  });
-  mergeExperimentVariant(current.variants[0], historical.variants[0]);
-  for (const language of Object.keys(current.languageVariants ?? {})) {
-    mergeExperimentVariant(current.languageVariants![language][0], historical.languageVariants![language][0]);
-  }
-  return {
-    ...current,
-    randomized: false,
-    planningNote: `Original includes a fixed 30-day baseline before the AI Chat split plus newly assigned Original users. ${sessionsAvailable ? "Sessions per subscribed day counts unique session starts during paid coverage, divided by covered paid user-days. Coverage stops at cancellation, refund or expiry and resumes with a later paid renewal. The current window follows the selected period, up to 30 days; the historical window is the fixed 30 days before the split. Free-trial time is excluded. Session rates are descriptive; no probability is calculated because exposure days and cohort ages differ." : "Session activity is unavailable because a session query failed; refresh to retry."} Historical outcomes stop at the split; new 90/10 and earlier 50/50 assignments keep their original labels. The cohorts have different ages, so this comparison cannot establish an AI Chat winner.`,
-  };
-}
-
-function mergeExperimentVariant(target: MobileAppExperimentVariant, source: MobileAppExperimentVariant) {
-  addExperimentMetricsToSlice(target, source);
-  for (const [country, slice] of Object.entries(source.countries)) {
-    const bucket = target.countries[country] ?? emptyExperimentSlice();
-    addExperimentMetricsToSlice(bucket, slice);
-    target.countries[country] = bucket;
-  }
 }
 
 function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDefinition): MobileAppExperiment {
@@ -1222,10 +1221,6 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     definition.variants.map((variant) => emptyExperimentVariant(variant.key, variant.label)),
   ]));
   const variantIndexFor = (attrs: Record<string, string> | undefined) => {
-    if (definition.historicalControl) {
-      const environment = attrs?.poky_tracking_environment?.trim().toLowerCase();
-      return environment && environment !== "production" ? null : 0;
-    }
     if (!attrs) return null;
     if (definition.id.startsWith("poky-") && attrs.poky_tracking_environment !== "production") return null;
     if (definition.id.startsWith("versy-") && attrs.versy_tracking_environment === "development") return null;
@@ -1237,7 +1232,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     );
     return matched ? definition.variants.indexOf(matched) : null;
   };
-  const now = definition.asOfMs ?? Date.now();
+  const now = Date.now();
   const cohortStartMs = definition.id.startsWith("glow-") ? glowExperimentStart(facts.startMs) : facts.startMs;
   const eligibleInstalls = new Map(facts.installs
     .filter((row) => row.appUserId && inRange(row.installedAt, cohortStartMs, facts.endMs))
@@ -1263,10 +1258,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   };
 
   if (definition.countAssignedUsers) {
-    const assignedUsers: [string, Record<string, string> | undefined][] = definition.historicalControl
-      ? [...eligibleAppUserIds].map((appUserId) => [appUserId, facts.attributes.get(appUserId)])
-      : [...facts.attributes];
-    for (const [appUserId, attrs] of assignedUsers) {
+    for (const [appUserId, attrs] of facts.attributes) {
       if (!eligibleAppUserIds.has(appUserId)) continue;
       addForUser(appUserId, attrs, {
         country: countryByUser.get(appUserId) ?? "unknown",
@@ -1733,7 +1725,7 @@ function logAnalytics(event: string, extra: Record<string, unknown>) {
   log(event, extra);
 }
 
-async function querySuperwall<T>(sql: string, organizationId: number, apiKey: string): Promise<T[]> {
+export async function querySuperwall<T>(sql: string, organizationId: number, apiKey: string): Promise<T[]> {
   const url = `https://api.superwall.com/v2/organizations/${organizationId}/query`;
   let lastError: Error | null = null;
 

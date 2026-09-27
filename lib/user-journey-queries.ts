@@ -7,6 +7,7 @@ import {
   type UserJourneyReport,
   type UserJourneyStep,
 } from "./user-journey";
+import { appVersionSide } from "./app-version-comparison";
 
 type Query = <T>(sql: string) => Promise<T[]>;
 
@@ -41,6 +42,7 @@ export function userJourneySql(
   definition: UserJourneyDefinition,
   start: string,
   end: string,
+  includeVersions = false,
 ) {
   const variantAttribute = definition.variantAttribute;
   const variantValues = definition.variants.map((variant) => variant.key);
@@ -68,14 +70,15 @@ export function userJourneySql(
       `if(cohort.variant = ${quote(rule.variant)} AND countIf(seen.key = ${quote(rule.key!)} AND seen.value IN (${rule.values!.map(quote).join(", ")})) > 0, ${quote(rule.attribute)}, '')`),
   ];
   return `
-SELECT variant, step AS key, uniq(appUserId) AS users
+SELECT variant, step AS key, ${includeVersions ? "version," : ""} uniq(appUserId) AS users
 FROM (
   SELECT
     cohort.appUserId AS appUserId,
     cohort.variant AS variant,
+    ${includeVersions ? "cohort.version AS version," : ""}
     arrayJoin(arrayFilter(x -> x != '', [${stepFlags.join(", ")}])) AS step
   FROM (
-    SELECT assigned.appUserId AS appUserId, assigned.variant AS variant
+    SELECT assigned.appUserId AS appUserId, assigned.variant AS variant${includeVersions ? ", installs.version AS version" : ""}
     FROM (
       SELECT appUserId, any(value) AS variant
       FROM sw.user_attributes_rep FINAL
@@ -88,7 +91,7 @@ FROM (
       GROUP BY appUserId
     ) AS assigned
     INNER JOIN (
-      SELECT appUserId
+      SELECT appUserId${includeVersions ? ", argMin(JSONExtractString(meta, 'appVersion'), ts) AS version" : ""}
       FROM sw.demand_score_events_rep
       WHERE applicationId = ${applicationId}
         AND isSandbox = 0
@@ -109,9 +112,9 @@ FROM (
       AND ts < now()
       AND (${seenFilters.join(" OR ") || "0"})
   ) AS seen ON seen.appUserId = cohort.appUserId
-  GROUP BY cohort.appUserId, cohort.variant
+  GROUP BY cohort.appUserId, cohort.variant${includeVersions ? ", cohort.version" : ""}
 )
-GROUP BY variant, step
+GROUP BY variant, step${includeVersions ? ", version" : ""}
 FORMAT JSON
 `.trim();
 }
@@ -122,18 +125,26 @@ export async function loadUserJourney(
   applicationId: number,
   start: string,
   end: string,
+  compareVersion?: string,
 ): Promise<UserJourneyReport> {
   const definition = userJourneyDefinition(appId);
   if (!definition) return unsupportedUserJourney(appId);
   try {
-    const rows = await query<{ variant: string; key: string; users: string | number }>(
-      userJourneySql(applicationId, definition, start, end),
+    const rows = await query<{ variant: string; key: string; users: string | number; version?: string }>(
+      userJourneySql(applicationId, definition, start, end, Boolean(compareVersion)),
     );
-    return buildUserJourney(definition, rows.map((row) => ({
+    const allRows = rows.map((row) => ({
       variant: row.variant,
       key: row.key,
       users: Number(row.users),
-    })));
+    }));
+    if (!compareVersion) return buildUserJourney(definition, allRows);
+    const report = buildUserJourney(definition, sumJourneyRows(allRows));
+    report.versionComparison = {
+      before: buildUserJourney(definition, sumJourneyRows(allRows.filter((_, index) => appVersionSide(rows[index].version ?? "", compareVersion) === "before"))),
+      after: buildUserJourney(definition, sumJourneyRows(allRows.filter((_, index) => appVersionSide(rows[index].version ?? "", compareVersion) === "after"))),
+    };
+    return report;
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
       console.warn("tap_and_swipe.user_journey_failed", error instanceof Error ? error.message : error);
@@ -145,4 +156,15 @@ export async function loadUserJourney(
       note: "User journey reporting is unavailable. Refresh to retry.",
     };
   }
+}
+
+function sumJourneyRows(rows: { variant: string; key: string; users: number }[]) {
+  const totals = new Map<string, { variant: string; key: string; users: number }>();
+  for (const row of rows) {
+    const id = `${row.variant}|${row.key}`;
+    const total = totals.get(id) ?? { variant: row.variant, key: row.key, users: 0 };
+    total.users += row.users;
+    totals.set(id, total);
+  }
+  return [...totals.values()];
 }

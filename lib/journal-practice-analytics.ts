@@ -19,6 +19,7 @@ export type JournalPracticeRow = {
 export type JournalPracticeReport = {
   status: "ready" | "empty" | "unavailable"; asOf: number;
   rows: JournalPracticeRow[]; warnings: string[];
+  versionComparison?: { before: JournalPracticeReport; after: JournalPracticeReport; excludedUsers: number };
 };
 
 function object(value: unknown): value is Record<string, unknown> {

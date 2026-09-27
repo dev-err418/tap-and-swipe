@@ -2,7 +2,7 @@
 // These independent assignments are not sequential enrolment conditions.
 const experimentOrder: Record<string, readonly string[]> = {
   glow: ["glow-onboarding-copy", "glow-native-paywall", "glow-yearly-price"],
-  poky: ["poky-app-experience", "poky-animated-plan", "poky-onboarding-abcd", "poky-superwall-vs-native", "poky-native-recovery-holdout"],
+  poky: ["poky-plan-design-combinations", "poky-animated-plan", "poky-trial-vs-current", "poky-superwall-vs-native", "poky-native-recovery-holdout"],
   versy: ["versy-bible-widget-v1", "versy-paywall-layout-v1", "versy-paywall-access-v1",
     "versy-yearly-price-v1", "versy-paywall-configuration-v1"],
 };

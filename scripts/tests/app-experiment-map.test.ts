@@ -27,20 +27,6 @@ test("Poky experiment data begins at Sep 20, 2026 16:00 GMT+2", () => {
   assert.match(appExperimentMap("poky")!.notes[0], /September 20, 2026 at 16:00 GMT\+2/);
 });
 
-test("paid-user activity uses each cohort's observed days across old and new windows", () => {
-  const comparison = experiment("poky-app-experience", "sessions_per_day", [
-    variant("control", { users: 10, sessions: 40, sessionUserDays: 200 }),
-    variant("new_experience", { users: 10, sessions: 10, sessionUserDays: 20 }),
-  ]);
-  comparison.sessionDays = 7;
-  comparison.showSessions = true;
-  comparison.showUsers = true;
-  assert.equal(currentBestVariants([comparison]).get(comparison.id), "new_experience");
-  const markup = renderToStaticMarkup(createElement(AppExperimentCard, { experiment: comparison }));
-  assert.match(markup, /0\.20/);
-  assert.match(markup, /0\.50/);
-});
-
 test("every configured audience has a complete, valid allocation", () => {
   for (const app of ["glow", "poky", "versy"]) {
     const map = appExperimentMap(app);
@@ -68,15 +54,16 @@ test("Glow includes configured onboarding, paywall and Journal VS Practice assig
   }
 });
 
-test("Poky shows a 90/10 experience split, 50/50 plan split and four joint combinations", () => {
+test("Poky shows independent intro and plan design splits with four equal plan cohorts", () => {
   const map = appExperimentMap("poky")!;
-  for (const experiment of map.tests.filter((row) => row.id !== "poky-localized-paywalls" && row.id !== "poky-app-experience")) {
+  for (const experiment of map.tests.filter((row) => row.id !== "poky-localized-paywalls")) {
     assert.deepEqual(experiment.branches.map((branch) => branch.percent), [50, 50]);
   }
-  assert.deepEqual(map.tests.find((row) => row.id === "poky-app-experience")?.branches.map((branch) => branch.percent), [10, 90]);
   assert.deepEqual(map.tests.find((row) => row.id === "poky-localized-paywalls")?.branches.map((branch) => branch.percent), [100]);
-  assert.deepEqual(map.combinations?.map((branch) => branch.percent), [5, 45, 5, 45]);
-  assert.match(map.tests.find((row) => row.id === "poky-app-experience")!.scope, /next app release/);
+  assert.deepEqual(map.tests.find((row) => row.id === "poky-plan-design-combinations")?.branches.map((branch) => branch.id), ["plan_a", "plan_b"]);
+  assert.deepEqual(map.combinations?.map((branch) => branch.percent), [25, 25, 25, 25]);
+  assert.deepEqual(map.combinations?.map((branch) => branch.id), ["control-plan_a", "control-plan_b", "animated_plan-plan_a", "animated_plan-plan_b"]);
+  assert.deepEqual(map.tests.find((row) => row.id === "poky-trial-vs-current")?.branches.map((branch) => branch.id), ["current", "trial"]);
   assert.match(map.tests.find((row) => row.id === "poky-native-recovery-holdout")!.scope, /any origin placement/);
 });
 
@@ -104,16 +91,16 @@ test("unsupported apps do not show invented experiments", () => {
   assert.equal(appExperimentMap("unknown"), null);
 });
 
-test("active A/B counts include the new paywall engine assignment", () => {
+test("active A/B counts include the new plan design and trial offer assignments", () => {
   assert.equal(activeABTestCount("glow"), 3);
-  assert.equal(activeABTestCount("poky"), 5);
+  assert.equal(activeABTestCount("poky"), 6);
   assert.equal(activeABTestCount("versy"), 4);
 });
 
 test("result cards follow the onboarding-to-paywall progression without mutating inputs", () => {
   for (const [app, expected] of Object.entries({
     glow: ["glow-onboarding-copy", "glow-native-paywall", "glow-yearly-price"],
-    poky: ["poky-app-experience", "poky-animated-plan", "poky-onboarding-abcd", "poky-superwall-vs-native", "poky-native-recovery-holdout"],
+    poky: ["poky-plan-design-combinations", "poky-animated-plan", "poky-trial-vs-current", "poky-superwall-vs-native", "poky-native-recovery-holdout"],
     versy: ["versy-bible-widget-v1", "versy-paywall-layout-v1", "versy-paywall-access-v1", "versy-yearly-price-v1", "versy-paywall-configuration-v1"],
   })) {
     const input = [...expected].reverse().map((id) => ({ id }));
@@ -131,6 +118,16 @@ test("recovery map uses native assignment identities, never legacy Superwall var
   assert.deepEqual(nodes.map((node) => node.variantId), ["recovery", "holdout"]);
 });
 
+test("trial branch goes directly to one native paywall without Superwall or recovery", () => {
+  const flow = appExperimentFlow("poky")!;
+  const outgoing = flow.edges.filter((edge) => edge.from === "offer-trial");
+  assert.deepEqual(outgoing, []);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "language" && edge.to.startsWith("offer-"))
+    .map((edge) => [edge.to, edge.label]), [["offer-current", "50%"], ["offer-trial", "50%"]]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.to === "superwall" || edge.to === "native")
+    .map((edge) => edge.from), ["offer-current", "offer-current"]);
+});
+
 test("configured maps render their percentage badges without analytics data", () => {
   for (const app of ["glow", "poky", "versy"]) {
     const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: app }));
@@ -144,119 +141,88 @@ test("configured maps render their percentage badges without analytics data", ()
   assert.equal(renderToStaticMarkup(createElement(AppExperimentMap, { appId: "unknown" })), "");
 });
 
-test("the map shows APPU for every experiment step and marks the current leader", () => {
-  const experiments: MobileAppExperiment[] = [
-    experiment("poky-onboarding-abcd", "appu", [
-      variant("extra_original", { installs: 50, proceeds: 4 }),
-      variant("intro_original", { installs: 50, proceeds: 8 }),
-      variant("extra_chat", { installs: 50, proceeds: 3 }),
-      variant("intro_chat", { installs: 50, proceeds: 15 }),
-    ]),
-    experiment("poky-animated-plan", "appu_d7", [
-      variant("control", { installs: 100, proceeds: 20, installsD7: 100, proceedsD7: 20 }),
-      variant("animated_plan", { installs: 100, proceeds: 30, installsD7: 100, proceedsD7: 30 }),
-    ]),
-    experiment("poky-app-experience", "sessions_per_day", [
-      variant("control", { users: 100, sessions: 200, proceeds: 12 }),
-      variant("new_experience", { users: 100, sessions: 250, proceeds: 18 }),
-    ]),
-    experiment("poky-native-recovery-holdout", "appu", [
-      variant("holdout", { installs: 100, proceeds: 10 }),
-      variant("recovery", { installs: 100, proceeds: 20 }),
-    ]),
-  ];
-
-  assert.deepEqual([...currentBestVariants(experiments)], [
-    ["poky-onboarding-abcd", "intro_chat"],
-    ["poky-animated-plan", "animated_plan"],
-    ["poky-app-experience", "new_experience"],
-    ["poky-native-recovery-holdout", "recovery"],
-  ]);
-  const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "poky", experiments }));
-  assert.doesNotMatch(markup, />BEST<\/text>/);
-  assert.doesNotMatch(markup, /% conf|% better|50\/50 in next release|25% of new assignments/);
-  assert.match(markup, /APPU \$0\.12/);
-  assert.match(markup, /APPU \$0\.18/);
-  assert.match(markup, /APPU \$0\.06/);
-  assert.match(markup, /APPU \$0\.30/);
-  assert.match(markup, /APPU — · CR —/); // Recovery waits for the shared Paywalls report.
-  assert.match(markup, /stroke-width="3"/);
-});
-
-test("repeated downstream winners highlight only the branch under the winning parent", () => {
+test("Poky map shows four plan cohorts with independent intro assignments", () => {
   const flow = appExperimentFlow("poky")!;
-  const candidates = new Set([
-    "background-new_experience",
-    "background-control-animated_plan",
-    "background-new_experience-animated_plan",
+  const cohorts = experiment("poky-plan-design-combinations", "appu", [
+    variant("animated_plan_a", { installs: 50, proceeds: 20 }),
+    variant("animated_plan_b", { installs: 50, proceeds: 10 }),
+    variant("no_intro_plan_a", { installs: 50, proceeds: 5 }),
+    variant("no_intro_plan_b", { installs: 50, proceeds: 15 }),
   ]);
-  const active = currentBestPathNodeIds(flow.nodes, flow.edges, candidates);
-  assert.equal(active.has("background-new_experience"), true);
-  assert.equal(active.has("background-new_experience-animated_plan"), true);
-  assert.equal(active.has("background-new_experience-control"), false);
-  assert.equal(active.has("background-control-animated_plan"), false);
+  const metrics = currentCohortMetrics(flow.nodes, flow.edges, [cohorts]);
+  assert.equal(metrics.get("intro-control")?.appu, 0.2);
+  assert.equal(metrics.get("intro-animated_plan")?.appu, 0.3);
+  assert.equal(metrics.get("plan-no_intro_plan_a")?.appu, 0.1);
+  assert.equal(metrics.get("plan-animated_plan_a")?.appu, 0.4);
+  const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "poky", experiments: [cohorts] }));
+  assert.match(markup, /No intro \(100\)/);
+  assert.match(markup, /Animated plan intro \(100\)/);
+  assert.match(markup, /Intro \+ Plan A \(50\)/);
+  assert.match(markup, /No intro \+ Plan B \(50\)/);
+  assert.match(markup, /APPU \$0\.40/);
+  assert.doesNotMatch(markup, /Original|Warm experience/);
 });
 
-test("Poky parents use the user-weighted APPU of their own joint-cohort children", () => {
-  const flow = appExperimentFlow("poky")!;
-  const cohorts = experiment("poky-onboarding-abcd", "appu_d7", [
-    variant("extra_original", { installs: 90, proceeds: 9 }),
-    variant("intro_original", { installs: 10, proceeds: 5 }),
-    variant("extra_chat", { installs: 90, proceeds: 270, installsD7: 90, proceedsD7: 270 }),
-    variant("intro_chat", { installs: 10, proceeds: 60, installsD7: 10, proceedsD7: 0 }),
+test("map labels count assigned people for ordinary variants and leave routing cards uncounted", () => {
+  const offer = experiment("poky-trial-vs-current", "appu", [
+    variant("current", { users: 23, installs: 25 }),
+    variant("trial", { installs: 1_234 }),
   ]);
-  const unrelated = [
-    { ...experiment("poky-app-experience", "sessions_per_day", [
-      variant("new_experience", { users: 10, proceeds: 249.4 }),
-    ]), paidUsersOnly: true },
-    experiment("poky-animated-plan", "appu", [
-      variant("control", { installs: 100, proceeds: 382 }),
-      variant("animated_plan", { installs: 100, proceeds: 318 }),
-    ]),
-  ];
-  const metrics = currentCohortMetrics(flow.nodes, flow.edges, [cohorts, ...unrelated]);
-  const parent = metrics.get("background-new_experience")!;
-  const standard = metrics.get("background-new_experience-control")!;
-  const animated = metrics.get("background-new_experience-animated_plan")!;
-  assert.equal(parent.users, 100);
-  assert.equal(parent.proceeds, 330);
-  assert.equal(parent.appu, 3.3); // Observed 90/10 weighting, not configured 50/50 (4.5).
-  assert.equal(parent.appu, (standard.appu! * standard.users + animated.appu! * animated.users) / parent.users);
-  assert.equal(metrics.get("background-control")!.appu, 0.14);
-  assert.equal(metrics.get("background-control-control")!.appu, 0.1);
-  assert.equal(standard.appu, 3);
-  assert.equal(animated.appu, 6);
-  assert.equal(parent.isBest, true);
-  assert.equal(standard.isBest, false);
-  assert.equal(animated.isBest, true); // Highlight matches displayed total APPU, not D7.
-  const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "poky", experiments: [cohorts, ...unrelated] }));
-  assert.match(markup, /APPU \$3\.30/);
-  assert.match(markup, /APPU \$6\.00/);
-  assert.doesNotMatch(markup, /APPU \$24\.94|APPU \$3\.82|APPU \$3\.18/);
-  assert.doesNotMatch(markup, /Paywall percentages apply|Results start September|Background 50\/50 applies|The recovery group is assigned/);
+  const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "poky", experiments: [offer] }));
+  assert.match(markup, /Current paywall flow \(23\)/);
+  assert.match(markup, /3-day trial · native \(1,234\)/);
+  assert.match(markup, />Paywall language<\/text>/);
+  assert.doesNotMatch(markup, /Paywall language \(/);
 });
 
-test("Poky map does not substitute paying-only or marginal data for missing joint cohorts", () => {
+test("Poky plan paths do not cross between intro groups", () => {
   const flow = appExperimentFlow("poky")!;
-  const missing = currentCohortMetrics(flow.nodes, flow.edges, [experiment("poky-app-experience", "appu", [
-    variant("new_experience", { users: 10, proceeds: 249.4 }),
-  ])]);
-  assert.ok([...missing.values()].every((metric) => metric.appu == null && !metric.isBest));
-  const partial = currentCohortMetrics(flow.nodes, flow.edges, [experiment("poky-onboarding-abcd", "appu", [
-    variant("extra_chat", { installs: 10, proceeds: 100 }),
-  ])]);
-  assert.equal(partial.get("background-new_experience")!.appu, null);
-  assert.equal(partial.get("background-new_experience-control")!.appu, 10);
-  assert.equal(partial.get("background-new_experience-control")!.isBest, false);
+  const planEdges = flow.edges.filter((edge) => edge.to.startsWith("plan-"));
+  assert.equal(planEdges.length, 4);
+  assert.deepEqual(planEdges.map((edge) => [edge.from, edge.to]), [
+    ["intro-control", "plan-no_intro_plan_a"],
+    ["intro-control", "plan-no_intro_plan_b"],
+    ["intro-animated_plan", "plan-animated_plan_a"],
+    ["intro-animated_plan", "plan-animated_plan_b"],
+  ]);
+  const active = currentBestPathNodeIds(flow.nodes, flow.edges, new Set([
+    "intro-animated_plan", "plan-animated_plan_a", "plan-no_intro_plan_b",
+  ]));
+  assert.equal(active.has("plan-animated_plan_a"), true);
+  assert.equal(active.has("plan-no_intro_plan_b"), false);
 });
 
-test("Poky weighted map uses the selected language's joint cohorts", () => {
-  const cohorts = experiment("poky-onboarding-abcd", "appu", [
-    variant("extra_chat", { installs: 10, proceeds: 1000 }), variant("intro_chat", { installs: 10, proceeds: 1000 }),
+test("Poky intro parents use observed cohort weights and missing data stays unavailable", () => {
+  const flow = appExperimentFlow("poky")!;
+  const cohorts = experiment("poky-plan-design-combinations", "appu", [
+    variant("animated_plan_a", { installs: 90, proceeds: 270 }),
+    variant("animated_plan_b", { installs: 10, proceeds: 60 }),
+    variant("no_intro_plan_a", { installs: 90, proceeds: 9 }),
+    variant("no_intro_plan_b", { installs: 10, proceeds: 5 }),
+  ]);
+  const metrics = currentCohortMetrics(flow.nodes, flow.edges, [cohorts]);
+  assert.equal(metrics.get("intro-animated_plan")?.appu, 3.3);
+  assert.equal(metrics.get("intro-control")?.appu, 0.14);
+  assert.equal(metrics.get("plan-animated_plan_a")?.appu, 3);
+  assert.equal(metrics.get("plan-animated_plan_b")?.appu, 6);
+  const partial = currentCohortMetrics(flow.nodes, flow.edges, [{ ...cohorts, variants: cohorts.variants.slice(0, 1) }]);
+  assert.equal(partial.get("intro-animated_plan")?.appu, null);
+  assert.equal(partial.get("plan-animated_plan_a")?.appu, 3);
+  assert.equal(partial.get("plan-animated_plan_a")?.isBest, false);
+});
+
+test("Poky map uses the selected language's plan cohorts", () => {
+  const cohorts = experiment("poky-plan-design-combinations", "appu", [
+    variant("animated_plan_a", { installs: 10, proceeds: 1000 }),
+    variant("animated_plan_b", { installs: 10, proceeds: 1000 }),
+    variant("no_intro_plan_a", { installs: 10, proceeds: 1000 }),
+    variant("no_intro_plan_b", { installs: 10, proceeds: 1000 }),
   ]);
   cohorts.languageVariants = { en: [
-    variant("extra_chat", { installs: 30, proceeds: 30 }), variant("intro_chat", { installs: 10, proceeds: 30 }),
-    variant("extra_original", { installs: 5, proceeds: 0 }), variant("intro_original", { installs: 5, proceeds: 0 }),
+    variant("animated_plan_a", { installs: 30, proceeds: 30 }),
+    variant("animated_plan_b", { installs: 10, proceeds: 30 }),
+    variant("no_intro_plan_a", { installs: 5, proceeds: 0 }),
+    variant("no_intro_plan_b", { installs: 5, proceeds: 0 }),
   ] };
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
     appId: "poky", experiments: [cohorts], nativePaywalls: NATIVE_PAYWALL_DEMO_REPORT,
@@ -291,6 +257,7 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
   const metrics = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT);
   assert.equal(metrics.size, 5);
   assert.ok([...metrics.values()].every((metric) => metric.appu != null && metric.conversionRate != null));
+  assert.ok([...metrics.values()].every((metric) => metric.users != null));
 
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
     appId: "glow",
@@ -303,6 +270,8 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
   assert.equal(markup.match(/APPU \$/g)?.length, 5);
   assert.equal(markup.match(/ · CR /g)?.length, 5);
   assert.match(markup, /fill="#fff0e4"/);
+  const englishUsers = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT, "en").get("yr_49")!.users!;
+  assert.match(markup, new RegExp(`yr_49 \\(${englishUsers.toLocaleString("en-US")}\\)`));
   assert.match(markup, /stroke="#d98245"/);
   assert.match(markup, /stroke-width="3"/);
   assert.doesNotMatch(markup, /height="68"/);
@@ -329,7 +298,7 @@ test("Poky flow only includes main paywalls for the selected language", () => {
   assert.deepEqual(englishPaywalls.map((node) => node.id), ["624224", "624761"]);
   assert.ok(englishPaywalls.every((node) => node.paywallMetric?.language === "en"));
   assert.equal(english.edges.filter((edge) => edge.from === "language").length, 2);
-  assert.deepEqual(english.edges.filter((edge) => edge.from === "language").map((edge) => edge.to), ["superwall", "native"]);
+  assert.deepEqual(english.edges.filter((edge) => edge.from === "language").map((edge) => edge.to), ["offer-current", "offer-trial"]);
   assert.equal(english.edges.filter((edge) => edge.from === "native").length, 2);
   assert.equal(english.edges.filter((edge) => edge.to === "cancel").length, 2);
 
@@ -383,7 +352,7 @@ test("flows have one onboarding origin, valid left-to-right edges and no disconn
   assert.equal(appExperimentFlow("unknown"), null);
 });
 
-test("Poky branches through background, four plan combinations and all paywalls before conditional recovery", () => {
+test("Poky branches through intro, plan, offer and paywalls before conditional recovery", () => {
   const flow = appExperimentFlow("poky")!;
   const plans = flow.nodes.filter((node) => node.cohortMetric?.variants.length === 1);
   assert.equal(plans.length, 4);

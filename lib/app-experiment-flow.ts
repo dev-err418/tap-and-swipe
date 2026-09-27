@@ -107,32 +107,34 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
 }
 
 function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): ExperimentFlow {
-  const [plan, background, engine, english, localized, recovery] = map.tests;
+  const [plan, planDesign, offer, engine, english, localized, recovery] = map.tests;
   const nodes: ExperimentFlowNode[] = [
-    { id: "start", x: 36, y: 268, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
-    { id: "language", x: 618, y: 268, width: 144, label: "Paywall language", detail: "English is the fallback", tone: "neutral",
-      statsTarget: { experimentId: engine.id } },
-    { id: "cancel", x: 1320, y: 268, width: 160, label: "Native purchase cancelled", detail: "Any origin placement", tone: "neutral",
+    { id: "start", x: 36, y: 330, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
+    { id: "language", x: 618, y: 330, width: 144, label: "Paywall language", detail: "English is the fallback", tone: "neutral",
+      statsTarget: { experimentId: offer.id } },
+    { id: "cancel", x: 1560, y: 368, width: 160, label: "Native purchase cancelled", detail: "Current arm only", tone: "neutral",
       statsTarget: { experimentId: recovery.id } },
-    { id: "superwall-recovery", x: 1540, y: 76, width: 164, label: "Superwall recovery", detail: "Campaign managed", tone: "orange",
+    { id: "superwall-recovery", x: 1780, y: 76, width: 164, label: "Superwall recovery", detail: "Current arm only", tone: "orange",
       statsTarget: { experimentId: engine.id } },
   ];
   const edges: ExperimentFlowEdge[] = [];
-  background.branches.forEach((bg, bgIndex) => {
-    const bgId = `background-${bg.id}`;
-    const experience = bg.id === "control" ? "original" : "chat";
-    const y = 148 + bgIndex * 240;
-    nodes.push({
-      id: bgId, x: 160, y, width: 150, label: bg.id === "control" ? "Original" : "Warm experience",
-      tone: "blue", cohortMetric: { experiment: "poky-onboarding-abcd", variants: [`extra_${experience}`, `intro_${experience}`] },
-    });
-    edges.push({ from: "start", to: bgId, label: `${bg.percent}%` });
-    plan.branches.forEach((branch, planIndex) => {
-      const id = `${bgId}-${branch.id}`;
-      nodes.push({ id, x: 398, y: y - 60 + planIndex * 120, width: 150, label: branch.label,
-        tone: "blue",
-        cohortMetric: { experiment: "poky-onboarding-abcd", variants: [`${branch.id === "control" ? "extra" : "intro"}_${experience}`] } });
-      edges.push({ from: bgId, to: id, label: `${branch.percent}%` }, { from: id, to: "language" });
+  plan.branches.forEach((intro, introIndex) => {
+    const introId = `intro-${intro.id}`;
+    const isAnimated = intro.id === "animated_plan";
+    const variants = isAnimated ? ["animated_plan_a", "animated_plan_b"] : ["no_intro_plan_a", "no_intro_plan_b"];
+    nodes.push({ id: introId, x: 160, y: introIndex === 0 ? 190 : 470, width: 154,
+      label: intro.label, tone: "blue", cohortMetric: { experiment: planDesign.id, variants } });
+    edges.push({ from: "start", to: introId, label: `${intro.percent}%` });
+    planDesign.branches.forEach((design, designIndex) => {
+      const id = isAnimated
+        ? `animated_plan_${design.id === "plan_a" ? "a" : "b"}`
+        : `no_intro_${design.id}`;
+      const childId = `plan-${id}`;
+      const y = introIndex === 0 ? 120 + designIndex * 130 : 410 + designIndex * 130;
+      nodes.push({ id: childId, x: 398, y, width: 180,
+        label: `${isAnimated ? "Intro" : "No intro"} + ${design.id === "plan_a" ? "Plan A" : "Plan B"}`,
+        tone: "blue", cohortMetric: { experiment: planDesign.id, variants: [id] } });
+      edges.push({ from: introId, to: childId, label: `${design.percent}%` }, { from: childId, to: "language" });
     });
   });
   const offers = [
@@ -148,16 +150,21 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
   const visibleOffers = selectedLanguage
     ? offers.filter((offer) => offer.languageCode === selectedLanguage)
     : offers;
+  offer.branches.forEach((branch, index) => {
+    nodes.push({ id: `offer-${branch.id}`, x: 814, y: index === 0 ? 368 : 76, width: 174,
+      label: branch.label, tone: "orange", experimentId: offer.id, variantId: branch.id });
+    edges.push({ from: "language", to: `offer-${branch.id}`, label: `${branch.percent}%` });
+  });
   engine.branches.forEach((branch, index) => {
-    nodes.push({ id: branch.id, x: 814, y: index === 0 ? 76 : 328, width: 160,
+    nodes.push({ id: branch.id, x: 1054, y: index === 0 ? 208 : 448, width: 160,
       label: branch.label, tone: "orange", experimentId: engine.id, variantId: branch.id });
-    edges.push({ from: "language", to: branch.id, label: `${branch.percent}%` });
+    edges.push({ from: "offer-current", to: branch.id, label: `${branch.percent}%` });
   });
   edges.push({ from: "superwall", to: "superwall-recovery", conditional: true });
-  const firstOfferY = 268 - (visibleOffers.length - 1) * 50;
+  const firstOfferY = 448 - (visibleOffers.length - 1) * 50;
   visibleOffers.forEach((offer, index) => {
     nodes.push({
-      id: offer.id, x: 1054, y: firstOfferY + index * 100, width: 176, label: offer.label, detail: offer.language, tone: "orange",
+      id: offer.id, x: 1294, y: firstOfferY + index * 100, width: 176, label: offer.label, detail: offer.language, tone: "orange",
       paywallMetric: {
         experiment: `poky_native_main_v1_${offer.languageCode}`,
         variant: offer.metricVariant,
@@ -167,17 +174,17 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
     edges.push({ from: "native", to: offer.id, label: `${offer.percent}%` }, { from: offer.id, to: "cancel", conditional: true });
   });
   recovery.branches.forEach((branch, index) => {
-    nodes.push({ id: branch.id, x: 1540, y: 208 + index * 120, width: 164, label: branch.label,
+    nodes.push({ id: branch.id, x: 1780, y: 308 + index * 120, width: 164, label: branch.label,
       tone: "orange",
       experimentId: recovery.id, variantId: branch.id });
     edges.push({ from: "cancel", to: branch.id, label: `${branch.percent}%` });
   });
   return {
-    width: 1730, height: 522, nodes, edges,
+    width: 1970, height: 700, nodes, edges,
     stages: [
-      { x: 160, label: "App experience" }, { x: 398, label: "Plan flow" },
-      { x: 618, label: "Audience" }, { x: 814, label: "Engine" }, { x: 1054, label: "Native paywalls" },
-      { x: 1320, label: "Native recovery trigger" }, { x: 1540, label: "Recovery" },
+      { x: 160, label: "Plan intro" }, { x: 398, label: "Plan A/B" },
+      { x: 618, label: "Audience" }, { x: 814, label: "Offer" }, { x: 1054, label: "Current engine" },
+      { x: 1294, label: "Current native paywalls" }, { x: 1560, label: "Current recovery trigger" }, { x: 1780, label: "Recovery" },
     ],
     notes: map.notes,
   };

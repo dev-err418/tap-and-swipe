@@ -74,7 +74,7 @@ export default function AppExperimentCard({
       {scored.map((item) => (
         <ExperimentStats key={item.key} analysis={item.analysis} title={item.title} titleClassName="font-bold" showReadiness={experiment.randomized !== false || !!experiment.planningNote} historical={experiment.randomized === false} />
       ))}
-      {experiment.planningNote && (experiment.id === "poky-app-experience" || experiment.id === "poky-native-recovery-holdout") ? (
+      {experiment.planningNote && (experiment.id === "poky-native-recovery-holdout" || experiment.id === "poky-trial-vs-current") ? (
         <p className="border-b border-black/[0.08] px-4 py-3 text-xs text-black/55">{experiment.planningNote}</p>
       ) : null}
       <ExperimentTable headings={<>
@@ -90,7 +90,7 @@ export default function AppExperimentCard({
                 </Th>
               ) : null}
               {experiment.showCompletion ? <Th right>Onboarding completion</Th> : null}
-              {showTrials ? <Th right>Download → trial</Th> : null}
+              {showTrials ? <Th right>{experiment.trialRateLabel ?? "Download → trial"}</Th> : null}
               {showTrials ? <Th right>Trial → paid</Th> : null}
               {showCohortAppu ? (
                 <Th right className="font-bold text-black">

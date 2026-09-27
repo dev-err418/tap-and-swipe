@@ -41,10 +41,10 @@ test("paywall detail lookup keeps the chosen language and experiment version", (
 
 test("branch summaries agree with weighted map APPU and reject incomplete cohorts", () => {
   const flow = appExperimentFlow("poky", "en")!;
-  const node = flow.nodes.find((node) => node.id === "background-new_experience")!;
+  const node = flow.nodes.find((node) => node.id === "intro-animated_plan")!;
   const experiment: MobileAppExperiment = {
-    id: "poky-onboarding-abcd", title: "Combined onboarding", subtitle: "", scoreMetrics: ["appu_d7"],
-    variants: [variant("extra_chat", 90, 270), variant("intro_chat", 10, 60)],
+    id: "poky-plan-design-combinations", title: "Combined onboarding", subtitle: "", scoreMetrics: ["appu_d7"],
+    variants: [variant("animated_plan_a", 90, 270), variant("animated_plan_b", 10, 60)],
   };
   const summary = experimentMapBranchSummary(node, experiment)!;
   const map = currentCohortMetrics(flow.nodes, flow.edges, [experiment]).get(node.id)!;

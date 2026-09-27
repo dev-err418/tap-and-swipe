@@ -616,6 +616,8 @@ async function AppDetail({
 
       <AppOverviewPanel
         appId={app.id}
+        period={period}
+        appVersions={app.appVersions}
         installs={app.downloads}
         proceeds={proceeds}
         windowLabel={windowLabel}

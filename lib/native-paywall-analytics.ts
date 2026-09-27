@@ -81,6 +81,7 @@ export type NativePaywallReport = {
   asOf: number;
   groups: NativePaywallGroup[];
   warnings: string[];
+  versionComparison?: { before: NativePaywallReport; after: NativePaywallReport; excludedUsers: number };
 };
 
 const DAY = 86_400_000;

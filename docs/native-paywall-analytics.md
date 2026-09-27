@@ -26,6 +26,16 @@ Dashboard files:
 - `lib/mobile-app-analytics.ts`: loads this report for Glow and Poky's detail views.
 
 Poky uses the same contract from `peptides/Subscription/PokyNativePaywallAnalytics.swift`.
+Its new onboarding offer test assigns fresh installs 50/50 to the current flow
+or one hardcoded three-day trial paywall. The trial purchase and restore use
+StoreKit directly; Superwall observer mode supplies transaction association,
+analytics attributes and subscription state, but no trial paywall campaign or
+placement is registered. The trial arm
+does not enter the older engine, High/Name, or recovery tests. The primary
+`poky-trial-vs-current` card reads the scalar onboarding offer assignment,
+counts assigned nonviewers, free trial starts, later paid renewals and refunds,
+and excludes returning `legacy` assignments. The older Superwall/native and
+recovery cards describe the nested current flow and remain separate.
 Its stable per-language experiments use `poky_native_main_v1_<language>`
 (English/fallback High/Name 50/50; German, Spanish, and French Name 100%) and
 `poky_native_recovery_v2_<language>` (Recovery/holdout 50/50, assigned before
@@ -89,12 +99,10 @@ wins across language changes within each version, before filtering cohort dates.
 Missing money blocks winner estimates, including verified regular purchases
 awaiting Apple revenue for a recovery-cohort user.
 
-Fresh plan assignments publish `onboarding_plan_allocation=50_50`. New home
-assignments publish `home_experience_allocation=90_10`; earlier 50/50 home
-assignments retain their original marker. Inherited assignments are `legacy`.
-The current plan/home tests require a recognized fresh marker, and the four-way
-table requires both. Old assignments remain sticky but legacy assignments are
-excluded from these new cohorts; missing markers are never inferred. Historical raw
+Fresh intro and plan screen assignments publish their own `50_50` allocation
+markers. The four-way plan comparison requires both markers; legacy assignments
+are excluded. Poky now routes every user through the Warm experience, and the
+retired Original/Warm comparison is absent from the dashboard. Historical raw
 attributes remain stored. Do not lowercase attribute JSON during parsing.
 Current Poky onboarding reports also require `poky_tracking_environment=production`,
 so Debug overrides cannot contaminate them even before the SDK labels a user sandbox.
@@ -171,23 +179,15 @@ September 25, 2026 live check: Apple's public lookup lists Glow 1.7.2, released 
 
 ## Metric definitions
 
-Poky's App experience comparison uses only users with a positive server purchase or renewal after their cohort install. Free users and unconverted trials are excluded consistently from users, sessions, revenue, fixed-age APPU, retention, country/language slices and readiness. Previous payers remain included after expiry/refund; this measures the paying cohort rather than current subscription entitlement. Session totals count unique logged `session_start` IDs in the selected window for those users, including sessions before their first payment. Average sessions per day divides those sessions by elapsed calendar user-days since install within each window. The historical 30-day window and current shorter window contribute their own user-days, including paying users with zero sessions; their sessions are never divided by one shared seven-day window. This is a pooled, exposure-weighted rate, not the arithmetic mean of each user's rate. Other experiments keep their original populations.
-
-The App experience comparison also includes Poky installs from the fixed 30 days before the September 20 AI Chat split in Original, since that was the only available experience. Their purchases, renewals, refunds and sessions are counted only before the split. New Original users continue to count in the live arm. The dashboard recognizes saved 50/50 assignments and new 90/10 assignments without relabeling either cohort. This merged historical and randomized comparison is observational, so the card explains the cohort difference and cannot report a decisive A/B winner. The historical addition is isolated from the four-way onboarding experiment, experiment map cohorts and overview totals.
-
-The **Experiment map's onboarding tree** uses a different, consistent population:
-the four `poky-onboarding-abcd` joint experience × plan cohorts, including
-non-payers, scoped to the selected language. Each plan leaf uses its own joint
-cohort's total proceeds / installs. Each experience parent sums its two leaves'
-proceeds and installs before dividing, so its APPU is their observed-user-weighted
-average. Configured 50/50 allocation is not a weighting substitute for actual
-counts. The map never uses the paying-only App experience card or repeats the
-marginal Animated plan results beneath both parents. Missing joint data stays
-unavailable. Branch highlights compare the same total APPU displayed, within
-each sibling pair. The subsequent merged paywall stages retain their separate
-paywall-assignment populations and direct purchase attribution; they are not
-further subdivisions of the four onboarding cohorts. Poky's map has no footer
-notes; hovering a populated onboarding node shows its users and net proceeds.
+The **Experiment map's onboarding tree** uses the four
+`poky-plan-design-combinations` intro × plan screen cohorts, including non-payers
+and scoped to the selected language. Each plan leaf shows total proceeds per
+install. Each intro parent sums its Plan A and Plan B users and proceeds before
+dividing. Missing joint data stays unavailable. Intro nodes only branch to their
+own two plan screens, so independent assignments do not create crossing paths.
+The subsequent merged paywall stages retain their separate paywall-assignment
+populations and direct purchase attribution. Poky's map has no footer notes;
+hovering a populated onboarding node shows users and net proceeds.
 
 Every map card opens a stats dialog on click, Enter or Space. It reuses the current
 loaded A/B card or native paywall results table, scoped to the map language without
@@ -200,6 +200,10 @@ closing the dialog returns keyboard focus to the map card.
 Most A/B result cards display APPU D7 and D14; the full-flow Recovery card uses total APPU. D30 APPU remains available in the underlying data. Glow and Poky's historical Superwall-vs-native comparisons load Superwall installs from 30 days before their September 20 experiment cutoffs (August 21), while native installs retain the selected, cutoff-clamped cohort window. This expanded history is isolated from other experiment and dashboard totals. Their planning panels are indicative, with no completion-date projection or decisive verdict for these non-randomized cohorts. Glow classifies the earliest observed install version as Superwall before 1.7.0 and native from 1.7.0; upgrades do not move that user. All linked outcomes are followed through now, including historical trial starts/conversions, renewals and refunds; revenue is deduplicated and trial/paid counts are unique users.
 
 The AB tests and Paywalls tabs always use a rolling **30-day assignment cohort**, independently of the dashboard period selector used by the Data tab and overview charts. Outcomes are followed through report `asOf` (now), even when the cohort period ended earlier. Both paywall tables use that same 30-day cohort. Placement rows include only cohort members reaching that placement and can overlap in users; each transaction is attributed to one placement.
+
+### App version comparison
+
+The Data, AB tests, and Paywalls tabs can compare a selected app version. A user's **first recorded version on a production `device_attributes` event** fixes their cohort: versions below the selected version are Before, and the selected version or newer are After. Versions are compared by numeric components, so 1.10 is newer than 1.9. Missing or malformed first versions are excluded from both sides; they are not inferred from later upgrades. The Data comparison follows the selected dashboard period, while AB tests, native paywalls, and win-back offers retain their rolling 30-day cohorts. The difference column is After minus Before; rate differences are percentage points. These version cohorts are observational and do not imply that a release caused a change or establish an A/B winner. Native paywall, Journal VS Practice, and win-back comparisons resolve first versions for assigned or viewing users even if they installed before the report window. Win-back remains a separate PostHog view-to-purchase report with no revenue or refund attribution.
 
 - **Users:** all assigned users for a paywall; assigned users who reached a particular placement for placement rows.
 - **Views:** unique users actually shown that paywall/placement. Repeated openings count once.
@@ -257,3 +261,12 @@ The A/B tests tab includes **Paywalls · Superwall vs native**, a fresh 50/50 as
 The card has Spanish, English, German, and French APPU comparisons, plus combined APPU and assigned-to-paid analyses. Language comes from the app's initial engine assignment, not IP country. Unsupported app locales use the English fallback. Malformed or sandbox assignments are excluded. Country filtering applies to both the language numerator and denominator when country telemetry is available; older installs without that telemetry appear under `unknown` and remain in the overall denominator.
 
 The dashboard date picker selects assignments made on or after **2026-09-24 11:37:23 UTC**. Total APPU is net proceeds divided by all assigned users in that arm, including non-payers and users who never saw a paywall. Only subscriptions whose original purchase began after the individual assignment are eligible. Their later renewals, recovery revenue, and refunds follow the cohort; older Superwall subscriptions and renewals never enter this test. Transactions are deduplicated and paid counts are unique users. The assignment is sticky across app versions and language changes. No historical conversions are deleted from Superwall; they are excluded from this new result.
+# Poky plan intro × plan design
+
+The plan screen has a new independent, saved 50/50 Plan A/Plan B assignment.
+Together with the existing 50/50 animated intro assignment, the dashboard
+shows four 25% cohorts at the top of Poky's A/B results. Plan B is a placeholder
+screen until its final design is ready. Completed onboarding users remain on
+Plan A and are excluded from the new comparison; only fresh `50_50` markers on
+both attributes enter the four-cohort report. Everyone now uses the Warm
+experience; the old background test is retired. Paywall tests remain separate.
