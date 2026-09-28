@@ -27,6 +27,7 @@ test("glow and versy journeys follow each onboarding variant", () => {
   assert.equal(widget.steps[0].attribute, "bible_widget_entry_screen_seen");
   assert.equal(widget.steps.at(-1)?.attribute, "bible_widget_paywall_screen_seen");
   assert.equal(widget.steps.at(-1)?.paywall, true);
+  assert.equal(versy.minimumInstallVersion, "1.2.0");
   assert.notEqual(prayer.steps[0].attribute, widget.steps[0].attribute);
   assert.equal(userJourneyDefinition("poky"), null);
 });
@@ -116,5 +117,9 @@ test("journey sql stays inside the install window and the variant list", () => {
   const versy = userJourneySql(51393, userJourneyDefinition("versy")!, "2026-09-18 00:00:00.000", "2026-09-25 00:00:00.000");
   assert.match(versy, /paywall_placement/);
   assert.match(versy, /onboarding_short_prayer/);
+  assert.match(versy, /HAVING tuple\(toUInt32OrZero\(splitByChar\('\.', version\)\[1\]\)/);
+  assert.match(versy, />= tuple\(1, 2, 0\)/);
+  assert.match(versy, /argMin\(JSONExtractString\(meta, 'appVersion'\), ts\) AS version/);
+  assert.doesNotMatch(sql, /HAVING tuple/);
   assert.throws(() => userJourneySql(54736, glow, "2026-09-18'; drop", "2026-09-25 00:00:00.000"));
 });

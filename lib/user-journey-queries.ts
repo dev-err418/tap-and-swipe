@@ -7,7 +7,7 @@ import {
   type UserJourneyReport,
   type UserJourneyStep,
 } from "./user-journey";
-import { appVersionSide } from "./app-version-comparison";
+import { appVersionSide, versionParts } from "./app-version-comparison";
 
 type Query = <T>(sql: string) => Promise<T[]>;
 
@@ -69,6 +69,15 @@ export function userJourneySql(
     ...valueRules.map((rule) =>
       `if(cohort.variant = ${quote(rule.variant)} AND countIf(seen.key = ${quote(rule.key!)} AND seen.value IN (${rule.values!.map(quote).join(", ")})) > 0, ${quote(rule.attribute)}, '')`),
   ];
+  const minimumVersion = definition.minimumInstallVersion
+    ? versionParts(definition.minimumInstallVersion)
+    : null;
+  if (definition.minimumInstallVersion && (!minimumVersion || minimumVersion.length > 3)) {
+    throw new Error("Invalid minimum install version");
+  }
+  const installVersionFilter = minimumVersion
+    ? `HAVING tuple(${[1, 2, 3].map((part) => `toUInt32OrZero(splitByChar('.', version)[${part}])`).join(", ")}) >= tuple(${[0, 1, 2].map((index) => minimumVersion[index] ?? 0).join(", ")})`
+    : "";
   return `
 SELECT variant, step AS key, ${includeVersions ? "version," : ""} uniq(appUserId) AS users
 FROM (
@@ -91,7 +100,7 @@ FROM (
       GROUP BY appUserId
     ) AS assigned
     INNER JOIN (
-      SELECT appUserId${includeVersions ? ", argMin(JSONExtractString(meta, 'appVersion'), ts) AS version" : ""}
+      SELECT appUserId${includeVersions || minimumVersion ? ", argMin(JSONExtractString(meta, 'appVersion'), ts) AS version" : ""}
       FROM sw.demand_score_events_rep
       WHERE applicationId = ${applicationId}
         AND isSandbox = 0
@@ -101,6 +110,7 @@ FROM (
         AND ts >= toDateTime64('${start}', 6, 'UTC')
         AND ts < now()
       GROUP BY appUserId
+      ${installVersionFilter}
     ) AS installs ON installs.appUserId = assigned.appUserId
   ) AS cohort
   LEFT JOIN (

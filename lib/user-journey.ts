@@ -21,6 +21,8 @@ export type UserJourneyVariant = {
 export type UserJourneyDefinition = {
   title: string;
   variantAttribute: string;
+  /** Old install versions could not record the screens in this journey. */
+  minimumInstallVersion?: string;
   variants: UserJourneyVariant[];
 };
 
@@ -216,6 +218,7 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
     return {
       title: "User journey",
       variantAttribute: "onboarding_variant",
+      minimumInstallVersion: "1.2.0",
       variants: [
         { key: "short-1-prayer", label: "Prayer journey", steps: [...VERSY_PRAYER_STEPS, VERSY_PRAYER_PAYWALL] },
         { key: "bible_widget", label: "Bible widget", steps: VERSY_WIDGET_STEPS },
@@ -274,7 +277,14 @@ export function buildUserJourney(
   if (variants.length === 0) {
     return { status: "empty", title: definition.title, variants: [], note: "No assigned installs in this window." };
   }
-  return { status: "ready", title: definition.title, variants };
+  return {
+    status: "ready",
+    title: definition.title,
+    variants,
+    ...(definition.minimumInstallVersion
+      ? { note: `Includes installs on version ${definition.minimumInstallVersion} or later, when screen progress tracking became available.` }
+      : {}),
+  };
 }
 
 /** Lost users versus the previous main-path screen. Branches do not move that baseline. */

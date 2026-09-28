@@ -62,6 +62,7 @@ export default function UserJourneyFunnel({
         ))}
       </div>
       <JourneyVariant variant={variant} />
+      {report.note ? <p className="mt-3 text-xs text-muted-foreground">{report.note}</p> : null}
     </DashboardCard>
   );
 }
