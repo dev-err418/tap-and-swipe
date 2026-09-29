@@ -54,7 +54,6 @@ export type UserJourneyReport = {
   title: string;
   variants: UserJourneyVariantResult[];
   note?: string;
-  versionComparison?: { before: UserJourneyReport; after: UserJourneyReport };
 };
 
 const ASSIGNED_KEY = "__assigned__";

@@ -10,8 +10,6 @@ export type WinbackPaywallReport = {
   sources: WinbackPaywallRow[];
   products: WinbackPaywallRow[];
   note?: string;
-  versionComparison?: { before: WinbackPaywallReport; after: WinbackPaywallReport; excludedUsers: number };
-  versionComparisonError?: string;
 };
 
 type GroupedEvent = { userId: string; source: string; productId: string; views: number; purchases: number; firstView: number; lastPurchase: number };

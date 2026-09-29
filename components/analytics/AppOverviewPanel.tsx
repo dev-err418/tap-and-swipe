@@ -9,11 +9,8 @@ import type {
   MobileAppExperiment,
   MobileAppPlanCountryRow,
   MobileAppRetentionCountryRow,
-  MobileAppVersionComparison,
   TrialCancelTiming,
 } from "@/lib/mobile-app-analytics";
-import { availableAppVersions } from "@/lib/app-version-comparison";
-import { VersionDataComparison, VersionExperimentComparison, VersionPaywallComparison } from "./AppVersionComparison";
 import AppExperimentCard from "@/components/analytics/AppExperimentCard";
 import AppExperimentMap from "@/components/analytics/AppExperimentMap";
 import TrialCancelChart from "@/components/analytics/TrialCancelChart";
@@ -22,6 +19,7 @@ import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown"
 import AppNotesChart from "@/components/analytics/AppNotesChart";
 import NativePaywallsPanel from "@/components/analytics/NativePaywallsPanel";
 import WinbackPaywallPanel from "@/components/analytics/WinbackPaywallPanel";
+import VersyPaywallPlacementsPanel from "@/components/analytics/VersyPaywallPlacementsPanel";
 import JournalPracticePanel from "@/components/analytics/JournalPracticePanel";
 import UserJourneyFunnel from "@/components/analytics/UserJourneyFunnel";
 import type { UserJourneyReport } from "@/lib/user-journey";
@@ -49,13 +47,10 @@ type MonthExperimentBundle = {
   countries: MobileAppCountryRow[];
   nativePaywalls: NativePaywallReport | null;
   journalPractice: JournalPracticeReport | null;
-  appVersions?: string[];
 };
 
 export default function AppOverviewPanel({
   appId,
-  period = "month",
-  appVersions = [],
   installs,
   proceeds,
   windowLabel,
@@ -75,8 +70,6 @@ export default function AppOverviewPanel({
   productSlot = null,
 }: {
   appId: "glow" | "poky" | "versy";
-  period?: "day" | "yesterday" | "3days" | "week" | "month" | "all";
-  appVersions?: string[];
   installs: number;
   proceeds: number;
   windowLabel: string;
@@ -96,15 +89,13 @@ export default function AppOverviewPanel({
   productSlot?: ReactNode;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
-  const [selectedVersion, setSelectedVersion] = useState("");
-  const [comparisonBundle, setComparisonBundle] = useState<{ key: string; data: MobileAppVersionComparison | null; month: MobileAppVersionComparison | null } | null>(null);
-  const [comparisonFailedKey, setComparisonFailedKey] = useState<string | null>(null);
   const [monthBundle, setMonthBundle] = useState<{ appId: string; bundle: MonthExperimentBundle } | null>(null);
   const [monthFailedAppId, setMonthFailedAppId] = useState<string | null>(null);
   useEffect(() => {
-    if (!deferExperiments) return;
+    if (!deferExperiments || activeTab === "data" || (activeTab === "paywalls" && appId === "versy")
+      || monthBundle?.appId === appId || monthFailedAppId === appId) return;
     const controller = new AbortController();
-    fetch(`/api/analytics/mobile-app?appId=${appId}&period=month`, { signal: controller.signal })
+    fetch(`/api/analytics/mobile-app?appId=${appId}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("App experiments failed to load");
         return response.json() as Promise<MonthExperimentBundle>;
@@ -115,31 +106,9 @@ export default function AppOverviewPanel({
         setMonthFailedAppId(appId);
       });
     return () => controller.abort();
-  }, [appId, deferExperiments]);
-  const comparisonKey = `${appId}:${period}:${selectedVersion}`;
-  useEffect(() => {
-    if (!selectedVersion) return;
-    const controller = new AbortController();
-    const params = new URLSearchParams({ appId, period, compareVersion: selectedVersion });
-    fetch(`/api/analytics/mobile-app?${params}`, { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Version comparison failed to load");
-        return response.json() as Promise<{ comparison: MobileAppVersionComparison | null; monthComparison: MobileAppVersionComparison | null }>;
-      })
-      .then((result) => setComparisonBundle({ key: comparisonKey, data: result.comparison, month: result.monthComparison }))
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setComparisonFailedKey(comparisonKey);
-      });
-    return () => controller.abort();
-  }, [appId, period, selectedVersion, comparisonKey]);
+  }, [activeTab, appId, deferExperiments, monthBundle, monthFailedAppId]);
   const loadedBundle = monthBundle?.appId === appId ? monthBundle.bundle : null;
   const monthFailed = monthFailedAppId === appId;
-  const versions = availableAppVersions([...appVersions, ...(loadedBundle?.appVersions ?? [])]);
-  const versionData = comparisonBundle?.key === comparisonKey ? comparisonBundle.data : null;
-  const versionMonth = comparisonBundle?.key === comparisonKey ? comparisonBundle.month : null;
-  const comparisonLoading = Boolean(selectedVersion) && comparisonBundle?.key !== comparisonKey && comparisonFailedKey !== comparisonKey;
-  const comparisonFailed = Boolean(selectedVersion) && (comparisonFailedKey === comparisonKey || (comparisonBundle?.key === comparisonKey && !versionData));
   const resolvedExperiments = deferExperiments ? loadedBundle?.experiments ?? experiments : experiments;
   const resolvedPaywalls = deferExperiments ? loadedBundle?.nativePaywalls ?? nativePaywalls : nativePaywalls;
   const resolvedJournal = deferExperiments ? loadedBundle?.journalPractice ?? journalPractice : journalPractice;
@@ -202,23 +171,6 @@ export default function AppOverviewPanel({
         </div>
       </div>
 
-      <div className={cn(DASHBOARD_SURFACE_CLASS, "flex flex-wrap items-center gap-3 px-5 py-4")}>
-        <label htmlFor="app-version-cutoff" className="text-sm font-medium">Compare app versions</label>
-        <select
-          id="app-version-cutoff"
-          value={selectedVersion}
-          onChange={(event) => setSelectedVersion(event.target.value)}
-          className="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm"
-        >
-          <option value="">All versions</option>
-          {versions.map((version) => <option key={version} value={version}>Before {version} / {version} and newer</option>)}
-        </select>
-        <p className="text-xs text-muted-foreground">Grouped by the first version recorded at install. Difference = after − before.</p>
-      </div>
-
-      {selectedVersion && comparisonLoading ? <TabEmptyState>Loading version comparison…</TabEmptyState> : null}
-      {comparisonFailed ? <TabEmptyState>Version comparison could not be loaded. Choose the version again to retry.</TabEmptyState> : null}
-
       {activeTab === "data" ? (
         <div
           id="app-analytics-panel-data"
@@ -226,8 +178,6 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-data"
           className="space-y-4"
         >
-          {selectedVersion && versionData ? <VersionDataComparison comparison={versionData} windowLabel={windowLabel} /> : null}
-          {selectedVersion && versionData ? <h2 className="px-1 text-sm font-semibold">All versions</h2> : null}
           <UserJourneyFunnel report={userJourney} windowLabel={windowLabel} />
           {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
           {productSlot}
@@ -257,8 +207,6 @@ export default function AppOverviewPanel({
         >
           {experimentsLoading ? <TabEmptyState>Loading the last 30 days of A/B tests…</TabEmptyState> : monthFailed ? <TabEmptyState>A/B tests could not be loaded.</TabEmptyState> : <>
             <AppExperimentMap appId={appId} experiments={resolvedExperiments} nativePaywalls={resolvedPaywalls ?? null} journalPractice={resolvedJournal ?? null} />
-            {selectedVersion && versionMonth ? <VersionExperimentComparison comparison={versionMonth} /> : null}
-            {selectedVersion && versionMonth ? <h2 className="px-1 text-sm font-semibold">All versions</h2> : null}
             {appId === "glow" && <JournalPracticePanel report={resolvedJournal ?? null} />}
             {resolvedExperiments.length > 0 ? resolvedExperiments.map((experiment) => (
               <AppExperimentCard
@@ -278,10 +226,9 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-paywalls"
           className="min-w-0 space-y-4"
         >
-          {selectedVersion && versionMonth && appId !== "versy" ? <VersionPaywallComparison comparison={versionMonth} /> : null}
-          {(appId === "glow" || appId === "versy") && <WinbackPaywallPanel key={`${appId}:${selectedVersion}`} appId={appId} compareVersion={selectedVersion} />}
-          {selectedVersion && versionMonth && appId !== "versy" ? <h2 className="px-1 text-sm font-semibold">All versions</h2> : null}
-          {appId === "versy" ? null : experimentsLoading ? <TabEmptyState>Loading paywalls…</TabEmptyState> : monthFailed ? <TabEmptyState>Paywalls could not be loaded.</TabEmptyState>
+          {appId === "glow" && <WinbackPaywallPanel appId={appId} />}
+          {appId === "versy" ? <VersyPaywallPlacementsPanel />
+            : experimentsLoading ? <TabEmptyState>Loading paywalls…</TabEmptyState> : monthFailed ? <TabEmptyState>Paywalls could not be loaded.</TabEmptyState>
             : <NativePaywallsPanel appId={appId} report={resolvedPaywalls ?? null} />}
         </div>
       ) : null}

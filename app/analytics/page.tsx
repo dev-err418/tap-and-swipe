@@ -534,9 +534,9 @@ async function AppDetail({
       : null;
   let app: MobileAppAnalytics | null = null;
   try {
-    // A/B tests stay on the 30-day window and load after this render, so they
-    // don't compete with the selected period for Superwall query slots.
-    app = await getMobileAppById(period, appId, { sessions: period === "month" });
+    // Load the Data tab first. A/B tests and paywall reports use their own
+    // 30-day request when the corresponding tab is opened.
+    app = await getMobileAppById(period, appId, { sessions: false, includeReports: false });
   } catch (error) {
     const log = process.env.NODE_ENV === "development" ? console.warn : console.error;
     log("tap_and_swipe.mobile_app_detail_failed", {
@@ -616,8 +616,6 @@ async function AppDetail({
 
       <AppOverviewPanel
         appId={app.id}
-        period={period}
-        appVersions={app.appVersions}
         installs={app.downloads}
         proceeds={proceeds}
         windowLabel={windowLabel}
@@ -628,12 +626,9 @@ async function AppDetail({
         experimentCountries={app.countries}
         plans={app.plans}
         retention={app.retention}
-        experiments={period === "month" ? app.experiments : []}
         trialCancelTiming={app.trialCancelTiming}
-        nativePaywalls={period === "month" ? app.nativePaywalls : null}
-        journalPractice={period === "month" ? app.journalPractice : null}
         userJourney={app.userJourney}
-        deferExperiments={period !== "month"}
+        deferExperiments
         productSlot={productPromise ? (
           <Suspense fallback={<p role="status" className="px-4 py-6 text-sm text-muted-foreground">Loading {app.name} product analytics…</p>}>
             <ProductReportReady promise={productPromise} appName={app.name === "Versy" ? "Versy" : "Glow"} />

@@ -4,18 +4,16 @@ import { useEffect, useState } from "react";
 import type { WinbackPaywallReport, WinbackPaywallRow } from "@/lib/winback-paywall-analytics";
 import { DASHBOARD_SURFACE_CLASS } from "./dashboard-surface";
 import { cn } from "@/lib/utils";
-import { VersionWinbackComparison } from "./AppVersionComparison";
 
 const count = (value: number) => value.toLocaleString("en-US");
 const rate = (value: number | null) => value === null ? "—" : `${(value * 100).toFixed(1)}%`;
 
-export default function WinbackPaywallPanel({ appId, compareVersion = "" }: { appId: "glow" | "versy"; compareVersion?: string }) {
+export default function WinbackPaywallPanel({ appId }: { appId: "glow" | "versy" }) {
   const [report, setReport] = useState<WinbackPaywallReport | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     const params = new URLSearchParams({ appId });
-    if (compareVersion) params.set("compareVersion", compareVersion);
     fetch(`/api/analytics/winback-paywall?${params}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Offer analytics failed to load");
@@ -27,7 +25,7 @@ export default function WinbackPaywallPanel({ appId, compareVersion = "" }: { ap
         setFailed(true);
       });
     return () => controller.abort();
-  }, [appId, compareVersion]);
+  }, [appId]);
 
   return <section aria-label="50% win-back offer" className="space-y-2">
     <div className="px-1">
@@ -39,8 +37,6 @@ export default function WinbackPaywallPanel({ appId, compareVersion = "" }: { ap
         ? <p className="text-sm text-muted-foreground">{report?.note ?? "Offer analytics could not be loaded. Refresh to retry."}</p>
         : !report ? <p className="text-sm text-muted-foreground">Loading offer analytics…</p>
         : <div className="space-y-5">
-          {compareVersion ? <VersionWinbackComparison report={report} /> : null}
-          {compareVersion ? <p className="text-xs font-semibold">All versions</p> : null}
           <div className="grid gap-4 sm:grid-cols-3">
             <Metric label="Viewers" value={count(report.viewers)} />
             <Metric label="Purchasers" value={count(report.buyers)} />

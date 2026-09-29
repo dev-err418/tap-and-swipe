@@ -7,7 +7,7 @@ import {
   type UserJourneyReport,
   type UserJourneyStep,
 } from "./user-journey";
-import { appVersionSide, versionParts } from "./app-version-comparison";
+import { versionParts } from "./app-version";
 
 type Query = <T>(sql: string) => Promise<T[]>;
 
@@ -42,7 +42,6 @@ export function userJourneySql(
   definition: UserJourneyDefinition,
   start: string,
   end: string,
-  includeVersions = false,
 ) {
   const variantAttribute = definition.variantAttribute;
   const variantValues = definition.variants.map((variant) => variant.key);
@@ -79,15 +78,14 @@ export function userJourneySql(
     ? `HAVING tuple(${[1, 2, 3].map((part) => `toUInt32OrZero(splitByChar('.', version)[${part}])`).join(", ")}) >= tuple(${[0, 1, 2].map((index) => minimumVersion[index] ?? 0).join(", ")})`
     : "";
   return `
-SELECT variant, step AS key, ${includeVersions ? "version," : ""} uniq(appUserId) AS users
+SELECT variant, step AS key, uniq(appUserId) AS users
 FROM (
   SELECT
     cohort.appUserId AS appUserId,
     cohort.variant AS variant,
-    ${includeVersions ? "cohort.version AS version," : ""}
     arrayJoin(arrayFilter(x -> x != '', [${stepFlags.join(", ")}])) AS step
   FROM (
-    SELECT assigned.appUserId AS appUserId, assigned.variant AS variant${includeVersions ? ", installs.version AS version" : ""}
+    SELECT assigned.appUserId AS appUserId, assigned.variant AS variant
     FROM (
       SELECT appUserId, any(value) AS variant
       FROM sw.user_attributes_rep FINAL
@@ -100,7 +98,7 @@ FROM (
       GROUP BY appUserId
     ) AS assigned
     INNER JOIN (
-      SELECT appUserId${includeVersions || minimumVersion ? ", argMin(JSONExtractString(meta, 'appVersion'), ts) AS version" : ""}
+      SELECT appUserId${minimumVersion ? ", argMin(JSONExtractString(meta, 'appVersion'), ts) AS version" : ""}
       FROM sw.demand_score_events_rep
       WHERE applicationId = ${applicationId}
         AND isSandbox = 0
@@ -122,9 +120,9 @@ FROM (
       AND ts < now()
       AND (${seenFilters.join(" OR ") || "0"})
   ) AS seen ON seen.appUserId = cohort.appUserId
-  GROUP BY cohort.appUserId, cohort.variant${includeVersions ? ", cohort.version" : ""}
+  GROUP BY cohort.appUserId, cohort.variant
 )
-GROUP BY variant, step${includeVersions ? ", version" : ""}
+GROUP BY variant, step
 FORMAT JSON
 `.trim();
 }
@@ -135,26 +133,19 @@ export async function loadUserJourney(
   applicationId: number,
   start: string,
   end: string,
-  compareVersion?: string,
 ): Promise<UserJourneyReport> {
   const definition = userJourneyDefinition(appId);
   if (!definition) return unsupportedUserJourney(appId);
   try {
-    const rows = await query<{ variant: string; key: string; users: string | number; version?: string }>(
-      userJourneySql(applicationId, definition, start, end, Boolean(compareVersion)),
+    const rows = await query<{ variant: string; key: string; users: string | number }>(
+      userJourneySql(applicationId, definition, start, end),
     );
     const allRows = rows.map((row) => ({
       variant: row.variant,
       key: row.key,
       users: Number(row.users),
     }));
-    if (!compareVersion) return buildUserJourney(definition, allRows);
-    const report = buildUserJourney(definition, sumJourneyRows(allRows));
-    report.versionComparison = {
-      before: buildUserJourney(definition, sumJourneyRows(allRows.filter((_, index) => appVersionSide(rows[index].version ?? "", compareVersion) === "before"))),
-      after: buildUserJourney(definition, sumJourneyRows(allRows.filter((_, index) => appVersionSide(rows[index].version ?? "", compareVersion) === "after"))),
-    };
-    return report;
+    return buildUserJourney(definition, allRows);
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
       console.warn("tap_and_swipe.user_journey_failed", error instanceof Error ? error.message : error);
@@ -166,15 +157,4 @@ export async function loadUserJourney(
       note: "User journey reporting is unavailable. Refresh to retry.",
     };
   }
-}
-
-function sumJourneyRows(rows: { variant: string; key: string; users: number }[]) {
-  const totals = new Map<string, { variant: string; key: string; users: number }>();
-  for (const row of rows) {
-    const id = `${row.variant}|${row.key}`;
-    const total = totals.get(id) ?? { variant: row.variant, key: row.key, users: 0 };
-    total.users += row.users;
-    totals.set(id, total);
-  }
-  return [...totals.values()];
 }

@@ -1,12 +1,10 @@
 import { buildNativePaywallReport, firstRecoveryAssignments, parsePaywallAttributes, type NativePaywallReport, type PaywallAttribute, type PaywallRevenue } from "./native-paywall-analytics";
-import { appVersionSide } from "./app-version-comparison";
-import { loadFirstInstalledVersions } from "./superwall-first-versions";
 
 type Query = <T>(sql: string) => Promise<T[]>;
 const quote = (s: string) => `'${s.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
 
 /** Read only; no ingestion endpoint, schema, campaign or Superwall placement is created. */
-export async function loadNativePaywalls(query: Query, applicationID: number, start: number, end: number, compareVersion?: string): Promise<NativePaywallReport> {
+export async function loadNativePaywalls(query: Query, applicationID: number, start: number, end: number): Promise<NativePaywallReport> {
   const asOf = Date.now();
   try {
     const attributes: PaywallAttribute[] = [];
@@ -33,43 +31,31 @@ ORDER BY appUserId, key LIMIT 10000 FORMAT JSON`);
     const originals = [...new Set(parsed.purchases.filter(({ owner, purchase: p }) =>
       ((p.context.assignedAt >= start && p.context.assignedAt < end) || recoveryUserSet.has(owner)) && p.purchasedAt <= asOf
     ).map(({ purchase: p }) => p.originalTransactionID))];
-    const events: PaywallRevenue[] = [];
+    const revenueQueries: Promise<PaywallRevenue[]>[] = [];
     for (let i = 0; i < recoveryUsers.length; i += 500) {
-      const rows = await query<PaywallRevenue>(`
+      revenueQueries.push(query<PaywallRevenue>(`
 SELECT appUserId, id, name, originalTransactionId, transactionId, isRefund, price, proceeds, ts, purchasedAt, attributionTs
 FROM open_revenue.attributed_events_by_ts_rep FINAL
 WHERE applicationId = ${applicationID} AND isSandbox = 0 AND source = 'integration' AND isFamilyShare = 0
   AND appUserId IN (${recoveryUsers.slice(i, i + 500).map(quote).join(",")})
   AND ts >= fromUnixTimestamp64Milli(${Math.trunc(start)}) AND ts < fromUnixTimestamp64Milli(${asOf})
   AND (name IN ('initial_purchase', 'renewal', 'non_renewing_purchase') OR isRefund = 1)
-LIMIT 50001 FORMAT JSON`);
-      if (rows.length > 50000) throw new Error("Transaction data exceeds the current reporting limit.");
-      events.push(...rows);
+LIMIT 50001 FORMAT JSON`));
     }
     for (let i = 0; i < originals.length; i += 500) {
-      const rows = await query<PaywallRevenue>(`
+      revenueQueries.push(query<PaywallRevenue>(`
 SELECT appUserId, id, name, originalTransactionId, transactionId, isRefund, price, proceeds, ts, purchasedAt, attributionTs
 FROM open_revenue.attributed_events_by_ts_rep FINAL
 WHERE applicationId = ${applicationID} AND isSandbox = 0 AND source = 'integration' AND isFamilyShare = 0
   AND originalTransactionId IN (${originals.slice(i, i + 500).map(quote).join(",")})
   AND ts >= fromUnixTimestamp64Milli(${Math.trunc(start)}) AND ts < fromUnixTimestamp64Milli(${asOf})
   AND (name IN ('initial_purchase', 'renewal', 'non_renewing_purchase') OR isRefund = 1)
-LIMIT 50001 FORMAT JSON`);
-      if (rows.length > 50000) throw new Error("Transaction data exceeds the current reporting limit.");
-      events.push(...rows);
+LIMIT 50001 FORMAT JSON`));
     }
-    const report = buildNativePaywallReport(attributes, events, start, end, asOf);
-    if (!compareVersion) return report;
-    const owners = [...new Set([...parsed.assignments].filter(([, record]) => record.assignedAt >= start && record.assignedAt < end)
-      .map(([key]) => key.slice(0, key.lastIndexOf("|"))))];
-    const firstVersions = await loadFirstInstalledVersions(query, applicationID, owners);
-    const sideByOwner = new Map(owners.map((owner) => [owner, appVersionSide(firstVersions.get(owner) ?? "", compareVersion)]));
-    report.versionComparison = {
-      before: buildNativePaywallReport(attributes.filter((row) => sideByOwner.get(row.appUserId) === "before"), events, start, end, asOf),
-      after: buildNativePaywallReport(attributes.filter((row) => sideByOwner.get(row.appUserId) === "after"), events, start, end, asOf),
-      excludedUsers: owners.filter((owner) => sideByOwner.get(owner) == null).length,
-    };
-    return report;
+    const eventChunks = await Promise.all(revenueQueries);
+    if (eventChunks.some((rows) => rows.length > 50000)) throw new Error("Transaction data exceeds the current reporting limit.");
+    const events = eventChunks.flat();
+    return buildNativePaywallReport(attributes, events, start, end, asOf);
   } catch (error) {
     console.error("native_paywall_report_failed", error instanceof Error ? error.message : "Unknown error");
     return { status: "unavailable", asOf, groups: [], warnings: ["Paywall reporting is temporarily unavailable. Refresh to retry."] };

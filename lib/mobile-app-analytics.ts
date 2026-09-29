@@ -19,7 +19,6 @@ import { paidSubscriptionActivity } from "./paid-subscription-activity";
 import { installCohortCountries } from "./install-cohort-countries";
 import { subscriptionActiveAt } from "./subscription-retention";
 import { matchedCohortInstall } from "./experiment-install-cohort";
-import { appVersionSide, availableAppVersions } from "./app-version-comparison";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -160,30 +159,6 @@ export type MobileAppAnalytics = {
   nativePaywalls?: NativePaywallReport | null;
   journalPractice?: JournalPracticeReport | null;
   userJourney?: UserJourneyReport | null;
-  appVersions?: string[];
-  versionComparison?: MobileAppVersionComparison | null;
-};
-
-export type MobileAppVersionMetrics = {
-  installs: number;
-  cohortInstalls: number;
-  cohortPaid: number;
-  cohortProceeds: number;
-  countries: MobileAppCountryRow[];
-  plans: MobileAppPlanCountryRow[];
-  retention: MobileAppRetentionCountryRow[];
-  trialCancelTiming: TrialCancelTiming | null;
-  experiments: MobileAppExperiment[];
-};
-
-export type MobileAppVersionComparison = {
-  cutoff: string;
-  before: MobileAppVersionMetrics;
-  after: MobileAppVersionMetrics;
-  excludedInstalls: number;
-  userJourney: { before: UserJourneyReport; after: UserJourneyReport } | null;
-  nativePaywalls: { before: NativePaywallReport; after: NativePaywallReport; excludedUsers: number } | null;
-  journalPractice: { before: JournalPracticeReport; after: JournalPracticeReport; excludedUsers: number } | null;
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -296,12 +271,13 @@ const queryWaiters: Array<() => void> = [];
 export async function getMobileAppById(
   period: Period,
   id: MobileAppAnalytics["id"],
-  options?: { sessions?: boolean; compareVersion?: string },
+  options?: { sessions?: boolean; includeReports?: boolean },
 ) {
   const sessions = options?.sessions !== false;
-  if (id === "poky") return getPokyAnalytics(period, true, false, options?.compareVersion);
-  if (id === "glow") return getGlowAnalytics(period, true, sessions, options?.compareVersion);
-  return getVersyAnalytics(period, true, sessions, options?.compareVersion);
+  const includeReports = options?.includeReports !== false;
+  if (id === "poky") return getPokyAnalytics(period, true, false, includeReports);
+  if (id === "glow") return getGlowAnalytics(period, true, sessions, includeReports);
+  return getVersyAnalytics(period, true, sessions, includeReports);
 }
 
 export async function getMobileAppSummary(period: Period, id: MobileAppAnalytics["id"]) {
@@ -323,7 +299,7 @@ export async function getMobileAppAnalytics(period: Period) {
   return results.filter((app) => app !== null);
 }
 
-async function getGlowAnalytics(period: Period, includeCountries = false, sessions = true, compareVersion?: string): Promise<MobileAppAnalytics> {
+async function getGlowAnalytics(period: Period, includeCountries = false, sessions = true, includeReports = true): Promise<MobileAppAnalytics> {
   const apiKey = process.env.SUPERWALL_GLOW_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_GLOW_API_KEY is not configured");
 
@@ -339,11 +315,11 @@ async function getGlowAnalytics(period: Period, includeCountries = false, sessio
     },
     includeCountries,
     sessions,
-    compareVersion,
+    includeReports,
   );
 }
 
-async function getPokyAnalytics(period: Period, includeCountries = false, sessions = false, compareVersion?: string): Promise<MobileAppAnalytics> {
+async function getPokyAnalytics(period: Period, includeCountries = false, sessions = false, includeReports = true): Promise<MobileAppAnalytics> {
   const apiKey = process.env.SUPERWALL_POKY_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_POKY_API_KEY is not configured");
 
@@ -359,11 +335,11 @@ async function getPokyAnalytics(period: Period, includeCountries = false, sessio
     },
     includeCountries,
     sessions,
-    compareVersion,
+    includeReports,
   );
 }
 
-async function getVersyAnalytics(period: Period, includeCountries = false, sessions = true, compareVersion?: string): Promise<MobileAppAnalytics> {
+async function getVersyAnalytics(period: Period, includeCountries = false, sessions = true, includeReports = true): Promise<MobileAppAnalytics> {
   const apiKey = process.env.SUPERWALL_VERSY_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_VERSY_API_KEY is not configured");
 
@@ -379,7 +355,7 @@ async function getVersyAnalytics(period: Period, includeCountries = false, sessi
     },
     includeCountries,
     sessions,
-    compareVersion,
+    includeReports,
   );
 }
 
@@ -388,15 +364,15 @@ async function getSuperwallAppAnalytics(
   app: SuperwallAppConfig,
   includeCountries = false,
   sessions = true,
-  compareVersion?: string,
+  includeReports = true,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${compareVersion ? `:version:${compareVersion}` : ""}`;
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}`;
   const hit = analyticsCache.get(cacheKey);
   if (hit && hit.expiresAt > Date.now()) return hit.value;
   const pending = analyticsInflight.get(cacheKey);
   if (pending) return pending;
 
-  const promise = loadSuperwallAppAnalytics(period, app, includeCountries, sessions, compareVersion).then(
+  const promise = loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports).then(
     (value) => {
       analyticsCache.set(cacheKey, { expiresAt: Date.now() + ANALYTICS_CACHE_MS, value });
       analyticsInflight.delete(cacheKey);
@@ -416,7 +392,7 @@ async function loadSuperwallAppAnalytics(
   app: SuperwallAppConfig,
   includeCountries: boolean,
   sessions: boolean,
-  compareVersion?: string,
+  includeReports: boolean,
 ): Promise<MobileAppAnalytics> {
   const { since, before } = periodRange(period);
   const bucketExpression = superwallBucketExpression(period);
@@ -468,7 +444,7 @@ async function loadSuperwallAppAnalytics(
     FORMAT JSON
   `;
 
-  const [downloadResult, revenueResult, factsResult, paywallResult, journalPracticeResult, journeyResult, versionsResult] = await Promise.allSettled([
+  const [downloadResult, revenueResult, factsResult, paywallResult, journalPracticeResult, journeyResult] = await Promise.allSettled([
     querySuperwall<{ bucket: string; downloads: string | number }>(
       downloadsQuery,
       app.organizationId,
@@ -479,8 +455,8 @@ async function loadSuperwallAppAnalytics(
       app.organizationId,
       app.apiKey,
     ),
-    includeCountries ? loadAppFacts(app, start, end, startMs, endMs, sessions) : Promise.resolve(null),
-    includeCountries && (app.id === "glow" || app.id === "poky") && (!compareVersion || period === "month")
+    includeCountries ? loadAppFacts(app, start, end, startMs, endMs, sessions, includeReports) : Promise.resolve(null),
+    includeCountries && includeReports && (app.id === "glow" || app.id === "poky")
       ? loadNativePaywalls(
           <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
           app.applicationId,
@@ -488,11 +464,10 @@ async function loadSuperwallAppAnalytics(
             ? glowExperimentStart(startMs)
             : pokyExperimentStart(startMs),
           endMs,
-          compareVersion,
         )
       : Promise.resolve(null),
-    includeCountries && app.id === "glow" && (!compareVersion || period === "month")
-      ? loadJournalPractice(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs, compareVersion)
+    includeCountries && includeReports && app.id === "glow"
+      ? loadJournalPractice(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
       : Promise.resolve(null),
     includeCountries
       ? loadUserJourney(
@@ -501,10 +476,8 @@ async function loadSuperwallAppAnalytics(
           app.applicationId,
           start,
           end,
-          compareVersion,
         )
       : Promise.resolve(null),
-    includeCountries ? fetchAppVersions(app) : Promise.resolve([]),
   ]);
 
   if (downloadResult.status === "rejected") throw downloadResult.reason;
@@ -534,7 +507,7 @@ async function loadSuperwallAppAnalytics(
   const includePlanCards = Boolean(facts) && app.id !== "glow";
   const plans = includePlanCards && facts ? plansFromFacts(facts) : [];
   const retention = includePlanCards && facts ? retentionFromFacts(facts) : [];
-  const experiments = facts
+  const experiments = facts && includeReports
     ? app.id === "glow"
       ? glowExperiments(facts)
       : app.id === "poky"
@@ -542,12 +515,6 @@ async function loadSuperwallAppAnalytics(
         : versyExperiments(facts)
     : [];
   const trialCancelTiming = facts && (app.id === "glow" || app.id === "versy") ? trialCancelFromFacts(facts) : null;
-  const versionComparison = facts && compareVersion ? compareFactsByVersion(app.id, facts, compareVersion) : null;
-  if (versionComparison) {
-    versionComparison.userJourney = journeyResult.status === "fulfilled" ? journeyResult.value?.versionComparison ?? null : null;
-    versionComparison.nativePaywalls = paywallResult.status === "fulfilled" ? paywallResult.value?.versionComparison ?? null : null;
-    versionComparison.journalPractice = journalPracticeResult.status === "fulfilled" ? journalPracticeResult.value?.versionComparison ?? null : null;
-  }
 
   return {
     id: app.id,
@@ -571,67 +538,6 @@ async function loadSuperwallAppAnalytics(
       status: "unavailable", asOf: Date.now(), groups: [], warnings: ["Paywall reporting is temporarily unavailable."],
     },
     userJourney: journeyResult.status === "fulfilled" ? journeyResult.value : null,
-    appVersions: availableAppVersions(versionsResult.status === "fulfilled" ? versionsResult.value : (facts?.migrationHistory?.installs ?? facts?.installs ?? []).map((row) => row.appVersion)),
-    versionComparison,
-  };
-}
-
-async function fetchAppVersions(app: SuperwallAppConfig): Promise<string[]> {
-  const rows = await querySuperwall<{ ver: string }>(`
-SELECT DISTINCT JSONExtractString(meta, 'appVersion') AS ver
-FROM sw.demand_score_events_rep
-WHERE applicationId = ${app.applicationId} AND isSandbox = 0 AND name = 'device_attributes' AND ts < now()
-  AND JSONExtractString(meta, 'appVersion') != ''
-LIMIT 200
-FORMAT JSON`, app.organizationId, app.apiKey);
-  return rows.map((row) => row.ver);
-}
-
-function compareFactsByVersion(appId: MobileAppAnalytics["id"], facts: AppFacts, cutoff: string): MobileAppVersionComparison {
-  const allInstalls = facts.migrationHistory?.installs ?? facts.installs;
-  const sideFor = new Map(allInstalls.map((row) => [row.appUserId, appVersionSide(row.appVersion, cutoff)]));
-  const metrics = (side: "before" | "after"): MobileAppVersionMetrics => {
-    const ids = new Set([...sideFor].filter(([, value]) => value === side).map(([id]) => id));
-    const scoped = filterAppFacts(facts, ids);
-    const currentInstallFacts = filterAppFacts(scoped, new Set(scoped.installs.map((row) => row.appUserId)));
-    const cohortCountries = appId === "glow" ? glowMatureCountries(scoped) : installCohortCountries(scoped);
-    const experiments = appId === "glow" ? glowExperiments(scoped) : appId === "poky" ? pokyExperiments(scoped) : versyExperiments(scoped);
-    return {
-      installs: scoped.installs.length,
-      cohortInstalls: cohortCountries.reduce((total, row) => total + row.installs, 0),
-      cohortPaid: cohortCountries.reduce((total, row) => total + row.paid, 0),
-      cohortProceeds: cohortCountries.reduce((total, row) => total + row.proceeds, 0),
-      countries: cohortCountries,
-      plans: appId === "glow" ? [] : plansFromFacts(scoped),
-      retention: appId === "glow" ? [] : retentionFromFacts(scoped),
-      trialCancelTiming: appId === "poky" ? null : trialCancelFromFacts(currentInstallFacts),
-      experiments: orderAppExperiments(appId, experiments),
-    };
-  };
-  return {
-    cutoff,
-    before: metrics("before"),
-    after: metrics("after"),
-    excludedInstalls: facts.installs.filter((row) => sideFor.get(row.appUserId) == null).length,
-    userJourney: null,
-    nativePaywalls: null,
-    journalPractice: null,
-  };
-}
-
-function filterAppFacts(facts: AppFacts, ids: Set<string>): AppFacts {
-  const filterRows = <T extends { appUserId: string }>(rows: T[]) => rows.filter((row) => ids.has(row.appUserId));
-  return {
-    ...facts,
-    installs: filterRows(facts.installs),
-    events: filterRows(facts.events),
-    sessions: filterRows(facts.sessions),
-    attributes: new Map([...facts.attributes].filter(([id]) => ids.has(id))),
-    migrationHistory: facts.migrationHistory ? {
-      ...facts.migrationHistory,
-      installs: filterRows(facts.migrationHistory.installs),
-      events: filterRows(facts.migrationHistory.events),
-    } : undefined,
   };
 }
 
@@ -642,9 +548,10 @@ async function loadAppFacts(
   startMs: number,
   endMs: number,
   includeSessions: boolean,
+  includeReports: boolean,
 ): Promise<AppFacts> {
-  const keys = attributeKeysFor(app.id);
-  const hasMigrationHistory = app.id === "poky" || app.id === "glow";
+  const keys = includeReports ? attributeKeysFor(app.id) : [];
+  const hasMigrationHistory = includeReports && (app.id === "poky" || app.id === "glow");
   const historyStartMs = app.id === "poky" ? pokyExperimentStart(0) - 30 * DAY_MS
     : app.id === "glow" ? GLOW_SUPERWALL_HISTORY_START_MS : startMs;
   const fetchStart = hasMigrationHistory ? clickhouseDate(new Date(Math.min(startMs, historyStartMs))) : start;

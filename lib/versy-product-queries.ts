@@ -233,7 +233,7 @@ async function loadVersyProductReport(start: Date, end: Date, projectId: string,
   const window = timeFilter(start, end);
   const production = "properties.app_environment = 'production'";
   try {
-    const [permissions, notificationSnapshots, widgetSnapshots, widgetAdds, widgetPrompts, features, reading, favorites, screens, categories, premiumUse, feedback, recentTrialCancels, recentPaidCancels, prefetchedTrialStarts] = await Promise.all([
+    const [engagementTotals, stateSnapshots, widgetEvents, features, screens, categories, premiumUse, feedback, recentCancels, prefetchedTrialStarts] = await Promise.all([
       queryPostHog(`SELECT
           uniqExactIf(distinct_id, event = 'notification_permission_requested'),
           uniqExactIf(distinct_id, event = 'notification_permission_resolved'
@@ -241,42 +241,42 @@ async function loadVersyProductReport(start: Date, end: Date, projectId: string,
           uniqExactIf(distinct_id, event = 'notification_permission_resolved'
             AND toString(properties.result) = 'denied'),
           uniqExactIf(distinct_id, event = 'notification_permission_resolved'
-            AND toString(properties.result) IN ('authorized', 'provisional', 'ephemeral', 'denied'))
+            AND toString(properties.result) IN ('authorized', 'provisional', 'ephemeral', 'denied')),
+          uniqExactIf(distinct_id, event = 'quote_reading_session'),
+          countIf(event = 'quote_reading_session'),
+          sumIf(toFloatOrZero(toString(properties.quote_views)), event = 'quote_reading_session'),
+          sumIf(toFloatOrZero(toString(properties.quote_swipes)), event = 'quote_reading_session'),
+          sumIf(toFloatOrZero(toString(properties.duration_seconds)), event = 'quote_reading_session')
         FROM events WHERE ${window} AND ${production}
-          AND event IN ('notification_permission_requested', 'notification_permission_resolved')`, projectId, key),
+          AND event IN ('notification_permission_requested', 'notification_permission_resolved',
+            'quote_reading_session')`, projectId, key),
       queryPostHog(`SELECT count(),
           countIf(permission IN ('authorized', 'provisional', 'ephemeral', 'denied')),
           countIf(permission IN ('authorized', 'provisional', 'ephemeral')),
-          countIf(enabled IN ('true', '1'))
+          countIf(enabled IN ('true', '1')),
+          countIf(widget_checked),
+          countIf(widget_seen),
+          sum(toFloatOrZero(favorite_count)),
+          countIf(toFloatOrZero(favorite_count) > 0)
         FROM (SELECT distinct_id,
           argMax(ifNull(toString(properties.notification_permission), 'unknown'), timestamp) AS permission,
-          argMax(ifNull(toString(properties.notifications_enabled), 'unknown'), timestamp) AS enabled
+          argMax(ifNull(toString(properties.notifications_enabled), 'unknown'), timestamp) AS enabled,
+          max(properties.has_widget IS NOT NULL) AS widget_checked,
+          max(toString(properties.has_widget) IN ('true', '1')) AS widget_seen,
+          argMax(ifNull(toString(properties.favorite_count), '0'), timestamp) AS favorite_count
           FROM events WHERE ${window} AND ${production} AND event = 'app_state_snapshot'
           GROUP BY distinct_id)`, projectId, key),
-      queryPostHog(`SELECT uniqExactIf(distinct_id, properties.has_widget IS NOT NULL),
-          uniqExactIf(distinct_id, toString(properties.has_widget) IN ('true', '1'))
-        FROM events WHERE ${window} AND ${production} AND event = 'app_state_snapshot'`, projectId, key),
-      queryPostHog(`SELECT toString(properties.inferred_source), uniqExact(distinct_id), count()
-        FROM events WHERE ${window} AND ${production} AND event = 'widget_installed_detected'
-        GROUP BY toString(properties.inferred_source) LIMIT 20`, projectId, key),
-      queryPostHog(`SELECT toString(properties.source), uniqExact(distinct_id)
-        FROM events WHERE ${window} AND ${production} AND event = 'widget_prompt_viewed'
-        GROUP BY toString(properties.source) LIMIT 20`, projectId, key),
+      queryPostHog(`SELECT event,
+          if(event = 'widget_installed_detected', toString(properties.inferred_source),
+            toString(properties.source)) AS source,
+          uniqExact(distinct_id), count()
+        FROM events WHERE ${window} AND ${production}
+          AND event IN ('widget_installed_detected', 'widget_prompt_viewed')
+        GROUP BY event, source LIMIT 40`, projectId, key),
       queryPostHog(`SELECT event, uniqExact(distinct_id), count()
         FROM events WHERE ${window} AND ${production}
           AND event IN (${VERSY_FEATURES.map((feature) => sqlQuote(feature.event)).join(", ")})
         GROUP BY event LIMIT 20`, projectId, key),
-      queryPostHog(`SELECT uniqExact(distinct_id), count(),
-          sum(toFloatOrZero(toString(properties.quote_views))),
-          sum(toFloatOrZero(toString(properties.quote_swipes))),
-          sum(toFloatOrZero(toString(properties.duration_seconds)))
-        FROM events WHERE ${window} AND ${production} AND event = 'quote_reading_session'`, projectId, key),
-      queryPostHog(`SELECT count(), sum(toFloatOrZero(favorite_count)),
-          countIf(toFloatOrZero(favorite_count) > 0)
-        FROM (SELECT distinct_id,
-          argMax(ifNull(toString(properties.favorite_count), '0'), timestamp) AS favorite_count
-          FROM events WHERE ${window} AND ${production} AND event = 'app_state_snapshot'
-          GROUP BY distinct_id)`, projectId, key),
       queryPostHog(`SELECT toString(properties.screen), uniqExact(distinct_id),
           sum(toFloatOrZero(toString(properties.duration_seconds)))
         FROM events WHERE ${window} AND ${production} AND event = 'screen_time'
@@ -293,17 +293,28 @@ async function loadVersyProductReport(start: Date, end: Date, projectId: string,
         FROM events WHERE ${window} AND ${production}
           AND event = 'subscription_feedback_submitted'
         GROUP BY toString(properties.reason) LIMIT 20`, projectId, key),
-      queryPostHog(`SELECT distinct_id, toUnixTimestamp(timestamp), toString(properties.cancelReason)
-        FROM events WHERE ${window} AND event = 'sw_trial_cancelled'
+      queryPostHog(`SELECT event, distinct_id, toUnixTimestamp(timestamp), toString(properties.cancelReason)
+        FROM events WHERE ${window}
+          AND event IN ('sw_trial_cancelled', 'sw_subscription_cancelled', 'sw_intro_offer_cancelled')
           AND lower(toString(properties.environment)) = 'production'
-        ORDER BY timestamp DESC LIMIT ${MAX_RECENT_CANCELLATIONS}`, projectId, key),
-      queryPostHog(`SELECT distinct_id, toUnixTimestamp(timestamp), toString(properties.cancelReason)
-        FROM events WHERE ${window} AND event IN ('sw_subscription_cancelled', 'sw_intro_offer_cancelled')
-          AND lower(toString(properties.environment)) = 'production'
-        ORDER BY timestamp DESC LIMIT ${MAX_RECENT_CANCELLATIONS}`, projectId, key),
+        ORDER BY timestamp DESC
+        LIMIT ${MAX_RECENT_CANCELLATIONS} BY if(event = 'sw_trial_cancelled', 'trial', 'paid')`, projectId, key),
       trialStartsQuery(start, end, projectId, key),
     ]);
 
+    const permissions = engagementTotals;
+    const reading = engagementTotals.map((row) => row.slice(4));
+    const notificationSnapshots = stateSnapshots;
+    const widgetSnapshots = stateSnapshots.map((row) => row.slice(4, 6));
+    const favorites = stateSnapshots.map((row) => [row[0], row[6], row[7]]);
+    const widgetAdds = widgetEvents.filter((row) => row[0] === "widget_installed_detected")
+      .map((row) => row.slice(1));
+    const widgetPrompts = widgetEvents.filter((row) => row[0] === "widget_prompt_viewed")
+      .map((row) => row.slice(1));
+    const recentTrialCancels = recentCancels.filter((row) => row[0] === "sw_trial_cancelled")
+      .map((row) => row.slice(1));
+    const recentPaidCancels = recentCancels.filter((row) => row[0] !== "sw_trial_cancelled")
+      .map((row) => row.slice(1));
     report.notifications.requestedUsers = toNumber(permissions[0]?.[0]);
     report.notifications.allowedUsers = toNumber(permissions[0]?.[1]);
     report.notifications.deniedUsers = toNumber(permissions[0]?.[2]);
