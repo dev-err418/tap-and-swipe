@@ -27,7 +27,7 @@ export default function JournalPracticePanel({ report }: { report: JournalPracti
             <ExperimentNumberTd>{row.users.toLocaleString()}</ExperimentNumberTd>
             <ExperimentNumberTd><span title={`${row.d1.retained} / ${row.d1.eligible} eligible users`}><ReturnRate metric={row.d1} /></span></ExperimentNumberTd>
             <ExperimentNumberTd><span title={`${row.d7.retained} / ${row.d7.eligible} eligible users`}><ReturnRate metric={row.d7} /></span></ExperimentNumberTd>
-            <ExperimentNumberTd><span title={`${row.sessionUsersD7} users · first 7 days`}>{row.sessionsPerUserDayD7?.toFixed(2) ?? "—"}</span>
+            <ExperimentNumberTd><span title={`${row.users} users · average of each user's sessions / elapsed days through now, including inactive days (minimum 1 day; up to 31 tracked days)`}>{row.sessionsPerUserDay?.toFixed(2) ?? "—"}</span>
             </ExperimentNumberTd>
           </tr>)}
         </ExperimentTable>

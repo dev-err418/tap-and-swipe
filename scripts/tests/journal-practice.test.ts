@@ -24,8 +24,8 @@ test("return retention includes non-returners and waits for the complete day win
   assert.equal(before.rows[0].d7.rate, null);
   const after = buildJournalPracticeReport(data, start, start + 1, start + 8 * DAY_MS);
   assert.deepEqual(after.rows[0].d7, { eligible: 2, retained: 1, rate: 0.5 });
-  assert.equal(after.rows[0].sessionsPerUserDayD7, 1 / 7); // day 7 isn't in the first 7 days
-  assert.equal(after.rows[1].sessionsPerUserDayD7, null);
+  assert.equal(after.rows[0].sessionsPerUserDay, 3 / 16); // Includes day 7 activity through now.
+  assert.equal(after.rows[1].sessionsPerUserDay, null);
 });
 
 test("D1 and D30 use exact elapsed windows and no unobserved zero rates", () => {
@@ -38,16 +38,48 @@ test("D1 and D30 use exact elapsed windows and no unobserved zero rates", () => 
   assert.equal(buildJournalPracticeReport([attribute("a")], start, start + 1, start + 2 * DAY_MS).rows[0].d1.rate, 0);
 });
 
-test("sessions use equal 7-day windows with zeros, excluding immature users", () => {
+test("sessions average each user's own observation window, including users younger than seven days", () => {
   const report = buildJournalPracticeReport([
-    attribute("a", { days: { "0": { sessions: 7, opens: 1, active: true } } }),
-    attribute("b"), attribute("young", { assignedAt: start + DAY_MS, updatedAt: start + DAY_MS }),
-  ], start, start + 2 * DAY_MS, start + 7 * DAY_MS);
-  assert.equal(report.rows[0].users, 3);
-  assert.equal(report.rows[0].sessionUsersD7, 2);
-  assert.equal(report.rows[0].sessionsPerUserDayD7, 8 / 14);
-  assert.ok(Math.abs(report.rows[0].sessionsPerUserDayVarianceD7! - 18 / 49) < 1e-10);
-  assert.equal(report.rows[1].sessionsPerUserDayVarianceD7, null);
+    attribute("eight-days-old", { updatedAt: start + 7 * DAY_MS, days: {
+      "0": { sessions: 1, opens: 0, active: true }, "7": { sessions: 7, opens: 1, active: true },
+    } }),
+    attribute("five-days-old", { assignedAt: start + 3 * DAY_MS, updatedAt: start + 3 * DAY_MS,
+      days: { "0": { sessions: 10, opens: 0, active: true } } }),
+  ], start, start + 4 * DAY_MS, start + 8 * DAY_MS);
+  assert.equal(report.rows[0].users, 2);
+  assert.equal(report.rows[0].sessions, 18);
+  assert.equal(report.rows[0].sessionsPerUserDay, (8 / 8 + 10 / 5) / 2);
+  assert.equal(report.rows[0].sessionsPerUserDayVariance, 0.5);
+  assert.equal(report.rows[1].sessionsPerUserDay, null);
+  assert.equal(report.rows[1].sessionsPerUserDayVariance, null);
+  const comparison = journalPracticeComparisons(report)[2].analysis;
+  assert.equal(comparison.variants[0].metricValue, 1.5);
+  assert.equal(comparison.readiness.observed, 2);
+});
+
+test("fresh assignments appear immediately without inflated partial-first-day rates", () => {
+  for (const elapsed of [0, DAY_MS / 2, DAY_MS]) {
+    const report = buildJournalPracticeReport([attribute("fresh")], start, start + 1, start + elapsed);
+    assert.equal(report.rows[0].sessionsPerUserDay, 1);
+    assert.equal(report.rows[0].sessionsPerUserDayVariance, null);
+    assert.equal(report.rows[0].d7.rate, null);
+    const html = renderToStaticMarkup(createElement(JournalPracticePanel, { report }));
+    assert.match(html, /1\.00/);
+    assert.doesNotMatch(html, /first 7 days/);
+  }
+});
+
+test("inactive days and fractional elapsed days count through report time, not latest activity", () => {
+  const report = buildJournalPracticeReport([attribute("no-return")], start, start + 1, start + 5.5 * DAY_MS);
+  assert.equal(report.rows[0].sessionsPerUserDay, 1 / 5.5);
+});
+
+test("older cohorts stop the denominator at the native 31-day tracking limit", () => {
+  const report = buildJournalPracticeReport([attribute("older", { updatedAt: start + 30 * DAY_MS,
+    days: { "0": { sessions: 1, opens: 0, active: true }, "30": { sessions: 30, opens: 0, active: true } },
+  })], start, start + 1, start + 60 * DAY_MS);
+  assert.equal(report.rows[0].sessions, 31);
+  assert.equal(report.rows[0].sessionsPerUserDay, 1);
 });
 
 test("only production randomized assignments in the selected cohort count", () => {
@@ -110,7 +142,7 @@ test("activity tests share the regular A/B comparison charts and table without i
   assert.match(html, /text-right font-mono tabular-nums/);
   assert.match(html, /0\.0%/); // Mature observed non-return is a true zero.
   assert.match(html, /—/); // Immature/unobserved data is still missing, not zero.
-  assert.match(html, /0\.14/);
+  assert.match(html, /0\.13/);
   assert.match(html, /chance to win/);
   assert.match(html, /Planning pending/);
   assert.doesNotMatch(html, /Proceeds|100%.*?chance to win|text-lg font-semibold/);
@@ -126,7 +158,7 @@ test("unavailable activity data never renders stale metrics", () => {
   assert.doesNotMatch(html, /chance to win/);
 });
 
-test("comparison charts use mature return denominators and per-user session variance", () => {
+test("comparison charts use mature return denominators and observed per-user session rates", () => {
   const attributes = ["journal", "practice"].flatMap((variant) => Array.from({ length: 100 }, (_, index) => attribute(`${variant}-${index}`, {
     variant, updatedAt: start + DAY_MS,
     days: { "0": { sessions: index % 2 ? 7 : 1, opens: 0, active: true },
@@ -138,7 +170,7 @@ test("comparison charts use mature return denominators and per-user session vari
   assert.deepEqual(comparisons[0].analysis.variants.map((row) => row.metricValue), [0.3, 0.5]);
   assert.ok(comparisons[0].analysis.variants[1].chanceToWin! > 0.95);
   assert.ok(comparisons[2].analysis.sufficientData);
-  assert.ok(Math.abs(comparisons[2].analysis.variants[0].metricValue - report.rows[0].sessionsPerUserDayD7!) < 1e-10);
+  assert.ok(Math.abs(comparisons[2].analysis.variants[0].metricValue - report.rows[0].sessionsPerUserDay!) < 1e-10);
   assert.deepEqual(comparisons.map((row) => row.title), ["D1 return", "D7 return", "Sessions / user / day"]);
   const flagged = journalPracticeComparisons({ ...report, warnings: ["Malformed records"] });
   assert.ok(flagged.every(({ analysis }) => analysis.variants.every((row) => row.chanceToWin === null)));

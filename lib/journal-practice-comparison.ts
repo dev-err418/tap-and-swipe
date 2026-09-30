@@ -1,7 +1,7 @@
 import { analyzeExperiment, type ExperimentAnalysis } from "./experiment-stats";
 import type { JournalPracticeReport } from "./journal-practice-analytics";
 
-/** Feed the shared comparison UI real mature-user measurements, never installs or revenue proxies. */
+/** Compare eligible return windows and each assigned user's observed daily session rate. */
 export function journalPracticeComparisons(report: JournalPracticeReport): { title: string; analysis: ExperimentAnalysis }[] {
   if (report.status === "unavailable") return [];
   const comparisons = (["d1", "d7"] as const).map((day) => {
@@ -13,10 +13,10 @@ export function journalPracticeComparisons(report: JournalPracticeReport): { tit
   });
   const title = "Sessions / user / day";
   comparisons.push({ title, analysis: analyzeExperiment(report.rows.map((row) => ({
-    key: row.variant, label: row.label, exposures: row.sessionUsersD7,
+    key: row.variant, label: row.label, exposures: row.users,
     // All enrolled users have a session on day zero; the sample is the user, not the session.
-    conversions: row.sessionUsersD7, revenue: row.sessionsD7 / 7,
-    variance: row.sessionsPerUserDayVarianceD7 ?? 0,
+    conversions: row.users, revenue: (row.sessionsPerUserDay ?? 0) * row.users,
+    variance: row.sessionsPerUserDayVariance ?? 0,
   })), "revenue_per_visitor", title, { decisiveProbability: 0 }) });
 
   return comparisons.map(({ title, analysis }) => {

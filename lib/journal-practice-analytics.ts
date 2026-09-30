@@ -13,8 +13,8 @@ export type ReturnMetric = { eligible: number; retained: number; rate: number | 
 export type JournalPracticeRow = {
   variant: "journal" | "practice"; label: string; users: number;
   d1: ReturnMetric; d7: ReturnMetric; d30: ReturnMetric;
-  sessionUsersD7: number; sessionsD7: number; sessionsPerUserDayD7: number | null;
-  sessionsPerUserDayVarianceD7: number | null;
+  sessions: number; sessionsPerUserDay: number | null;
+  sessionsPerUserDayVariance: number | null;
 };
 export type JournalPracticeReport = {
   status: "ready" | "empty" | "unavailable"; asOf: number;
@@ -73,20 +73,21 @@ export function buildJournalPracticeReport(attributes: JournalPracticeAttribute[
       const retained = eligible.filter((r) => r.days[String(day)]?.active).length;
       return { eligible: eligible.length, retained, rate: eligible.length ? retained / eligible.length : null };
     };
-    // A common seven-day observation window prevents younger cohorts biasing the comparison.
-    const mature = users.filter((r) => r.assignedAt + 7 * DAY_MS <= asOf);
-    const sessionTotals = mature.map((r) => Object.entries(r.days)
-      .filter(([day]) => Number(day) < 7).reduce((total, [, day]) => total + day.sessions, 0));
-    const sessionsD7 = sessionTotals.reduce((sum, sessions) => sum + sessions, 0);
-    const sessionsPerUserDayD7 = mature.length ? sessionsD7 / (mature.length * 7) : null;
-    const sessionsPerUserDayVarianceD7 = mature.length > 1
-      ? sessionTotals.reduce((sum, sessions) => sum + (sessions / 7 - sessionsPerUserDayD7!) ** 2, 0) / (mature.length - 1)
+    // Normalize each user by their own elapsed observation time, including inactive days.
+    // Count the first day as at least one day so a just-assigned user's initial session
+    // cannot inflate the rate. Native activity stops after day 30 (31 tracked days).
+    const sessionTotals = users.map((r) => Object.values(r.days).reduce((total, day) => total + day.sessions, 0));
+    const dailyRates = users.map((r, index) => sessionTotals[index]
+      / Math.max(1, Math.min(31, (asOf - r.assignedAt) / DAY_MS)));
+    const sessions = sessionTotals.reduce((sum, count) => sum + count, 0);
+    const sessionsPerUserDay = users.length ? dailyRates.reduce((sum, rate) => sum + rate, 0) / users.length : null;
+    const sessionsPerUserDayVariance = users.length > 1
+      ? dailyRates.reduce((sum, rate) => sum + (rate - sessionsPerUserDay!) ** 2, 0) / (users.length - 1)
       : null;
     return {
       variant, label: variant === "journal" ? "Journal" : "Practice", users: users.length,
       d1: retention(1), d7: retention(7), d30: retention(30),
-      sessionUsersD7: mature.length, sessionsD7,
-      sessionsPerUserDayD7, sessionsPerUserDayVarianceD7,
+      sessions, sessionsPerUserDay, sessionsPerUserDayVariance,
     };
   });
   return { status: cohort.length ? "ready" : "empty", asOf, rows, warnings };
