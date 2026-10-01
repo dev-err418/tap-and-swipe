@@ -1,3 +1,5 @@
+import { loadGlowOnboardingExperience } from "./glow-onboarding-experience-queries";
+import { GLOW_ONBOARDING_KEY, type GlowOnboardingReport } from "./glow-onboarding-experience";
 import "server-only";
 import { glowMatureCountries } from "./glow-mature-countries";
 import { GLOW_SUPERWALL_HISTORY_START_MS, glowPaywallMigrationExperiment } from "./glow-paywall-migration";
@@ -158,6 +160,7 @@ export type MobileAppAnalytics = {
   trialCancelTiming?: TrialCancelTiming | null;
   nativePaywalls?: NativePaywallReport | null;
   journalPractice?: JournalPracticeReport | null;
+  onboardingExperience?: GlowOnboardingReport | null;
   userJourney?: UserJourneyReport | null;
 };
 
@@ -178,7 +181,7 @@ const VERSY_ICON_URL = "/community-icons/versy.png";
 const GLOW_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/19/20/0e/19200e98-f11f-8ab4-850a-81a2a45122e0/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg";
 
-const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen"] as const;
+const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY] as const;
 const VERSY_ATTRIBUTE_KEYS = ["onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
   "bible_widget_widget_screen_seen",
   "onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant", "onboarding_paywall_access_variant",
@@ -444,7 +447,7 @@ async function loadSuperwallAppAnalytics(
     FORMAT JSON
   `;
 
-  const [downloadResult, revenueResult, factsResult, paywallResult, journalPracticeResult, journeyResult] = await Promise.allSettled([
+  const [downloadResult, revenueResult, factsResult, paywallResult, journalPracticeResult, journeyResult, onboardingExperienceResult] = await Promise.allSettled([
     querySuperwall<{ bucket: string; downloads: string | number }>(
       downloadsQuery,
       app.organizationId,
@@ -477,6 +480,9 @@ async function loadSuperwallAppAnalytics(
           start,
           end,
         )
+      : Promise.resolve(null),
+    includeCountries && includeReports && app.id === "glow"
+      ? loadGlowOnboardingExperience(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
       : Promise.resolve(null),
   ]);
 
@@ -531,6 +537,9 @@ async function loadSuperwallAppAnalytics(
     retention,
     experiments: orderAppExperiments(app.id, experiments),
     trialCancelTiming,
+    onboardingExperience: onboardingExperienceResult.status === "fulfilled" ? onboardingExperienceResult.value : {
+      status: "unavailable", asOf: Date.now(), rows: [], warnings: ["Onboarding reporting is temporarily unavailable."],
+    },
     journalPractice: journalPracticeResult.status === "fulfilled" ? journalPracticeResult.value : {
       status: "unavailable", asOf: Date.now(), rows: [], warnings: ["Activity reporting is temporarily unavailable."],
     },
@@ -979,7 +988,7 @@ function glowExperiments(facts: AppFacts): MobileAppExperiment[] {
 function glowOnboardingExperiment(facts: AppFacts): MobileAppExperiment {
   return attributeExperiment(facts, {
     id: "glow-onboarding-copy",
-    title: "Onboarding A/B test",
+    title: "Onboarding copy A/B test",
     subtitle: "IAM vs Copy",
     attributeKeys: ["onboarding_variant"],
     variants: [
@@ -1129,6 +1138,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   ]));
   const variantIndexFor = (attrs: Record<string, string> | undefined) => {
     if (!attrs) return null;
+    if (definition.id === "glow-onboarding-copy" && attrs[GLOW_ONBOARDING_KEY] !== undefined) return null;
     if (definition.id.startsWith("poky-") && attrs.poky_tracking_environment !== "production") return null;
     if (definition.id.startsWith("versy-") && attrs.versy_tracking_environment === "development") return null;
     const matched = definition.variants.find((variant) =>

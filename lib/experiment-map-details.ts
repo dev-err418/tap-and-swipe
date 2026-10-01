@@ -2,6 +2,7 @@ import type { ExperimentFlowNode } from "./app-experiment-flow";
 import type { MobileAppExperiment } from "./mobile-app-analytics";
 import type { NativePaywallReport } from "./native-paywall-analytics";
 import { JOURNAL_PRACTICE_ID } from "./journal-practice-analytics";
+import { GLOW_ONBOARDING_ID } from "./glow-onboarding-experience";
 
 const RECOVERY_COMPARISON_ID = "poky-native-recovery-holdout";
 
@@ -27,7 +28,7 @@ export function experimentMapDetailTarget(node: ExperimentFlowNode, language?: s
   const experimentId = node.cohortMetric?.experiment ?? node.experimentId ?? node.statsTarget?.experimentId;
   if (!experimentId) return null;
   return { kind: experimentId === JOURNAL_PRACTICE_ID ? "journal" as const : "experiment" as const,
-    experimentId, language: experimentId === JOURNAL_PRACTICE_ID ? "all" : language ?? "all" };
+    experimentId, language: [JOURNAL_PRACTICE_ID, GLOW_ONBOARDING_ID].includes(experimentId) ? "all" : language ?? "all" };
 }
 
 export function experimentMapPaywallGroup(node: ExperimentFlowNode, report: NativePaywallReport | null, language?: string) {

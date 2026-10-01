@@ -69,17 +69,17 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
 }
 
 function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
-  const [onboarding, paywalls, journalPractice] = map.tests;
+  const [onboarding, , paywalls, journalPractice] = map.tests;
   const centerY = 64 + (paywalls.branches.length - 1) * 52;
   const nodes: ExperimentFlowNode[] = [
-    { id: "start", x: 36, y: centerY, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
+    { id: "start", x: 36, y: centerY, width: 0, label: "Prepared", kind: "start", tone: "blue" },
     { id: "placements", x: 390, y: centerY, width: 162, label: "Paywall entry", detail: "Same variant everywhere", tone: "neutral",
       statsTarget: { paywallExperiment: paywalls.id, language: "all" } },
   ];
   const edges: ExperimentFlowEdge[] = [];
   onboarding.branches.forEach((branch, index) => {
     nodes.push({
-      id: branch.id, x: 164, y: centerY - 56 + index * 112, width: 142, label: branch.label, tone: "blue",
+      id: branch.id, x: 164, y: centerY - 56 + index * 112, width: 160, label: branch.label, detail: "Enrollment off", tone: "blue",
       experimentId: onboarding.id, variantId: branch.id,
     });
     edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` }, { from: branch.id, to: "placements" });
@@ -102,7 +102,7 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   return {
     width: 1396, height: 112 + (paywalls.branches.length - 1) * 104, nodes, edges,
     stages: [{ x: 164, label: "Onboarding flow" }, { x: 390, label: "Placements" }, { x: 684, label: "Native paywalls" }, { x: 1210, label: "Journal VS Practice" }],
-    notes: ["Each Yearly/Weekly design receives 25%; yr_49, yr_59 and yr_34 share the remaining 50% equally (~17% each). Displayed percentages are rounded; the actual allocation totals 100%. The split applies within each language, independently of IAM / Copy.", ...map.notes],
+    notes: ["The new onboarding experience is prepared at 30% Current / 70% No mascot. Enrollment remains off until the treatment is complete; the current IAM / Copy experiment is reported separately.", "Each Yearly/Weekly design receives 25%; yr_49, yr_59 and yr_34 share the remaining 50% equally (~17% each). Displayed percentages are rounded; the actual allocation totals 100%. The split applies within each language, independently of onboarding experience.", ...map.notes],
   };
 }
 

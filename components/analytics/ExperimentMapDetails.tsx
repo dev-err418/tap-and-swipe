@@ -1,17 +1,20 @@
+import { GLOW_ONBOARDING_ID, type GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
+import GlowOnboardingExperiencePanel from "./GlowOnboardingExperiencePanel";
+import type { JournalPracticeReport } from "@/lib/journal-practice-analytics";
+import JournalPracticePanel from "./JournalPracticePanel";
 import type { ExperimentFlowNode } from "@/lib/app-experiment-flow";
 import type { MobileAppExperiment } from "@/lib/mobile-app-analytics";
 import type { NativePaywallReport } from "@/lib/native-paywall-analytics";
-import type { JournalPracticeReport } from "@/lib/journal-practice-analytics";
 import { experimentMapDetailTarget, experimentMapPaywallGroup } from "@/lib/experiment-map-details";
 import AppExperimentCard from "./AppExperimentCard";
-import JournalPracticePanel from "./JournalPracticePanel";
 import { NativePaywallResultsTable } from "./NativePaywallsPanel";
 
-export default function ExperimentMapDetails({ node, language, experiments, nativePaywalls, journalPractice }: {
+export default function ExperimentMapDetails({ node, language, experiments, nativePaywalls, journalPractice, onboardingExperience = null }: {
   node: ExperimentFlowNode; language?: string; experiments: MobileAppExperiment[];
-  nativePaywalls: NativePaywallReport | null; journalPractice: JournalPracticeReport | null;
+  nativePaywalls: NativePaywallReport | null; journalPractice: JournalPracticeReport | null; onboardingExperience?: GlowOnboardingReport | null;
 }) {
   const target = experimentMapDetailTarget(node, language, nativePaywalls);
+  if (target?.experimentId === GLOW_ONBOARDING_ID) return <GlowOnboardingExperiencePanel report={onboardingExperience} />;
   if (target?.kind === "journal") return <JournalPracticePanel report={journalPractice} />;
   if (target?.kind === "paywalls") {
     const group = experimentMapPaywallGroup(node, nativePaywalls, language);

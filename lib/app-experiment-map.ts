@@ -1,3 +1,4 @@
+import { GLOW_ONBOARDING_ID } from "./glow-onboarding-experience";
 import { GLOW_PAYWALL_EXPERIMENT } from "./native-paywall-allocation";
 
 export type ExperimentMapBranch = { id: string; label: string; percent: number };
@@ -26,6 +27,13 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
   if (appId === "glow") {
     return {
       tests: [
+        {
+          id: GLOW_ONBOARDING_ID, label: "Onboarding experience", scope: "Prepared · enrollment off · new eligible installations", tone: "blue", planned: true,
+          branches: [
+            { id: "current", label: "Current", percent: 30 },
+            { id: "mascot_free", label: "No mascot", percent: 70 },
+          ],
+        },
         {
           id: "glow-onboarding-copy", label: "Onboarding", scope: "New onboarding assignments", tone: "blue",
           branches: [

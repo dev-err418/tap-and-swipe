@@ -10,6 +10,7 @@ import type { NativePaywallGroup, NativePaywallReport } from "../../lib/native-p
 import { NATIVE_PAYWALL_DEMO_REPORT } from "../../lib/native-paywall-demo";
 import type { MobileAppExperiment, MobileAppExperimentVariant } from "../../lib/mobile-app-analytics";
 import { buildJournalPracticeReport } from "../../lib/journal-practice-analytics";
+import { buildGlowOnboardingReport, GLOW_ONBOARDING_ID } from "../../lib/glow-onboarding-experience";
 
 test("every map card opens a relevant test, including structural cards", () => {
   for (const app of ["glow", "poky"]) {
@@ -81,6 +82,18 @@ test("missing paywall and experiment results show an empty state instead of anot
   }));
   assert.match(html, /No results for this test and language/);
   assert.doesNotMatch(html, /<table/);
+});
+
+test("Glow experience cards open the new comparison with an all-language audience", () => {
+  const node = appExperimentFlow("glow")!.nodes.find((node) => node.id === "mascot_free")!;
+  assert.deepEqual(experimentMapDetailTarget(node, "es"), { kind: "experiment", experimentId: GLOW_ONBOARDING_ID, language: "all" });
+  const html = renderToStaticMarkup(createElement(ExperimentMapDetails, {
+    node, language: "es", experiments: [], nativePaywalls: null, journalPractice: null,
+    onboardingExperience: buildGlowOnboardingReport([], [], 0, Date.now(), Date.now()),
+  }));
+  assert.match(html, /Onboarding experience/);
+  assert.match(html, /Avg time to cancel/);
+  assert.doesNotMatch(html, /No results for this test and language/);
 });
 
 function variant(key: string, installs: number, proceeds: number): MobileAppExperimentVariant {

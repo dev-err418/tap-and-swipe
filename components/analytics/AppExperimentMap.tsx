@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import ExperimentMapDetails from "./ExperimentMapDetails";
 import { experimentMapDetailTarget, experimentMapPaywallGroup } from "@/lib/experiment-map-details";
+import { GLOW_ONBOARDING_ID, type GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
 import type { JournalPracticeReport } from "@/lib/journal-practice-analytics";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import { appExperimentFlow, type ExperimentFlowEdge, type ExperimentFlowNode } from "@/lib/app-experiment-flow";
@@ -40,11 +41,13 @@ export default function AppExperimentMap({
   experiments = [],
   nativePaywalls = null,
   journalPractice = null,
+  onboardingExperience = null,
 }: {
   appId: string;
   experiments?: MobileAppExperiment[];
   nativePaywalls?: NativePaywallReport | null;
   journalPractice?: JournalPracticeReport | null;
+  onboardingExperience?: GlowOnboardingReport | null;
 }) {
   const [language, setLanguage] = useState("en");
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
@@ -149,6 +152,9 @@ export default function AppExperimentMap({
             );
           })}
           {flow.nodes.map((node) => {
+            const isOnboardingExperience = node.experimentId === GLOW_ONBOARDING_ID;
+            const onboardingMetric = isOnboardingExperience && onboardingExperience?.status === "ready"
+              ? onboardingExperience.rows.find((row) => row.variant === node.variantId) : undefined;
             const tone = TONES[node.tone];
             const bestTone = BEST_TONES[node.tone];
             const bestResult = node.experimentId ? bestVariants.get(node.experimentId) : null;
@@ -169,12 +175,16 @@ export default function AppExperimentMap({
               : null;
             const cohortComplete = cohortSource && !cohortSource.paidUsersOnly
               && node.cohortMetric?.variants.every((key) => cohortSource.variants.some((variant) => variant.key === key));
-            const users = cohortComplete ? cohortMetric?.users
+            const users = isOnboardingExperience ? onboardingMetric?.users
+              : cohortComplete ? cohortMetric?.users
               : showsPaywallMetrics ? paywallMetric?.users
                 : experimentMetricKey ? experimentUsers.get(experimentMetricKey) : undefined;
             const label = users == null ? node.label : `${node.label} (${users.toLocaleString("en-US")})`;
             const isBest = isExperimentBest || (bestPathNodeIds.has(node.id) && (paywallMetric?.isBest === true || cohortMetric?.isBest === true));
-            const cardDetail = node.cohortMetric
+            const cardDetail = isOnboardingExperience
+                ? onboardingExperience?.status === "ready" ? `ARPU ${formatAppu(onboardingMetric?.arpu)}`
+                  : onboardingExperience?.status === "unavailable" ? "Stats unavailable" : node.detail
+                : node.cohortMetric
                 ? `APPU ${formatAppu(cohortMetric?.appu)}`
                 : showsPaywallMetrics
                 ? formatPaywallMetric(paywallMetric)
@@ -242,7 +252,7 @@ export default function AppExperimentMap({
         <DialogDescription className="sr-only">{activeTarget?.language === "all" ? "All languages" : LANGUAGE_LABELS[activeTarget?.language ?? ""] ?? activeTarget?.language}</DialogDescription>
         <div className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-4 pt-10 scrollbar-none [&_.overflow-x-auto]:scrollbar-none">
           {activeNode && <ExperimentMapDetails key={`${activeNode.id}-${selectedLanguage}`} node={activeNode} language={selectedLanguage}
-            experiments={visibleExperiments} nativePaywalls={nativePaywalls} journalPractice={journalPractice} />}
+            experiments={visibleExperiments} nativePaywalls={nativePaywalls} journalPractice={journalPractice} onboardingExperience={onboardingExperience} />}
         </div>
       </DialogContent>
     </Dialog>

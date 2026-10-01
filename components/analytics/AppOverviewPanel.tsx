@@ -21,9 +21,11 @@ import NativePaywallsPanel from "@/components/analytics/NativePaywallsPanel";
 import WinbackPaywallPanel from "@/components/analytics/WinbackPaywallPanel";
 import VersyPaywallPlacementsPanel from "@/components/analytics/VersyPaywallPlacementsPanel";
 import JournalPracticePanel from "@/components/analytics/JournalPracticePanel";
+import type { JournalPracticeReport } from "@/lib/journal-practice-analytics";
+import GlowOnboardingExperiencePanel from "./GlowOnboardingExperiencePanel";
+import type { GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
 import UserJourneyFunnel from "@/components/analytics/UserJourneyFunnel";
 import type { UserJourneyReport } from "@/lib/user-journey";
-import type { JournalPracticeReport } from "@/lib/journal-practice-analytics";
 import type { NativePaywallReport } from "@/lib/native-paywall-analytics";
 import {
   DASHBOARD_SURFACE_CLASS,
@@ -47,6 +49,7 @@ type MonthExperimentBundle = {
   countries: MobileAppCountryRow[];
   nativePaywalls: NativePaywallReport | null;
   journalPractice: JournalPracticeReport | null;
+  onboardingExperience: GlowOnboardingReport | null;
 };
 
 export default function AppOverviewPanel({
@@ -65,6 +68,7 @@ export default function AppOverviewPanel({
   trialCancelTiming = null,
   nativePaywalls = null,
   journalPractice = null,
+  onboardingExperience = null,
   userJourney = null,
   deferExperiments = false,
   productSlot = null,
@@ -84,6 +88,7 @@ export default function AppOverviewPanel({
   trialCancelTiming?: TrialCancelTiming | null;
   nativePaywalls?: NativePaywallReport | null;
   journalPractice?: JournalPracticeReport | null;
+  onboardingExperience?: GlowOnboardingReport | null;
   userJourney?: UserJourneyReport | null;
   deferExperiments?: boolean;
   productSlot?: ReactNode;
@@ -112,6 +117,7 @@ export default function AppOverviewPanel({
   const resolvedExperiments = deferExperiments ? loadedBundle?.experiments ?? experiments : experiments;
   const resolvedPaywalls = deferExperiments ? loadedBundle?.nativePaywalls ?? nativePaywalls : nativePaywalls;
   const resolvedJournal = deferExperiments ? loadedBundle?.journalPractice ?? journalPractice : journalPractice;
+  const resolvedOnboarding = deferExperiments ? loadedBundle?.onboardingExperience ?? onboardingExperience : onboardingExperience;
   const resolvedExperimentCountries = deferExperiments ? loadedBundle?.countries ?? experimentCountries : experimentCountries;
   const experimentsLoading = deferExperiments && !loadedBundle && !monthFailed;
   const cohort = dataCountries.reduce((total, row) => ({
@@ -206,7 +212,8 @@ export default function AppOverviewPanel({
           className="space-y-4"
         >
           {experimentsLoading ? <TabEmptyState>Loading the last 30 days of A/B tests…</TabEmptyState> : monthFailed ? <TabEmptyState>A/B tests could not be loaded.</TabEmptyState> : <>
-            <AppExperimentMap appId={appId} experiments={resolvedExperiments} nativePaywalls={resolvedPaywalls ?? null} journalPractice={resolvedJournal ?? null} />
+            <AppExperimentMap appId={appId} experiments={resolvedExperiments} nativePaywalls={resolvedPaywalls ?? null} journalPractice={resolvedJournal ?? null} onboardingExperience={resolvedOnboarding ?? null} />
+            {appId === "glow" && <GlowOnboardingExperiencePanel report={resolvedOnboarding ?? null} />}
             {appId === "glow" && <JournalPracticePanel report={resolvedJournal ?? null} />}
             {resolvedExperiments.length > 0 ? resolvedExperiments.map((experiment) => (
               <AppExperimentCard

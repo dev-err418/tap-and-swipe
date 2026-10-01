@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
       countries: app.countries,
       nativePaywalls: app.nativePaywalls ?? null,
       journalPractice: app.journalPractice ?? null,
+      onboardingExperience: app.onboardingExperience ?? null,
     });
   } catch (error) {
     const log = process.env.NODE_ENV === "development" ? console.warn : console.error;
