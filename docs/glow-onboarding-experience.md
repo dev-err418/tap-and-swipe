@@ -1,8 +1,10 @@
 # Glow onboarding experience reporting
 
-Prepared experiment: **30% Current / 70% No mascot**. Production enrollment is off until the complete mascot-free treatment is implemented. The existing IAM/Copy report remains a separate historical comparison; new experiment members are excluded from it.
+Prepared experiment: **15% Current / 85% No mascot**. Production enrollment is off until the complete mascot-free treatment is implemented. The existing IAM/Copy report remains a separate historical comparison; new experiment members are excluded from it.
 
-App contract: `native/ONBOARDING-EXPERIENCE-EXPERIMENT.md` in Glow. ID `onboarding_mascot_v1`, scalar JSON attribute `goe1_onboarding_mascot_v1`, schema 1, allocation `30_70`. Variants are `current` and `mascot_free`. Store immutable assignment time, language and environment with cumulative day-0–30 session counts and optional onboarding completion time. New randomized users only; completed and legacy users are excluded. Debug/sandbox/forced records cannot enter the production comparison.
+App contract: `native/ONBOARDING-EXPERIENCE-EXPERIMENT.md` in Glow. ID `onboarding_mascot_v1`, scalar JSON attribute `goe1_onboarding_mascot_v1`, schema 1, allocation `15_85`. Variants are `current` and `mascot_free`. Store immutable assignment time, language and environment with cumulative day-0–30 session counts and optional onboarding completion time. New randomized users only; completed and legacy users are excluded. Debug/sandbox/forced records cannot enter the production comparison.
+
+The split changed before production enrollment. Earlier `30_70` records remain valid with their original assignment and allocation; new assignments use `15_85`.
 
 ## Metrics
 

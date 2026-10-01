@@ -30,8 +30,8 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         {
           id: GLOW_ONBOARDING_ID, label: "Onboarding experience", scope: "Prepared · enrollment off · new eligible installations", tone: "blue", planned: true,
           branches: [
-            { id: "current", label: "Current", percent: 30 },
-            { id: "mascot_free", label: "No mascot", percent: 70 },
+            { id: "current", label: "Current", percent: 15 },
+            { id: "mascot_free", label: "No mascot", percent: 85 },
           ],
         },
         {
@@ -49,16 +49,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
             percent,
           })),
         },
-        {
-          id: "journal_vs_practice_v1", label: "Journal VS Practice", scope: "Home button · Glow 1.7.2", tone: "blue",
-          branches: [
-            { id: "journal", label: "Journal", percent: 30 },
-            { id: "practice", label: "Practice", percent: 70 },
-          ],
-        },
       ],
       notes: [
         "Results start September 20, 2026 at 08:00 GMT+2; earlier cohorts and proceeds are excluded.",
+        "Practice is the only Home experience in the next Glow release. The Journal comparison has ended.",
         "V3 starts a new sticky paywall assignment on upgrade; v1/v2 results and pending purchases stay separate. Onboarding assignments are unchanged.",
         "Glow 1.7.3 extends English yearly-only yr_59 presentations through September 28 under the separate legacy experiment; saved v3 assignments resume September 29 (device local time).",
         "The split shows app configuration, not observed traffic. StoreKit determines which subscriptions are available and their displayed prices.",

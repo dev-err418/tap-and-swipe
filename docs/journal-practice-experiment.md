@@ -1,5 +1,11 @@
 # Glow: Journal VS Practice
 
+> Retired October 1, 2026. Journal vs Practice is removed from the analytics A/B
+> results, experiment map and automatic report loading. The next Glow release uses
+> Practice for everyone; older installed clients may still publish legacy activity.
+> Historical Superwall records, parsers and their tests remain preserved. The rest
+> of this document describes the archived experiment contract.
+
 App experiment `journal_vs_practice_v1`: sticky 30% Journal / 70% Practice for new assignments, independent of onboarding and paywalls. This replaces the prepared 50/50 split before production enrollment; existing development assignments stay unchanged. Changes the home button's title, icon and destination. Journal retains existing behavior; Practice opens its own modal and suppresses Journal prompts, shortcuts, history and related stats without deleting saved entries. **Production enrollment is enabled in the next app build**, approved September 21, 2026; existing installed releases do not change remotely. Debug overrides are development-only and do not rewrite random assignment.
 
 Source of truth: Glow's `native/Glow/JournalPracticeExperiment.swift` and `native/JOURNAL-PRACTICE-EXPERIMENT.md`. No remote configuration, analytics database, ingestion endpoint, Superwall campaign or SDK placement.

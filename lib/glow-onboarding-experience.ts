@@ -6,7 +6,7 @@ export const GLOW_ONBOARDING_KEY = "goe1_onboarding_mascot_v1";
 export const DAY_MS = 86_400_000;
 type Variant = "current" | "mascot_free";
 type RecordValue = {
-  schema: 1; experiment: string; allocation: "30_70"; environment: string;
+  schema: 1; experiment: string; allocation: "15_85" | "30_70"; environment: string;
   variant: Variant; language: string; randomized: boolean;
   assignedAt: number; updatedAt: number; completedAt?: number;
   days: Record<string, { sessions: number; active: true }>;
@@ -28,7 +28,8 @@ function parse(value: string, asOf: number): RecordValue | null {
   try {
     let r: unknown = JSON.parse(value);
     if (typeof r === "string") r = JSON.parse(r);
-    if (!object(r) || r.schema !== 1 || r.experiment !== GLOW_ONBOARDING_ID || r.allocation !== "30_70"
+    if (!object(r) || r.schema !== 1 || r.experiment !== GLOW_ONBOARDING_ID
+      || (r.allocation !== "15_85" && r.allocation !== "30_70")
       || !["current", "mascot_free"].includes(String(r.variant)) || typeof r.environment !== "string"
       || typeof r.language !== "string" || typeof r.randomized !== "boolean"
       || !timestamp(r.assignedAt) || !timestamp(r.updatedAt) || r.assignedAt > asOf
@@ -160,7 +161,7 @@ export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events
       const duration = cancellation.durations.get(id);
       return duration === undefined ? [] : [duration];
     });
-    return { variant, label: variant === "current" ? "Current · 30%" : "No mascot · 70%", users: users.length,
+    return { variant, label: variant === "current" ? "Current · 15%" : "No mascot · 85%", users: users.length,
       completed: users.filter(([, r]) => r.completedAt !== undefined).length,
       paid: users.filter(([id]) => paid.has(id)).length, sessions, sessionUserDays,
       cancelledUsers: cancelTimes.length,

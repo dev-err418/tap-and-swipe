@@ -40,14 +40,12 @@ test("every configured audience has a complete, valid allocation", () => {
   }
 });
 
-test("Glow includes the staged onboarding experience and existing independent assignments", () => {
+test("Glow keeps onboarding and paywall assignments after retiring the Journal comparison", () => {
   const map = appExperimentMap("glow")!;
   assert.equal(map.tests[0].planned, true);
-  assert.deepEqual(map.tests[0].branches.map((b) => b.percent), [30, 70]);
-  assert.deepEqual(map.tests.map((experiment) => experiment.id), ["onboarding_mascot_v1", "glow-onboarding-copy", "native_paywalls_v3", "journal_vs_practice_v1"]);
-  assert.deepEqual(map.tests[3].branches.map((branch) => [branch.id, branch.percent]), [["journal", 30], ["practice", 70]]);
-  assert.match(map.tests[3].scope, /Glow 1\.7\.2/);
-  assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.detail, "Glow 1.7.2");
+  assert.deepEqual(map.tests[0].branches.map((b) => b.percent), [15, 85]);
+  assert.deepEqual(map.tests.map((experiment) => experiment.id), ["onboarding_mascot_v1", "glow-onboarding-copy", "native_paywalls_v3"]);
+  assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.label, "Practice");
   assert.ok(map.notes.some((note) => note.includes("Glow 1.7.3 extends English yearly-only yr_59 presentations through September 28")));
   assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [50, 50]);
   assert.deepEqual(map.tests[2].branches.map((branch) => branch.percent), [100 / 6, 100 / 6, 100 / 6, 25, 25]);
@@ -94,7 +92,7 @@ test("unsupported apps do not show invented experiments", () => {
 });
 
 test("active A/B counts include the new plan design and trial offer assignments", () => {
-  assert.equal(activeABTestCount("glow"), 3);
+  assert.equal(activeABTestCount("glow"), 2);
   assert.equal(activeABTestCount("poky"), 6);
   assert.equal(activeABTestCount("versy"), 4);
 });
@@ -137,8 +135,8 @@ test("configured maps render their percentage badges without analytics data", ()
     assert.match(markup, /Configured allocation/);
     assert.match(markup, /<svg/);
     if (app === "glow") {
-      assert.match(markup, />30%<\/text>/);
-      assert.match(markup, />70%<\/text>/);
+      assert.match(markup, />15%<\/text>/);
+      assert.match(markup, />85%<\/text>/);
       assert.match(markup, /Enrollment off/);
     } else assert.match(markup, />50%<\/text>/);
     assert.match(markup, /Start/);
@@ -318,7 +316,7 @@ test("Glow's experience map uses all assigned users regardless of paywall langua
   const start = Date.parse("2026-10-01T00:00:00Z");
   const report = buildGlowOnboardingReport([
     { appUserId: "spanish", key: GLOW_ONBOARDING_KEY, value: JSON.stringify({
-      schema: 1, experiment: GLOW_ONBOARDING_ID, allocation: "30_70", environment: "production",
+      schema: 1, experiment: GLOW_ONBOARDING_ID, allocation: "15_85", environment: "production",
       variant: "mascot_free", language: "es", randomized: true, assignedAt: start, updatedAt: start,
       days: { "0": { sessions: 1, active: true } },
     }) },
@@ -396,11 +394,14 @@ test("Poky branches through intro, plan, offer and paywalls before conditional r
 
 test("Glow shares all five paywalls after either onboarding flow without clipping nodes", () => {
   const flow = appExperimentFlow("glow")!;
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["30%", "70%"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["15%", "85%"]);
   assert.equal(flow.edges.filter((edge) => edge.to === "placements").length, 2);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "placements").map((edge) => edge.label), ["~17%", "~17%", "~17%", "25%", "25%"]);
   assert.ok(flow.nodes.every((node) => node.y + 40 < flow.height));
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "home").map((edge) => [edge.to, edge.label]), [["home-journal", "30%"], ["home-practice", "70%"]]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "home"), []);
+  assert.equal(flow.edges.filter((edge) => edge.to === "home").length, 5);
+  assert.ok(flow.nodes.every((node) => node.x + node.width < flow.width));
+  assert.ok(flow.nodes.every((node) => node.experimentId !== "journal_vs_practice_v1"));
 });
 
 function experiment(

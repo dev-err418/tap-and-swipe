@@ -10,8 +10,6 @@ import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as tren
 import { loadNativePaywalls } from "./native-paywall-queries";
 import { glowExperimentStart } from "./glow-experiment-window";
 import { pokyExperimentStart } from "./poky-experiment-window";
-import { loadJournalPractice } from "./journal-practice-queries";
-import type { JournalPracticeReport } from "./journal-practice-analytics";
 import type { NativePaywallReport } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_NATIVE_RECOVERY_KEYS, pokyNativeRecoveryExperiment } from "./poky-native-recovery";
@@ -159,7 +157,6 @@ export type MobileAppAnalytics = {
   experiments: MobileAppExperiment[];
   trialCancelTiming?: TrialCancelTiming | null;
   nativePaywalls?: NativePaywallReport | null;
-  journalPractice?: JournalPracticeReport | null;
   onboardingExperience?: GlowOnboardingReport | null;
   userJourney?: UserJourneyReport | null;
 };
@@ -447,7 +444,7 @@ async function loadSuperwallAppAnalytics(
     FORMAT JSON
   `;
 
-  const [downloadResult, revenueResult, factsResult, paywallResult, journalPracticeResult, journeyResult, onboardingExperienceResult] = await Promise.allSettled([
+  const [downloadResult, revenueResult, factsResult, paywallResult, journeyResult, onboardingExperienceResult] = await Promise.allSettled([
     querySuperwall<{ bucket: string; downloads: string | number }>(
       downloadsQuery,
       app.organizationId,
@@ -468,9 +465,6 @@ async function loadSuperwallAppAnalytics(
             : pokyExperimentStart(startMs),
           endMs,
         )
-      : Promise.resolve(null),
-    includeCountries && includeReports && app.id === "glow"
-      ? loadJournalPractice(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
       : Promise.resolve(null),
     includeCountries
       ? loadUserJourney(
@@ -539,9 +533,6 @@ async function loadSuperwallAppAnalytics(
     trialCancelTiming,
     onboardingExperience: onboardingExperienceResult.status === "fulfilled" ? onboardingExperienceResult.value : {
       status: "unavailable", asOf: Date.now(), rows: [], warnings: ["Onboarding reporting is temporarily unavailable."],
-    },
-    journalPractice: journalPracticeResult.status === "fulfilled" ? journalPracticeResult.value : {
-      status: "unavailable", asOf: Date.now(), rows: [], warnings: ["Activity reporting is temporarily unavailable."],
     },
     nativePaywalls: paywallResult.status === "fulfilled" ? paywallResult.value : {
       status: "unavailable", asOf: Date.now(), groups: [], warnings: ["Paywall reporting is temporarily unavailable."],

@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import ExperimentMapDetails from "./ExperimentMapDetails";
 import { experimentMapDetailTarget, experimentMapPaywallGroup } from "@/lib/experiment-map-details";
 import { GLOW_ONBOARDING_ID, type GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
-import type { JournalPracticeReport } from "@/lib/journal-practice-analytics";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import { appExperimentFlow, type ExperimentFlowEdge, type ExperimentFlowNode } from "@/lib/app-experiment-flow";
 import type {
@@ -40,13 +39,11 @@ export default function AppExperimentMap({
   appId,
   experiments = [],
   nativePaywalls = null,
-  journalPractice = null,
   onboardingExperience = null,
 }: {
   appId: string;
   experiments?: MobileAppExperiment[];
   nativePaywalls?: NativePaywallReport | null;
-  journalPractice?: JournalPracticeReport | null;
   onboardingExperience?: GlowOnboardingReport | null;
 }) {
   const [language, setLanguage] = useState("en");
@@ -252,7 +249,7 @@ export default function AppExperimentMap({
         <DialogDescription className="sr-only">{activeTarget?.language === "all" ? "All languages" : LANGUAGE_LABELS[activeTarget?.language ?? ""] ?? activeTarget?.language}</DialogDescription>
         <div className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-4 pt-10 scrollbar-none [&_.overflow-x-auto]:scrollbar-none">
           {activeNode && <ExperimentMapDetails key={`${activeNode.id}-${selectedLanguage}`} node={activeNode} language={selectedLanguage}
-            experiments={visibleExperiments} nativePaywalls={nativePaywalls} journalPractice={journalPractice} onboardingExperience={onboardingExperience} />}
+            experiments={visibleExperiments} nativePaywalls={nativePaywalls} onboardingExperience={onboardingExperience} />}
         </div>
       </DialogContent>
     </Dialog>

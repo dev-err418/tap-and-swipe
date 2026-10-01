@@ -9,21 +9,20 @@ import { experimentMapBranchSummary, experimentMapDetailTarget, experimentMapPay
 import type { NativePaywallGroup, NativePaywallReport } from "../../lib/native-paywall-analytics";
 import { NATIVE_PAYWALL_DEMO_REPORT } from "../../lib/native-paywall-demo";
 import type { MobileAppExperiment, MobileAppExperimentVariant } from "../../lib/mobile-app-analytics";
-import { buildJournalPracticeReport } from "../../lib/journal-practice-analytics";
 import { buildGlowOnboardingReport, GLOW_ONBOARDING_ID } from "../../lib/glow-onboarding-experience";
 
-test("every map card opens a relevant test, including structural cards", () => {
+test("test cards open comparisons while the fixed Practice destination is non-interactive", () => {
   for (const app of ["glow", "poky"]) {
     for (const language of ["en", "es", "de", "fr"]) {
       const flow = appExperimentFlow(app, language)!;
       for (const node of flow.nodes) {
         const target = experimentMapDetailTarget(node, language);
-        if (node.kind === "start") assert.equal(target, null);
+        if (node.kind === "start" || (app === "glow" && node.id === "home")) assert.equal(target, null);
         else assert.ok(target, `${app}/${node.id}`);
       }
     }
     const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: app }));
-    assert.equal(markup.match(/aria-haspopup="dialog"/g)?.length, appExperimentFlow(app)!.nodes.length - 1);
+    assert.equal(markup.match(/aria-haspopup="dialog"/g)?.length, appExperimentFlow(app)!.nodes.filter((node) => experimentMapDetailTarget(node)).length);
     assert.match(markup, /role="button" tabindex="0"/);
   }
 });
@@ -54,31 +53,29 @@ test("branch summaries agree with weighted map APPU and reject incomplete cohort
   assert.equal(experimentMapBranchSummary(node, { ...experiment, variants: experiment.variants.slice(0, 1) }), null);
   assert.equal(experimentMapBranchSummary(node, { ...experiment, paidUsersOnly: true }), null);
   const html = renderToStaticMarkup(createElement(ExperimentMapDetails, {
-    node, language: "en", experiments: [experiment], nativePaywalls: null, journalPractice: null,
+    node, language: "en", experiments: [experiment], nativePaywalls: null,
   }));
   assert.doesNotMatch(html, /<dl/);
   assert.match(html, /Combined onboarding/);
   assert.doesNotMatch(html, /APPU D7/);
 });
 
-test("journal cards open the activity comparison labelled all languages, with no D30 return", () => {
-  const node = appExperimentFlow("glow")!.nodes.find((node) => node.id === "home-practice")!;
-  assert.deepEqual(experimentMapDetailTarget(node, "es"), {
-    kind: "journal", experimentId: "journal_vs_practice_v1", language: "all",
-  });
-  const html = renderToStaticMarkup(createElement(ExperimentMapDetails, {
-    node, language: "es", experiments: [], nativePaywalls: null,
-    journalPractice: buildJournalPracticeReport([], 0, Date.now(), Date.now()),
-  }));
-  assert.match(html, /Journal VS Practice/);
-  assert.match(html, /D1 return/);
-  assert.doesNotMatch(html, /D30 return|APPU/);
+test("Glow map ends at Practice with no retired Journal comparison or detail dialog", () => {
+  const flow = appExperimentFlow("glow")!;
+  const node = flow.nodes.find((node) => node.id === "home")!;
+  assert.equal(node.label, "Practice");
+  assert.equal(node.detail, "Everyone");
+  assert.equal(experimentMapDetailTarget(node, "es"), null);
+  assert.ok(!flow.nodes.some((node) => node.id === "home-journal" || node.id === "home-practice"));
+  const html = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "glow" }));
+  assert.match(html, /Practice/);
+  assert.doesNotMatch(html, /Journal VS Practice|Home button|home-journal|home-practice/);
 });
 
 test("missing paywall and experiment results show an empty state instead of another audience", () => {
   const node = appExperimentFlow("glow")!.nodes.find((node) => node.id === "yr_49")!;
   const html = renderToStaticMarkup(createElement(ExperimentMapDetails, {
-    node, language: "fr", experiments: [], nativePaywalls: { ...NATIVE_PAYWALL_DEMO_REPORT, groups: [] }, journalPractice: null,
+    node, language: "fr", experiments: [], nativePaywalls: { ...NATIVE_PAYWALL_DEMO_REPORT, groups: [] },
   }));
   assert.match(html, /No results for this test and language/);
   assert.doesNotMatch(html, /<table/);
@@ -88,7 +85,7 @@ test("Glow experience cards open the new comparison with an all-language audienc
   const node = appExperimentFlow("glow")!.nodes.find((node) => node.id === "mascot_free")!;
   assert.deepEqual(experimentMapDetailTarget(node, "es"), { kind: "experiment", experimentId: GLOW_ONBOARDING_ID, language: "all" });
   const html = renderToStaticMarkup(createElement(ExperimentMapDetails, {
-    node, language: "es", experiments: [], nativePaywalls: null, journalPractice: null,
+    node, language: "es", experiments: [], nativePaywalls: null,
     onboardingExperience: buildGlowOnboardingReport([], [], 0, Date.now(), Date.now()),
   }));
   assert.match(html, /Onboarding experience/);
@@ -119,7 +116,7 @@ test("recovery map and modal reuse Paywalls proceeds and assigned-user CR even w
   assert.match(markup, /APPU \$0\.98 · CR 10%/);
   assert.doesNotMatch(markup, /Recovery · legacy cohort/);
   const detail = renderToStaticMarkup(createElement(ExperimentMapDetails, {
-    node: holdout, language: "es", experiments: [], nativePaywalls: report, journalPractice: null,
+    node: holdout, language: "es", experiments: [], nativePaywalls: report,
   }));
   assert.match(detail, /58\.63/);
   assert.match(detail, /Regular flow vs recovery/);

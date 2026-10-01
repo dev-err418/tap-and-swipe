@@ -11,7 +11,7 @@ export default function GlowOnboardingExperiencePanel({ report }: { report: Glow
   const analysis = report?.status === "ready" && report.warnings.length === 0
     ? analyzeExperiment(report.rows.map((r) => ({ key: r.variant, label: r.label, exposures: r.users,
       conversions: r.paid, revenue: r.proceeds ?? 0, variance: r.proceedsVariance ?? 0 })), "revenue_per_visitor", "ARPU") : null;
-  return <AppExperimentLayout title="Onboarding experience" label="Onboarding experience" subtitle="30% Current · 70% No mascot">
+  return <AppExperimentLayout title="Onboarding experience" label="Onboarding experience" subtitle="15% Current · 85% No mascot">
     {!report || report.status === "unavailable" ? <p role="status" className="px-4 py-4 text-sm text-muted-foreground">Onboarding reporting is unavailable. Refresh to retry.</p> : <>
       {report.status === "empty" && <p role="status" className="px-4 py-4 text-sm text-muted-foreground">Prepared · enrollment is off while the new experience is being built. No production assignments in this cohort yet.</p>}
       {report.warnings.map((warning) => <p role="status" key={warning} className="px-4 py-3 text-sm text-muted-foreground">{warning}</p>)}

@@ -11,7 +11,7 @@ const start = Date.parse("2026-10-01T00:00:00Z");
 const asOf = start + 10 * DAY_MS;
 function assignment(id: string, variant = "current", at = start, extra: Record<string, unknown> = {}): PaywallAttribute {
   return { appUserId: id, key: GLOW_ONBOARDING_KEY, value: JSON.stringify({ schema: 1, experiment: GLOW_ONBOARDING_ID,
-    allocation: "30_70", variant, environment: "production", language: "en", randomized: true,
+    allocation: "15_85", variant, environment: "production", language: "en", randomized: true,
     assignedAt: at, updatedAt: at, days: { "0": { sessions: 1, active: true } }, ...extra }) };
 }
 function event(user: string, transaction: string, amount = 10, extra: Partial<PaywallRevenue> = {}): PaywallRevenue {
@@ -19,6 +19,16 @@ function event(user: string, transaction: string, amount = 10, extra: Partial<Pa
   return { appUserId: user, id: transaction, name: "initial_purchase", originalTransactionId: `original-${transaction}`,
     transactionId: transaction, isRefund: 0, price: amount, proceeds: amount, ts, purchasedAt: ts, attributionTs: ts, ...extra };
 }
+
+test("the 15/85 allocation reports both variants and preserves earlier 30/70 records", () => {
+  const report = buildGlowOnboardingReport([
+    assignment("current"), assignment("treatment", "mascot_free"),
+    assignment("earlier", "current", start, { allocation: "30_70" }),
+    assignment("unknown", "current", start, { allocation: "50_50" }),
+  ], [], start, asOf, asOf);
+  assert.deepEqual(report.rows.map((row) => [row.label, row.users]), [["Current · 15%", 2], ["No mascot · 85%", 1]]);
+  assert.equal(report.warnings.length, 1);
+});
 
 test("ARPU includes non-payers and every post-assignment purchase, renewal and refund once", () => {
   const a = [assignment("payer"), assignment("nonpayer"), assignment("new", "mascot_free")];
@@ -144,6 +154,7 @@ test("the comparison shows all three metrics with empty and unavailable values k
   const empty = buildGlowOnboardingReport([], [], start, asOf, asOf);
   const markup = renderToStaticMarkup(createElement(GlowOnboardingExperiencePanel, { report: empty }));
   assert.match(markup, /Prepared/);
+  assert.match(markup, /15% Current · 85% No mascot/);
   assert.match(markup, /ARPU/);
   assert.match(markup, /Sessions \/ user \/ day/);
   assert.match(markup, /Avg time to cancel/);

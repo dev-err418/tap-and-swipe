@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
       experiments: app.experiments,
       countries: app.countries,
       nativePaywalls: app.nativePaywalls ?? null,
-      journalPractice: app.journalPractice ?? null,
       onboardingExperience: app.onboardingExperience ?? null,
     });
   } catch (error) {
