@@ -603,11 +603,7 @@ async function AppDetail({
               className="size-10 shrink-0 rounded-[10px]"
             />
             <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
-              <strong className="font-semibold text-black">{app.name}</strong> got{" "}
-              <strong className="font-semibold text-black">{formatNumber(app.downloads)} installs</strong>{" "}
-              and{" "}
-              <strong className="font-semibold text-black">{formatRevenue(app.revenueCents)} proceeds</strong>{" "}
-              {PERIOD_SUMMARY_LABELS[period]}.
+              <strong className="font-semibold text-black">{app.name}</strong>
             </h1>
           </div>
           <AnalyticsPeriodSelect period={period} app={app.id} />
@@ -620,6 +616,7 @@ async function AppDetail({
         proceeds={proceeds}
         windowLabel={windowLabel}
         trend={trend}
+        overviewCohorts={app.overviewCohorts}
         countries={app.countries}
         dataCountries={app.dataCountries}
         cohortDataAvailable={app.cohortDataAvailable}

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import type { FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
+import { VisitorsRevenueChart, type FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
+import { totalCohortAppu, overviewForLanguage, overviewLanguageLabel, type AppOverviewCohorts } from "@/lib/app-overview-cohorts";
+import { APP_ANALYTICS_TIME_ZONE } from "@/lib/app-analytics-time";
 import AppCountryBreakdown from "@/components/analytics/AppCountryBreakdown";
 import AppConversionBreakdown from "@/components/analytics/AppConversionBreakdown";
 import type {
@@ -31,8 +33,12 @@ import {
   DASHBOARD_TAB_CLASS,
   DASHBOARD_TAB_INACTIVE_CLASS,
   DASHBOARD_TAB_LIST_CLASS,
+  DASHBOARD_PICKER_TRIGGER_CLASS,
+  DASHBOARD_POPOVER_CLASS,
+  DASHBOARD_POPOVER_ITEM_CLASS,
 } from "@/components/analytics/dashboard-surface";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type AnalyticsTab = "data" | "experiments" | "paywalls";
 
@@ -41,6 +47,11 @@ const ANALYTICS_TABS: { id: AnalyticsTab; label: string }[] = [
   { id: "experiments", label: "AB tests" },
   { id: "paywalls", label: "Paywalls" },
 ];
+
+const LANGUAGE_FLAGS: Record<string, string> = {
+  en: "🇬🇧", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷",
+  it: "🇮🇹", pt: "🇵🇹", ja: "🇯🇵", ko: "🇰🇷", zh: "🇨🇳",
+};
 
 type MonthExperimentBundle = {
   experiments: MobileAppExperiment[];
@@ -55,9 +66,9 @@ export default function AppOverviewPanel({
   proceeds,
   windowLabel,
   trend,
+  overviewCohorts = null,
   countries,
   dataCountries = countries,
-  cohortDataAvailable = true,
   experimentCountries = countries,
   plans,
   retention,
@@ -74,6 +85,7 @@ export default function AppOverviewPanel({
   proceeds: number;
   windowLabel: string;
   trend: FunnelTrendPoint[];
+  overviewCohorts?: AppOverviewCohorts | null;
   countries: MobileAppCountryRow[];
   dataCountries?: MobileAppCountryRow[];
   cohortDataAvailable?: boolean;
@@ -89,6 +101,13 @@ export default function AppOverviewPanel({
   productSlot?: ReactNode;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
+  const [languageChoice, setLanguageChoice] = useState({ appId, language: "all" });
+  const languages = Object.keys(overviewCohorts?.languages ?? {}).sort((a, b) =>
+    a === "unknown" ? 1 : b === "unknown" ? -1 : overviewLanguageLabel(a).localeCompare(overviewLanguageLabel(b)));
+  const language = languageChoice.appId === appId && languages.includes(languageChoice.language)
+    ? languageChoice.language : "all";
+  const selectedOverview = overviewCohorts ? overviewForLanguage(overviewCohorts, language) : null;
+  const installLabel = language === "all" ? "Installs" : "Tracked installs";
   const [monthBundle, setMonthBundle] = useState<{ appId: string; bundle: MonthExperimentBundle } | null>(null);
   const [monthFailedAppId, setMonthFailedAppId] = useState<string | null>(null);
   useEffect(() => {
@@ -114,13 +133,11 @@ export default function AppOverviewPanel({
   const resolvedOnboarding = deferExperiments ? loadedBundle?.onboardingExperience ?? onboardingExperience : onboardingExperience;
   const resolvedExperimentCountries = deferExperiments ? loadedBundle?.countries ?? experimentCountries : experimentCountries;
   const experimentsLoading = deferExperiments && !loadedBundle && !monthFailed;
-  const cohort = dataCountries.reduce((total, row) => ({
-    installs: total.installs + row.installs,
-    proceeds: total.proceeds + row.proceeds,
-    paid: total.paid + row.paid,
-  }), { installs: 0, proceeds: 0, paid: 0 });
-  const appu = cohort.installs > 0 ? cohort.proceeds / cohort.installs : null;
-  const installToPaid = cohort.installs > 0 ? cohort.paid / cohort.installs : null;
+  const cohortAvailable = Boolean(selectedOverview?.available);
+  const total = selectedOverview?.total;
+  const appu = total && cohortAvailable ? totalCohortAppu(total) : null;
+  const installToPaid = cohortAvailable && total && total.installs > 0 && total.missingMoney === 0
+    ? total.paid / total.installs : null;
   const showPlans = plans.some((row) => row.yearlySubs + row.weeklySubs > 0);
   const showRetention = retention.some((row) => row.overall.d1.eligible > 0);
   const topCountries = resolvedExperimentCountries
@@ -131,20 +148,38 @@ export default function AppOverviewPanel({
   return (
     <section className="w-full min-w-0 space-y-4">
       <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-[28px] border-0 bg-white shadow-none">
-        <div className="min-w-0 overflow-x-auto border-b border-black/[0.08]">
-          <div className="grid min-w-[48rem] grid-cols-4 divide-x divide-black/[0.08]">
-            <MetricSummary label="Installs" value={formatInt(installs)} detail={windowLabel} />
-            <MetricSummary label="Proceeds" value={formatCurrency(proceeds)} detail={windowLabel} />
-            <MetricSummary label="Cohort APPU" value={!cohortDataAvailable || appu == null ? "—" : formatPreciseCurrency(appu)} detail={cohortDataAvailable ? `${formatInt(cohort.installs)} ${appId === "glow" ? "mature installs" : "tracked installs"} · through today` : "Cohort data unavailable"} />
-            <MetricSummary
-              label="Install → paid"
-              value={!cohortDataAvailable || installToPaid == null ? "—" : formatRate(installToPaid)}
-              detail={cohortDataAvailable ? `${formatInt(cohort.paid)} paid / ${formatInt(cohort.installs)} cohort installs` : "Cohort data unavailable"}
-            />
+        <div className="min-w-0 border-b border-black/[0.08]">
+          <div className="grid grid-cols-3 divide-x divide-black/[0.08]">
+            <MetricSummary label={installLabel} value={formatInt(language === "all" ? installs : total?.installs ?? 0)} detail={language === "all" ? windowLabel : `${overviewLanguageLabel(language)} · ${windowLabel}`} />
+            <MetricSummary label="APPU" value={appu == null ? "—" : formatPreciseCurrency(appu)} detail={!cohortAvailable || !total ? "Cohort data unavailable" : total.missingMoney > 0 ? "Proceeds data unavailable" : total.installs > 0 ? `${formatInt(total.installs)} tracked installs · through today` : "No tracked installs"} />
+            <MetricSummary label="Conversion to paid" value={installToPaid == null ? "—" : formatRate(installToPaid)} detail={!cohortAvailable || !total ? "Cohort data unavailable" : total.missingMoney > 0 ? "Payment data unavailable" : `${formatInt(total.paid)} paid / ${formatInt(total.installs)} tracked installs · through today`} />
           </div>
         </div>
-        <div className="min-w-0 p-4">
-          <AppNotesChart appId={appId} data={trend} />
+        <div className="min-w-0 p-4 sm:p-6">
+          <AppNotesChart appId={appId} data={trend} cohorts={selectedOverview} installLabel={installLabel}
+            languagePicker={
+              <Select value={language} onValueChange={(value) => setLanguageChoice({ appId, language: value })}>
+                <SelectTrigger aria-label="Graph language" className={`${DASHBOARD_PICKER_TRIGGER_CLASS} h-8 w-[180px] border border-black/10 text-xs`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper" align="start" className={DASHBOARD_POPOVER_CLASS}>
+                  {["all", ...languages].map((code) => (
+                    <SelectItem key={code} value={code} className={DASHBOARD_POPOVER_ITEM_CLASS}>
+                      <span className="inline-flex items-center gap-1.5"><span aria-hidden="true">{LANGUAGE_FLAGS[code] ?? "🌐"}</span>{overviewLanguageLabel(code)}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            } />
+          <details className="group mt-6 border-t border-black/[0.08] pt-4">
+            <summary className="w-fit cursor-pointer text-xs font-medium text-black/55 hover:text-black focus-visible:outline-2 focus-visible:outline-black/40">More metrics</summary>
+            <div className="mt-4">
+              <MetricSummary label="Proceeds" value={formatCurrency(proceeds)} detail={windowLabel} />
+            </div>
+            <div className="mt-4">
+              <VisitorsRevenueChart data={trend} timeZone={APP_ANALYTICS_TIME_ZONE} visitLabel="Installs" revenueLabel="Proceeds" />
+            </div>
+          </details>
         </div>
       </div>
 
@@ -249,7 +284,7 @@ function MetricSummary({ label, value, detail }: { label: string; value: string;
     <div className="min-w-0 px-4 py-4">
       <p className="text-sm text-muted-foreground">{label}</p>
       <p className="mt-1 truncate text-2xl font-bold tabular-nums">{value}</p>
-      <p className="mt-1 truncate text-xs text-muted-foreground">{detail}</p>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{detail}</p>
     </div>
   );
 }

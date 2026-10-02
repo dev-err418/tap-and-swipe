@@ -60,8 +60,7 @@ export function AnalyticsDetailSkeleton({
               <WebsiteFavicon domain={SITES[site]} size="large" />
             ) : null}
             <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
-              <strong className="font-semibold text-black">{name}</strong> got <MetricBone />{" "}
-              {app ? "installs" : "visitors"} and <MetricBone wide /> {app ? "proceeds" : "revenue"} {periodLabel}.
+              {app ? <strong className="font-semibold text-black">{name}</strong> : <><strong className="font-semibold text-black">{name}</strong> got <MetricBone /> visitors and <MetricBone wide /> revenue {periodLabel}.</>}
             </h1>
           </div>
           <AnalyticsPeriodSelect period={period} app={app} site={site} />
@@ -73,12 +72,12 @@ export function AnalyticsDetailSkeleton({
 }
 
 function AppOverviewSkeleton() {
-  const metrics = ["Installs", "Proceeds", "Cohort APPU", "Install → paid"];
+  const metrics = ["Installs", "APPU", "Conversion to paid"];
   return (
     <section className="w-full min-w-0 space-y-4">
       <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-[28px] border-0 bg-white shadow-none">
-        <div className="min-w-0 overflow-x-auto border-b border-black/[0.08]">
-          <div className="grid min-w-[48rem] grid-cols-4 divide-x divide-black/[0.08]">
+        <div className="min-w-0 border-b border-black/[0.08]">
+          <div className="grid grid-cols-3 divide-x divide-black/[0.08]">
             {metrics.map((label) => (
               <div key={label} className="min-w-0 px-4 py-4">
                 <p className="text-sm text-muted-foreground">{label}</p>
@@ -88,9 +87,9 @@ function AppOverviewSkeleton() {
             ))}
           </div>
         </div>
-        <div className="min-w-0 p-4">
+        <div className="min-w-0 p-4 sm:p-6">
           <div className="mb-3 h-8" aria-hidden />
-          <div aria-hidden className="h-72 w-full rounded-xl bg-black/[0.04] motion-safe:animate-pulse" />
+          <div aria-hidden className="h-80 w-full rounded-xl bg-black/[0.04] motion-safe:animate-pulse sm:h-96" />
         </div>
       </div>
     </section>

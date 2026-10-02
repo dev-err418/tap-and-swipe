@@ -28,13 +28,13 @@ const METRIC_LABELS: Record<RetentionMetric, string> = {
 };
 
 export default function AppRetentionBreakdown({ rows }: { rows: MobileAppRetentionCountryRow[] }) {
-  const [metric, setMetric] = useState<RetentionMetric>("installs");
+  const [metric, setMetric] = useState<RetentionMetric>("d7");
   const sorted = [...rows].sort((a, b) => metricValue(b, metric) - metricValue(a, metric) || b.installs - a.installs);
   const preview = sorted.slice(0, PREVIEW_ROWS);
 
   return (
     <DashboardCard
-      title="Retention"
+      title="Subscription retention"
       titleAccessory={
         <DashboardCardMetricPicker
           ariaLabel="Retention metric"
@@ -69,7 +69,7 @@ function RetentionDetails({ rows, metric }: { rows: MobileAppRetentionCountryRow
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden bg-white p-0 sm:max-w-3xl">
           <DialogHeader className="px-6 pt-6 pr-16">
-            <DialogTitle>Retention</DialogTitle>
+            <DialogTitle>Subscription retention</DialogTitle>
             <DialogDescription>
               {rows.length.toLocaleString("en-US")} {rows.length === 1 ? "country" : "countries"} for the selected period, sorted by {METRIC_LABELS[metric].toLowerCase()}.
             </DialogDescription>
@@ -156,7 +156,7 @@ function RetentionRow({
         <div className="relative z-10 flex h-full min-w-0 items-center gap-2 px-3 text-sm font-medium text-foreground">
           <span className="flex size-5 shrink-0 items-center justify-center text-base">{marker}</span>
           <span className="min-w-0 flex-1 truncate">{label}</span>
-          <span className="shrink-0 font-mono text-xs font-medium tabular-nums">{formatRate(rate(row.overall[day]))}</span>
+          <span className="shrink-0 font-mono text-xs font-medium tabular-nums">{row.overall[day].eligible > 0 ? formatRate(rate(row.overall[day])) : "—"}</span>
         </div>
         <div
           aria-hidden="true"
@@ -166,7 +166,7 @@ function RetentionRow({
           <div className="flex h-full min-w-0 items-center gap-2 px-3 text-sm font-medium text-white">
             <span className="flex size-5 shrink-0 items-center justify-center text-base">{marker}</span>
             <span className="min-w-0 flex-1 truncate">{label}</span>
-            <span className="shrink-0 font-mono text-xs font-medium tabular-nums">{formatRate(rate(row.overall[day]))}</span>
+            <span className="shrink-0 font-mono text-xs font-medium tabular-nums">{row.overall[day].eligible > 0 ? formatRate(rate(row.overall[day])) : "—"}</span>
           </div>
         </div>
       </div>
@@ -251,6 +251,9 @@ function countryFlag(code: string) {
 
 function countryName(code: string) {
   if (!code || code === "unknown") return "Unknown";
+  // These region names differ between server and browser ICU versions.
+  if (code.toUpperCase() === "HK") return "Hong Kong";
+  if (code.toUpperCase() === "MO") return "Macao";
   try {
     return new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase()) ?? code;
   } catch {

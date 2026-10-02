@@ -179,6 +179,57 @@ September 25, 2026 live check: Apple's public lookup lists Glow 1.7.2, released 
 
 ## Metric definitions
 
+### App overview trends
+
+The app detail overview shows orange install bars and a blue **APPU** line on one
+chart. Installs use the left count axis; APPU uses the right dollar axis. The
+summary has three equal-width blocks with vertical dividers: Installs, APPU and
+**Conversion to paid**. Conversion is unique tracked installers with a positive production
+charge through report time / all tracked installers in the selected period and
+language. Free trials do not count; renewals and multiple purchases count a user
+once, and later refunds do not undo a past conversion. Identity-free renewals
+follow known original-transaction owners. Missing payment amounts leave conversion
+unavailable. There is no fixed-day checkpoint selector or retention series in this
+overview. Proceeds remain available under **More metrics**.
+
+The period selects installs. APPU is all production net proceeds linked to those
+tracked installs **through report time**, divided by all tracked installs,
+including recent installs and non-payers. Each chart point follows its install-date
+cohort through the same report time. Renewals and refunds are included. Younger
+cohorts have had less time to earn; this is not a fixed-age D7 comparison.
+Authoritative `first_seen` totals supply Installs and the bars, and never substitute
+for the tracked-install APPU denominator. Summaries divide summed proceeds by
+summed installs instead of averaging daily APPU. Known original transaction chains
+resolve identity-free renewals/refunds; duplicate money deliveries count once,
+preferring the latest attribution revision. Missing proceeds suppress the affected
+APPU instead of becoming zero. Glow's existing mature country-chart filter is
+unchanged and does not apply to this overview.
+
+The overview language picker defaults to **All languages** and filters only the
+main chart and its Installs/APPU/Conversion to paid summaries. Language is the earliest recorded
+install device language, normalized to the base code (e.g. `es-MX` → `es`). Missing
+or malformed codes remain **Unknown language**, and later language changes do not
+move users. Linked renewals/refunds follow the install's language. Language views
+use **Tracked installs** for bars and counts, including non-payers; the aggregate
+`first_seen` totals have no language breakdown. All languages retains authoritative
+install totals and the weighted APPU over every tracked install, including unknown
+languages. Other cards and More metrics retain their full-period audience.
+
+Install buckets match the original acquisition trend: hourly for Today, Yesterday
+and Last 3 days, four-hour Paris-clock buckets for Last week, and daily buckets for
+Last month and All time. APPU is a flat segment for each Paris calendar day, changing
+at midnight. Its daily value divides summed linked proceeds by summed tracked
+installs for that day and selected language; it never averages hourly rates.
+Partial days use only the selected report window. Missing proceeds suppress the
+whole affected day's APPU, and days with no tracked installs remain gaps.
+Both repeated autumn hours remain distinct; nonexistent spring hours are skipped.
+Installs and daily-average APPU share one tooltip. Notes use the original
+title/version labels, purple dashed lines centered on their matching buckets, and
+hover Add note button; their editor is unchanged.
+Failed cohort queries show unavailable while independently loaded install totals
+remain visible. Fixed-age and subscription-retention calculations remain available
+in the underlying cohort report and separate reporting views.
+
 The **Experiment map's onboarding tree** uses the four
 `poky-plan-design-combinations` intro × plan screen cohorts, including non-payers
 and scoped to the selected language. Each plan leaf shows total proceeds per

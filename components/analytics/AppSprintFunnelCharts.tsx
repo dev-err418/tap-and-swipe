@@ -282,7 +282,7 @@ export function VisitorsRevenueChart({
   );
 }
 
-function ChartNoteButton({
+export function ChartNoteButton({
   points,
   onAddNote,
   timeZone,
@@ -321,7 +321,7 @@ function ChartNoteButton({
   );
 }
 
-function NoteMarker({
+export function NoteMarker({
   note,
   onClick,
   viewBox,
@@ -393,7 +393,7 @@ function formatAppVersion(value: string) {
   return /^v/i.test(trimmed) ? trimmed : `v${trimmed}`;
 }
 
-function LegendItem({ label, color, dashed = false }: { label: string; color: string; dashed?: boolean }) {
+export function LegendItem({ label, color, dashed = false }: { label: string; color: string; dashed?: boolean }) {
   return (
     <span
       className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-1 font-medium"
@@ -412,7 +412,7 @@ function LegendItem({ label, color, dashed = false }: { label: string; color: st
   );
 }
 
-function RoundedRevenueBar(props: {
+export function RoundedRevenueBar(props: {
   x?: number;
   y?: number;
   width?: number;
@@ -502,32 +502,44 @@ function TrendTooltip({
   if (!row) return null;
 
   return (
-    <div className="dashboard-tooltip-shadow w-[16rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-popover text-xs text-popover-foreground ring-1 ring-foreground/5">
+    <ChartTooltip date={label ?? row.date} timeZone={timeZone}>
+      <div className="grid gap-1.5">
+        <TooltipMetric label={visitLabel} value={formatInteger(row.visits)} color={VISIT_COLOR} />
+        <TooltipMetric label={revenueLabel} value={formatCurrency(row.revenue)} color={REVENUE_COLOR} />
+        {rateLabel && row.rate !== undefined ? (
+          <TooltipMetric label={rateLabel} value={formatRate(row.rate)} color={RATE_COLOR} />
+        ) : null}
+        {averageRateLabel && row.averageRate !== undefined ? (
+          <TooltipMetric label={averageRateLabel} value={formatRate(row.averageRate)} color={RATE_COLOR} />
+        ) : null}
+        {row.trialStarts > 0 ? (
+          <TooltipMetric
+            label="Trial starts"
+            value={formatInteger(row.trialStarts)}
+            color="oklch(0.828 0.189 84.429)"
+          />
+        ) : null}
+      </div>
+    </ChartTooltip>
+  );
+}
+
+export function ChartTooltip({ date, timeZone, children }: {
+  date: string | number;
+  timeZone: string;
+  children: ReactNode;
+}) {
+  return (
+    <div role="tooltip" className="dashboard-tooltip-shadow w-[16rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-popover text-xs text-popover-foreground ring-1 ring-foreground/5">
       <div className="grid gap-2 px-2.5 py-2">
-        <div className="font-medium text-foreground">{formatLongDate(label ?? row.date, timeZone)}</div>
-        <div className="grid gap-1.5">
-          <TooltipMetric label={visitLabel} value={formatInteger(row.visits)} color={VISIT_COLOR} />
-          <TooltipMetric label={revenueLabel} value={formatCurrency(row.revenue)} color={REVENUE_COLOR} />
-          {rateLabel && row.rate !== undefined ? (
-            <TooltipMetric label={rateLabel} value={formatRate(row.rate)} color={RATE_COLOR} />
-          ) : null}
-          {averageRateLabel && row.averageRate !== undefined ? (
-            <TooltipMetric label={averageRateLabel} value={formatRate(row.averageRate)} color={RATE_COLOR} />
-          ) : null}
-          {row.trialStarts > 0 ? (
-            <TooltipMetric
-              label="Trial starts"
-              value={formatInteger(row.trialStarts)}
-              color="oklch(0.828 0.189 84.429)"
-            />
-          ) : null}
-        </div>
+        <div className="font-medium text-foreground">{formatLongDate(date, timeZone)}</div>
+        {children}
       </div>
     </div>
   );
 }
 
-function TooltipMetric({
+export function TooltipMetric({
   label,
   value,
   color,

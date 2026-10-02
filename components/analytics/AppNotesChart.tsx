@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { APP_ANALYTICS_TIME_ZONE, parisDatetimeLocalValue as toDatetimeLocalValue, parisDatetimeToDate } from "@/lib/app-analytics-time";
 import {
-  VisitorsRevenueChart,
   type AnalyticsChartNote,
   type FunnelTrendPoint,
 } from "@/components/analytics/AppSprintFunnelCharts";
+import type { AppOverviewTrend } from "@/lib/app-overview-cohorts";
+import AppCohortCharts from "./AppCohortCharts";
+import { Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +20,13 @@ import {
 
 type AppId = "glow" | "poky" | "versy";
 
-export default function AppNotesChart({ appId, data }: { appId: AppId; data: FunnelTrendPoint[] }) {
+export default function AppNotesChart({ appId, data, cohorts, languagePicker, installLabel }: {
+  appId: AppId;
+  data: FunnelTrendPoint[];
+  cohorts: AppOverviewTrend | null;
+  languagePicker?: ReactNode;
+  installLabel?: string;
+}) {
   const [notes, setNotes] = useState<AnalyticsChartNote[]>([]);
   const [composerOpen, setComposerOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<AnalyticsChartNote | null>(null);
@@ -127,24 +135,23 @@ export default function AppNotesChart({ appId, data }: { appId: AppId; data: Fun
 
   return (
     <>
-      <VisitorsRevenueChart
-        data={data}
-        timeZone={APP_ANALYTICS_TIME_ZONE}
-        action={<span className="text-[11px] text-muted-foreground" title="Europe/Paris · daylight saving adjusts automatically">Paris time</span>}
-        visitLabel="Installs"
-        revenueLabel="Proceeds"
-        rateLabel={appId === "glow" ? "Trial starts / installs · same time" : "Paid / installs · same time"}
-        averageRateLabel="Daily average"
-        rateScaleMax={appId === "versy" ? 1 : 0.3}
-        averageRateScaleMax={appId === "versy" ? 1 : 0.2}
-        showRateScales={appId !== "versy"}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {languagePicker}
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-[11px] text-black/40" title={`${APP_ANALYTICS_TIME_ZONE} · daylight saving adjusts automatically`}>Paris time</span>
+          <button type="button" onClick={() => openComposer()} className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium text-black/60 hover:bg-black/[0.03] focus-visible:outline-2 focus-visible:outline-black/40"><Plus size={13} aria-hidden /> Add note</button>
+        </div>
+      </div>
+      {error && !composerOpen ? <p role="status" className="mb-4 text-xs text-red-600">{error}</p> : null}
+      <AppCohortCharts
+        report={cohorts}
+        installLabel={installLabel}
         notes={notes}
         onAddNote={openComposer}
         onNoteClick={(note) => {
           setManageError(null);
           setSelectedNote(note);
         }}
-        emptyMessage="Install and proceeds trends appear after Superwall events are tracked."
       />
 
       <Dialog

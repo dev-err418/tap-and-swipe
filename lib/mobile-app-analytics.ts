@@ -19,6 +19,7 @@ import { paidSubscriptionActivity } from "./paid-subscription-activity";
 import { installCohortCountries } from "./install-cohort-countries";
 import { subscriptionActiveAt } from "./subscription-retention";
 import { matchedCohortInstall } from "./experiment-install-cohort";
+import { buildAppOverviewCohorts, type AppOverviewCohorts } from "./app-overview-cohorts";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -148,6 +149,7 @@ export type MobileAppAnalytics = {
   revenueCents: number;
   paid: number;
   trend: MobileAppTrendPoint[];
+  overviewCohorts: AppOverviewCohorts | null;
   countries: MobileAppCountryRow[];
   /** Countries/APPU and CR charts; Glow uses fully observed 72-hour cohorts. */
   dataCountries?: MobileAppCountryRow[];
@@ -524,6 +526,13 @@ async function loadSuperwallAppAnalytics(
     revenueCents: Math.round(trend.reduce((sum, point) => sum + point.revenue, 0) * 100),
     paid: countries.reduce((sum, row) => sum + row.paid, 0),
     trend,
+    overviewCohorts: includeCountries ? buildAppOverviewCohorts({
+      period, startMs, endMs,
+      installs: facts?.installs ?? [],
+      events: facts?.events ?? [],
+      downloads: trend,
+      available: Boolean(facts),
+    }) : null,
     countries,
     dataCountries,
     cohortDataAvailable: Boolean(facts),
