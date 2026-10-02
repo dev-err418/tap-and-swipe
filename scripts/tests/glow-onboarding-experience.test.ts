@@ -153,7 +153,8 @@ test("unmatched or invalid cancellation timing never becomes a false average", (
 test("the comparison shows all three metrics with empty and unavailable values kept honest", () => {
   const empty = buildGlowOnboardingReport([], [], start, asOf, asOf);
   const markup = renderToStaticMarkup(createElement(GlowOnboardingExperiencePanel, { report: empty }));
-  assert.match(markup, /Prepared/);
+  assert.match(markup, /enabled in the next app build/);
+  assert.match(markup, /results appear after that build is released/);
   assert.match(markup, /15% Current · 85% No mascot/);
   assert.match(markup, /ARPU/);
   assert.match(markup, /Sessions \/ user \/ day/);
