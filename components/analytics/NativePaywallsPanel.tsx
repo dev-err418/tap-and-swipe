@@ -58,7 +58,7 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
             {id} <span className="ml-1 font-semibold tabular-nums">{formatPaywallAllocation(percent)}</span>
           </span>)}
         </div>
-        <p className="text-xs text-muted-foreground">Glow 1.7.3 English paywall views through September 28 use the yearly-only yr_59 offer and are reported separately. The five-way v3 assignment resumes presentations September 29.</p>
+        <p className="text-xs text-muted-foreground">In the updated Glow app, English paywall views through October 5 use the yearly-only yr_59 offer and are reported separately. The saved five-way v3 assignment resumes presentations October 6 (device local time).</p>
       </div>
     </section>}
     <section className="space-y-2 pt-2">

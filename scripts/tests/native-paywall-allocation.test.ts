@@ -34,7 +34,8 @@ test("the live paywall panel shows the released allocation and English override 
   assert.match(markup, /25%/);
   assert.doesNotMatch(markup, /166666/);
   assert.match(markup, /Glow paywall allocation/);
-  assert.match(markup, /Glow 1\.7\.3 English paywall views through September 28 use the yearly-only yr_59 offer/);
+  assert.match(markup, /In the updated Glow app, English paywall views through October 5 use the yearly-only yr_59 offer/);
+  assert.match(markup, /resumes presentations October 6 \(device local time\)/);
   const poky = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "poky", report: null }));
   assert.doesNotMatch(poky, /yr_wk_34/);
 });
