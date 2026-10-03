@@ -23,6 +23,9 @@ export type UserJourneyDefinition = {
   variantAttribute: string;
   /** Old install versions could not record the screens in this journey. */
   minimumInstallVersion?: string;
+  /** Require explicit tracking enrollment and build environment when available. */
+  cohortAttributes?: Record<string, string>;
+  note?: string;
   variants: UserJourneyVariant[];
 };
 
@@ -202,6 +205,46 @@ const VERSY_WIDGET_STEPS: UserJourneyStep[] = [
   ...(branch ? { branch: true } : {}),
 }));
 
+/** Poky's activeSequence; the animated intro is inserted just before the plan. */
+const POKY_STEPS: UserJourneyStep[] = [
+  ["welcome", "Welcome"],
+  ["poky_intro", "Poky intro"],
+  ["poky_setup", "Poky setup"],
+  ["taking_medication", "Medication intro"],
+  ["medication", "Medication"],
+  ["dose", "Dose"],
+  ["shot_frequency", "Frequency"],
+  ["right_place", "Right place"],
+  ["gender", "Gender"],
+  ["doctor_recommended", "Doctor"],
+  ["height", "Height"],
+  ["current_weight", "Weight"],
+  ["goal_weight", "Goal weight"],
+  ["first_name", "Name"],
+  ["weight_left", "Weight result"],
+  ["pace", "Pace"],
+  ["app_impact", "App impact"],
+  ["daily_routine", "Routine"],
+  ["brand_education", "Education"],
+  ["side_effect", "Side effects"],
+  ["motivation", "Motivation"],
+  ["review_support", "Reviews"],
+  ["customizing_plan", "Creating plan"],
+].map(([name, label]) => ({ attribute: `${name}_screen_seen`, label }));
+
+function pokyVariant(key: string, label: string, animated: boolean, plan: string): UserJourneyVariant {
+  return {
+    key,
+    label,
+    steps: [
+      ...POKY_STEPS,
+      ...(animated ? [{ attribute: "animated_plan_intro_screen_seen", label: "Plan intro" }] : []),
+      { attribute: "custom_plan_screen_seen", label: plan },
+      { attribute: "onboarding_paywall_screen_seen", label: "Paywall", paywall: true },
+    ],
+  };
+}
+
 export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJourneyDefinition | null {
   if (appId === "glow") {
     return {
@@ -224,6 +267,23 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
       ],
     };
   }
+  if (appId === "poky") {
+    return {
+      title: "User journey",
+      variantAttribute: "onboarding_variant",
+      cohortAttributes: {
+        poky_onboarding_journey_schema: "1",
+        poky_tracking_environment: "production",
+      },
+      note: "Includes installs that began the tracked onboarding flow in the updated Poky app. Earlier journeys cannot be reconstructed. Paywall seen includes the native, trial and Superwall onboarding paywalls.",
+      variants: [
+        pokyVariant("control_plan_a", "No intro · Plan A", false, "Plan A"),
+        pokyVariant("control_plan_b", "No intro · Plan B", false, "Plan B"),
+        pokyVariant("animated_plan_a", "Animated intro · Plan A", true, "Plan A"),
+        pokyVariant("animated_plan_b", "Animated intro · Plan B", true, "Plan B"),
+      ],
+    };
+  }
   return null;
 }
 
@@ -232,9 +292,7 @@ export function unsupportedUserJourney(appId: "glow" | "poky" | "versy"): UserJo
     status: "unsupported",
     title: "User journey",
     variants: [],
-    note: appId === "poky"
-      ? "Poky records intro and plan screen assignments in Superwall. It does not record which onboarding screen each install reached."
-      : "This app has no screen-by-screen Superwall journey.",
+    note: `${appId === "poky" ? "Poky" : "This app"} has no screen-by-screen Superwall journey.`,
   };
 }
 
@@ -274,13 +332,15 @@ export function buildUserJourney(
   });
 
   if (variants.length === 0) {
-    return { status: "empty", title: definition.title, variants: [], note: "No assigned installs in this window." };
+    return { status: "empty", title: definition.title, variants: [], note: `No assigned installs in this window.${definition.note ? ` ${definition.note}` : ""}` };
   }
   return {
     status: "ready",
     title: definition.title,
     variants,
-    ...(definition.minimumInstallVersion
+    ...(definition.note
+      ? { note: definition.note }
+      : definition.minimumInstallVersion
       ? { note: `Includes installs on version ${definition.minimumInstallVersion} or later, when screen progress tracking became available.` }
       : {}),
   };

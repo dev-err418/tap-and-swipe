@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import UserJourneyFunnel from "../../components/analytics/UserJourneyFunnel";
 import { ASSIGNED_KEY, buildUserJourney, journeyDrops, largestDropAttributes, userJourneyDefinition, type UserJourneyDefinition } from "../../lib/user-journey";
-import { userJourneySql } from "../../lib/user-journey-queries";
+import { loadUserJourney, userJourneySql } from "../../lib/user-journey-queries";
 
 test("glow and versy journeys follow each onboarding variant", () => {
   const glow = userJourneyDefinition("glow")!;
@@ -29,7 +29,61 @@ test("glow and versy journeys follow each onboarding variant", () => {
   assert.equal(widget.steps.at(-1)?.paywall, true);
   assert.equal(versy.minimumInstallVersion, "1.2.0");
   assert.notEqual(prayer.steps[0].attribute, widget.steps[0].attribute);
-  assert.equal(userJourneyDefinition("poky"), null);
+});
+
+test("Poky journeys match the four sticky intro and plan combinations", () => {
+  const poky = userJourneyDefinition("poky")!;
+  assert.equal(poky.variantAttribute, "onboarding_variant");
+  assert.deepEqual(poky.variants.map((variant) => variant.key), ["control_plan_a", "control_plan_b", "animated_plan_a", "animated_plan_b"]);
+  for (const variant of poky.variants) {
+    assert.equal(variant.steps[0].attribute, "welcome_screen_seen");
+    assert.equal(variant.steps.at(-1)?.attribute, "onboarding_paywall_screen_seen");
+    assert.equal(variant.steps.at(-1)?.paywall, true);
+    assert.equal(variant.steps.at(-2)?.label, variant.key.endsWith("_a") ? "Plan A" : "Plan B");
+    assert.equal(variant.steps.some((step) => step.attribute === "animated_plan_intro_screen_seen"), variant.key.startsWith("animated_"));
+    assert.equal(variant.steps.length, variant.key.startsWith("animated_") ? 26 : 25);
+    assert.equal(new Set(variant.steps.map((step) => step.attribute)).size, variant.steps.length);
+    assert.equal(variant.steps.some((step) => step.attributeKey || step.attributeSuffix), false);
+  }
+  assert.deepEqual(poky.cohortAttributes, { poky_onboarding_journey_schema: "1", poky_tracking_environment: "production" });
+});
+
+test("Poky SQL requires production enrollment and keeps views separate from requests", () => {
+  const sql = userJourneySql(49771, userJourneyDefinition("poky")!, "2026-10-01 00:00:00.000", "2026-10-04 00:00:00.000");
+  assert.match(sql, /applicationId = 49771/);
+  assert.match(sql, /countIf\(key = 'poky_tracking_environment' AND value = 'production'\) > 0/);
+  assert.match(sql, /countIf\(key = 'poky_onboarding_journey_schema' AND value = '1'\) > 0/);
+  assert.match(sql, /onboarding_paywall_screen_seen/);
+  assert.match(sql, /appInstallDate >=/);
+  assert.doesNotMatch(sql, /gp1_p_|paywall_placement|firstName|profileCurrentWeightLb/);
+});
+
+test("Poky reports all assigned users and actual paywall views in each variant", async () => {
+  const report = await loadUserJourney(async <T,>() => [
+    { variant: "control_plan_b", key: ASSIGNED_KEY, users: "100" },
+    { variant: "control_plan_b", key: "welcome_screen_seen", users: "100" },
+    { variant: "control_plan_b", key: "custom_plan_screen_seen", users: "50" },
+    { variant: "control_plan_b", key: "onboarding_paywall_screen_seen", users: "40" },
+    { variant: "animated_plan_a", key: ASSIGNED_KEY, users: "80" },
+    { variant: "animated_plan_a", key: "welcome_screen_seen", users: "80" },
+    { variant: "animated_plan_a", key: "onboarding_paywall_screen_seen", users: "20" },
+  ] as T[], "poky", 49771, "2026-10-01 00:00:00.000", "2026-10-04 00:00:00.000");
+  assert.equal(report.status, "ready");
+  assert.deepEqual(report.variants.map((variant) => variant.completionShare), [0.4, 0.25]);
+  const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report, windowLabel: "Last 7 days" }));
+  assert.match(html, /No intro · Plan B/);
+  assert.match(html, /Animated intro · Plan A/);
+  assert.match(html, /Earlier journeys cannot be reconstructed/);
+  assert.match(html, /\(40%\)/);
+});
+
+test("Poky empty and failed queries remain explicit", async () => {
+  const empty = buildUserJourney(userJourneyDefinition("poky")!, []);
+  assert.equal(empty.status, "empty");
+  assert.match(empty.note!, /updated Poky app/);
+  const failed = await loadUserJourney(async () => { throw new Error("Query failed"); }, "poky", 49771, "2026-10-01 00:00:00.000", "2026-10-04 00:00:00.000");
+  assert.equal(failed.status, "unavailable");
+  assert.equal(failed.variants.length, 0);
 });
 
 test("screen reach is a share of assigned installs in that variant", () => {

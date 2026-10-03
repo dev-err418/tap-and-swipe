@@ -50,6 +50,19 @@ export function userJourneySql(
   if (!Number.isInteger(applicationId) || applicationId <= 0) throw new Error("Invalid application id");
   if (!/^[\d:.\- ]+$/.test(start) || !/^[\d:.\- ]+$/.test(end)) throw new Error("Invalid journey window");
   const variants = variantValues.map(quote).join(", ");
+  const cohortAttributes = Object.entries(definition.cohortAttributes ?? {});
+  const trackingCohortJoin = cohortAttributes.length ? `
+    INNER JOIN (
+      SELECT appUserId
+      FROM sw.user_attributes_rep FINAL
+      WHERE applicationId = ${applicationId}
+        AND isSandbox = 0
+        AND isDeleted = 0
+        AND ts < now()
+        AND key IN (${cohortAttributes.map(([key]) => quote(key)).join(", ")})
+      GROUP BY appUserId
+      HAVING ${cohortAttributes.map(([key, value]) => `countIf(key = ${quote(key)} AND value = ${quote(value)}) > 0`).join(" AND ")}
+    ) AS tracked ON tracked.appUserId = assigned.appUserId` : "";
   const screenList = screens.map(quote).join(", ");
   const suffixRules = rules.filter((rule) => rule.suffix);
   const valueRules = rules.filter((rule) => rule.key && rule.values?.length);
@@ -109,7 +122,7 @@ FROM (
         AND ts < now()
       GROUP BY appUserId
       ${installVersionFilter}
-    ) AS installs ON installs.appUserId = assigned.appUserId
+    ) AS installs ON installs.appUserId = assigned.appUserId${trackingCohortJoin}
   ) AS cohort
   LEFT JOIN (
     SELECT appUserId, key, value

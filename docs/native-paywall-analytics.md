@@ -107,6 +107,20 @@ attributes remain stored. Do not lowercase attribute JSON during parsing.
 Current Poky onboarding reports also require `poky_tracking_environment=production`,
 so Debug overrides cannot contaminate them even before the SDK labels a user sandbox.
 
+Poky's Data-tab User journey now uses the same boolean screen attributes as
+Versy. The app freezes `onboarding_variant` at Welcome into the four existing
+intro × plan combinations: `control_plan_a`, `control_plan_b`, `animated_plan_a`
+and `animated_plan_b`. The loader requires `poky_onboarding_journey_schema=1`
+and the production environment marker. Returning subscription gates do not
+enroll users, and historical screen progress is never inferred or backfilled.
+The animated routes insert `animated_plan_intro_screen_seen` before the plan.
+All routes finish with `onboarding_paywall_screen_seen`, recorded only when the
+native, trial or Superwall onboarding paywall actually appears. Recovery offers,
+debug previews and failed presentation requests do not count. Screen flags carry
+no onboarding answers or health values. The existing install date filters,
+unique-user denominator and drop chart apply unchanged; paywall seen is the
+funnel's final stage, not a purchase or completed onboarding event.
+
 ## Storage contract: gp1
 
 ### Live data only
