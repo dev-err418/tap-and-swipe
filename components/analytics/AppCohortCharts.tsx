@@ -106,9 +106,6 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
           </ResponsiveContainer>
         ) : <p role="status" className="flex h-full items-center justify-center text-sm text-black/45">Cohort data unavailable</p>}
       </div>
-      <p className="mt-3 px-1 text-[11px] leading-relaxed text-black/45">
-        {bucketHours === 1 ? "Hourly" : bucketHours === 4 ? "Four-hour" : "Daily"} installs · APPU shows each day’s average, using net proceeds through today per tracked install, including non-payers.
-      </p>
       {!report?.available ? <p role="status" className="mt-1 px-1 text-[11px] text-black/45">Cohort data unavailable. Install totals remain visible.</p> : null}
       {report?.available && appuValues.length === 0 ? <p role="status" className="mt-1 px-1 text-[11px] text-black/45">{report.total?.missingMoney > 0 ? "APPU unavailable: proceeds data is incomplete." : "No tracked installs yet."}</p> : null}
     </div>

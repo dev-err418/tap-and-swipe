@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getAnalyticsViewer } from "@/lib/analytics-session";
+import { canAccessAnalyticsApp } from "@/lib/analytics-access";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -9,14 +10,9 @@ const MAX_TITLE_LENGTH = 80;
 const MAX_CONTENT_LENGTH = 1_000;
 const MAX_APP_VERSION_LENGTH = 40;
 
-async function isAuthorized() {
-  if (process.env.NODE_ENV === "development") return true;
-  const session = await getSession();
-  return session?.discordId === process.env.ADMIN_DISCORD_ID;
-}
-
 export async function GET(request: NextRequest) {
-  if (!(await isAuthorized())) {
+  const access = await getAnalyticsViewer();
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -24,17 +20,21 @@ export async function GET(request: NextRequest) {
   if (!APP_IDS.has(appId)) {
     return NextResponse.json({ error: "Invalid appId" }, { status: 400 });
   }
+  if (!canAccessAnalyticsApp(access, appId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const notes = await prisma.analyticsNote.findMany({
     where: { appId },
     orderBy: { notedAt: "asc" },
   });
 
-  return NextResponse.json({ notes });
+  return NextResponse.json({ notes }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAuthorized())) {
+  const access = await getAnalyticsViewer();
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -51,6 +51,9 @@ export async function POST(request: NextRequest) {
 
   if (!APP_IDS.has(appId)) {
     return NextResponse.json({ error: "Invalid appId" }, { status: 400 });
+  }
+  if (!canAccessAnalyticsApp(access, appId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (!title) {
     return NextResponse.json({ error: "Title is required" }, { status: 400 });

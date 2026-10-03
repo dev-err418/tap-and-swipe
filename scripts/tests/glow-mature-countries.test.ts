@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
 import { glowMatureCountries } from "../../lib/glow-mature-countries";
+import { buildAppOverviewCohorts } from "../../lib/app-overview-cohorts";
 
 const DAY = 86_400_000;
 const start = Date.parse("2026-10-20T00:00:00Z");
@@ -61,13 +62,27 @@ test("recent-only periods have no mature results instead of borrowing older user
   assert.deepEqual(glowMatureCountries(input, now), []);
 });
 
-test("APPU and install-to-paid CR use mature data while overview totals retain all selected-period data", () => {
+test("country charts use mature data while the top dashboard defaults to Spanish cohorts", () => {
   const countries = [{ country: "US", installs: 99, proceeds: 99, trials: 10, converted: 1, paid: 1 }];
   const dataCountries = [{ country: "ES", installs: 4, proceeds: 20, trials: 2, converted: 1, paid: 1 }];
-  const props = { appId: "glow" as const, installs: 99, proceeds: 99, paid: 1, windowLabel: "Last 30 days", trend: [], countries, plans: [], retention: [] };
+  const overviewCohorts = buildAppOverviewCohorts({
+    period: "month", startMs: start, endMs: now, asOf: now,
+    installs: [
+      ...Array.from({ length: 4 }, (_, id) => ({ ...install(`spanish-${id}`), language: "es" })),
+      { ...install("english"), language: "en" },
+    ],
+    events: [{ ...event("spanish-0", 0, { periodType: "normal", netProceeds: 20 }), isRefund: false, expiresAt: now + 365 * DAY }],
+    downloads: [],
+  });
+  const props = { appId: "glow" as const, installs: 99, windowLabel: "Last 30 days", trend: [], countries, plans: [], retention: [], overviewCohorts };
   const markup = renderToStaticMarkup(createElement(AppOverviewPanel, { ...props, dataCountries }));
   const chartMarkup = markup.split('id="app-analytics-panel-data"')[1];
-  assert.match(markup.split('id="app-analytics-panel-data"')[0], /99/);
+  const topMarkup = markup.split('id="app-analytics-panel-data"')[0];
+  assert.match(topMarkup, /Spanish · Last 30 days/);
+  assert.match(topMarkup, /Tracked installs/);
+  assert.match(topMarkup, />4<\/p>/);
+  assert.match(topMarkup, /\$5\.00/);
+  assert.doesNotMatch(topMarkup, />99<\/p>|More metrics|APPU shows each day/);
   // Each chart renders its country label twice to contrast against the bars.
   assert.equal(chartMarkup.match(/Spain/g)?.length, 4);
   assert.doesNotMatch(chartMarkup, /United States/);
@@ -80,7 +95,7 @@ test("APPU and install-to-paid CR use mature data while overview totals retain a
   assert.equal(unchanged.match(/United States/g)?.length, 4);
   assert.doesNotMatch(unchanged, /10\.1%/);
   const unavailable = renderToStaticMarkup(createElement(AppOverviewPanel, {
-    ...props, dataCountries: [], cohortDataAvailable: false,
+    ...props, dataCountries: [], cohortDataAvailable: false, overviewCohorts: null,
   }));
   assert.match(unavailable, /Cohort data unavailable/);
   assert.doesNotMatch(unavailable, /0 paid \/ 0 cohort installs/);

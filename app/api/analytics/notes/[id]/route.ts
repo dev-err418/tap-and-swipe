@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getAnalyticsViewer } from "@/lib/analytics-session";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -8,22 +8,19 @@ const MAX_TITLE_LENGTH = 80;
 const MAX_CONTENT_LENGTH = 1_000;
 const MAX_APP_VERSION_LENGTH = 40;
 
-async function isAuthorized() {
-  if (process.env.NODE_ENV === "development") return true;
-  const session = await getSession();
-  return session?.discordId === process.env.ADMIN_DISCORD_ID;
-}
-
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await isAuthorized())) {
+  const access = await getAnalyticsViewer();
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
-  const existing = await prisma.analyticsNote.findUnique({ where: { id } });
+  const existing = await prisma.analyticsNote.findFirst({
+    where: { id, appId: { in: [...access.appIds] } },
+  });
   if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -63,12 +60,15 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await isAuthorized())) {
+  const access = await getAnalyticsViewer();
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
-  const note = await prisma.analyticsNote.findUnique({ where: { id } });
+  const note = await prisma.analyticsNote.findFirst({
+    where: { id, appId: { in: [...access.appIds] } },
+  });
   if (!note) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

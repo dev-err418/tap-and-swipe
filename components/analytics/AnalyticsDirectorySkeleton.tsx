@@ -1,5 +1,6 @@
 import { activeABTestCount } from "@/lib/app-experiment-map";
 import { DASHBOARD_SURFACE_CLASS } from "@/components/analytics/dashboard-surface";
+import type { AnalyticsAccess, AnalyticsAppId } from "@/lib/analytics-access";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -39,19 +40,19 @@ export function analyticsPeriodSummary(period: string) {
   return period in PERIOD_SUMMARY ? PERIOD_SUMMARY[period as Period] : PERIOD_SUMMARY.week;
 }
 
-export function AnalyticsDirectorySkeleton({ periodLabel }: { periodLabel: string }) {
+export function AnalyticsDirectorySkeleton({ periodLabel, access }: { periodLabel: string; access: AnalyticsAccess }) {
   return (
     <div className="space-y-12">
-      <AppDirectorySkeleton periodLabel={periodLabel} />
-      <WebsiteDirectorySkeleton periodLabel={periodLabel} />
+      <AppDirectorySkeleton periodLabel={periodLabel} name={access.name} appIds={access.appIds} />
+      {access.canManage ? <WebsiteDirectorySkeleton periodLabel={periodLabel} /> : null}
     </div>
   );
 }
 
-export function AppTotalsSkeleton({ periodLabel }: { periodLabel: string }) {
+export function AppTotalsSkeleton({ periodLabel, name = "Arthur" }: { periodLabel: string; name?: string }) {
   return (
     <p className="min-w-0 text-lg text-black/55 sm:text-xl">
-      Hey Arthur, you got <MetricBone /> downloads and <MetricBone /> proceeds {periodLabel}.
+      Hey {name}, you got <MetricBone /> downloads and <MetricBone /> proceeds {periodLabel}.
     </p>
   );
 }
@@ -88,12 +89,12 @@ export function WebsiteCardSkeleton({ domain }: { domain: "appsprint.app" | "com
   );
 }
 
-export function AppDirectorySkeleton({ periodLabel }: { periodLabel: string }) {
+export function AppDirectorySkeleton({ periodLabel, name, appIds }: { periodLabel: string; name: string; appIds: readonly AnalyticsAppId[] }) {
   return (
     <section className="space-y-6" aria-busy="true" aria-label="Loading apps">
-      <AppTotalsSkeleton periodLabel={periodLabel} />
+      <AppTotalsSkeleton periodLabel={periodLabel} name={name} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {APPS.map((app) => (
+        {APPS.filter((app) => appIds.includes(app.id)).map((app) => (
           <DirectoryCardSkeleton
             key={app.name}
             title={app.name}

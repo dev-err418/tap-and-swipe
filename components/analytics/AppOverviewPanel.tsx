@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { VisitorsRevenueChart, type FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
+import type { FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
 import { totalCohortAppu, overviewForLanguage, overviewLanguageLabel, type AppOverviewCohorts } from "@/lib/app-overview-cohorts";
-import { APP_ANALYTICS_TIME_ZONE } from "@/lib/app-analytics-time";
 import AppCountryBreakdown from "@/components/analytics/AppCountryBreakdown";
 import AppConversionBreakdown from "@/components/analytics/AppConversionBreakdown";
 import type {
@@ -63,7 +62,6 @@ type MonthExperimentBundle = {
 export default function AppOverviewPanel({
   appId,
   installs,
-  proceeds,
   windowLabel,
   trend,
   overviewCohorts = null,
@@ -82,7 +80,6 @@ export default function AppOverviewPanel({
 }: {
   appId: "glow" | "poky" | "versy";
   installs: number;
-  proceeds: number;
   windowLabel: string;
   trend: FunnelTrendPoint[];
   overviewCohorts?: AppOverviewCohorts | null;
@@ -101,11 +98,12 @@ export default function AppOverviewPanel({
   productSlot?: ReactNode;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
-  const [languageChoice, setLanguageChoice] = useState({ appId, language: "all" });
-  const languages = Object.keys(overviewCohorts?.languages ?? {}).sort((a, b) =>
+  const [languageChoice, setLanguageChoice] = useState({ appId, language: "es" });
+  const languages = [...new Set(["es", ...Object.keys(overviewCohorts?.languages ?? {})])].sort((a, b) =>
     a === "unknown" ? 1 : b === "unknown" ? -1 : overviewLanguageLabel(a).localeCompare(overviewLanguageLabel(b)));
-  const language = languageChoice.appId === appId && languages.includes(languageChoice.language)
-    ? languageChoice.language : "all";
+  const language = languageChoice.appId === appId
+    && (languageChoice.language === "all" || languages.includes(languageChoice.language))
+    ? languageChoice.language : "es";
   const selectedOverview = overviewCohorts ? overviewForLanguage(overviewCohorts, language) : null;
   const installLabel = language === "all" ? "Installs" : "Tracked installs";
   const [monthBundle, setMonthBundle] = useState<{ appId: string; bundle: MonthExperimentBundle } | null>(null);
@@ -171,15 +169,6 @@ export default function AppOverviewPanel({
                 </SelectContent>
               </Select>
             } />
-          <details className="group mt-6 border-t border-black/[0.08] pt-4">
-            <summary className="w-fit cursor-pointer text-xs font-medium text-black/55 hover:text-black focus-visible:outline-2 focus-visible:outline-black/40">More metrics</summary>
-            <div className="mt-4">
-              <MetricSummary label="Proceeds" value={formatCurrency(proceeds)} detail={windowLabel} />
-            </div>
-            <div className="mt-4">
-              <VisitorsRevenueChart data={trend} timeZone={APP_ANALYTICS_TIME_ZONE} visitLabel="Installs" revenueLabel="Proceeds" />
-            </div>
-          </details>
         </div>
       </div>
 
@@ -291,14 +280,6 @@ function MetricSummary({ label, value, detail }: { label: string; value: string;
 
 function formatInt(value: number) {
   return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
 }
 
 function formatPreciseCurrency(value: number) {

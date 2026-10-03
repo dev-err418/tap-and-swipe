@@ -5,7 +5,8 @@ import {
   ArrowLeft,
   Command,
 } from "lucide-react";
-import { getSession } from "@/lib/session";
+import { getAnalyticsViewer } from "@/lib/analytics-session";
+import { canAccessAnalyticsPage, type AnalyticsAccess } from "@/lib/analytics-access";
 import {
   getAppSprintFunnelAnalytics,
   type AppSprintFunnelAnalytics,
@@ -47,8 +48,6 @@ import TrialAbusePanel from "@/components/aso-debug/TrialAbusePanel";
 import { activeABTestCount } from "@/lib/app-experiment-map";
 
 export const dynamic = "force-dynamic";
-
-const isDev = process.env.NODE_ENV === "development";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 type Tab = "analytics" | "appsprint";
@@ -105,15 +104,10 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ period?: string; tab?: string; site?: string; app?: string }>;
 }) {
-  const session = await getSession();
-  if (!isDev && !session) {
-    redirect("/login");
-  }
-  if (!isDev && session?.discordId !== process.env.ADMIN_DISCORD_ID) {
-    notFound();
-  }
-
+  const access = await getAnalyticsViewer();
+  if (!access) redirect("/login?redirect=analytics");
   const params = await searchParams;
+  if (!canAccessAnalyticsPage(access, params)) notFound();
   const tab = normalizeTab(params.tab);
 
   if (tab === "appsprint") {
@@ -148,7 +142,7 @@ export default async function AnalyticsPage({
               <div className="flex justify-end">
                 <AnalyticsPeriodSelect period={period} />
               </div>
-              <AnalyticsDirectorySkeleton periodLabel={PERIOD_SUMMARY_LABELS[period]} />
+              <AnalyticsDirectorySkeleton periodLabel={PERIOD_SUMMARY_LABELS[period]} access={access} />
             </div>
           )
         }>
@@ -157,39 +151,42 @@ export default async function AnalyticsPage({
           ) : detailSite ? (
             <WebsiteDetail period={period} site={detailSite} />
           ) : (
-            <WebsiteDirectory period={period} />
+            <WebsiteDirectory period={period} access={access} />
           )}
         </Suspense>
       </div>
-      <Link
-        href="/analytics?tab=appsprint"
-        aria-label="AppSprint"
-        title="AppSprint"
-        className="fixed right-4 bottom-4 z-50 inline-flex size-10 items-center justify-center rounded-full bg-white text-black/60 transition-colors hover:text-black"
-      >
-        <Command className="size-4" />
-      </Link>
+      {access.canManage ? (
+        <Link
+          href="/analytics?tab=appsprint"
+          aria-label="AppSprint"
+          title="AppSprint"
+          className="fixed right-4 bottom-4 z-50 inline-flex size-10 items-center justify-center rounded-full bg-white text-black/60 transition-colors hover:text-black"
+        >
+          <Command className="size-4" />
+        </Link>
+      ) : null}
     </main>
   );
 }
 
 function WebsiteDirectory({
   period,
+  access,
 }: {
   period: Period;
+  access: AnalyticsAccess;
 }) {
   return (
     <div className="space-y-12">
       <div className="flex justify-end">
         <AnalyticsPeriodSelect period={period} />
       </div>
-      <AppDirectory period={period} />
-      <LiveWebsiteDirectory period={period} />
+      <AppDirectory period={period} access={access} />
+      {access.canManage ? <LiveWebsiteDirectory period={period} /> : null}
     </div>
   );
 }
 
-const APP_LOAD_ORDER = ["poky", "glow", "versy"] as const;
 const funnelInflight = new Map<string, Promise<AppSprintFunnelAnalytics | null>>();
 
 function loadWebsiteFunnel(period: Period, site: "appsprint" | "community") {
@@ -204,15 +201,15 @@ function loadWebsiteFunnel(period: Period, site: "appsprint" | "community") {
 
 
 
-function AppDirectory({ period }: { period: Period }) {
+function AppDirectory({ period, access }: { period: Period; access: AnalyticsAccess }) {
   const periodLabel = PERIOD_SUMMARY_LABELS[period];
   return (
     <section className="space-y-6">
-      <Suspense fallback={<AppTotalsSkeleton periodLabel={periodLabel} />}>
-        <AppTotals period={period} />
+      <Suspense fallback={<AppTotalsSkeleton periodLabel={periodLabel} name={access.name} />}>
+        <AppTotals period={period} access={access} />
       </Suspense>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {APP_LOAD_ORDER.map((id) => (
+        {access.appIds.map((id) => (
           <Suspense key={id} fallback={<AppCardSkeleton id={id} />}>
             <AppDirectoryCard period={period} id={id} />
           </Suspense>
@@ -222,15 +219,15 @@ function AppDirectory({ period }: { period: Period }) {
   );
 }
 
-async function AppTotals({ period }: { period: Period }) {
-  const apps = (await Promise.all(APP_LOAD_ORDER.map((id) => getMobileAppSummary(period, id))))
+async function AppTotals({ period, access }: { period: Period; access: AnalyticsAccess }) {
+  const apps = (await Promise.all(access.appIds.map((id) => getMobileAppSummary(period, id))))
     .filter((app) => app !== null);
   if (apps.length === 0) return null;
   const downloads = apps.reduce((sum, app) => sum + app.downloads, 0);
   const revenueCents = apps.reduce((sum, app) => sum + app.revenueCents, 0);
   return (
     <p className="min-w-0 text-lg text-black/55 sm:text-xl">
-      Hey Arthur, you got{" "}
+      Hey {access.name}, you got{" "}
       <strong className="font-semibold text-black">{formatNumber(downloads)} downloads</strong>
       {" "}and{" "}
       <strong className="font-semibold text-black">{formatRevenue(revenueCents)}</strong>
@@ -239,7 +236,7 @@ async function AppTotals({ period }: { period: Period }) {
   );
 }
 
-async function AppDirectoryCard({ period, id }: { period: Period; id: (typeof APP_LOAD_ORDER)[number] }) {
+async function AppDirectoryCard({ period, id }: { period: Period; id: AppId }) {
   const app = await getMobileAppSummary(period, id);
   if (!app) return null;
   return <MobileAppCard app={app} period={period} />;
@@ -560,7 +557,6 @@ async function AppDetail({
     );
   }
 
-  const proceeds = app.revenueCents / 100;
   const windowLabel = APP_PERIOD_LABELS[period];
   const dailyConversions = new Map<string, { installs: number; conversions: number }>();
   for (const point of app.trend) {
@@ -613,7 +609,6 @@ async function AppDetail({
       <AppOverviewPanel
         appId={app.id}
         installs={app.downloads}
-        proceeds={proceeds}
         windowLabel={windowLabel}
         trend={trend}
         overviewCohorts={app.overviewCohorts}

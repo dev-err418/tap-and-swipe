@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { exchangeCode, getUser, addToGuildWithRoles, createPrivateChannel, sendChannelMessage } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/session";
+import { getAnalyticsAccess } from "@/lib/analytics-access";
 
 const STATE_COOKIE = "discord_oauth_state";
 const SECRET = new TextEncoder().encode(process.env.SESSION_SECRET!);
@@ -223,6 +224,22 @@ Feel free to reach out here if you have any questions 😉`;
     }
 
     // --- Standard flows ---
+    const analyticsAccess = getAnalyticsAccess(discordUser.id, { development: false });
+    if (rawRedirect === "analytics" || (analyticsAccess && !analyticsAccess.canManage)) {
+      if (!analyticsAccess) {
+        return NextResponse.redirect(`${APP_URL}/login?redirect=analytics&error=analytics_denied`);
+      }
+      await createSession(
+        {
+          discordId: discordUser.id,
+          discordUsername: discordUser.global_name || discordUser.username,
+          discordAvatar: discordUser.avatar,
+        },
+        "7d",
+      );
+      return NextResponse.redirect(`${APP_URL}/analytics`);
+    }
+
     const WHITELISTED_DISCORD_IDS = new Set([
       process.env.ADMIN_DISCORD_ID,
     ]);

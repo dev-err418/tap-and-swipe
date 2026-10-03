@@ -14,8 +14,12 @@ import { Button } from "@/components/ui/button";
 
 export default function LoginClient({
   showNotSubscribed,
+  analyticsLogin = false,
+  analyticsDenied = false,
 }: {
   showNotSubscribed: boolean;
+  analyticsLogin?: boolean;
+  analyticsDenied?: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(showNotSubscribed);
 
@@ -32,15 +36,15 @@ export default function LoginClient({
               className="rounded-lg"
             />
             <h1 className="mt-2 text-xl font-bold">
-              Welcome to the Community
+              {analyticsLogin ? "Sign in to analytics" : "Welcome to the Community"}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Sign in to access your roadmap and track your progress.
+              {analyticsLogin ? "Continue with Discord to access your dashboard." : "Sign in to access your roadmap and track your progress."}
             </p>
           </div>
 
           <Button size="lg" className="w-full" asChild>
-            <a href="/api/auth/discord">
+            <a href={analyticsLogin ? "/api/auth/discord?redirect=analytics" : "/api/auth/discord"}>
               <svg
                 className="size-5"
                 viewBox="0 0 24 24"
@@ -51,6 +55,12 @@ export default function LoginClient({
               Continue with Discord
             </a>
           </Button>
+
+          {analyticsDenied ? (
+            <p role="alert" className="text-center text-sm text-red-600">
+              This Discord account does not have access to analytics.
+            </p>
+          ) : null}
 
           <p className="text-center text-xs text-muted-foreground">
             By continuing, you agree to our{" "}

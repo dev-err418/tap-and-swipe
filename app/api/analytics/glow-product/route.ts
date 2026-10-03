@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getAnalyticsViewer } from "@/lib/analytics-session";
 import { getGlowProductReport, getGlowUserJourney, type GlowProductPeriod } from "@/lib/glow-product-queries";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +20,8 @@ function validAgentToken(candidate: string | null): boolean {
 
 async function isAuthorized(request: NextRequest): Promise<boolean> {
   if (validAgentToken(request.headers.get("authorization"))) return true;
-  if (process.env.NODE_ENV === "development") return true;
-  const session = await getSession();
-  return Boolean(session && process.env.ADMIN_DISCORD_ID && session.discordId === process.env.ADMIN_DISCORD_ID);
+  const access = await getAnalyticsViewer();
+  return Boolean(access?.canManage);
 }
 
 /** Bounded, read-only product summary for the owner dashboard and trusted agents. */
