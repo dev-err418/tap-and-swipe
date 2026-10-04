@@ -16,6 +16,7 @@ import {
 } from "@/components/analytics/dashboard-surface";
 import { DashboardCardMetricPicker } from "@/components/analytics/DashboardCardMetricPicker";
 import { cn } from "@/lib/utils";
+import MarketingCtaExperiment from "@/components/analytics/MarketingCtaExperiment";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,7 @@ export default function AppSprintFunnelPanel({
   showPricingExperiment = false,
   showTrialExperiment = false,
   showOnboardingExperiment = false,
+  showCtaExperiment = false,
 }: {
   analytics: AppSprintFunnelAnalytics;
   experimentAnalytics?: AppSprintFunnelAnalytics;
@@ -44,6 +46,7 @@ export default function AppSprintFunnelPanel({
   showPricingExperiment?: boolean;
   showTrialExperiment?: boolean;
   showOnboardingExperiment?: boolean;
+  showCtaExperiment?: boolean;
 }) {
   const daily = analytics.daily.filter((row) => row.surface === "aso");
   const interval = analytics.interval?.filter((row) => row.surface === "aso") ?? [];
@@ -159,6 +162,8 @@ export default function AppSprintFunnelPanel({
           </table>
         </div>
       </DashboardCard> : null}
+
+      {showCtaExperiment ? <MarketingCtaExperiment rows={analytics.ctaExperiment} windowDays={analytics.windowDays} /> : null}
 
       <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <BreakdownCard

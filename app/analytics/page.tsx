@@ -46,6 +46,7 @@ import LicenseUsagePanel from "@/components/aso-debug/LicenseUsagePanel";
 import FeedbackPanel from "@/components/aso-debug/FeedbackPanel";
 import TrialAbusePanel from "@/components/aso-debug/TrialAbusePanel";
 import { activeABTestCount } from "@/lib/app-experiment-map";
+import { activeWebsiteABTestCount } from "@/lib/website-ab-tests";
 
 export const dynamic = "force-dynamic";
 
@@ -326,15 +327,6 @@ function websiteData(
   return { site, domain, metrics, trend, activeTests: activeWebsiteABTestCount(analytics) };
 }
 
-function activeWebsiteABTestCount(analytics: AppSprintFunnelAnalytics) {
-  return [
-    analytics.pricingExperiment,
-    analytics.heroPreviewExperiment,
-    analytics.trialExperiment,
-    analytics.onboardingExperiment,
-  ].filter((rows) => new Set(rows?.map((row) => row.variant) ?? []).size > 1).length;
-}
-
 function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Period }) {
   const activeTests = activeABTestCount(app.id);
   const appu = app.downloads > 0 ? app.revenueCents / 100 / app.downloads : null;
@@ -441,6 +433,7 @@ async function WebsiteDetail({
           showPricingExperiment={site === "appsprint" || site === "community"}
           showTrialExperiment={site === "postback"}
           showOnboardingExperiment={site === "postback"}
+          showCtaExperiment={site === "appsprint"}
         />
       ) : (
         <div className={`px-6 py-16 text-center ${DASHBOARD_SURFACE_CLASS}`}>

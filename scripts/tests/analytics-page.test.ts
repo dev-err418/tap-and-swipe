@@ -4,6 +4,7 @@ import { createElement, Fragment, isValidElement, Suspense, type ReactNode } fro
 import { renderToStaticMarkup } from "react-dom/server";
 import { getAnalyticsAccess } from "../../lib/analytics-access";
 import * as accessHelpers from "../../lib/analytics-access";
+import { activeWebsiteABTestCount } from "../../lib/website-ab-tests";
 import { AnalyticsDirectorySkeleton } from "../../components/analytics/AnalyticsDirectorySkeleton";
 import { loadTestModule } from "./helpers/load-test-module";
 
@@ -54,6 +55,7 @@ function pageFixture() {
       getMobileAppById: forbiddenData,
     },
     "@/lib/app-experiment-map": { activeABTestCount: () => 0 },
+    "@/lib/website-ab-tests": { activeWebsiteABTestCount },
     "@/components/analytics/dashboard-surface": { DASHBOARD_SURFACE_CLASS: "" },
     "@/components/analytics/website-summary-card": { formatCompactRevenue: String, ProjectExperimentBadge: passthrough, WebsiteFavicon: passthrough, WebsiteMiniChart: passthrough, WebsiteSummaryCard: passthrough },
     "@/components/analytics/AnalyticsDirectorySkeleton": { AnalyticsDirectorySkeleton, AppCardSkeleton: passthrough, AppTotalsSkeleton: passthrough, WebsiteCardSkeleton: passthrough, WebsiteTotalsSkeleton: passthrough },

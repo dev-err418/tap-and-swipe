@@ -80,6 +80,20 @@ export type AppSprintFunnelAnalytics = {
     revenue: number;
     currency: string;
   }[];
+  ctaExperiment?: {
+    experiment: string;
+    page: string;
+    pageLabel: string;
+    placement: string;
+    variant: string;
+    label: string;
+    position?: string;
+    eligibleVisitors?: number;
+    viewers: number;
+    clickers: number;
+    checkoutVisitors: number;
+    paidVisitors: number;
+  }[];
   heroPreviewExperiment: {
     variant: string;
     label: string;
