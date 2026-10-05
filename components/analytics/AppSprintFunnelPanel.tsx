@@ -73,8 +73,10 @@ export default function AppSprintFunnelPanel({
       }));
   const readinessWindow = { elapsedDays: 30, asOfMs: Date.parse(experimentAnalytics.generatedAt) };
   const cumulativePricing = experimentAnalytics.pricingExperiment?.some((row) => row.variant === "annual_108_eur") ?? false;
+  // Also hide retired C when reading an older AppSprint analytics response.
+  const pricingRows = (experimentAnalytics.pricingExperiment ?? []).filter((row) => row.variant !== "annual_144_usd_vat");
   // The current $108 arm includes another test's history, so only analyze standalone experiments.
-  const pricingAnalysis = cumulativePricing ? null : analyzeExperiment(toRevenueArms(experimentAnalytics.pricingExperiment ?? []), "conversion_rate", "Paid conversion rate", readinessWindow);
+  const pricingAnalysis = cumulativePricing ? null : analyzeExperiment(toRevenueArms(pricingRows), "conversion_rate", "Paid conversion rate", readinessWindow);
   const heroAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.heroPreviewExperiment), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
   const trialAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.trialExperiment ?? []), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
   const onboardingAnalysis = analyzeExperiment((experimentAnalytics.onboardingExperiment ?? []).map((row) => ({ key: row.variant, label: row.label, exposures: row.visitors, conversions: row.completed, revenue: row.revenue })), "conversion_rate", "Completion rate", readinessWindow);
@@ -94,19 +96,19 @@ export default function AppSprintFunnelPanel({
         </div>
       </div>
 
-      {showPricingExperiment ? <DashboardCard title={cumulativePricing ? "Pricing A/B/C test" : "Pricing A/B test"} titleAccessory={cumulativePricing ? <span className="text-xs text-muted-foreground">Prior $108/year data included</span> : !pricingAnalysis?.sufficientData ? <span className="text-xs text-muted-foreground">Collecting data</span> : null} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{cumulativePricing ? "40% $108 / 30% €108 / 30% $144 · Cumulative" : experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
+      {showPricingExperiment ? <DashboardCard title="Pricing A/B test" titleAccessory={cumulativePricing ? <span className="text-xs text-muted-foreground">Prior $108/year data included</span> : !pricingAnalysis?.sufficientData ? <span className="text-xs text-muted-foreground">Collecting data</span> : null} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{cumulativePricing ? "50% $108 / 50% €108 · Cumulative" : experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
         {pricingAnalysis?.sufficientData ? <ExperimentStats analysis={pricingAnalysis} /> : null}
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
             <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-black">Revenue / visitor</Th></tr></thead>
             <tbody>
-              {(experimentAnalytics.pricingExperiment ?? []).map((row, index) => (
+              {pricingRows.map((row, index) => (
                 <tr key={row.variant} className="border-b border-black/[0.07]">
                   <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatPreciseCurrency(row.revenue, row.currency)}</NumberTd><NumberTd className="font-bold">{formatPreciseCurrency(ratio(row.revenue, row.visitors), row.currency)}</NumberTd>
                 </tr>
               ))}
-              {!experimentAnalytics.pricingExperiment?.length ? <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Pricing experiment data is not available yet.</td></tr> : null}
+              {!pricingRows.length ? <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Pricing experiment data is not available yet.</td></tr> : null}
             </tbody>
           </table>
         </div>
