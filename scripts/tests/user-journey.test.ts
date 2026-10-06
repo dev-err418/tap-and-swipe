@@ -18,17 +18,23 @@ test("glow and versy journeys follow each onboarding variant", () => {
   assert.equal(glow.variants[0].steps.some((step) => step.attribute.startsWith("source")), false);
 
   const versy = userJourneyDefinition("versy")!;
-  const prayer = versy.variants.find((variant) => variant.key === "short-1-prayer")!;
-  const widget = versy.variants.find((variant) => variant.key === "bible_widget")!;
-  assert.equal(prayer.steps[0].attribute, "entry_screen_seen");
-  assert.equal(prayer.steps.at(-1)?.attribute, "paywall_seen");
-  assert.equal(prayer.steps.at(-1)?.attributeKey, "paywall_placement");
-  assert.equal(prayer.steps.find((step) => step.branch)?.attribute, "notifications_denied_screen_seen");
+  assert.deepEqual(versy.variants.map((variant) => variant.key), ["bible_widget", "bible_widget_shorter"]);
+  const [widget, shorter] = versy.variants;
   assert.equal(widget.steps[0].attribute, "bible_widget_entry_screen_seen");
   assert.equal(widget.steps.at(-1)?.attribute, "bible_widget_paywall_screen_seen");
   assert.equal(widget.steps.at(-1)?.paywall, true);
   assert.equal(versy.minimumInstallVersion, "1.2.0");
-  assert.notEqual(prayer.steps[0].attribute, widget.steps[0].attribute);
+  assert.deepEqual(versy.cohortAttributes, { onboarding_experiment_id: "bible_widget_shorter_v1" });
+  assert.equal(shorter.steps.length, widget.steps.length - 2);
+  assert.deepEqual(widget.steps.filter((step) => !shorter.steps.includes(step)).map((step) => step.attribute), [
+    "bible_widget_habit_screen_seen", "bible_widget_relationshipWithGod_screen_seen",
+  ]);
+  assert.equal(shorter.steps.find((step) => step.branch)?.attribute, "bible_widget_notificationsDenied_screen_seen");
+  assert.equal(shorter.steps.at(-1)?.paywall, true);
+  const sql = userJourneySql(123, versy, "2026-10-06 00:00:00.000", "2026-10-07 00:00:00.000");
+  assert.match(sql, /onboarding_experiment_id/);
+  assert.match(sql, /bible_widget_shorter_v1/);
+  assert.doesNotMatch(sql, /short-1-prayer/);
 });
 
 test("Poky journeys match the four sticky intro and plan combinations", () => {
@@ -152,7 +158,7 @@ test("completion is paywall reach, and the three steepest main-path drops are ma
 
 test("a variant with no screen attributes stays out of the chart", () => {
   const report = buildUserJourney(userJourneyDefinition("versy")!, [
-    { variant: "short-1-prayer", key: ASSIGNED_KEY, users: 12 },
+    { variant: "bible_widget_shorter", key: ASSIGNED_KEY, users: 12 },
   ]);
   const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report, windowLabel: "Last 7 days" }));
   assert.match(html, /none of them have a screen-reached attribute yet/);
@@ -169,8 +175,9 @@ test("journey sql stays inside the install window and the variant list", () => {
   assert.match(sql, /endsWith\(key, '__onboarding_iam_complete'\)/);
   assert.match(sql, /endsWith\(key, '__onboarding_complete_copy'\)/);
   const versy = userJourneySql(51393, userJourneyDefinition("versy")!, "2026-09-18 00:00:00.000", "2026-09-25 00:00:00.000");
-  assert.match(versy, /paywall_placement/);
-  assert.match(versy, /onboarding_short_prayer/);
+  assert.match(versy, /bible_widget_paywall_screen_seen/);
+  assert.match(versy, /'bible_widget', 'bible_widget_shorter'/);
+  assert.doesNotMatch(versy, /onboarding_short_prayer/);
   assert.match(versy, /HAVING tuple\(toUInt32OrZero\(splitByChar\('\.', version\)\[1\]\)/);
   assert.match(versy, />= tuple\(1, 2, 0\)/);
   assert.match(versy, /argMin\(JSONExtractString\(meta, 'appVersion'\), ts\) AS version/);

@@ -122,45 +122,6 @@ function glowVariant(key: string, label: string, placement: string): UserJourney
   };
 }
 
-/** Prayer journey order from PrayerOnboardingStep, with the denied-notification detour marked. */
-const VERSY_PRAYER_STEPS: UserJourneyStep[] = [
-  ["entry", "Entry"],
-  ["welcome", "Welcome"],
-  ["problem_hook", "Problem"],
-  ["value_prop", "Value"],
-  ["first_name", "Name"],
-  ["transition_name", "Name transition"],
-  ["age", "Age"],
-  ["goals", "Goals"],
-  ["vision", "Vision"],
-  ["obstacles", "Obstacles"],
-  ["root_causes", "Root causes"],
-  ["validation", "Validation"],
-  ["denomination", "Denomination"],
-  ["gender", "Gender"],
-  ["summary_cards", "Summary"],
-  ["prayer_modal", "Prayer"],
-  ["completion", "Completion"],
-  ["notifications", "Notifications"],
-  ["notifications_denied", "Notifications denied", true],
-  ["widget", "Widget"],
-  ["reviews", "Reviews"],
-  ["subscription", "Subscription"],
-  ["trial_reminder", "Trial reminder"],
-].map(([name, label, branch]) => ({
-  attribute: `${name}_screen_seen`,
-  label: String(label),
-  ...(branch ? { branch: true } : {}),
-}));
-
-const VERSY_PRAYER_PAYWALL: UserJourneyStep = {
-  attribute: "paywall_seen",
-  label: "Paywall",
-  paywall: true,
-  attributeKey: "paywall_placement",
-  attributeValues: ["onboarding_short_prayer", "onboarding_short_prayer_no_trial"],
-};
-
 /** Bible widget order is WidgetStep declaration order. Attributes are bible_widget_<case>_screen_seen. */
 const VERSY_WIDGET_STEPS: UserJourneyStep[] = [
   ["entry", "Entry"],
@@ -261,9 +222,12 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
       title: "User journey",
       variantAttribute: "onboarding_variant",
       minimumInstallVersion: "1.2.0",
+      cohortAttributes: { onboarding_experiment_id: "bible_widget_shorter_v1" },
       variants: [
-        { key: "short-1-prayer", label: "Prayer journey", steps: [...VERSY_PRAYER_STEPS, VERSY_PRAYER_PAYWALL] },
         { key: "bible_widget", label: "Bible widget", steps: VERSY_WIDGET_STEPS },
+        { key: "bible_widget_shorter", label: "Bible widget shorter", steps: VERSY_WIDGET_STEPS.filter(
+          (step) => !["bible_widget_relationshipWithGod_screen_seen", "bible_widget_habit_screen_seen"].includes(step.attribute),
+        ) },
       ],
     };
   }

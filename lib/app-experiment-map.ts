@@ -136,24 +136,17 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
     return {
       tests: [
         {
-          id: "versy-bible-widget-v1", label: "Onboarding", scope: "New onboarding assignments · next app release", tone: "blue",
+          id: "versy-bible-widget-shorter-v1", label: "Onboarding", scope: "New onboarding assignments · next app release", tone: "blue",
           branches: [
-            { id: "short-1-prayer", label: "Prayer journey", percent: 50 },
             { id: "bible_widget", label: "Bible widget", percent: 50 },
+            { id: "bible_widget_shorter", label: "Bible widget shorter", percent: 50 },
           ],
         },
         {
-          id: "versy-paywall-layout-v1", label: "Paywall plans", scope: "All paywall placements · independent 50/50 assignment · next app release", tone: "orange",
+          id: "versy-yearly-paywall-access-v1", label: "Yearly-only paywall", scope: "All paywall placements · independent 50/50 assignment · next app release", tone: "orange",
           branches: [
-            { id: "yearly_only", label: "Yearly only", percent: 50 },
-            { id: "yearly_weekly", label: "Yearly + Weekly", percent: 50 },
-          ],
-        },
-        {
-          id: "versy-paywall-access-v1", label: "Paywall access", scope: "All paywall placements · independent 50/50 assignment · next app release", tone: "orange",
-          branches: [
-            { id: "dismissible", label: "Dismissible", percent: 50 },
-            { id: "hard", label: "Hard paywall", percent: 50 },
+            { id: "dismissible", label: "Yearly · Soft", percent: 50 },
+            { id: "hard", label: "Yearly · Hard", percent: 50 },
           ],
         },
         {
@@ -161,16 +154,15 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           branches: yearlyPrices.map(({ id, label }) => ({ id, label, percent: 100 / 3 })),
         },
       ],
-      combinations: ["yearly_only", "yearly_weekly"].flatMap((layout) =>
-        ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ id, label }) => ({
-          id: `${layout}|${access}|${id}`,
-          label: `${layout === "yearly_only" ? "Yearly only" : "Yearly + Weekly"} · ${access === "hard" ? "Hard" : "Dismissible"} · ${label}`,
-          percent: 100 / 12,
-        })))),
+      combinations: ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ id, label }) => ({
+        id: `yearly_only|${access}|${id}`,
+        label: `Yearly only · ${access === "hard" ? "Hard" : "Soft"} · ${label}`,
+        percent: 100 / 6,
+      }))),
       notes: [
-        "Onboarding, plan layout, access and yearly price are independent saved assignments. The twelve paywall configurations each receive 1/12 of new users; crossing onboarding creates twenty-four paths.",
-        "The same yearly product is shown at every paywall placement for a user. Yearly + Weekly also offers com.arthurbuildsstuff.bible.Weekly. The configuration result card compares layout, access and price together.",
-        "This map describes the next app release. Existing layout and access assignments remain sticky; existing users receive a yearly price once, and historical users without the new attributes are excluded from price results.",
+        "All paywalls show yearly only. Soft and hard each receive 50% of new users. Onboarding and yearly price remain independent saved assignments.",
+        "The same yearly product is shown at every paywall placement for a user. Access × yearly price creates six configurations; crossing the two onboarding flows creates twelve paths.",
+        "This map describes the next app release. Existing Yearly + Weekly users move to yearly-only and keep their access and price assignments. New experiment IDs separate the yearly-only results from historical mixed-layout cohorts.",
       ],
     };
   }

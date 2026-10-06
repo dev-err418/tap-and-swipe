@@ -1,7 +1,6 @@
 export const VERSY_PAYWALL_PLACEMENTS = [
-  "onboarding_short_prayer",
-  "onboarding_short_prayer_no_trial",
   "onboarding_bible_widget",
+  "onboarding_bible_widget_shorter",
   "home_crown",
   "app_open",
   "settings_upgrade",
@@ -54,15 +53,16 @@ export function summarizeVersyPlacements(events: VersyPlacementEvent[], windowSt
   };
   for (const event of events) {
     if (!event.userId || !/^[a-z0-9_]{1,80}$/.test(event.placement)) continue;
-    const placement = event.placement === "onboarding_short_prayer" && event.onboardingVariant === "bible_widget"
-      ? "onboarding_bible_widget" : event.placement;
+    const embeddedWidget = ["onboarding_short_prayer", "onboarding_short_prayer_no_trial"].includes(event.placement)
+      && ["bible_widget", "bible_widget_shorter"].includes(event.onboardingVariant ?? "");
+    const placement = embeddedWidget ? `onboarding_${event.onboardingVariant}` : event.placement;
     const group = groups.get(placement) ?? {
       reached: new Set<string>(), viewed: new Set<string>(), attempted: new Set<string>(), purchased: new Set<string>(),
     };
     add(group, event);
     groups.set(placement, group);
     const flow = placement === "onboarding_bible_widget" ? "Bible Widget onboarding"
-      : placement === "onboarding_short_prayer" || placement === "onboarding_short_prayer_no_trial" ? "Prayer journey onboarding" : null;
+      : placement === "onboarding_bible_widget_shorter" ? "Bible Widget Shorter onboarding" : null;
     if (flow) {
       const onboardingGroup = onboardingGroups.get(flow) ?? {
         reached: new Set<string>(), viewed: new Set<string>(), attempted: new Set<string>(), purchased: new Set<string>(),
@@ -77,7 +77,7 @@ export function summarizeVersyPlacements(events: VersyPlacementEvent[], windowSt
     return { placement, reached: group?.reached.size ?? 0, viewed: group?.viewed.size ?? 0,
       attempted: group?.attempted.size ?? 0, purchased: group?.purchased.size ?? 0 };
   });
-  const onboarding = ["Prayer journey onboarding", "Bible Widget onboarding"].map((placement) => {
+  const onboarding = ["Bible Widget onboarding", "Bible Widget Shorter onboarding"].map((placement) => {
     const group = onboardingGroups.get(placement);
     return { placement, reached: group?.reached.size ?? 0, viewed: group?.viewed.size ?? 0,
       attempted: group?.attempted.size ?? 0, purchased: group?.purchased.size ?? 0 };

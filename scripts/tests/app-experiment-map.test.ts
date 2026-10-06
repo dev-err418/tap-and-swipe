@@ -67,24 +67,25 @@ test("Poky shows independent intro and plan design splits with four equal plan c
   assert.match(map.tests.find((row) => row.id === "poky-native-recovery-holdout")!.scope, /any origin placement/);
 });
 
-test("Versy shows independent onboarding, layout, access and three-way price assignments", () => {
+test("Versy shows yearly-only soft/hard paywalls with independent onboarding and price assignments", () => {
   const map = appExperimentMap("versy")!;
   assert.deepEqual(map.tests.map((row) => row.id), [
-    "versy-bible-widget-v1", "versy-paywall-layout-v1", "versy-paywall-access-v1", "versy-yearly-price-v1",
+    "versy-bible-widget-shorter-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v1",
   ]);
   assert.deepEqual(map.tests.map((row) => row.branches.map((branch) => branch.percent)),
-    [[50, 50], [50, 50], [50, 50], [100 / 3, 100 / 3, 100 / 3]]);
-  assert.deepEqual(map.tests[0].branches.map((branch) => branch.id), ["short-1-prayer", "bible_widget"]);
-  assert.deepEqual(map.tests[1].branches.map((branch) => branch.id), ["yearly_only", "yearly_weekly"]);
-  assert.deepEqual(map.tests[2].branches.map((branch) => branch.id), ["dismissible", "hard"]);
-  assert.deepEqual(map.tests[3].branches.map((branch) => branch.id), [
+    [[50, 50], [50, 50], [100 / 3, 100 / 3, 100 / 3]]);
+  assert.deepEqual(map.tests[0].branches.map((branch) => branch.id), ["bible_widget", "bible_widget_shorter"]);
+  assert.deepEqual(map.tests[1].branches.map((branch) => branch.id), ["dismissible", "hard"]);
+  assert.deepEqual(map.tests[2].branches.map((branch) => branch.id), [
     "com.arthurbuildsstuff.bible.yearly_3999_80",
     "com.arthurbuildsstuff.bible.yearly_2999_80",
     "com.arthurbuildsstuff.bible.yearly_4999_80",
   ]);
-  assert.equal(map.combinations?.length, 12);
-  assert.equal(appExperimentFlow("versy")?.nodes.filter((node) => node.experimentId).length, 9);
-  assert.equal(activeABTestCount("versy"), 4);
+  assert.equal(map.combinations?.length, 6);
+  assert.ok(map.combinations?.every((branch) => branch.id.startsWith("yearly_only|") && branch.percent === 100 / 6));
+  assert.ok(map.tests.every((row) => row.branches.every((branch) => branch.id !== "yearly_weekly")));
+  assert.equal(appExperimentFlow("versy")?.nodes.filter((node) => node.experimentId).length, 7);
+  assert.equal(activeABTestCount("versy"), 3);
 });
 
 test("unsupported apps do not show invented experiments", () => {
@@ -94,14 +95,14 @@ test("unsupported apps do not show invented experiments", () => {
 test("active A/B counts include the new plan design and trial offer assignments", () => {
   assert.equal(activeABTestCount("glow"), 2);
   assert.equal(activeABTestCount("poky"), 6);
-  assert.equal(activeABTestCount("versy"), 4);
+  assert.equal(activeABTestCount("versy"), 3);
 });
 
 test("result cards follow the onboarding-to-paywall progression without mutating inputs", () => {
   for (const [app, expected] of Object.entries({
     glow: ["glow-onboarding-copy", "glow-native-paywall", "glow-yearly-price"],
     poky: ["poky-plan-design-combinations", "poky-animated-plan", "poky-trial-vs-current", "poky-superwall-vs-native", "poky-native-recovery-holdout"],
-    versy: ["versy-bible-widget-v1", "versy-paywall-layout-v1", "versy-paywall-access-v1", "versy-yearly-price-v1", "versy-paywall-configuration-v1"],
+    versy: ["versy-bible-widget-shorter-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v1", "versy-yearly-paywall-configuration-v1"],
   })) {
     const input = [...expected].reverse().map((id) => ({ id }));
     assert.deepEqual(orderAppExperiments(app, input).map((row) => row.id), expected);
@@ -334,11 +335,11 @@ test("Glow's experience map uses all assigned users regardless of paywall langua
 });
 
 test("the map language picker scopes localized legacy experiment APPU", () => {
-  const localized = experiment("versy-bible-widget-v1", "appu", [
-    variant("short-1-prayer", { installs: 10, proceeds: 90 }), variant("bible_widget", { installs: 10, proceeds: 80 }),
+  const localized = experiment("versy-bible-widget-shorter-v1", "appu", [
+    variant("bible_widget", { installs: 10, proceeds: 90 }), variant("bible_widget_shorter", { installs: 10, proceeds: 80 }),
   ]);
   localized.languageVariants = {
-    en: [variant("short-1-prayer", { installs: 10, proceeds: 1 }), variant("bible_widget", { installs: 10, proceeds: 2 })],
+    en: [variant("bible_widget", { installs: 10, proceeds: 1 }), variant("bible_widget_shorter", { installs: 10, proceeds: 2 })],
   };
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
     appId: "versy",
