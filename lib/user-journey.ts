@@ -159,6 +159,7 @@ const VERSY_WIDGET_STEPS: UserJourneyStep[] = [
   ["premiumIntro", "Premium"],
   ["trialReminder", "Trial reminder"],
   ["paywall", "Paywall"],
+  ["recovery", "Recovery offer", true],
 ].map(([name, label, branch]) => ({
   attribute: `bible_widget_${name}_screen_seen`,
   label: String(label),
