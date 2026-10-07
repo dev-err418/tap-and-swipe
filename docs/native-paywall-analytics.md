@@ -17,6 +17,8 @@ Related app files (in the sibling `glow-app/glow-app` repo):
 - `native/Glow/GlowSubscriptionStore.swift`: capture purchase attempt/result.
 - `native/PAYWALL-ANALYTICS.md`: app-side contract and extension instructions.
 
+From October 7 through October 11, 2026, US/USA users receive yearly-only native paywalls in every language. The existing geo lookup resolves before startup product loading and analytics; non-US and unknown-country users retain their normal assignment. Package variants map to their yearly-only counterpart while preserving the assigned annual product and price. The saved v3 assignment is unchanged, and regular presentation resumes at local midnight October 12. Manual Debug design previews remain isolated. These presentations use the separate nonrandomized `native_paywall_us_yearly_oct2026` analytics experiment with `yr_49`, `yr_59`, or `yr_34` and only the matching yearly SKU in `allowedProducts`; do not mix them into the v3 randomized comparison. No fixed allocation badges are assigned to this temporary geographic cohort.
+
 Dashboard files:
 
 - `lib/native-paywall-queries.ts`: paginated attribute fetch, authoritative money queries.
