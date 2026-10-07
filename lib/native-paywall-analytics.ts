@@ -169,7 +169,7 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
     let group = groups.get(id);
     if (!group) {
       group = { experiment: r.experiment, name: isRecoveryExperiment(r.experiment)
-        ? r.experiment.includes("_v2_") ? "Regular flow vs recovery · 50/50" : "Recovery after cancellation · legacy 50/50"
+        ? r.experiment.includes("_v2_") ? "Regular flow vs recovery · retired 50/50" : "Recovery after cancellation · legacy 50/50"
         : r.experimentName, language, paywalls: new Map(), placements: new Map() };
       groups.set(id, group);
     }

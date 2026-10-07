@@ -31,17 +31,18 @@ or one hardcoded three-day trial paywall. The trial purchase and restore use
 StoreKit directly; Superwall observer mode supplies transaction association,
 analytics attributes and subscription state, but no trial paywall campaign or
 placement is registered. The trial arm
-does not enter the older engine, High/Name, or recovery tests. The primary
+does not enter the High/Name or recovery tests. The primary
 `poky-trial-vs-current` card reads the scalar onboarding offer assignment,
 counts assigned nonviewers, free trial starts, later paid renewals and refunds,
-and excludes returning `legacy` assignments. The older Superwall/native and
-recovery cards describe the nested current flow and remain separate.
+and excludes returning `legacy` assignments. The current flow now uses only native
+paywalls, including for former Superwall cohorts. Its recovery rollout is reported separately; the retired Superwall/native engine
+comparison is no longer loaded, displayed or counted as an active test.
 Its stable per-language experiments use `poky_native_main_v1_<language>`
 (English/fallback High/Name 50/50; German, Spanish, and French Name 100%) and
-`poky_native_recovery_v2_<language>` (Recovery/holdout 50/50, assigned before
-onboarding). Recovery v2 has one sticky assignment per install, with its initial
-language frozen across later language changes. Existing v1 assignments remain
-v1; users already exposed are not rerandomized or backdated.
+`poky_native_recovery_v3_<language>` (Recovery 100%, nonrandomized). V3 has one
+sticky record per install, with its initial language frozen across later language
+changes. Former v1/v2 holdouts receive recovery under a new v3 record; historical
+assignments and transactions remain untouched.
 Automatic recovery is once-ever and evaluated after
 a main purchase cancellation or main-paywall decline, independent of origin
 placement. `poky_context_recovery_v1_<language>` reports the separate explicit home-screen
@@ -53,51 +54,25 @@ production users. See Poky's `docs/NATIVE-PAYWALL-TRACKING.md` for the app-side 
 
 ### Recovery and onboarding A/B reporting
 
-`lib/poky-native-recovery.ts` powers the native Recovery vs Holdout card in AB
-tests. It reads the four `gp1_a_poky_native_recovery_v2_<language>` attributes,
-deduplicates first assignment per user across language changes, and measures
-**all** subsequent server proceeds for both arms, including immediate main-paywall
-buyers and later purchases by holdouts. Total APPU is the primary comparison.
-The cohort is selected by upfront assignment time and followed through today;
-underlying D7/D14/D30 metrics include only fully observed users. The old
-Superwall recovery card and trigger queries have been removed; historical
-campaign results are neither displayed nor mixed into the hardcoded experiment.
-The underlying historical source records are not deleted.
+The Recovery/Holdout A/B test is retired. The active map shows one 100% Recovery
+branch for the current offer, after main-purchase cancellation; trial paywalls
+have no automatic recovery branch. The once-per-install flag is preserved across
+updates, so users who already saw recovery do not receive it again.
 
-Result cards follow the flow map from top to bottom (`lib/app-experiment-order.ts`):
-Glow onboarding → paywall comparison → yearly price; Poky app experience → plan
-flow → combined onboarding results → native recovery. Recovery nodes use the
-native experiment's `recovery` / `holdout` rows from the same report as Paywalls
-for their badges, highlights and stats dialog. APPU uses all post-assignment
-proceeds / assigned users; CR uses conversions / assigned users, including
-holdouts with zero recovery views. Within the selected language, the map uses
-only v2 upfront assignments. If there are no v2 users yet, it shows no result
-rather than substituting v1's cancellation-only cohort. Versions and languages
-are never combined, and explicit home-shortcut groups are excluded. The map
-does not mark an APPU leader until both v2 arms contain at least 50 assigned users.
+The route no longer loads the v2 recovery A/B card or counts it as active. The
+map's metrics and details use only `poky_native_recovery_v3_<language>` from the
+native paywall report; missing v3 data stays empty rather than borrowing historical
+v1/v2 results. V3 records have `randomized: false`, `variantCount: 1` and a 100%
+allocation. Proceeds use direct purchase attribution and cannot name an A/B winner.
 
-The Paywalls tab uses direct purchase attribution for ordinary paywalls and all
-placement rows. **Recovery offer · 50/50 is a flow comparison:** regular flow vs
-regular flow + recovery. It counts all server proceeds after each user's first
-recovery assignment, regardless of the purchasing paywall or SKU, divided by
-unique assigned users (including non-payers). Users are never added twice for
-seeing both stages, and neither arm borrows revenue from unrelated main-paywall
-users. The loader fetches recovery outcomes by user identity as well as native
-transaction anchors; duplicate Apple events across these queries count once.
-Renewals and refunds are included. Conversion rate uses assigned users, since
-holdouts have no recovery view. Placement rows retain direct attribution.
+Historical v1/v2 rows remain separate in the Paywalls report and are labelled legacy
+or retired. Their original allocations and records are preserved. The isolated
+`lib/poky-native-recovery.ts` helper documents the historical full-flow comparison;
+it is no longer used by the active A/B route. Explicit home-shortcut recovery
+continues to have its own attribution.
 
-The old v1 app assigned recovery only after cancellation of a main purchase.
-Immediate main-paywall buyers never entered that experiment. Its corrected
-results are explicitly labelled historical cancellation-only results in Paywalls.
-The new v2 experiment assigns non-premium users during splash, before onboarding,
-with a fallback before any direct paywall entry. Immediate buyers and non-viewers
-remain in their assigned group. V2 needs the updated app release before real
-results can arrive; old users with a v1 assignment retain it and do not enter v2.
-Do not invent historical assignments or backdate either test. First assignment
-wins across language changes within each version, before filtering cohort dates.
-Missing money blocks winner estimates, including verified regular purchases
-awaiting Apple revenue for a recovery-cohort user.
+Result cards follow onboarding intro/plan results and the current/trial offer
+comparison. The retired Superwall/native and Recovery/Holdout comparisons are absent.
 
 Fresh intro and plan screen assignments publish their own `50_50` allocation
 markers. The four-way plan comparison requires both markers; legacy assignments
@@ -115,7 +90,8 @@ and the production environment marker. Returning subscription gates do not
 enroll users, and historical screen progress is never inferred or backfilled.
 The animated routes insert `animated_plan_intro_screen_seen` before the plan.
 All routes finish with `onboarding_paywall_screen_seen`, recorded only when the
-native, trial or Superwall onboarding paywall actually appears. Recovery offers,
+native main or trial onboarding paywall actually appears in the updated app.
+Previously recorded Superwall paywall views remain historical data. Recovery offers,
 debug previews and failed presentation requests do not count. Screen flags carry
 no onboarding answers or health values. The existing install date filters,
 unique-user denominator and drop chart apply unchanged; paywall seen is the
@@ -319,13 +295,27 @@ npm run build
 For a new app release: verify first assignment without a view, repeated views, two entry points, purchase/cancel, Ask to Buy across restart, restore, renewal, refund and language change in sandbox. Confirm `gp1_` fields in Superwall and exclusion from production reporting. Do not fabricate old timestamps or sample production rows to populate an empty dashboard.
 
 Sources: [attributes](https://superwall.com/docs/ios/sdk-reference/setUserAttributes), [Query API](https://superwall.com/docs/dashboard/guides/query-clickhouse), [direct purchases](https://superwall.com/docs/ios/guides/advanced/direct-purchasing), [pricing](https://superwall.com/pricing). Published pricing bills Superwall-rendered paywall revenue; this implementation does not render or register their paywalls. Historical Superwall-attributed subscriptions remain historical and are not rewritten.
-# Poky: Superwall vs native A/B test
+# Poky: native-only paywalls
 
-The A/B tests tab includes **Paywalls · Superwall vs native**, a fresh 50/50 assignment made in the app before onboarding. The saved `poky_paywall_engine_assignment_v1` JSON record contains the arm, timestamp, initial language, and environment. The live experiment map shows the Superwall and native branches. It replaces the old observational comparison of app versions.
+The updated iOS app removes the Superwall/native engine A/B test. Every current-flow
+user now sees a hardcoded native paywall, including users with an old Superwall
+assignment. The independent current/trial and High/Name assignments remain. Recovery is now
+100% for non-trial users, tracked separately from the retired holdout experiment.
+This describes the updated app configuration; older installed builds can still emit
+historical engine assignments until users update.
 
-The card has Spanish, English, German, and French APPU comparisons, plus combined APPU and assigned-to-paid analyses. Language comes from the app's initial engine assignment, not IP country. Unsupported app locales use the English fallback. Malformed or sandbox assignments are excluded. Country filtering applies to both the language numerator and denominator when country telemetry is available; older installs without that telemetry appear under `unknown` and remain in the overall denominator.
+The analytics route no longer requests `poky_paywall_engine_assignment_v1` or builds
+the `poky-superwall-vs-native` result card. The experiment map connects the current
+offer directly to its localized native paywalls, with no engine or Superwall recovery
+branch. Poky's active A/B count is four. Native paywall views and purchase attribution
+continue using the existing `gp1_` records; missing native assignments are never
+inferred from an old engine assignment.
 
-The dashboard date picker selects assignments made on or after **2026-09-24 11:37:23 UTC**. Total APPU is net proceeds divided by all assigned users in that arm, including non-payers and users who never saw a paywall. Only subscriptions whose original purchase began after the individual assignment are eligible. Their later renewals, recovery revenue, and refunds follow the cohort; older Superwall subscriptions and renewals never enter this test. Transactions are deduplicated and paid counts are unique users. The assignment is sticky across app versions and language changes. No historical conversions are deleted from Superwall; they are excluded from this new result.
+Historical Superwall attributes and transactions remain untouched. The isolated
+`lib/poky-paywall-migration.ts` helper and its tests document the retired experiment,
+but are not loaded by the analytics route. Do not continue presenting its cohorts as
+a live randomized comparison after users switch to native paywalls.
+
 # Poky plan intro × plan design
 
 The plan screen has a new independent, saved 50/50 Plan A/Plan B assignment.

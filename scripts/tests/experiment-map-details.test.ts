@@ -100,53 +100,43 @@ function variant(key: string, installs: number, proceeds: number): MobileAppExpe
     installsD30: 0, proceedsD30: 0, eligibleD30: 0, retainedD30: 0 };
 }
 
-test("recovery map and modal reuse Paywalls proceeds and assigned-user CR even with zero holdout views", () => {
-  const current = recoveryGroup(2, "es");
-  const report: NativePaywallReport = { status: "ready", asOf: Date.now(), warnings: [], groups: [current] };
+test("recovery map and modal use only the nonrandomized v3 rollout", () => {
+  const current = recoveryGroup(3, "es");
+  const legacy = recoveryGroup(2, "es");
+  const report: NativePaywallReport = { status: "ready", asOf: Date.now(), warnings: [], groups: [legacy, current] };
   const flow = appExperimentFlow("poky", "es")!;
-  const holdout = flow.nodes.find((node) => node.id === "holdout")!;
-  const metrics = currentPaywallMetrics(flow.nodes, report, "es");
-  assert.equal(metrics.get("holdout")!.appu, 58.63 / 60);
-  assert.equal(metrics.get("holdout")!.conversionRate, 6 / 60);
-  assert.equal(metrics.get("holdout")!.isBest, true);
-  assert.equal(metrics.get("recovery")!.appu, 43.88 / 52);
-  assert.equal(metrics.get("recovery")!.conversionRate, 5 / 52);
-  assert.equal(experimentMapPaywallGroup(holdout, report, "es"), current);
-  const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "poky", nativePaywalls: report }));
-  assert.match(markup, /APPU \$0\.98 · CR 10%/);
-  assert.doesNotMatch(markup, /Recovery · legacy cohort/);
+  const node = flow.nodes.find((node) => node.id === "recovery")!;
+  assert.ok(!flow.nodes.some((node) => node.id === "holdout"));
+  const metrics = currentPaywallMetrics(flow.nodes, report, "es").get("recovery")!;
+  assert.equal(metrics.appu, 43.88 / 52);
+  assert.equal(metrics.conversionRate, 5 / 49);
+  assert.equal(metrics.isBest, false);
+  assert.equal(experimentMapPaywallGroup(node, report, "es"), current);
   const detail = renderToStaticMarkup(createElement(ExperimentMapDetails, {
-    node: holdout, language: "es", experiments: [], nativePaywalls: report,
+    node, language: "es", experiments: [], nativePaywalls: report,
   }));
-  assert.match(detail, /58\.63/);
-  assert.match(detail, /Regular flow vs recovery/);
+  assert.match(detail, /Recovery · all non-trial users/);
+  assert.doesNotMatch(detail, /Regular flow vs recovery|No recovery/);
 });
 
-test("recovery chooses enrolled v2 as a separate cohort, never sums v1 or another language", () => {
-  const legacy = recoveryGroup(1, "es");
-  const current = recoveryGroup(2, "es");
-  current.paywalls = current.paywalls.map((row) => ({ ...row, users: 1, proceeds: row.paywall === "holdout" ? 20 : 10 }));
-  const report: NativePaywallReport = { status: "ready", asOf: Date.now(), warnings: [], groups: [legacy, current, recoveryGroup(1, "en")] };
-  const flow = appExperimentFlow("poky", "es")!;
+test("recovery rollout never substitutes historical cohorts or another language", () => {
+  const legacy = recoveryGroup(2, "es");
+  const current = recoveryGroup(3, "es");
+  const report: NativePaywallReport = { status: "ready", asOf: Date.now(), warnings: [], groups: [legacy, current, recoveryGroup(3, "en")] };
   assert.equal(experimentMapRecoveryGroup(report, "es"), current);
-  assert.equal(currentPaywallMetrics(flow.nodes, report, "es").get("holdout")!.appu, 20);
-  assert.equal(currentPaywallMetrics(flow.nodes, report, "es").get("holdout")!.isBest, false);
   assert.equal(experimentMapRecoveryGroup(report, "fr"), null);
   assert.equal(experimentMapRecoveryGroup({ ...report, status: "unavailable" }, "es"), null);
-  assert.equal(experimentMapRecoveryGroup({ ...report, groups: [legacy, { ...current, paywalls: [] }] }, "es"), null);
   assert.equal(experimentMapRecoveryGroup({ ...report, groups: [legacy] }, "es"), null);
-  assert.equal(currentPaywallMetrics(flow.nodes, { ...report, groups: [legacy] }, "es").get("holdout")!.appu, null);
+  const flow = appExperimentFlow("poky", "es")!;
+  assert.equal(currentPaywallMetrics(flow.nodes, { ...report, groups: [legacy] }, "es").get("recovery")!.appu, null);
 });
 
-function recoveryGroup(version: 1 | 2, language: string): NativePaywallGroup {
+function recoveryGroup(version: 2 | 3, language: string): NativePaywallGroup {
   const base = NATIVE_PAYWALL_DEMO_REPORT.groups[0].paywalls[0];
   return {
     experiment: `poky_native_recovery_v${version}_${language}`, language,
-    name: version === 1 ? "Recovery after cancellation · legacy 50/50" : "Regular flow vs recovery · 50/50",
-    outcomeScope: version === 1 ? "recovery_eligibility" : "recovery_flow", placements: [],
-    paywalls: [
-      { ...base, id: "holdout|holdout", paywall: "holdout", label: "Regular flow", users: 60, views: 0, conversions: 6, proceeds: 58.63 },
-      { ...base, id: "recovery|recovery", paywall: "recovery", label: "Regular flow + recovery", users: 52, views: 49, conversions: 5, proceeds: 43.88 },
-    ],
+    name: version === 3 ? "Recovery · all non-trial users" : "Regular flow vs recovery · retired 50/50",
+    placements: [],
+    paywalls: [{ ...base, id: "recovery|recovery", paywall: "recovery", label: "Recovery", users: 52, views: 49, conversions: 5, proceeds: 43.88 }],
   };
 }

@@ -87,28 +87,20 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
         {
-          id: "poky-superwall-vs-native", label: "Current-flow engine", scope: "Current arm only · all supported languages", tone: "orange",
-          branches: [
-            { id: "superwall", label: "Superwall paywall", percent: 50 },
-            { id: "native", label: "Native paywall", percent: 50 },
-          ],
-        },
-        {
-          id: "poky-english-paywalls", label: "Native main paywalls", scope: "Current arm · native engine · 🇬🇧 English / fallback", tone: "orange",
+          id: "poky-english-paywalls", label: "Native main paywalls", scope: "Current arm · 🇬🇧 English / fallback", tone: "orange",
           branches: [
             { id: "624224", label: "Onboarding · High - 1", percent: 50 },
             { id: "624761", label: "Onboarding Name - 2", percent: 50 },
           ],
         },
         {
-          id: "poky-localized-paywalls", label: "Native localized paywalls", scope: "Current arm · native engine · 🇪🇸 Spanish · 🇩🇪 German · 🇫🇷 French", tone: "orange",
+          id: "poky-localized-paywalls", label: "Native localized paywalls", scope: "Current arm · 🇪🇸 Spanish · 🇩🇪 German · 🇫🇷 French", tone: "orange",
           branches: [{ id: "name-2", label: "Name - 2 · each language", percent: 100 }],
         },
         {
-          id: "poky-native-recovery-holdout", label: "Native recovery", scope: "Current arm · native engine · upfront 50/50 · any origin placement", tone: "orange",
+          id: "poky-native-recovery", label: "Native recovery", scope: "All non-trial users · once per install · any origin placement", tone: "orange",
           branches: [
-            { id: "recovery", label: "Recovery paywall", percent: 50 },
-            { id: "holdout", label: "No recovery", percent: 50 },
+            { id: "recovery", label: "Recovery paywall", percent: 100 },
           ],
         },
       ],
@@ -119,10 +111,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       }))),
       notes: [
         "Results start September 20, 2026 at 16:00 GMT+2. Everyone now uses the Warm experience.",
-        "The new 50/50 onboarding offer assigns current paywall or a single hardcoded three-day trial paywall. The trial arm never registers a Superwall paywall placement or enters the older paywall engine and recovery tests.",
+        "The 50/50 onboarding offer assigns the current native paywall flow or a single hardcoded three-day trial paywall. The trial arm skips the High/Name and recovery tests.",
         "The plan design draw is a new independent 50/50 assignment. Combined with the existing intro draw, it creates four 25% cohorts. Plan B currently displays a placeholder screen.",
-        "The older Superwall/native engine and native recovery tests continue only inside the current arm. Historical assignments remain separate.",
-        "The current native recovery group is assigned before onboarding within the current native engine. Superwall uses its configured campaign and recovery flow. The home-screen shortcut remains a separate entry point.",
+        "The updated app uses native paywalls for everyone, including former Superwall cohorts. The Superwall/native comparison is retired; historical assignments remain stored.",
+        "Every non-trial user is eligible for native recovery after cancelling a main purchase, once per install. Former holdouts are included; trial paywalls skip automatic recovery. The home-screen shortcut is separate.",
       ],
     };
   }

@@ -3,20 +3,20 @@ import type { MobileAppExperiment } from "./mobile-app-analytics";
 import type { NativePaywallReport } from "./native-paywall-analytics";
 import { GLOW_ONBOARDING_ID } from "./glow-onboarding-experience";
 
-const RECOVERY_COMPARISON_ID = "poky-native-recovery-holdout";
+const RECOVERY_ROLLOUT_ID = "poky-native-recovery";
 
-/** Only the upfront assignment compares complete onboarding flows. */
+/** The current recovery rollout never borrows retired v1/v2 cohort results. */
 export function experimentMapRecoveryGroup(report: NativePaywallReport | null, language = "en") {
   if (report?.status !== "ready") return null;
-  return report.groups.find((group) => group.experiment === `poky_native_recovery_v2_${language}`
+  return report.groups.find((group) => group.experiment === `poky_native_recovery_v3_${language}`
     && group.language === language && group.paywalls.some((row) => row.users > 0)) ?? null;
 }
 
 export function experimentMapDetailTarget(node: ExperimentFlowNode, language?: string, report: NativePaywallReport | null = null) {
-  if ((node.experimentId ?? node.statsTarget?.experimentId) === RECOVERY_COMPARISON_ID) {
+  if ((node.experimentId ?? node.statsTarget?.experimentId) === RECOVERY_ROLLOUT_ID) {
     const audience = language ?? "en";
     const group = experimentMapRecoveryGroup(report, audience);
-    return { kind: "paywalls" as const, experimentId: group?.experiment ?? `poky_native_recovery_v2_${audience}`, language: audience };
+    return { kind: "paywalls" as const, experimentId: group?.experiment ?? `poky_native_recovery_v3_${audience}`, language: audience };
   }
   const paywallExperiment = node.paywallMetric?.experiment ?? node.statsTarget?.paywallExperiment;
   if (paywallExperiment) {

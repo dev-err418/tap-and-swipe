@@ -78,3 +78,12 @@ test("Poky mirrors its language-specific main and recovery allocations", () => {
   assert.equal(nativePaywallAllocation("poky_context_recovery_v1_fr", "recovery", "recovery", "fr"), 100);
   assert.equal(nativePaywallAllocation("poky_native_main_v1_en", "high", "high", "fr"), null);
 });
+
+
+test("Poky recovery v3 is 100% without relabelling the retired holdout split", () => {
+  for (const language of ["en", "es", "de", "fr"]) {
+    assert.equal(nativePaywallAllocation(`poky_native_recovery_v3_${language}`, "recovery|recovery", "recovery"), 100);
+    assert.equal(nativePaywallAllocation(`poky_native_recovery_v3_${language}`, "holdout|holdout", "holdout"), null);
+    assert.equal(nativePaywallAllocation(`poky_native_recovery_v2_${language}`, "holdout|holdout", "holdout"), 50);
+  }
+});

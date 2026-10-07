@@ -56,7 +56,7 @@ test("Glow keeps onboarding and paywall assignments after retiring the Journal c
 
 test("Poky shows independent intro and plan design splits with four equal plan cohorts", () => {
   const map = appExperimentMap("poky")!;
-  for (const experiment of map.tests.filter((row) => row.id !== "poky-localized-paywalls")) {
+  for (const experiment of map.tests.filter((row) => row.id !== "poky-localized-paywalls" && row.id !== "poky-native-recovery")) {
     assert.deepEqual(experiment.branches.map((branch) => branch.percent), [50, 50]);
   }
   assert.deepEqual(map.tests.find((row) => row.id === "poky-localized-paywalls")?.branches.map((branch) => branch.percent), [100]);
@@ -64,7 +64,26 @@ test("Poky shows independent intro and plan design splits with four equal plan c
   assert.deepEqual(map.combinations?.map((branch) => branch.percent), [25, 25, 25, 25]);
   assert.deepEqual(map.combinations?.map((branch) => branch.id), ["control-plan_a", "control-plan_b", "animated_plan-plan_a", "animated_plan-plan_b"]);
   assert.deepEqual(map.tests.find((row) => row.id === "poky-trial-vs-current")?.branches.map((branch) => branch.id), ["current", "trial"]);
-  assert.match(map.tests.find((row) => row.id === "poky-native-recovery-holdout")!.scope, /any origin placement/);
+  assert.match(map.tests.find((row) => row.id === "poky-native-recovery")!.scope, /any origin placement/);
+});
+
+test("Poky retires the engine comparison and routes every current offer to native paywalls", () => {
+  const map = appExperimentMap("poky")!;
+  assert.ok(map.tests.every((experiment) => experiment.id !== "poky-superwall-vs-native"));
+  for (const language of [undefined, "en", "es", "de", "fr"]) {
+    const flow = appExperimentFlow("poky", language)!;
+    assert.ok(flow.nodes.every((node) => !node.id.includes("superwall") && node.id !== "native"));
+    assert.ok(flow.stages.every((stage) => !stage.label.includes("engine")));
+    const paywalls = flow.nodes.filter((node) => node.paywallMetric);
+    assert.deepEqual(flow.edges.filter((edge) => edge.from === "offer-current").map((edge) => edge.to),
+      paywalls.map((node) => node.id));
+    assert.ok(paywalls.length > 0);
+    assert.ok(flow.edges.every((edge) => flow.nodes.some((node) => node.id === edge.from)
+      && flow.nodes.some((node) => node.id === edge.to)));
+  }
+  const markup = renderToStaticMarkup(createElement(AppExperimentMap, { appId: "poky" }));
+  assert.doesNotMatch(markup, /Superwall paywall|Superwall recovery|Current engine/);
+  assert.match(markup, /Current native paywalls/);
 });
 
 test("Versy shows yearly-only soft/hard paywalls with independent onboarding and price assignments", () => {
@@ -94,14 +113,14 @@ test("unsupported apps do not show invented experiments", () => {
 
 test("active A/B counts include the new plan design and trial offer assignments", () => {
   assert.equal(activeABTestCount("glow"), 2);
-  assert.equal(activeABTestCount("poky"), 6);
+  assert.equal(activeABTestCount("poky"), 4);
   assert.equal(activeABTestCount("versy"), 3);
 });
 
 test("result cards follow the onboarding-to-paywall progression without mutating inputs", () => {
   for (const [app, expected] of Object.entries({
     glow: ["glow-onboarding-copy", "glow-native-paywall", "glow-yearly-price"],
-    poky: ["poky-plan-design-combinations", "poky-animated-plan", "poky-trial-vs-current", "poky-superwall-vs-native", "poky-native-recovery-holdout"],
+    poky: ["poky-plan-design-combinations", "poky-animated-plan", "poky-trial-vs-current"],
     versy: ["versy-bible-widget-shorter-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v1", "versy-yearly-paywall-configuration-v1"],
   })) {
     const input = [...expected].reverse().map((id) => ({ id }));
@@ -113,10 +132,10 @@ test("result cards follow the onboarding-to-paywall progression without mutating
 
 test("recovery map uses native assignment identities, never legacy Superwall variants", () => {
   const recovery = appExperimentMap("poky")!.tests.at(-1)!;
-  assert.equal(recovery.id, "poky-native-recovery-holdout");
-  assert.deepEqual(recovery.branches.map((branch) => branch.id), ["recovery", "holdout"]);
+  assert.equal(recovery.id, "poky-native-recovery");
+  assert.deepEqual(recovery.branches.map((branch) => branch.id), ["recovery"]);
   const nodes = appExperimentFlow("poky")!.nodes.filter((node) => node.experimentId === recovery.id);
-  assert.deepEqual(nodes.map((node) => node.variantId), ["recovery", "holdout"]);
+  assert.deepEqual(nodes.map((node) => node.variantId), ["recovery"]);
 });
 
 test("trial branch goes directly to one native paywall without Superwall or recovery", () => {
@@ -125,8 +144,8 @@ test("trial branch goes directly to one native paywall without Superwall or reco
   assert.deepEqual(outgoing, []);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "language" && edge.to.startsWith("offer-"))
     .map((edge) => [edge.to, edge.label]), [["offer-current", "50%"], ["offer-trial", "50%"]]);
-  assert.deepEqual(flow.edges.filter((edge) => edge.to === "superwall" || edge.to === "native")
-    .map((edge) => edge.from), ["offer-current", "offer-current"]);
+  assert.ok(flow.edges.filter((edge) => edge.from === "offer-current")
+    .every((edge) => flow.nodes.find((node) => node.id === edge.to)?.paywallMetric));
 });
 
 test("configured maps render their percentage badges without analytics data", () => {
@@ -304,7 +323,7 @@ test("Poky flow only includes main paywalls for the selected language", () => {
   assert.ok(englishPaywalls.every((node) => node.paywallMetric?.language === "en"));
   assert.equal(english.edges.filter((edge) => edge.from === "language").length, 2);
   assert.deepEqual(english.edges.filter((edge) => edge.from === "language").map((edge) => edge.to), ["offer-current", "offer-trial"]);
-  assert.equal(english.edges.filter((edge) => edge.from === "native").length, 2);
+  assert.equal(english.edges.filter((edge) => edge.from === "offer-current").length, 2);
   assert.equal(english.edges.filter((edge) => edge.to === "cancel").length, 2);
 
   const spanish = appExperimentFlow("poky", "es")!;
@@ -385,12 +404,12 @@ test("Poky branches through intro, plan, offer and paywalls before conditional r
     assert.ok(flow.edges.some((edge) => edge.from === plan.id && edge.to === "language"));
   }
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "language").map((edge) => edge.label), ["50%", "50%"]);
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "native").map((edge) => edge.label), ["50%", "50%", "100%", "100%", "100%"]);
-  assert.ok(flow.edges.some((edge) => edge.from === "superwall" && edge.to === "superwall-recovery"));
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "offer-current").map((edge) => edge.label), ["50%", "50%", "100%", "100%", "100%"]);
+  assert.ok(flow.nodes.every((node) => !node.id.includes("superwall")));
   const triggers = flow.edges.filter((edge) => edge.to === "cancel");
   assert.equal(triggers.length, 5);
   assert.ok(triggers.every((edge) => edge.conditional && edge.label === undefined));
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "cancel").map((edge) => edge.label), ["50%", "50%"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "cancel").map((edge) => edge.label), ["100%"]);
 });
 
 test("Glow shares all five paywalls after either onboarding flow without clipping nodes", () => {
