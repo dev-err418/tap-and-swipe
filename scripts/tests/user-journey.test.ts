@@ -18,13 +18,13 @@ test("glow and versy journeys follow each onboarding variant", () => {
   assert.equal(glow.variants[0].steps.some((step) => step.attribute.startsWith("source")), false);
 
   const versy = userJourneyDefinition("versy")!;
-  assert.deepEqual(versy.variants.map((variant) => variant.key), ["bible_widget", "bible_widget_shorter"]);
+  assert.deepEqual(versy.variants.map((variant) => variant.key), ["bible_widget", "bible_widget_shorter", "scroll_the_bible"]);
   const [widget, shorter] = versy.variants;
   assert.equal(widget.steps[0].attribute, "bible_widget_entry_screen_seen");
   assert.equal(widget.steps.find((step) => step.paywall)?.attribute, "bible_widget_paywall_screen_seen");
   assert.equal(widget.steps.at(-1)?.branch, true);
   assert.equal(versy.minimumInstallVersion, "1.2.0");
-  assert.deepEqual(versy.cohortAttributes, { onboarding_experiment_id: "bible_widget_shorter_v1" });
+  assert.deepEqual(versy.cohortAttributes, { onboarding_experiment_id: "scroll_the_bible_v1" });
   assert.equal(shorter.steps.length, widget.steps.length - 2);
   assert.deepEqual(widget.steps.filter((step) => !shorter.steps.includes(step)).map((step) => step.attribute), [
     "bible_widget_habit_screen_seen", "bible_widget_relationshipWithGod_screen_seen",
@@ -34,7 +34,7 @@ test("glow and versy journeys follow each onboarding variant", () => {
   assert.equal(shorter.steps.at(-1)?.attribute, "bible_widget_recovery_screen_seen");
   const sql = userJourneySql(123, versy, "2026-10-06 00:00:00.000", "2026-10-07 00:00:00.000");
   assert.match(sql, /onboarding_experiment_id/);
-  assert.match(sql, /bible_widget_shorter_v1/);
+  assert.match(sql, /scroll_the_bible_v1/);
   assert.doesNotMatch(sql, /short-1-prayer/);
 });
 

@@ -1,3 +1,5 @@
+import { onboardingSessionActivity } from "./onboarding-session-activity";
+import { versyOnboardingAudience, versyOnboardingPaywallReached } from "./versy-onboarding-analytics";
 import { loadGlowOnboardingExperience } from "./glow-onboarding-experience-queries";
 import { GLOW_ONBOARDING_KEY, type GlowOnboardingReport } from "./glow-onboarding-experience";
 import "server-only";
@@ -107,11 +109,14 @@ export type MobileAppExperiment = {
   variants: MobileAppExperimentVariant[];
   scoreMetrics?: MobileAppExperimentScoreMetric[];
   showCompletion?: boolean;
+  completionLabel?: string;
   showTrials?: boolean;
   trialRateLabel?: string;
   showRetention?: boolean;
   showUsers?: boolean;
   showSessions?: boolean;
+  sessionsLabel?: string;
+  sessionsAvailable?: boolean;
   showInstalls?: boolean;
   showPaid?: boolean;
   showDownloadPaid?: boolean;
@@ -179,7 +184,7 @@ const GLOW_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/19/20/0e/19200e98-f11f-8ab4-850a-81a2a45122e0/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg";
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY] as const;
-const VERSY_ATTRIBUTE_KEYS = ["onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
+const VERSY_ATTRIBUTE_KEYS = ["country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
   "bible_widget_widget_screen_seen",
   "onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant", "onboarding_paywall_access_variant",
   "yearly_price_experiment_id", "yearly_price_product_id",
@@ -252,8 +257,12 @@ type AttributeExperimentDefinition = {
   showRetention?: boolean;
   showTrials?: boolean;
   showCompletion?: boolean;
+  completionLabel?: string;
+  completionCheck?: (attributes?: Record<string, string>) => boolean;
   countAssignedUsers?: boolean;
   includeSessions?: boolean;
+  sessionAudience?: "all_installs";
+  sessionsLabel?: string;
   showUsers?: boolean;
   showSessions?: boolean;
   showInstalls?: boolean;
@@ -563,11 +572,12 @@ async function loadAppFacts(
     : app.id === "glow" ? GLOW_SUPERWALL_HISTORY_START_MS : startMs;
   const fetchStart = hasMigrationHistory ? clickhouseDate(new Date(Math.min(startMs, historyStartMs))) : start;
   const sessionRange = sessionWindow(startMs, endMs);
+  const fetchSessions = includeSessions && (app.id === "poky" || app.id === "versy");
   const [installResult, attributeResult, eventResult, sessionResult] = await Promise.allSettled([
     fetchInstallCohort(app, fetchStart, end),
     keys.length ? fetchUserAttributes(app, keys) : Promise.resolve([]),
     fetchAttributedEvents(app, fetchStart),
-    app.id === "poky" && includeSessions ? fetchSessionStarts(app, sessionRange.from, sessionRange.to) : Promise.resolve([]),
+    fetchSessions ? fetchSessionStarts(app, sessionRange.from, sessionRange.to) : Promise.resolve([]),
   ]);
 
   for (const [label, result] of [
@@ -597,7 +607,7 @@ async function loadAppFacts(
     sessionDays: sessionRange.days,
     sessionFromMs: sessionRange.from,
     sessionToMs: sessionRange.to,
-    sessionDataAvailable: includeSessions && sessionResult.status === "fulfilled",
+    sessionDataAvailable: fetchSessions && sessionResult.status === "fulfilled",
     installs: installResult.value.filter((row) => row.installedAt >= startMs),
     attributes: attributeMap(attributeResult.value),
     events: eventResult.value.filter((row) => row.eventTs >= startMs),
@@ -1005,10 +1015,44 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
     { key: "yearly_2999_80", label: "$29.99", productID: "com.arthurbuildsstuff.bible.yearly_2999_80" },
     { key: "yearly_4999_80", label: "$49.99", productID: "com.arthurbuildsstuff.bible.yearly_4999_80" },
   ];
+  const audienceFacts = (audience: ReturnType<typeof versyOnboardingAudience>): AppFacts => ({
+    ...facts,
+    installs: facts.installs.filter((row) => versyOnboardingAudience(row.country, facts.attributes.get(row.appUserId)) === audience),
+  });
+  const widgetFacts = { ...facts, installs: facts.installs.filter((row) =>
+    ["bible_widget", "bible_widget_shorter"].includes(facts.attributes.get(row.appUserId)?.onboarding_variant ?? "")) };
+  const onboardingVariants = [
+    { key: "bible_widget", label: "Bible Widget" },
+    { key: "bible_widget_shorter", label: "Bible Widget Shorter" },
+    { key: "scroll_the_bible", label: "Bible Scroll" },
+  ].map(({ key, label }) => ({ key, label,
+    attributes: { onboarding_experiment_id: "scroll_the_bible_v1", onboarding_variant: key } }));
+  const currentOnboarding: AttributeExperimentDefinition = {
+    id: "versy-scroll-the-bible-v1", title: "Onboarding A/B test · Bible Scroll",
+    subtitle: "Bible Widget 15% · Shorter 15% · Bible Scroll 70% · excludes Mexico and uncertain countries",
+    attributeKeys: ["onboarding_experiment_id", "onboarding_variant"],
+    variants: onboardingVariants, scoreMetrics: ["appu", "download_paid"],
+    showTrials: true, showCompletion: true, completionLabel: "Paywall reached",
+    completionCheck: versyOnboardingPaywallReached,
+    includeSessions: true, sessionAudience: "all_installs", countAssignedUsers: true,
+    showSessions: true, sessionsLabel: "Avg sessions / day",
+  };
   return [
+    { ...attributeExperiment(audienceFacts("comparison"), currentOnboarding),
+      planningNote: "15% Bible Widget / 15% Shorter / 70% Bible Scroll. Mexico and uncertain countries are reported separately. Country uses matching install and reported geo values; the app does not yet save immutable assignment geography. Paywall reached measures the final onboarding screen. Avg sessions / day is sessions per user per observed day since install, including free users and zero-session users; unavailable data shows a dash." },
+    ...(["mexico", "unknown"] as const).map((audience) => ({
+      ...attributeExperiment(audienceFacts(audience), { ...currentOnboarding,
+        id: `versy-scroll-the-bible-v1-${audience}`,
+        title: audience === "mexico" ? "Bible Scroll · Mexico (forced assignment)" : "Bible Scroll · Uncertain country",
+        scoreMetrics: [],
+      }), randomized: false,
+      planningNote: audience === "mexico"
+        ? "Mexico receives Bible Scroll automatically. Descriptive results only; excluded from the randomized comparison."
+        : "Missing or conflicting country data. Descriptive results only; excluded from the randomized comparison.",
+    })),
     attributeExperiment(facts, {
       id: "versy-bible-widget-shorter-v1",
-      title: "Onboarding A/B test",
+      title: "Historical onboarding · Widget vs Shorter",
       subtitle: "Bible widget vs Bible widget shorter · 50/50",
       attributeKeys: ["onboarding_experiment_id", "onboarding_variant"],
       variants: [
@@ -1020,10 +1064,12 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
       scoreMetrics: ["appu", "download_paid"],
       showTrials: true,
       showCompletion: true,
+      includeSessions: true, sessionAudience: "all_installs", countAssignedUsers: true,
+      showSessions: true, sessionsLabel: "Avg sessions / day",
     }),
-    attributeExperiment(facts, {
+    attributeExperiment(widgetFacts, {
       id: "versy-yearly-paywall-access-v1",
-      title: "Yearly paywall A/B test",
+      title: "Widget paywall · Soft vs Hard",
       subtitle: "Yearly only · Soft vs Hard · 50/50",
       attributeKeys: ["onboarding_paywall_experiment_id", "onboarding_paywall_access_variant"],
       variants: [
@@ -1048,9 +1094,9 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
       scoreMetrics: ["appu", "download_paid"],
       showTrials: true,
     }),
-    attributeExperiment(facts, {
+    attributeExperiment(widgetFacts, {
       id: "versy-yearly-paywall-configuration-v1",
-      title: "Paywall combinations",
+      title: "Widget paywall combinations",
       subtitle: "Yearly only · access × yearly price · 6 cohorts",
       attributeKeys: ["paywall_configuration_experiment_id", "paywall_configuration_variant"],
       variants: ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ key, label, productID }) => ({
@@ -1128,8 +1174,10 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   const eligibleAppUserIds = new Set(eligibleInstalls.keys());
   const countryByUser = new Map<string, string>();
   const languageByUser = new Map<string, string>();
-  const activity = definition.includeSessions
-    ? paidSubscriptionActivity(facts.events, facts.sessions, facts.sessionFromMs, facts.sessionToMs)
+  const activity = definition.includeSessions && facts.sessionDataAvailable
+    ? definition.sessionAudience === "all_installs"
+      ? onboardingSessionActivity([...eligibleInstalls.values()], facts.sessions, facts.sessionFromMs, facts.sessionToMs)
+      : paidSubscriptionActivity(facts.events, facts.sessions, facts.sessionFromMs, facts.sessionToMs)
     : null;
   for (const row of facts.installs) {
     countryByUser.set(row.appUserId, row.country);
@@ -1161,7 +1209,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     addForUser(row.appUserId, attrs, {
       country: row.country,
       installs: 1,
-      completed: definition.showCompletion && isOnboardingComplete(attrs) ? 1 : 0,
+      completed: definition.showCompletion && (definition.completionCheck ?? isOnboardingComplete)(attrs) ? 1 : 0,
       installsD7: row.installedAt + 7 * DAY_MS <= now ? 1 : 0,
       installsD14: row.installedAt + 14 * DAY_MS <= now ? 1 : 0,
       installsD30: row.installedAt + 30 * DAY_MS <= now ? 1 : 0,
@@ -1225,8 +1273,11 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     showRetention: definition.showRetention,
     showTrials: definition.showTrials,
     showCompletion: definition.showCompletion,
+    completionLabel: definition.completionLabel,
     showUsers: definition.showUsers,
     showSessions: definition.showSessions,
+    sessionsLabel: definition.sessionsLabel,
+    sessionsAvailable: definition.includeSessions ? facts.sessionDataAvailable : undefined,
     showInstalls: definition.showInstalls,
     showPaid: definition.showPaid,
     showDownloadPaid: definition.showDownloadPaid,

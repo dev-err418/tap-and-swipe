@@ -14,7 +14,7 @@ test("lists configured placements and counts distinct viewers with a later purch
   });
   assert.equal(report.rows.find((row) => row.placement === "onboarding_bible_widget_shorter")?.viewed, 0);
   assert.equal(report.rows.find((row) => row.placement === "settings_upgrade")?.viewed, 1);
-  assert.equal(report.onboarding.length, 2);
+  assert.equal(report.onboarding.length, 3);
 });
 
 test("splits the two onboarding paywalls using saved assignment, including embedded views without a reach event", () => {
@@ -34,4 +34,18 @@ test("splits the two onboarding paywalls using saved assignment, including embed
   });
   assert.equal(report.onboarding.find((row) => row.placement === "Bible Widget Shorter onboarding")?.viewed, 1);
   assert.equal(report.onboarding.find((row) => row.placement === "Bible Widget onboarding")?.viewed, 1);
+});
+
+
+test("Bible Scroll has its own paywall and does not infer views from reaches", () => {
+  const report = summarizeVersyPlacements([
+    { userId: "scroll", placement: "onboarding_scroll_bible", reaches: 1, views: 0, attempts: 1, purchases: 1, firstView: 0, lastPurchase: 20 },
+    { userId: "viewer", placement: "onboarding_scroll_bible", reaches: 1, views: 1, attempts: 1, purchases: 1, firstView: 10, lastPurchase: 20 },
+    { userId: "viewer", placement: "verse_study_upgrade", reaches: 1, views: 1, attempts: 0, purchases: 0, firstView: 30, lastPurchase: 0 },
+  ], "start", "end");
+  assert.deepEqual(report.onboarding.find((row) => row.placement === "Bible Scroll onboarding"), {
+    placement: "Bible Scroll onboarding", reached: 2, viewed: 1, attempted: 2, purchased: 1,
+  });
+  assert.equal(report.onboarding.find((row) => row.placement === "Bible Widget onboarding")?.reached, 0);
+  assert.equal(report.rows.find((row) => row.placement === "verse_study_upgrade")?.viewed, 1);
 });

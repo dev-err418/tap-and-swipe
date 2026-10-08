@@ -223,12 +223,21 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
       title: "User journey",
       variantAttribute: "onboarding_variant",
       minimumInstallVersion: "1.2.0",
-      cohortAttributes: { onboarding_experiment_id: "bible_widget_shorter_v1" },
+      cohortAttributes: { onboarding_experiment_id: "scroll_the_bible_v1" },
+      note: "Current experiment only; historical widget assignments are excluded. Includes Mexico’s forced Bible Scroll assignments, so this funnel is descriptive rather than a randomized comparison.",
       variants: [
         { key: "bible_widget", label: "Bible widget", steps: VERSY_WIDGET_STEPS },
         { key: "bible_widget_shorter", label: "Bible widget shorter", steps: VERSY_WIDGET_STEPS.filter(
           (step) => !["bible_widget_relationshipWithGod_screen_seen", "bible_widget_habit_screen_seen"].includes(step.attribute),
         ) },
+        { key: "scroll_the_bible", label: "Bible Scroll", steps: [
+          ["scrollingHours", "Scrolling hours"], ["fedYourSoul", "Feed your soul"],
+          ["wholeBible", "Whole Bible"], ["verseStory", "Verse story"],
+          ["searchVerse", "Verse search"], ["livesChanged", "Lives changed"],
+          ["reviews", "Reviews"], ["addicted", "Build a habit"],
+          ["goDeeper", "Go deeper"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
+        ].map(([name, label]) => ({ attribute: `scroll_bible_${name}_screen_seen`, label,
+          ...(name === "trial" ? { paywall: true } : {}) })) },
       ],
     };
   }

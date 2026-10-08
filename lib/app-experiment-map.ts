@@ -128,21 +128,22 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
     return {
       tests: [
         {
-          id: "versy-bible-widget-shorter-v1", label: "Onboarding", scope: "New onboarding assignments · next app release", tone: "blue",
+          id: "versy-scroll-the-bible-v1", label: "Onboarding", scope: "New assignments outside Mexico · 15/15/70", tone: "blue",
           branches: [
-            { id: "bible_widget", label: "Bible widget", percent: 50 },
-            { id: "bible_widget_shorter", label: "Bible widget shorter", percent: 50 },
+            { id: "bible_widget", label: "Bible widget", percent: 15 },
+            { id: "bible_widget_shorter", label: "Bible widget shorter", percent: 15 },
+            { id: "scroll_the_bible", label: "Bible Scroll", percent: 70 },
           ],
         },
         {
-          id: "versy-yearly-paywall-access-v1", label: "Yearly-only paywall", scope: "All paywall placements · independent 50/50 assignment · next app release", tone: "orange",
+          id: "versy-yearly-paywall-access-v1", label: "Yearly-only paywall", scope: "Widget onboarding · independent 50/50 assignment", tone: "orange",
           branches: [
             { id: "dismissible", label: "Yearly · Soft", percent: 50 },
             { id: "hard", label: "Yearly · Hard", percent: 50 },
           ],
         },
         {
-          id: "versy-yearly-price-v1", label: "Yearly price", scope: "All paywall placements · one saved price per user · next app release", tone: "orange",
+          id: "versy-yearly-price-v1", label: "Yearly price", scope: "One saved yearly price per user", tone: "orange",
           branches: yearlyPrices.map(({ id, label }) => ({ id, label, percent: 100 / 3 })),
         },
       ],
@@ -152,9 +153,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         percent: 100 / 6,
       }))),
       notes: [
-        "All paywalls show yearly only. Soft and hard each receive 50% of new users. Onboarding and yearly price remain independent saved assignments.",
-        "The same yearly product is shown at every paywall placement for a user. Access × yearly price creates six configurations; crossing the two onboarding flows creates twelve paths.",
-        "This map describes the next app release. Existing Yearly + Weekly users move to yearly-only and keep their access and price assignments. New experiment IDs separate the yearly-only results from historical mixed-layout cohorts.",
+        "New assignments use 15% Bible Widget, 15% Shorter and 70% Bible Scroll. Mexico receives Bible Scroll automatically and is excluded from the comparison, along with uncertain countries.",
+        "Bible Scroll uses a dismissible trial timeline with yearly and weekly plans, without onboarding recovery. The saved soft/hard assignment does not control this onboarding screen; access comparisons include widget variants only.",
+        "Yearly price remains a saved independent assignment. Bible Scroll also offers the fixed weekly product. Other upgrade placements use the assigned yearly product and access mode.",
+        "Existing widget assignments remain in bible_widget_shorter_v1 and are reported in a separate historical comparison. Current funnels use scroll_the_bible_v1 only. Country grouping uses reported and install geography, not immutable assignment geography.",
       ],
     };
   }

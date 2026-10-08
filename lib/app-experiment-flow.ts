@@ -38,25 +38,29 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   ];
   const edges: ExperimentFlowEdge[] = [];
   onboarding.branches.forEach((branch, index) => {
-    nodes.push({ id: branch.id, x: 168, y: 144 + index * 136, width: 170,
+    nodes.push({ id: branch.id, x: 168, y: 76 + index * 136, width: 170,
       label: branch.label, tone: "blue", experimentId: onboarding.id, variantId: branch.id });
     edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` });
   });
   access.branches.forEach((branch, index) => {
     const id = `access-${branch.id}`;
-    nodes.push({ id, x: 430, y: 144 + index * 136, width: 170,
+    nodes.push({ id, x: 430, y: 76 + index * 136, width: 170,
       label: branch.label, tone: "orange", experimentId: access.id, variantId: branch.id });
-    onboarding.branches.forEach((parent) => edges.push({ from: parent.id, to: id, label: "50%" }));
+    onboarding.branches.filter((parent) => parent.id !== "scroll_the_bible").forEach((parent) => edges.push({ from: parent.id, to: id, label: "50%" }));
   });
+  nodes.push({ id: "scroll-trial", x: 430, y: 348, width: 190,
+    label: "Bible Scroll trial", detail: "Dismissible · yearly + weekly", tone: "orange" });
+  edges.push({ from: "scroll_the_bible", to: "scroll-trial" });
   price.branches.forEach((branch, index) => {
     const id = `price-${index}`;
     nodes.push({ id, x: 692, y: 80 + index * 136, width: 190,
-      label: branch.label, tone: "orange", experimentId: price.id, variantId: branch.id });
+      label: branch.label, tone: "orange", experimentId: price.id, variantId: branch.id.split(".").at(-1) });
     access.branches.forEach((parent) => edges.push({ from: `access-${parent.id}`, to: id, label: "⅓" }));
+    edges.push({ from: "scroll-trial", to: id });
   });
   return {
     width: 928, height: 424, nodes, edges,
-    stages: [{ x: 168, label: "Onboarding flow" }, { x: 430, label: "Yearly-only access" },
+    stages: [{ x: 168, label: "Onboarding flow" }, { x: 430, label: "Onboarding paywall" },
       { x: 692, label: "Yearly price" }],
     notes: map.notes,
   };

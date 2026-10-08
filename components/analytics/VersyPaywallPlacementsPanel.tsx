@@ -60,7 +60,7 @@ export default function VersyPaywallPlacementsPanel() {
           <ResultsTable title="Paywalls" rows={report.onboarding} />
           <ResultsTable title="Placements" rows={report.rows} />
           {report.status === "empty" ? <p className="text-sm text-muted-foreground">No production placement events in this period yet.</p> : null}
-          <p className="px-1 text-xs text-muted-foreground">The two onboarding rows follow Versy’s saved Bible Widget and Bible Widget Shorter assignments. Native entry points appear even with no traffic. The embedded widget rows are inferred from the saved variant because they share a raw placement ID. Historical Prayer journey placements remain separate when they have traffic. A view counts as reach when the app did not send a separate reach event. Conversions are successful app purchase results after a view in this period. Versy does not yet record verified revenue, refunds, or immutable purchase attribution by native paywall, so those columns and winner estimates are unavailable.</p>
+          <p className="px-1 text-xs text-muted-foreground">The three onboarding rows separate Bible Widget, Bible Widget Shorter, and Bible Scroll. Bible Scroll uses its own placement ID. Its current app screen records reach; views and conversions remain unavailable until it also records a paywall view. Native entry points appear even with no traffic. The embedded widget rows are inferred from the saved variant because they share a raw placement ID. Historical Prayer journey placements remain separate when they have traffic. A view counts as reach when the app did not send a separate reach event. Conversions are successful app purchase results after a view in this period. Versy does not yet record verified revenue, refunds, or immutable purchase attribution by native paywall, so those columns and winner estimates are unavailable.</p>
         </div>}
     </div>
   </section>;
@@ -92,7 +92,7 @@ function ResultsTable({ title, rows }: { title: string; rows: VersyPlacementRow[
             </th>)}
           </tr></thead>
           <tbody>{rows.map((row) => <tr key={row.placement} className="border-b border-black/[0.04] last:border-0">
-            <td className="px-5 py-4 font-medium">{row.placement === "onboarding_bible_widget" ? "Bible Widget embedded paywall" : row.placement === "onboarding_bible_widget_shorter" ? "Bible Widget Shorter embedded paywall" : row.placement}</td>
+            <td className="px-5 py-4 font-medium">{row.placement === "onboarding_bible_widget" ? "Bible Widget embedded paywall" : row.placement === "onboarding_bible_widget_shorter" ? "Bible Widget Shorter embedded paywall" : row.placement === "onboarding_scroll_bible" ? "Bible Scroll trial paywall" : row.placement === "verse_study_upgrade" ? "Verse study upgrade" : row.placement}</td>
             <Cell>—</Cell><Cell>—</Cell>
             <ConversionRateCell conversions={row.purchased} views={row.viewed} domain={domain} />
             <Cell>{count(row.reached)}</Cell><Cell>{count(row.viewed)}</Cell><Cell>{count(row.attempted)}</Cell><Cell>{count(row.purchased)}</Cell>

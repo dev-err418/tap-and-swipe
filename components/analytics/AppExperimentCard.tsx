@@ -74,7 +74,7 @@ export default function AppExperimentCard({
       {scored.map((item) => (
         <ExperimentStats key={item.key} analysis={item.analysis} title={item.title} titleClassName="font-bold" showReadiness={experiment.randomized !== false || !!experiment.planningNote} historical={experiment.randomized === false} />
       ))}
-      {experiment.planningNote && (experiment.id === "poky-native-recovery-holdout" || experiment.id === "poky-trial-vs-current") ? (
+      {experiment.planningNote && (experiment.id.startsWith("versy-") || experiment.id === "poky-native-recovery-holdout" || experiment.id === "poky-trial-vs-current") ? (
         <p className="border-b border-black/[0.08] px-4 py-3 text-xs text-black/55">{experiment.planningNote}</p>
       ) : null}
       <ExperimentTable headings={<>
@@ -86,10 +86,10 @@ export default function AppExperimentCard({
               <Th right>Proceeds</Th>
               {showSessions ? (
                 <Th right className={scoreSessions ? "font-bold text-black" : undefined}>
-                  Sessions / subscribed day
+                  {experiment.sessionsLabel ?? "Sessions / subscribed day"}
                 </Th>
               ) : null}
-              {experiment.showCompletion ? <Th right>Onboarding completion</Th> : null}
+              {experiment.showCompletion ? <Th right>{experiment.completionLabel ?? "Onboarding completion"}</Th> : null}
               {showTrials ? <Th right>{experiment.trialRateLabel ?? "Download → trial"}</Th> : null}
               {showTrials ? <Th right>Trial → paid</Th> : null}
               {showCohortAppu ? (
@@ -132,7 +132,8 @@ export default function AppExperimentCard({
                 <NumberTd>{formatPreciseCurrency(row.proceeds)}</NumberTd>
                 {showSessions ? (
                   <NumberTd className={scoreSessions && row.key === bestSessionsKey ? "font-bold" : undefined}>
-                    {formatAvg(sessionsPerUserDay(row, sessionDays))}
+                    {experiment.sessionsAvailable === false || (experiment.sessionsLabel && !row.sessionUserDays)
+                      ? "—" : formatAvg(sessionsPerUserDay(row, sessionDays))}
                   </NumberTd>
                 ) : null}
                 {experiment.showCompletion ? (
