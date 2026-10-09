@@ -87,9 +87,7 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
                 tickFormatter={(value: number) => formatCurrency(value)}
               />
               {showTrialRate ? <YAxis
-                yAxisId="trialRate" orientation="right" width={44} tickLine={false} axisLine={false}
-                tick={{ fill: TRIAL_COLOR, fontSize: 11 }} tickCount={5} domain={[0, 1]}
-                tickFormatter={formatRate}
+                yAxisId="trialRate" domain={[0, 0.5]} allowDataOverflow hide
               /> : null}
               <Tooltip
                 filterNull={false} cursor={{ stroke: "#000", strokeOpacity: 0.12, strokeDasharray: "3 3" }}
