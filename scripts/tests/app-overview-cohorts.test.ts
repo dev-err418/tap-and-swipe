@@ -32,7 +32,7 @@ test("fixed-age APPU includes non-payers, linked renewals and refunds, and exclu
   assert.equal(data.summary[14].proceeds, 115);
   assert.equal(data.summary[30].eligibleInstalls, 2);
   assert.equal(data.points.reduce((sum, point) => sum + point.trackedInstalls, 0), 3);
-  assert.deepEqual(data.total, { installs: 3, paid: 2, proceeds: 315, missingMoney: 0 });
+  assert.deepEqual(data.total, { installs: 3, paid: 2, trials: 0, proceeds: 315, missingMoney: 0 });
   assert.equal(totalCohortAppu(data.total), 105);
 });
 
@@ -186,9 +186,9 @@ test("language APPU keeps non-payers, uses the first install's language and foll
   ], { downloads: [{ bucket: new Date(start), downloads: 10 }] });
   assert.equal(overviewForLanguage(data, "all"), data);
   assert.deepEqual(data.languages, {
-    es: { installs: 2, paid: 1, proceeds: 30, missingMoney: 0 },
-    en: { installs: 1, paid: 1, proceeds: 8, missingMoney: 0 },
-    unknown: { installs: 1, paid: 0, proceeds: 0, missingMoney: 0 },
+    es: { installs: 2, paid: 1, trials: 0, proceeds: 30, missingMoney: 0 },
+    en: { installs: 1, paid: 1, trials: 0, proceeds: 8, missingMoney: 0 },
+    unknown: { installs: 1, paid: 0, trials: 0, proceeds: 0, missingMoney: 0 },
   });
   const spanish = overviewForLanguage(data, "es");
   assert.equal(totalCohortAppu(spanish.total), 15);
@@ -207,7 +207,7 @@ test("missing language and missing proceeds stay explicit and affect only their 
     { ...install("malformed"), language: "not a language" },
   ], [event("english"), event("missing", 0, { netProceeds: null })]);
   assert.equal(totalCohortAppu(overviewForLanguage(data, "en").total), 10);
-  assert.deepEqual(data.languages.unknown, { installs: 2, paid: 0, proceeds: 0, missingMoney: 1 });
+  assert.deepEqual(data.languages.unknown, { installs: 2, paid: 0, trials: 0, proceeds: 0, missingMoney: 1 });
   assert.equal(totalCohortAppu(overviewForLanguage(data, "unknown").total), null);
   assert.equal(totalCohortAppu(data.total), null);
   assert.equal(overviewForLanguage(report([], [], { available: false }), "en").available, false);
@@ -267,4 +267,38 @@ test("conversion counts unique ever-paid installers through today and follows th
   assert.equal(overviewForLanguage(data, "en").total.paid, 1);
   assert.equal(data.points.reduce((sum, point) => sum + point.total.paid, 0), 2);
   assert.equal(Object.values(data.languages).reduce((sum, metric) => sum + metric.paid, 0), data.total.paid);
+});
+
+
+test("daily trial rates count unique installers, follow language and retain later trial starts", () => {
+  const trial = (user: string, day = 0, overrides = {}) => event(user, day, { periodType: "trial", netProceeds: 0, ...overrides });
+  const data = report([
+    { ...install("trial"), language: "es" },
+    ...Array.from({ length: 9 }, (_, index) => ({ ...install(`free-${index}`), installedAt: start + 3_600_000, language: "es" })),
+    { ...install("english"), language: "en" },
+    { ...install("tomorrow", 1), language: "es" },
+    install("older", -1),
+  ], [
+    trial("trial"), trial("trial"),
+    trial("trial", 1, { originalTransactionId: "second-trial" }),
+    trial("trial", 2, { name: "cancellation" }),
+    trial("english"), trial("tomorrow", 5, { netProceeds: null }),
+    trial("older"), trial("free-0", -1), trial("free-1", 32),
+    trial("free-2", 0, { isRefund: true }),
+    event("free-3"), // a paid purchase is not a trial
+    trial("free-4", 0, { name: "renewal" }),
+  ], { period: "3days", endMs: start + 3 * DAY });
+  const points = overviewDailyPoints(overviewForLanguage(data, "es"));
+  const firstDay = points.filter((point) => point.dayStartMs === points[0].dayStartMs);
+  assert.ok(firstDay.length > 1);
+  assert.ok(firstDay.every((point) => point.trialRate === 0.1));
+  const nextDay = points.filter((point) => point.dayStartMs === firstDay[0].dayEndMs);
+  assert.ok(nextDay.every((point) => point.trialRate === 1 && point.appu === null));
+  assert.equal(points.at(-1)!.trialRate, null);
+  assert.equal(data.total.trials, 3);
+  assert.equal(overviewForLanguage(data, "es").total.trials, 2);
+  assert.equal(overviewDailyPoints(data)[0].trialRate, 2 / 11);
+  assert.ok(overviewDailyPoints({ ...data, available: false }).every((point) => point.trialRate === null));
+  const zero = overviewDailyPoints(report([install("free")], []));
+  assert.equal(zero.find((point) => point.dailyTotal.installs > 0)!.trialRate, 0);
 });

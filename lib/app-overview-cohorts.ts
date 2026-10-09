@@ -16,7 +16,7 @@ export type OverviewCohortMetric = {
   pendingSubscriptions: number;
   retainedSubscriptions: number;
 };
-export type OverviewAppuMetric = { installs: number; paid: number; proceeds: number; missingMoney: number };
+export type OverviewAppuMetric = { installs: number; paid: number; trials: number; proceeds: number; missingMoney: number };
 export type OverviewCohortPoint = {
   date: string;
   installs: number;
@@ -45,6 +45,7 @@ type Outcome = {
   originalTransactionId: string;
   transactionId: string;
   name: string;
+  periodType?: string;
   isRefund: boolean;
   netProceeds: number | null;
   eventTs: number;
@@ -61,7 +62,7 @@ function emptyCheckpoints(): Record<CohortDay, OverviewCohortMetric> {
 }
 
 function emptyAppuMetric(): OverviewAppuMetric {
-  return { installs: 0, paid: 0, proceeds: 0, missingMoney: 0 };
+  return { installs: 0, paid: 0, trials: 0, proceeds: 0, missingMoney: 0 };
 }
 
 function installLanguage(install: Install): string {
@@ -115,6 +116,7 @@ export function overviewDailyPoints(report: AppOverviewTrend) {
     const total = days.get(day) ?? emptyAppuMetric();
     total.installs += point.total.installs;
     total.paid += point.total.paid;
+    total.trials += point.total.trials;
     total.proceeds += point.total.proceeds;
     total.missingMoney += point.total.missingMoney;
     days.set(day, total);
@@ -124,7 +126,8 @@ export function overviewDailyPoints(report: AppOverviewTrend) {
     const dailyTotal = days.get(dayStart.getTime())!;
     return { ...point, dailyTotal,
       dayStartMs: dayStart.getTime(), dayEndMs: nextBucket(dayStart, "month").getTime(),
-      appu: report.available ? totalCohortAppu(dailyTotal) : null };
+      appu: report.available ? totalCohortAppu(dailyTotal) : null,
+      trialRate: report.available && dailyTotal.installs > 0 ? dailyTotal.trials / dailyTotal.installs : null };
   });
 }
 
@@ -191,11 +194,20 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
     }
   }
   const money = new Map<string, Outcome>();
+  const trialUsers = new Set<string>();
   const subscriptions = new Map<string, { install: Install; startedAt: number; events: Outcome[] }>();
   for (const event of observed) {
     const owner = owners.get(event.originalTransactionId);
     const install = selected.get(owner?.user ?? event.appUserId);
     if (!install || event.eventTs < install.installedAt || (owner && owner.startedAt < install.installedAt)) continue;
+    // Count people starting a trial, independent of money availability or later cancellation.
+    if (event.name === "initial_purchase" && event.periodType === "trial" && !event.isRefund
+      && !trialUsers.has(install.appUserId)) {
+      trialUsers.add(install.appUserId);
+      const point = pointAt(install.installedAt);
+      point.total.trials++;
+      point.languages[installLanguage(install)].trials++;
+    }
     if (owner && owner.startedAt >= install.installedAt
       && (["initial_purchase", "renewal", "cancellation"].includes(event.name) || event.isRefund)) {
       const subscription = subscriptions.get(event.originalTransactionId)
@@ -249,12 +261,14 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
   for (const point of sorted) {
     total.installs += point.total.installs;
     total.paid += point.total.paid;
+    total.trials += point.total.trials;
     total.proceeds += point.total.proceeds;
     total.missingMoney += point.total.missingMoney;
     for (const [language, metric] of Object.entries(point.languages)) {
       const languageTotal = languages[language] ??= emptyAppuMetric();
       languageTotal.installs += metric.installs;
       languageTotal.paid += metric.paid;
+      languageTotal.trials += metric.trials;
       languageTotal.proceeds += metric.proceeds;
       languageTotal.missingMoney += metric.missingMoney;
       metric.proceeds = Math.round(metric.proceeds * 100) / 100;

@@ -145,6 +145,7 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
       {error && !composerOpen ? <p role="status" className="mb-4 text-xs text-red-600">{error}</p> : null}
       <AppCohortCharts
         report={cohorts}
+        showTrialRate={appId === "glow" || appId === "versy"}
         installLabel={installLabel}
         notes={notes}
         onAddNote={openComposer}

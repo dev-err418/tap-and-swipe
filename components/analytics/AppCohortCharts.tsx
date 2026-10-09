@@ -17,9 +17,11 @@ import {
 type PlotPoint = ReturnType<typeof overviewDailyPoints>[number] & { timestamp: number };
 const INSTALL_COLOR = "#f97316";
 const APPU_COLOR = "#1d4ed8";
+const TRIAL_COLOR = "#059669";
 
-export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote, installLabel = "Installs" }: {
+export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote, installLabel = "Installs", showTrialRate = false }: {
   report: AppOverviewTrend | null;
+  showTrialRate?: boolean;
   installLabel?: string;
   notes: AnalyticsChartNote[];
   onNoteClick: (note: AnalyticsChartNote) => void;
@@ -40,8 +42,8 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
   // single-point days and the last interval before a day with no APPU data.
   const dailyLine = [...new Map(points.map((point) => [point.dayStartMs, point])).values()]
     .flatMap((point) => [
-      { timestamp: Math.max(domain[0], point.dayStartMs), appu: point.appu },
-      { timestamp: Math.min(domain[1], point.dayEndMs), appu: point.appu },
+      { timestamp: Math.max(domain[0], point.dayStartMs), appu: point.appu, trialRate: point.trialRate },
+      { timestamp: Math.min(domain[1], point.dayEndMs), appu: point.appu, trialRate: point.trialRate },
     ]);
   if (dailyLine.length > 0) dailyLine[0].timestamp = domain[0];
   const visibleNotes = notes.filter((note) => report
@@ -57,9 +59,10 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
       <div aria-label="Chart legend" className="mb-3 flex flex-wrap items-center justify-center gap-2 text-[11px]">
         <LegendItem color={INSTALL_COLOR} label={installLabel} />
         <LegendItem color={APPU_COLOR} label="APPU · daily average" />
+        {showTrialRate ? <LegendItem color={TRIAL_COLOR} label="Download → trial · daily rate" /> : null}
         {visibleNotes.length > 0 ? <LegendItem color="#7c3aed" label="Notes" /> : null}
       </div>
-      <div className="h-80 w-full text-xs sm:h-96" aria-label="Installs and APPU by install date">
+      <div className="h-80 w-full text-xs sm:h-96" aria-label={showTrialRate ? "Installs, APPU and download-to-trial rate by install date" : "Installs and APPU by install date"}>
         {points.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={points} accessibilityLayer margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
@@ -83,10 +86,16 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
                 tick={{ fill: "#888", fontSize: 11 }} tickCount={5} domain={appuDomain}
                 tickFormatter={(value: number) => formatCurrency(value)}
               />
+              {showTrialRate ? <YAxis
+                yAxisId="trialRate" orientation="right" width={44} tickLine={false} axisLine={false}
+                tick={{ fill: TRIAL_COLOR, fontSize: 11 }} tickCount={5} domain={[0, 1]}
+                tickFormatter={formatRate}
+              /> : null}
               <Tooltip
                 filterNull={false} cursor={{ stroke: "#000", strokeOpacity: 0.12, strokeDasharray: "3 3" }}
                 content={({ active, payload }) => (
                   <CohortTooltip active={active} point={payload?.[0]?.payload as PlotPoint | undefined}
+                    showTrialRate={showTrialRate}
                     available={Boolean(report?.available)} notes={visibleNotes} report={report} installLabel={installLabel} />
                 )}
               />
@@ -95,6 +104,9 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
               <Line xAxisId="daily-appu" yAxisId="appu" data={dailyLine} dataKey="appu" name="APPU · daily average" type="stepAfter"
                 stroke={APPU_COLOR} strokeWidth={2.5} dot={false} activeDot={false}
                 connectNulls={false} isAnimationActive={false} />
+              {showTrialRate ? <Line xAxisId="daily-appu" yAxisId="trialRate" data={dailyLine} dataKey="trialRate" name="Download → trial · daily rate" type="stepAfter"
+                stroke={TRIAL_COLOR} strokeWidth={2.5} dot={false} activeDot={false}
+                connectNulls={false} isAnimationActive={false} /> : null}
               {visibleNotes.map((note) => (
                 <ReferenceLine key={note.id} yAxisId="installs"
                   x={overviewBucket(new Date(note.notedAt), period).getTime()}
@@ -112,13 +124,14 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
   );
 }
 
-function CohortTooltip({ active, point, available, notes, report, installLabel }: {
+function CohortTooltip({ active, point, available, notes, report, installLabel, showTrialRate }: {
   active?: boolean;
   point?: PlotPoint;
   available: boolean;
   notes: AnalyticsChartNote[];
   report: AppOverviewTrend | null;
   installLabel: string;
+  showTrialRate: boolean;
 }) {
   if (!active || !point) return null;
   const total = point.dailyTotal;
@@ -130,10 +143,12 @@ function CohortTooltip({ active, point, available, notes, report, installLabel }
       <div className="grid gap-1.5">
         <TooltipMetric label={installLabel} value={point.installs.toLocaleString("en-US")} color={INSTALL_COLOR} />
         <TooltipMetric label="APPU · daily average" value={appuLabel} color={APPU_COLOR} />
+        {showTrialRate ? <TooltipMetric label="Download → trial · daily rate" value={point.trialRate == null ? "—" : formatRate(point.trialRate)} color={TRIAL_COLOR} /> : null}
       </div>
       {available && total ? (
         <div className="border-t border-foreground/[0.06] pt-2 text-[11px] leading-relaxed text-muted-foreground">
           <p>{total.installs.toLocaleString("en-US")} tracked installs that day</p>
+          {showTrialRate ? <p>{total.trials.toLocaleString("en-US")} started a trial through today</p> : null}
           <p>{total.missingMoney > 0 ? "Proceeds data unavailable" : "Proceeds through today"}</p>
         </div>
       ) : <p className="text-[11px] text-muted-foreground">APPU unavailable</p>}
@@ -158,4 +173,7 @@ function formatDate(timestamp: number, period: OverviewPeriod) {
 }
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(value);
+}
+function formatRate(value: number) {
+  return new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 1 }).format(value);
 }
