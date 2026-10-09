@@ -15,6 +15,7 @@ export type UserJourneyStep = {
 export type UserJourneyVariant = {
   key: string;
   label: string;
+  family?: string;
   steps: UserJourneyStep[];
 };
 
@@ -25,6 +26,7 @@ export type UserJourneyDefinition = {
   minimumInstallVersion?: string;
   /** Require explicit tracking enrollment and build environment when available. */
   cohortAttributes?: Record<string, string>;
+  showEmptyVariants?: boolean;
   note?: string;
   variants: UserJourneyVariant[];
 };
@@ -38,6 +40,7 @@ export type UserJourneyStepResult = UserJourneyStep & {
 export type UserJourneyVariantResult = {
   key: string;
   label: string;
+  family?: string;
   assigned: number;
   /** Paywall seen divided by assigned installs. */
   completionShare: number;
@@ -221,24 +224,28 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
   if (appId === "versy") {
     return {
       title: "User journey",
-      variantAttribute: "onboarding_variant",
-      minimumInstallVersion: "1.2.0",
-      cohortAttributes: { onboarding_experiment_id: "scroll_the_bible_v1" },
-      note: "Current experiment only; historical widget assignments are excluded. Includes Mexico’s forced Bible Scroll assignments, so this funnel is descriptive rather than a randomized comparison.",
+      variantAttribute: "versy_onboarding_journey_variant",
+      showEmptyVariants: true,
+      cohortAttributes: { versy_onboarding_journey_schema: "2", versy_tracking_environment: "production" },
+      note: "Journeys starting at Welcome in the updated app only; earlier visits are not reconstructed. Widget full and shorter routes stay separate. Reviews are optional for the soft Widget paywall. Includes Mexico’s forced Scroll assignments; this is a descriptive funnel, not an A/B result.",
       variants: [
-        { key: "bible_widget", label: "Bible widget", steps: VERSY_WIDGET_STEPS },
-        { key: "bible_widget_shorter", label: "Bible widget shorter", steps: VERSY_WIDGET_STEPS.filter(
+        { key: "bible_widget", label: "Full", family: "Bible Widget", steps: VERSY_WIDGET_STEPS },
+        { key: "bible_widget_shorter", label: "Shorter", family: "Bible Widget", steps: VERSY_WIDGET_STEPS.filter(
           (step) => !["bible_widget_relationshipWithGod_screen_seen", "bible_widget_habit_screen_seen"].includes(step.attribute),
         ) },
-        { key: "scroll_the_bible", label: "Bible Scroll", steps: [
-          ["scrollingHours", "Scrolling hours"], ["fedYourSoul", "Feed your soul"],
-          ["wholeBible", "Whole Bible"], ["verseStory", "Verse story"],
-          ["searchVerse", "Verse search"], ["livesChanged", "Lives changed"],
-          ["reviews", "Reviews"], ["addicted", "Build a habit"],
-          ["goDeeper", "Go deeper"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
+        { key: "scroll_the_bible", label: "Bible Scroll", family: "Bible Scroll", steps: [
+          ["welcome", "Welcome"], ["scrollingHours", "Scrolling hook"], ["fedYourSoul", "Verse swipe preview"],
+          ["closeness", "Closeness to God"], ["familiarity", "Bible familiarity"],
+          ["goal", "Learning goal"], ["obstacle", "Reading obstacle"],
+          ["reassurance", "The Bible can make sense"], ["verseStory", "Verse explanation"],
+          ["readingHabit", "Reading habit"], ["reviews", "Reviews"],
+          ["goDeeper", "Premium preview"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
         ].map(([name, label]) => ({ attribute: `scroll_bible_${name}_screen_seen`, label,
           ...(name === "trial" ? { paywall: true } : {}) })) },
-      ],
+      ].map((variant) => ({ ...variant, steps: variant.steps.map((step) => ({
+        ...step, attribute: `versy_journey_${step.attribute}`,
+        ...(step.attribute === "bible_widget_reviews_screen_seen" ? { branch: true } : {}),
+      })) })),
     };
   }
   if (appId === "poky") {
@@ -288,16 +295,17 @@ export function buildUserJourney(
 
   const variants = definition.variants.flatMap((variant) => {
     const cohort = assigned.get(variant.key) ?? 0;
-    if (cohort <= 0) return [];
+    if (cohort <= 0 && !definition.showEmptyVariants) return [];
     const counts = seen.get(variant.key) ?? new Map<string, number>();
     const steps = variant.steps.map((step) => {
       const users = counts.get(step.attribute) ?? 0;
-      return { ...step, users, share: users / cohort };
+      return { ...step, users, share: cohort > 0 ? users / cohort : 0 };
     });
     const paywall = [...steps].reverse().find((step) => step.paywall);
     return [{
       key: variant.key,
       label: variant.label,
+      ...(variant.family ? { family: variant.family } : {}),
       assigned: cohort,
       completionShare: paywall?.share ?? 0,
       recorded: steps.some((step) => step.users > 0),
@@ -309,7 +317,7 @@ export function buildUserJourney(
     return { status: "empty", title: definition.title, variants: [], note: `No assigned installs in this window.${definition.note ? ` ${definition.note}` : ""}` };
   }
   return {
-    status: "ready",
+    status: variants.some((variant) => variant.assigned > 0) ? "ready" : "empty",
     title: definition.title,
     variants,
     ...(definition.note

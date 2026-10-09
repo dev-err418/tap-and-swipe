@@ -21,16 +21,17 @@ test("each flow measures its own final paywall screen", () => {
   assert.equal(versyOnboardingPaywallReached({ onboarding_variant: "bible_widget_shorter", scroll_bible_trial_screen_seen: "true" }), false);
 });
 
-test("current funnel uses the 11 recorded ScrollBibleStep keys and excludes legacy assignments", () => {
+test("current funnel uses the 14 current screens and explicit production enrollment", () => {
   const definition = userJourneyDefinition("versy")!;
   const scroll = definition.variants.find((row) => row.key === "scroll_the_bible")!;
-  assert.deepEqual(scroll.steps.map((step) => step.attribute), ["scrollingHours", "fedYourSoul", "wholeBible", "verseStory", "searchVerse", "livesChanged", "reviews", "addicted", "goDeeper", "remindPromise", "trial"].map((key) => `scroll_bible_${key}_screen_seen`));
+  assert.deepEqual(scroll.steps.map((step) => step.attribute), ["welcome", "scrollingHours", "fedYourSoul", "closeness", "familiarity", "goal", "obstacle", "reassurance", "verseStory", "readingHabit", "reviews", "goDeeper", "remindPromise", "trial"].map((key) => `versy_journey_scroll_bible_${key}_screen_seen`));
   const sql = userJourneySql(51393, definition, "2026-10-01 00:00:00", "2026-10-08 00:00:00");
-  assert.match(sql, /value = 'scroll_the_bible_v1'/);
+  assert.match(sql, /versy_onboarding_journey_schema/);
+  assert.match(sql, /value = 'production'/);
   assert.doesNotMatch(sql, /bible_widget_shorter_v1/);
   const report = buildUserJourney(definition, [
     { variant: "scroll_the_bible", key: ASSIGNED_KEY, users: 10 },
-    { variant: "scroll_the_bible", key: "scroll_bible_trial_screen_seen", users: 4 },
+    { variant: "scroll_the_bible", key: "versy_journey_scroll_bible_trial_screen_seen", users: 4 },
   ]);
   assert.equal(report.variants.find((row) => row.key === "scroll_the_bible")?.completionShare, 0.4);
 });

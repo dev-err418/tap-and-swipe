@@ -27,7 +27,7 @@ export default function UserJourneyFunnel({
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   if (!report) return null;
-  if (report.status === "unsupported" || report.status !== "ready") {
+  if ((report.status !== "ready" && report.status !== "empty") || report.variants.length === 0) {
     return (
       <DashboardCard title={report.title} action={<span className="text-xs text-muted-foreground">{windowLabel}</span>}>
         <p role="status" className="text-sm text-muted-foreground">{report.note}</p>
@@ -35,7 +35,11 @@ export default function UserJourneyFunnel({
     );
   }
 
-  const variant = report.variants.find((row) => row.key === selected) ?? report.variants[0];
+  const variant = report.variants.find((row) => row.key === selected)
+    ?? report.variants.find((row) => row.assigned > 0) ?? report.variants[0];
+  const family = variant.family ?? variant.label;
+  const families = [...new Set(report.variants.map((row) => row.family ?? row.label))];
+  const routes = report.variants.filter((row) => (row.family ?? row.label) === family);
 
   return (
     <DashboardCard
@@ -44,23 +48,33 @@ export default function UserJourneyFunnel({
       contentClassName="pb-4"
     >
       <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Onboarding variant">
-        {report.variants.map((row) => (
+        {families.map((name) => (
           <button
             type="button"
-            key={row.key}
-            aria-pressed={row.key === variant.key}
-            onClick={() => setSelected(row.key)}
+            key={name}
+            aria-pressed={name === family}
+            onClick={() => setSelected((report.variants.find((row) => (row.family ?? row.label) === name && row.assigned > 0)
+              ?? report.variants.find((row) => (row.family ?? row.label) === name))!.key)}
             className={cn(
               DASHBOARD_TAB_CLASS,
               "h-8 px-3",
-              row.key === variant.key ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS,
+              name === family ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS,
             )}
           >
-            {row.label}
-            <span className="ml-1.5 tabular-nums">({formatPercent(row.completionShare)})</span>
+            {name}
+            {!variant.family ? <span className="ml-1.5 tabular-nums">({formatPercent(report.variants.find((row) => row.label === name)!.completionShare)})</span> : null}
           </button>
         ))}
       </div>
+      {routes.length > 1 ? (
+        <div className="mb-4 flex gap-2" role="group" aria-label="Widget route">
+          {routes.map((row) => <button key={row.key} type="button" aria-pressed={row.key === variant.key}
+            onClick={() => setSelected(row.key)} className={cn(DASHBOARD_TAB_CLASS, "h-7 px-3 text-xs",
+              row.key === variant.key ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS)}>
+            {row.label} ({row.assigned > 0 ? formatPercent(row.completionShare) : "—"})
+          </button>)}
+        </div>
+      ) : null}
       <JourneyVariant variant={variant} />
       {report.note ? <p className="mt-3 text-xs text-muted-foreground">{report.note}</p> : null}
     </DashboardCard>
@@ -69,6 +83,9 @@ export default function UserJourneyFunnel({
 
 function JourneyVariant({ variant }: { variant: UserJourneyVariantResult }) {
   const [tooltip, setTooltip] = useState<JourneyTooltip | null>(null);
+  if (variant.assigned === 0) {
+    return <p role="status" className="text-sm text-muted-foreground">No tracked {variant.family ?? variant.label} installs in this window yet.</p>;
+  }
   if (!variant.recorded) {
     return (
       <p role="status" className="text-sm text-muted-foreground">

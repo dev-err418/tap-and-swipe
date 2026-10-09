@@ -20,21 +20,21 @@ test("glow and versy journeys follow each onboarding variant", () => {
   const versy = userJourneyDefinition("versy")!;
   assert.deepEqual(versy.variants.map((variant) => variant.key), ["bible_widget", "bible_widget_shorter", "scroll_the_bible"]);
   const [widget, shorter] = versy.variants;
-  assert.equal(widget.steps[0].attribute, "bible_widget_entry_screen_seen");
-  assert.equal(widget.steps.find((step) => step.paywall)?.attribute, "bible_widget_paywall_screen_seen");
+  assert.equal(widget.steps[0].attribute, "versy_journey_bible_widget_entry_screen_seen");
+  assert.equal(widget.steps.find((step) => step.paywall)?.attribute, "versy_journey_bible_widget_paywall_screen_seen");
   assert.equal(widget.steps.at(-1)?.branch, true);
-  assert.equal(versy.minimumInstallVersion, "1.2.0");
-  assert.deepEqual(versy.cohortAttributes, { onboarding_experiment_id: "scroll_the_bible_v1" });
+  assert.equal(versy.variantAttribute, "versy_onboarding_journey_variant");
+  assert.deepEqual(versy.cohortAttributes, { versy_onboarding_journey_schema: "2", versy_tracking_environment: "production" });
   assert.equal(shorter.steps.length, widget.steps.length - 2);
-  assert.deepEqual(widget.steps.filter((step) => !shorter.steps.includes(step)).map((step) => step.attribute), [
-    "bible_widget_habit_screen_seen", "bible_widget_relationshipWithGod_screen_seen",
+  assert.deepEqual(widget.steps.filter((step) => !shorter.steps.some((other) => other.attribute === step.attribute)).map((step) => step.attribute), [
+    "versy_journey_bible_widget_habit_screen_seen", "versy_journey_bible_widget_relationshipWithGod_screen_seen",
   ]);
-  assert.equal(shorter.steps.find((step) => step.branch)?.attribute, "bible_widget_notificationsDenied_screen_seen");
+  assert.equal(shorter.steps.find((step) => step.branch)?.attribute, "versy_journey_bible_widget_notificationsDenied_screen_seen");
   assert.equal(shorter.steps.at(-1)?.branch, true);
-  assert.equal(shorter.steps.at(-1)?.attribute, "bible_widget_recovery_screen_seen");
+  assert.equal(shorter.steps.at(-1)?.attribute, "versy_journey_bible_widget_recovery_screen_seen");
   const sql = userJourneySql(123, versy, "2026-10-06 00:00:00.000", "2026-10-07 00:00:00.000");
-  assert.match(sql, /onboarding_experiment_id/);
-  assert.match(sql, /scroll_the_bible_v1/);
+  assert.match(sql, /versy_onboarding_journey_schema/);
+  assert.match(sql, /versy_tracking_environment/);
   assert.doesNotMatch(sql, /short-1-prayer/);
 });
 
@@ -179,9 +179,29 @@ test("journey sql stays inside the install window and the variant list", () => {
   assert.match(versy, /bible_widget_paywall_screen_seen/);
   assert.match(versy, /'bible_widget', 'bible_widget_shorter'/);
   assert.doesNotMatch(versy, /onboarding_short_prayer/);
-  assert.match(versy, /HAVING tuple\(toUInt32OrZero\(splitByChar\('\.', version\)\[1\]\)/);
-  assert.match(versy, />= tuple\(1, 2, 0\)/);
-  assert.match(versy, /argMin\(JSONExtractString\(meta, 'appVersion'\), ts\) AS version/);
+  assert.match(versy, /versy_onboarding_journey_variant/);
+  assert.match(versy, /versy_onboarding_journey_schema/);
+  assert.doesNotMatch(versy, /HAVING tuple/);
   assert.doesNotMatch(sql, /HAVING tuple/);
   assert.throws(() => userJourneySql(54736, glow, "2026-09-18'; drop", "2026-09-25 00:00:00.000"));
+});
+
+test("Versy shows both families before data arrives and keeps the shorter route distinct", () => {
+  const definition = userJourneyDefinition("versy")!;
+  const empty = buildUserJourney(definition, []);
+  const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: empty, windowLabel: "Last 7 days" }));
+  assert.match(html, /Bible Widget/);
+  assert.match(html, /Bible Scroll/);
+  assert.match(html, /Widget route/);
+  assert.match(html, /Shorter/);
+  assert.match(html, /No tracked Bible Widget installs/);
+  assert.equal(empty.status, "empty");
+  assert.ok(empty.variants.every((row) => row.completionShare === 0 && !row.recorded));
+  const widget = definition.variants[0];
+  assert.equal(widget.steps.find((step) => step.attribute === "versy_journey_bible_widget_reviews_screen_seen")?.branch, true);
+  const report = buildUserJourney(definition, [
+    { variant: "scroll_the_bible", key: ASSIGNED_KEY, users: 10 },
+    { variant: "scroll_the_bible", key: "scroll_bible_trial_screen_seen", users: 8 },
+  ]);
+  assert.equal(report.variants[2].completionShare, 0, "old screen flags cannot become current-flow visits");
 });

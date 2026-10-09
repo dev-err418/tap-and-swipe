@@ -202,6 +202,13 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-data"
           className="space-y-4"
         >
+          {appId === "versy" ? (
+            <button type="button" onClick={() => setActiveTab("experiments")}
+              className="flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl bg-white px-5 py-4 text-left text-sm">
+              <span><strong>Annual pricing test</strong><span className="ml-2 text-muted-foreground">$29.99 · $39.99 · $49.99</span></span>
+              <span className="font-medium">View A/B tests →</span>
+            </button>
+          ) : null}
           <UserJourneyFunnel report={userJourney} windowLabel={windowLabel} />
           {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
           {productSlot}

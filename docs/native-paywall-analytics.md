@@ -327,3 +327,10 @@ screen until its final design is ready. Completed onboarding users remain on
 Plan A and are excluded from the new comparison; only fresh `50_50` markers on
 both attributes enter the four-cohort report. Everyone now uses the Warm
 experience; the old background test is retired. Paywall tests remain separate.
+
+
+### Versy journey schema 2
+
+Versy's updated Data-tab funnel groups Bible Widget and Bible Scroll, with separate
+Full/Shorter Widget routes. See [the journey contract](versy-onboarding-journey.md)
+for enrollment, persisted screen flags, debug exclusion and release requirements.
