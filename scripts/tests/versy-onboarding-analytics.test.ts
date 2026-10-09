@@ -21,10 +21,10 @@ test("each flow measures its own final paywall screen", () => {
   assert.equal(versyOnboardingPaywallReached({ onboarding_variant: "bible_widget_shorter", scroll_bible_trial_screen_seen: "true" }), false);
 });
 
-test("current funnel uses the 14 current screens and explicit production enrollment", () => {
+test("current funnel uses the 15 current screens and explicit production enrollment", () => {
   const definition = userJourneyDefinition("versy")!;
   const scroll = definition.variants.find((row) => row.key === "scroll_the_bible")!;
-  assert.deepEqual(scroll.steps.map((step) => step.attribute), ["welcome", "scrollingHours", "fedYourSoul", "closeness", "familiarity", "goal", "obstacle", "reassurance", "verseStory", "readingHabit", "reviews", "goDeeper", "remindPromise", "trial"].map((key) => `versy_journey_scroll_bible_${key}_screen_seen`));
+  assert.deepEqual(scroll.steps.map((step) => step.attribute), ["welcome", "scrollingHours", "fedYourSoul", "closeness", "familiarity", "goal", "obstacle", "reassurance", "verseStory", "readingHabit", "notifications", "reviews", "goDeeper", "remindPromise", "trial"].map((key) => `versy_journey_scroll_bible_${key}_screen_seen`));
   const sql = userJourneySql(51393, definition, "2026-10-01 00:00:00", "2026-10-08 00:00:00");
   assert.match(sql, /versy_onboarding_journey_schema/);
   assert.match(sql, /value = 'production'/);
@@ -40,7 +40,7 @@ test("Bible Scroll bypasses the widget soft/hard paywall nodes", () => {
   const flow = appExperimentFlow("versy")!;
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "scroll_the_bible").map((edge) => edge.to), ["scroll-trial"]);
   assert.equal(flow.edges.filter((edge) => edge.from === "scroll-trial").length, 3);
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["15%", "15%", "70%"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["10%", "10%", "80%"]);
   assert.deepEqual(flow.nodes.filter((node) => node.experimentId === "versy-yearly-price-v1").map((node) => node.variantId), ["yearly_3999_80", "yearly_2999_80", "yearly_4999_80"]);
   assert.ok(flow.nodes.every((node) => node.y < flow.height));
 });

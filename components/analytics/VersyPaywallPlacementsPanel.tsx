@@ -49,7 +49,7 @@ export default function VersyPaywallPlacementsPanel() {
 
   return <section aria-label="Versy paywall placements" className="space-y-2">
     <div className="px-1">
-      <h2 className="text-sm font-semibold">Native SwiftUI paywalls</h2>
+      <h2 className="text-sm font-semibold">App purchase events</h2>
       <p className="text-xs text-muted-foreground">Production · last 30 days · unique people per placement</p>
     </div>
     <div>
@@ -60,7 +60,7 @@ export default function VersyPaywallPlacementsPanel() {
           <ResultsTable title="Paywalls" rows={report.onboarding} />
           <ResultsTable title="Placements" rows={report.rows} />
           {report.status === "empty" ? <p className="text-sm text-muted-foreground">No production placement events in this period yet.</p> : null}
-          <p className="px-1 text-xs text-muted-foreground">The three onboarding rows separate Bible Widget, Bible Widget Shorter, and Bible Scroll. Bible Scroll uses its own placement ID. Its current app screen records reach; views and conversions remain unavailable until it also records a paywall view. Native entry points appear even with no traffic. The embedded widget rows are inferred from the saved variant because they share a raw placement ID. Historical Prayer journey placements remain separate when they have traffic. A view counts as reach when the app did not send a separate reach event. Conversions are successful app purchase results after a view in this period. Versy does not yet record verified revenue, refunds, or immutable purchase attribution by native paywall, so those columns and winner estimates are unavailable.</p>
+          <p className="px-1 text-xs text-muted-foreground">Historical app events, including builds before verified attribution. These conversions are client purchase results after a view, including trials. Revenue, paid users and refunds are shown in the verified tables above. Older missing views and purchase contexts are not reconstructed.</p>
         </div>}
     </div>
   </section>;
@@ -69,34 +69,27 @@ export default function VersyPaywallPlacementsPanel() {
 function ResultsTable({ title, rows }: { title: string; rows: VersyPlacementRow[] }) {
   const domain = conversionDomain(rows);
   const columns = [
-    ["Total APPU", "Net proceeds divided by assigned users. Versy does not yet have verified paywall-level purchase attribution."],
-    ["Probability best", "A winner estimate requires verified per-user revenue and randomized paywall assignments."],
     ["Conv. rate", "Successful app purchase results after a view, divided by unique viewers. The bar shows a 95% Wilson interval."],
     ["Users", "Unique people who reached this native paywall or placement."],
     ["Views", "Unique people who saw this native paywall."],
     ["Attempts", "Unique people who attempted a purchase."],
     ["Conversions", "Unique people with a successful app purchase result after a view in this period. Store revenue is not verified here."],
-    ["Proceeds", "Verified, attributed proceeds are unavailable for these native paywalls."],
-    ["Refunds", "Refund attribution is unavailable for these native paywalls."],
-    ["Refund rate", "Refund attribution is unavailable for these native paywalls."],
   ] as const;
   return <section className="space-y-2 pt-2">
     <h3 className="px-1 text-sm font-semibold">{title}</h3>
     <div className={cn(DASHBOARD_SURFACE_CLASS, "overflow-hidden")}>
       <div className="overflow-x-auto scrollbar-none">
-        <table className="w-full min-w-[1220px] text-left text-xs">
+        <table className="w-full min-w-[900px] text-left text-xs">
           <thead><tr className="border-b border-black/[0.06] text-muted-foreground">
             <th className="min-w-[180px] px-5 py-3 font-medium">{title === "Placements" ? "Placement" : "Paywall"}</th>
-            {columns.map(([label, hint]) => <th key={label} className={cn("px-3 py-3 text-right font-medium", label === "Conv. rate" ? "min-w-[260px]" : label === "Probability best" ? "min-w-[160px]" : "min-w-24")}>
+            {columns.map(([label, hint]) => <th key={label} className={cn("px-3 py-3 text-right font-medium", label === "Conv. rate" ? "min-w-[260px]" : "min-w-24")}>
               <abbr title={hint} className="cursor-help whitespace-nowrap no-underline">{label}</abbr>
             </th>)}
           </tr></thead>
           <tbody>{rows.map((row) => <tr key={row.placement} className="border-b border-black/[0.04] last:border-0">
             <td className="px-5 py-4 font-medium">{row.placement === "onboarding_bible_widget" ? "Bible Widget embedded paywall" : row.placement === "onboarding_bible_widget_shorter" ? "Bible Widget Shorter embedded paywall" : row.placement === "onboarding_scroll_bible" ? "Bible Scroll trial paywall" : row.placement === "verse_study_upgrade" ? "Verse study upgrade" : row.placement}</td>
-            <Cell>—</Cell><Cell>—</Cell>
             <ConversionRateCell conversions={row.purchased} views={row.viewed} domain={domain} />
             <Cell>{count(row.reached)}</Cell><Cell>{count(row.viewed)}</Cell><Cell>{count(row.attempted)}</Cell><Cell>{count(row.purchased)}</Cell>
-            <Cell>—</Cell><Cell>—</Cell><Cell>—</Cell>
           </tr>)}</tbody>
         </table>
       </div>

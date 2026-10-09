@@ -128,11 +128,11 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
     return {
       tests: [
         {
-          id: "versy-scroll-the-bible-v1", label: "Onboarding", scope: "New assignments outside Mexico · 15/15/70", tone: "blue",
+          id: "versy-scroll-the-bible-v1", label: "Onboarding", scope: "New assignments outside Mexico · 10/10/80", tone: "blue",
           branches: [
-            { id: "bible_widget", label: "Bible widget", percent: 15 },
-            { id: "bible_widget_shorter", label: "Bible widget shorter", percent: 15 },
-            { id: "scroll_the_bible", label: "Bible Scroll", percent: 70 },
+            { id: "bible_widget", label: "Bible widget", percent: 10 },
+            { id: "bible_widget_shorter", label: "Bible widget shorter", percent: 10 },
+            { id: "scroll_the_bible", label: "Bible Scroll", percent: 80 },
           ],
         },
         {
@@ -153,7 +153,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         percent: 100 / 6,
       }))),
       notes: [
-        "New assignments use 15% Bible Widget, 15% Shorter and 70% Bible Scroll. Mexico receives Bible Scroll automatically and is excluded from the comparison, along with uncertain countries.",
+        "New assignments use 10% Bible Widget, 10% Shorter and 80% Bible Scroll. Mexico receives Bible Scroll automatically and is excluded from the comparison, along with uncertain countries.",
         "Bible Scroll uses a dismissible trial timeline with yearly and weekly plans, without onboarding recovery. The saved soft/hard assignment does not control this onboarding screen; access comparisons include widget variants only.",
         "Yearly price remains a saved independent assignment. Bible Scroll also offers the fixed weekly product. Other upgrade placements use the assigned yearly product and access mode.",
         "Existing widget assignments remain in bible_widget_shorter_v1 and are reported in a separate historical comparison. Current funnels use scroll_the_bible_v1 only. Country grouping uses reported and install geography, not immutable assignment geography.",

@@ -465,13 +465,13 @@ async function loadSuperwallAppAnalytics(
       app.apiKey,
     ),
     includeCountries ? loadAppFacts(app, start, end, startMs, endMs, sessions, includeReports) : Promise.resolve(null),
-    includeCountries && includeReports && (app.id === "glow" || app.id === "poky")
+    includeCountries && includeReports && (app.id === "glow" || app.id === "poky" || app.id === "versy")
       ? loadNativePaywalls(
           <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
           app.applicationId,
           app.id === "glow"
             ? glowExperimentStart(startMs)
-            : pokyExperimentStart(startMs),
+            : app.id === "poky" ? pokyExperimentStart(startMs) : startMs,
           endMs,
         )
       : Promise.resolve(null),
@@ -1029,7 +1029,7 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
     attributes: { onboarding_experiment_id: "scroll_the_bible_v1", onboarding_variant: key } }));
   const currentOnboarding: AttributeExperimentDefinition = {
     id: "versy-scroll-the-bible-v1", title: "Onboarding A/B test · Bible Scroll",
-    subtitle: "Bible Widget 15% · Shorter 15% · Bible Scroll 70% · excludes Mexico and uncertain countries",
+    subtitle: "Bible Widget 10% · Shorter 10% · Bible Scroll 80% · excludes Mexico and uncertain countries",
     attributeKeys: ["onboarding_experiment_id", "onboarding_variant"],
     variants: onboardingVariants, scoreMetrics: ["appu", "download_paid"],
     showTrials: true, showCompletion: true, completionLabel: "Paywall reached",
@@ -1039,7 +1039,7 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
   };
   return [
     { ...attributeExperiment(audienceFacts("comparison"), currentOnboarding),
-      planningNote: "15% Bible Widget / 15% Shorter / 70% Bible Scroll. Mexico and uncertain countries are reported separately. Country uses matching install and reported geo values; the app does not yet save immutable assignment geography. Paywall reached measures the final onboarding screen. Avg sessions / day is sessions per user per observed day since install, including free users and zero-session users; unavailable data shows a dash." },
+      planningNote: "Current new assignments: 10% Bible Widget / 10% Shorter / 80% Bible Scroll. Earlier saved assignments retain their original variants. Mexico and uncertain countries are reported separately. Country uses matching install and reported geo values; the app does not yet save immutable assignment geography. Paywall reached measures the final onboarding screen. Avg sessions / day is sessions per user per observed day since install, including free users and zero-session users; unavailable data shows a dash." },
     ...(["mexico", "unknown"] as const).map((audience) => ({
       ...attributeExperiment(audienceFacts(audience), { ...currentOnboarding,
         id: `versy-scroll-the-bible-v1-${audience}`,

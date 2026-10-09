@@ -238,7 +238,7 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
           ["closeness", "Closeness to God"], ["familiarity", "Bible familiarity"],
           ["goal", "Learning goal"], ["obstacle", "Reading obstacle"],
           ["reassurance", "The Bible can make sense"], ["verseStory", "Verse explanation"],
-          ["readingHabit", "Reading habit"], ["reviews", "Reviews"],
+          ["readingHabit", "Reading habit"], ["notifications", "Daily reminders"], ["reviews", "Reviews"],
           ["goDeeper", "Premium preview"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
         ].map(([name, label]) => ({ attribute: `scroll_bible_${name}_screen_seen`, label,
           ...(name === "trial" ? { paywall: true } : {}) })) },

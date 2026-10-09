@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import { GLOW_PAYWALL_EXPERIMENT, formatPaywallAllocation, nativePaywallAllocation } from "@/lib/native-paywall-allocation";
 import { ReadinessIndicator } from "@/components/analytics/ExperimentStats";
 
-const languages: Record<string, string> = { en: "English", es: "Spanish", de: "German", fr: "French" };
-const languageFlags: Record<string, string> = { en: "🇬🇧", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷" };
+const languages: Record<string, string> = { all: "All languages", en: "English", es: "Spanish", de: "German", fr: "French", pt: "Portuguese" };
+const languageFlags: Record<string, string> = { all: "🌐", en: "🇬🇧", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷", pt: "🇧🇷" };
 const WIN_COLOR = "#1d4ed8";
 const LOSE_COLOR = "#f97316";
 const WIN_SOFT = "color-mix(in oklch, #1d4ed8 12%, white)";
@@ -43,8 +43,8 @@ function makeConversionDomain(rows: NativePaywallRow[]): ConversionDomain {
 }
 
 export default function NativePaywallsPanel({ appId, report }: { appId: "glow" | "poky" | "versy"; report: NativePaywallReport | null }) {
-  const [language, setLanguage] = useState("en");
-  const availableLanguages = [...new Set(report?.groups.filter((g) => g.language !== "all").map((g) => g.language) ?? [])]
+  const [language, setLanguage] = useState(appId === "versy" ? "all" : "en");
+  const availableLanguages = [...new Set(report?.groups.filter((g) => appId === "versy" || g.language !== "all").map((g) => g.language) ?? [])]
     .sort((a, b) => a === b ? 0 : a === "en" ? -1 : b === "en" ? 1 : 0);
   const selectedLanguage = availableLanguages.includes(language) ? language : availableLanguages[0];
   const groups = report?.groups.filter((g) => g.language === selectedLanguage).sort((a, b) => a.name.localeCompare(b.name)) ?? [];
@@ -73,11 +73,12 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
       </div>
     </section>
     {report?.status === "unavailable" || !report ? <Empty>Paywall data could not be loaded. Refresh to retry.</Empty>
-      : !groups.length ? <Empty>No production paywall records for this audience and date range yet.</Empty>
+      : !groups.length ? <Empty>{appId === "versy" ? "No verified attribution records yet. New records require the updated iOS app; earlier purchases are not assigned to a placement retroactively. Existing onboarding A/B revenue remains available in A/B tests." : "No production paywall records for this audience and date range yet."}</Empty>
       : groups.map((group) => <div key={group.experiment} className="space-y-4">
-        {groups.length > 1 ? <h2 className="px-1 pt-2 text-sm font-semibold">{group.name}</h2> : null}
-        <NativePaywallResultsTable title={group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} />
-        <NativePaywallResultsTable title="Placements" rows={group.placements} placement />
+        {groups.length > 1 || appId === "versy" ? <h2 className="px-1 pt-2 text-sm font-semibold">{group.name}</h2> : null}
+        {appId === "versy" && <p className="px-1 text-xs text-muted-foreground">USD net proceeds include linked renewals and refunds through today. New onboarding includes everyone enrolled at Welcome, including non-payers; returning users are separate. These all-country outcomes include forced Mexico assignments, so they do not declare a randomized winner. Trials count as conversions; paid users require a paid charge.</p>}
+        <NativePaywallResultsTable title={appId === "versy" ? "Onboarding variants" : group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} showPaidUsers={appId === "versy"} />
+        <NativePaywallResultsTable title="Placements" rows={group.placements} placement showPaidUsers={appId === "versy"} />
       </div>)}
   </div>;
 }
@@ -86,7 +87,7 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <div className={cn(DASHBOARD_SURFACE_CLASS, "flex min-h-48 items-center justify-center p-8 text-center text-sm text-muted-foreground")}>{children}</div>;
 }
 
-export function NativePaywallResultsTable({ title, rows, experiment, language, placement = false, flow = false }: { title: string; rows: NativePaywallRow[]; experiment?: string; language?: string; placement?: boolean; flow?: boolean }) {
+export function NativePaywallResultsTable({ title, rows, experiment, language, placement = false, flow = false, showPaidUsers = false }: { title: string; rows: NativePaywallRow[]; experiment?: string; language?: string; placement?: boolean; flow?: boolean; showPaidUsers?: boolean }) {
   const sortedRows = [...rows].sort((a, b) => {
     const appuA = a.users ? a.proceeds / a.users : Number.NEGATIVE_INFINITY;
     const appuB = b.users ? b.proceeds / b.users : Number.NEGATIVE_INFINITY;
@@ -112,6 +113,7 @@ export function NativePaywallResultsTable({ title, rows, experiment, language, p
     ["Users", placement ? "Assigned users who reached this placement. A user may reach several placements." : "All users assigned to this variant, including non-viewers and non-payers."],
     [flow ? "Recovery views" : "Views", "Unique users who actually saw the native paywall; repeat openings count once."],
     ["Conversions", "Unique users with a verified purchase, including free trial starts. Restores and renewals are not new conversions."],
+    ...(showPaidUsers ? [["Paid users", "Unique users with a positive paid charge from Apple's server records; a free trial alone does not count."]] : []),
     ["Proceeds", flow ? "All net proceeds after assignment for this flow's users, including regular purchases, recovery purchases, renewals and refunds. USD." : "Attributed proceeds after store fees/taxes and refunded proceeds, including renewals. USD."],
     ["Refunds", "Refunded customer revenue in USD, attributed back to the original purchase."],
     ["Refund rate", "Refunded customer revenue divided by gross customer revenue before refunds; not divided by proceeds."],
@@ -153,6 +155,7 @@ export function NativePaywallResultsTable({ title, rows, experiment, language, p
             <ConversionRateCell conversions={row.conversions} views={flow ? row.users : row.views} domain={conversionDomain} />
             <Cell>{count(row.users)}</Cell><Cell>{count(row.views)}</Cell>
             <Cell><span title={`${count(row.paid)} users have paid`}>{count(row.conversions)}</span></Cell>
+            {showPaidUsers && <Cell>{count(row.paid)}</Cell>}
             <Cell>{currency(row.proceeds)}</Cell>
             <Cell>{currency(row.refunds)}</Cell><Cell>{percent(refundRate)}</Cell>
           </tr>;

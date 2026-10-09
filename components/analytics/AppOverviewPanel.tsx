@@ -109,7 +109,7 @@ export default function AppOverviewPanel({
   const [monthBundle, setMonthBundle] = useState<{ appId: string; bundle: MonthExperimentBundle } | null>(null);
   const [monthFailedAppId, setMonthFailedAppId] = useState<string | null>(null);
   useEffect(() => {
-    if (!deferExperiments || activeTab === "data" || (activeTab === "paywalls" && appId === "versy")
+    if (!deferExperiments || activeTab === "data"
       || monthBundle?.appId === appId || monthFailedAppId === appId) return;
     const controller = new AbortController();
     fetch(`/api/analytics/mobile-app?appId=${appId}`, { signal: controller.signal })
@@ -258,9 +258,10 @@ export default function AppOverviewPanel({
           className="min-w-0 space-y-4"
         >
           {appId === "glow" && <WinbackPaywallPanel appId={appId} />}
-          {appId === "versy" ? <VersyPaywallPlacementsPanel />
-            : experimentsLoading ? <TabEmptyState>Loading paywalls…</TabEmptyState> : monthFailed ? <TabEmptyState>Paywalls could not be loaded.</TabEmptyState>
+          {appId === "versy" && <p className="px-1 text-sm text-muted-foreground">Compare onboarding routes by paid conversions and net proceeds in A/B tests. Below, verified purchases link revenue, renewals and refunds to the original route and purchase placement. Revenue per user makes different traffic shares comparable.</p>}
+          {experimentsLoading ? <TabEmptyState>Loading paywalls…</TabEmptyState> : monthFailed ? <TabEmptyState>Paywalls could not be loaded.</TabEmptyState>
             : <NativePaywallsPanel appId={appId} report={resolvedPaywalls ?? null} />}
+          {appId === "versy" && <details className="space-y-4"><summary className="cursor-pointer text-sm font-medium">App event history · includes older builds</summary><VersyPaywallPlacementsPanel /></details>}
         </div>
       ) : null}
     </section>

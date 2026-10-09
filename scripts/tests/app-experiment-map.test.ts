@@ -92,7 +92,7 @@ test("Versy separates Bible Scroll trial routing from widget soft/hard paywalls"
     "versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v1",
   ]);
   assert.deepEqual(map.tests.map((row) => row.branches.map((branch) => branch.percent)),
-    [[15, 15, 70], [50, 50], [100 / 3, 100 / 3, 100 / 3]]);
+    [[10, 10, 80], [50, 50], [100 / 3, 100 / 3, 100 / 3]]);
   assert.deepEqual(map.tests[0].branches.map((branch) => branch.id), ["bible_widget", "bible_widget_shorter", "scroll_the_bible"]);
   assert.deepEqual(map.tests[1].branches.map((branch) => branch.id), ["dismissible", "hard"]);
   assert.deepEqual(map.tests[2].branches.map((branch) => branch.id), [

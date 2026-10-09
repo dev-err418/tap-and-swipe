@@ -15,7 +15,7 @@ filter, as are Superwall sandbox users. No questionnaire answers are added.
 
 Existing unprefixed attributes remain for historical reports. Resuming mid-flow
 without enrollment does not backfill Welcome or old screens. Schema 2 follows the
-current 14-screen Scroll path. Widget reviews, notification-denied and recovery
+current 15-screen Scroll path, including daily reminders. Widget reviews, notification-denied and recovery
 are branches, so skipped optional screens do not become the next drop-off baseline.
 Installs are selected by the existing date window; later screen reach is followed
 through now. Completion means final paywall seen, not purchase.
