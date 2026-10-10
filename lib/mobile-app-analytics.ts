@@ -184,7 +184,7 @@ const POKY_ICON_URL =
   "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/5e/46/3f/5e463fde-45e6-7fdc-ce5a-bb5b73af405d/AppIcon-0-0-1x_U007ephone-0-1-sRGB-85-220.png/512x512bb.jpg";
 const VERSY_ICON_URL = "/community-icons/versy.png";
 const GLOW_ICON_URL =
-  "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/19/20/0e/19200e98-f11f-8ab4-850a-81a2a45122e0/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg";
+  "/community-icons/glow-wordmark.png";
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY] as const;
 const VERSY_ATTRIBUTE_KEYS = ["country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",

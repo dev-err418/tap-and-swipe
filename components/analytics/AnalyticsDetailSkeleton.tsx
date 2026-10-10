@@ -16,7 +16,7 @@ const APPS: Record<AppId, { name: string; iconUrl: string }> = {
   },
   glow: {
     name: "Glow",
-    iconUrl: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/19/20/0e/19200e98-f11f-8ab4-850a-81a2a45122e0/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+    iconUrl: "/community-icons/glow-wordmark.png",
   },
   versy: { name: "Versy", iconUrl: "/community-icons/versy.png" },
 };
