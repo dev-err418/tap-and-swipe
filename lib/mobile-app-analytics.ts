@@ -1,3 +1,4 @@
+import { sevenDayTrialSurvival } from "./trial-survival";
 import { onboardingSessionActivity } from "./onboarding-session-activity";
 import { versyOnboardingAudience, versyOnboardingPaywallReached } from "./versy-onboarding-analytics";
 import { loadGlowOnboardingExperience } from "./glow-onboarding-experience-queries";
@@ -18,6 +19,7 @@ import { POKY_TRIAL_OFFER_ATTRIBUTE_KEYS, pokyTrialOfferExperiment } from "./pok
 import { paidSubscriptionActivity } from "./paid-subscription-activity";
 import { installCohortCountries } from "./install-cohort-countries";
 import { subscriptionActiveAt } from "./subscription-retention";
+import { activeTrialsByAge, type ActiveTrials } from "./active-trials";
 import { matchedCohortInstall } from "./experiment-install-cohort";
 import { buildAppOverviewCohorts, type AppOverviewCohorts } from "./app-overview-cohorts";
 
@@ -138,6 +140,7 @@ export type TrialCancelBucket = {
 };
 
 export type TrialCancelTiming = {
+  activeTrials: ActiveTrials;
   trials: number;
   cancelled: number;
   cancelledBeforeQualified: number;
@@ -1367,58 +1370,12 @@ function tenureProceeds(
 }
 
 function trialCancelFromFacts(facts: AppFacts): TrialCancelTiming {
-  const buckets = TRIAL_CANCEL_BUCKETS.map((bucket) => ({
-    key: bucket.key,
-    label: bucket.label,
-    cancels: 0,
-    highlight: bucket.highlight,
-  }));
-  const byTxn = new Map<string, { trialStart: number; trialCancel: number }>();
-  for (const event of facts.events) {
-    if (event.periodType !== "trial") continue;
-    const current = byTxn.get(event.originalTransactionId) ?? {
-      trialStart: Number.POSITIVE_INFINITY,
-      trialCancel: Number.NaN,
-    };
-    if (event.name === "initial_purchase") current.trialStart = Math.min(current.trialStart, event.eventTs);
-    if (event.name === "cancellation") {
-      current.trialCancel = Number.isFinite(current.trialCancel)
-        ? Math.min(current.trialCancel, event.eventTs)
-        : event.eventTs;
-    }
-    byTxn.set(event.originalTransactionId, current);
-  }
-
-  let trials = 0;
-  let cancelled = 0;
-  let cancelledBeforeQualified = 0;
-  for (const row of byTxn.values()) {
-    if (row.trialStart < facts.startMs || row.trialStart >= facts.endMs) continue;
-    trials += 1;
-    if (!Number.isFinite(row.trialCancel) || row.trialCancel <= row.trialStart) continue;
-    const minutes = (row.trialCancel - row.trialStart) / 60_000;
-    if (minutes >= 72 * 60) continue;
-    cancelled += 1;
-    if (minutes <= 15) cancelledBeforeQualified += 1;
-    const index = TRIAL_CANCEL_BUCKETS.findIndex((bucket) => minutes < bucket.maxMinutes);
-    if (index >= 0) buckets[index].cancels += 1;
-  }
-  return { trials, cancelled, cancelledBeforeQualified, buckets };
+  const asOf = Date.now();
+  return {
+    ...sevenDayTrialSurvival(facts.events, facts.startMs, facts.endMs, asOf),
+    activeTrials: activeTrialsByAge(facts.events, facts.startMs, facts.endMs, asOf),
+  };
 }
-
-const TRIAL_CANCEL_BUCKETS: { key: string; label: string; maxMinutes: number; highlight?: boolean }[] = [
-  { key: "0-5m", label: "0–5m", maxMinutes: 5 },
-  { key: "5-10m", label: "5–10m", maxMinutes: 10 },
-  { key: "10-15m", label: "10–15m", maxMinutes: 15, highlight: true },
-  { key: "15-30m", label: "15–30m", maxMinutes: 30 },
-  { key: "30-60m", label: "30–60m", maxMinutes: 60 },
-  { key: "60-120m", label: "60–120m", maxMinutes: 120 },
-  { key: "2-6h", label: "2–6h", maxMinutes: 6 * 60 },
-  { key: "6-12h", label: "6–12h", maxMinutes: 12 * 60 },
-  { key: "12-24h", label: "12–24h", maxMinutes: 24 * 60 },
-  { key: "1-2d", label: "1–2d", maxMinutes: 48 * 60 },
-  { key: "2-3d", label: "2–3d", maxMinutes: 72 * 60 },
-];
 
 function eventRepWindows(fromMs: number, toMs: number) {
   const windows: [string, string][] = [];

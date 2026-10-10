@@ -29,11 +29,16 @@ const BUCKET_MINUTES: Record<string, number> = {
   "12-24h": 24 * 60,
   "1-2d": 48 * 60,
   "2-3d": 72 * 60,
+  "3-4d": 4 * 24 * 60,
+  "4-5d": 5 * 24 * 60,
+  "5-6d": 6 * 24 * 60,
+  "6-7d": 7 * 24 * 60,
 };
 
 const QUALIFIED_MINUTES = 15;
 const DETAIL_MINUTES = 30;
-const TIME_TICKS = [0, 5, 10, 15, 30, 60, 6 * 60, 24 * 60, 72 * 60];
+const TRIAL_MINUTES = 7 * 24 * 60;
+const TIME_TICKS = [0, 5, 10, 15, 30, 24 * 60, 3 * 24 * 60, 5 * 24 * 60, TRIAL_MINUTES];
 
 export default function TrialCancelChart({
   timing,
@@ -49,13 +54,13 @@ export default function TrialCancelChart({
 
   return (
     <DashboardCard
-      title="Trial survival"
+      title="Trial survival · 7-day trials"
       action={<span className="text-xs text-muted-foreground">{windowLabel}</span>}
       contentClassName="min-w-0"
     >
       <div className="mb-4 grid grid-cols-3 gap-3 text-xs">
         <Stat
-          label="Still in trial at 15m"
+          label="Not cancelled by 15m"
           value={formatPercent(stillAtQualifiedRate)}
           detail={`${formatInt(stillAtQualified)} of ${formatInt(timing.trials)} would qualify`}
           accent
@@ -66,7 +71,7 @@ export default function TrialCancelChart({
           detail="Never reach Trial Qualified"
         />
         <Stat
-          label="Cancelled 15m–3d"
+          label="Cancelled 15m–7d"
           value={formatInt(laterCancels)}
           detail="After Trial Qualified"
         />
@@ -137,9 +142,10 @@ export default function TrialCancelChart({
         </div>
       ) : (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          Trial survival appears after Superwall trial events are tracked.
+          No confirmed 7-day trials started in the selected period.
         </p>
       )}
+      <p className="mt-3 text-xs text-muted-foreground">Only trials with a recorded 7-day duration. Three-day trials and unknown durations are excluded. Shows cancellations observed through now; recent trials have not yet completed all seven days.</p>
     </DashboardCard>
   );
 }
@@ -175,12 +181,12 @@ function survivalPoints(timing: TrialCancelTiming) {
 
 function warpTime(minutes: number) {
   if (minutes <= DETAIL_MINUTES) return (minutes / DETAIL_MINUTES) * 50;
-  return 50 + ((minutes - DETAIL_MINUTES) / (72 * 60 - DETAIL_MINUTES)) * 50;
+  return 50 + ((minutes - DETAIL_MINUTES) / (TRIAL_MINUTES - DETAIL_MINUTES)) * 50;
 }
 
 function formatWarpedTick(t: number) {
   const minutes =
-    t <= 50 ? (t / 50) * DETAIL_MINUTES : DETAIL_MINUTES + ((t - 50) / 50) * (72 * 60 - DETAIL_MINUTES);
+    t <= 50 ? (t / 50) * DETAIL_MINUTES : DETAIL_MINUTES + ((t - 50) / 50) * (TRIAL_MINUTES - DETAIL_MINUTES);
   if (minutes <= 0) return "0";
   if (minutes < 60) return `${Math.round(minutes)}m`;
   if (minutes < 24 * 60) return `${Math.round(minutes / 60)}h`;
@@ -214,7 +220,7 @@ function SurvivalTooltip({
           {point.qualified ? " · Trial Qualified" : ""}
         </div>
         <div className="grid gap-1.5 text-muted-foreground">
-          <TooltipRow label="Still in trial" value={`${formatInt(point.remaining)} · ${point.remainingPct.toFixed(0)}%`} />
+          <TooltipRow label="Not cancelled" value={`${formatInt(point.remaining)} · ${point.remainingPct.toFixed(0)}%`} />
           <TooltipRow label="Cancelled in this window" value={formatInt(point.cancels)} />
           <TooltipRow
             label="Cancelled so far"

@@ -15,6 +15,7 @@ import type {
 import AppExperimentCard from "@/components/analytics/AppExperimentCard";
 import AppExperimentMap from "@/components/analytics/AppExperimentMap";
 import TrialCancelChart from "@/components/analytics/TrialCancelChart";
+import ActiveTrialsChart from "@/components/analytics/ActiveTrialsChart";
 import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
 import AppNotesChart from "@/components/analytics/AppNotesChart";
@@ -210,6 +211,7 @@ export default function AppOverviewPanel({
             </button>
           ) : null}
           <UserJourneyFunnel report={userJourney} windowLabel={windowLabel} />
+          {trialCancelTiming ? <ActiveTrialsChart report={trialCancelTiming.activeTrials} windowLabel={windowLabel} /> : null}
           {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
           {productSlot}
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">
