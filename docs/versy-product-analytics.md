@@ -79,3 +79,7 @@ Bible Scroll's onboarding paywall is `onboarding_scroll_bible`; the premium stud
 New assignments now use 15/15/70; existing saved assignments are not redrawn and Mexico remains forced to Bible Scroll. The map shows configured allocation, not the observed mix. The experiment ID remains unchanged because the variants themselves have not changed.
 
 Onboarding cards also show **Avg sessions / day**: unique production Superwall `session_start` events divided by observed user-days since install, capped to the reporting window and current time. This includes free and zero-session users, excludes pre-install events, and uses the same country/variant cohorts as the rest of each card. It is an all-user engagement metric, not sessions per paid subscription day. Failed or truncated session queries and cohorts with no observed time display a dash.
+
+## Daily gift paywall
+
+See [the daily gift contract](versy-daily-gift.md) for its separate `versy_daily_gift_v1` cohort and `daily_gift_app_open` placement, sealed-to-revealed funnel, and Apple purchase attribution. It is a nonrandomized rollout, not another onboarding A/B test.

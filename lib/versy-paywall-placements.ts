@@ -4,7 +4,8 @@ export const VERSY_PAYWALL_PLACEMENTS = [
   "onboarding_bible_widget",
   "onboarding_bible_widget_shorter",
   "home_crown",
-  "app_open",
+  "app_open", // Historical two-hour app-open paywall.
+  "daily_gift_app_open",
   "settings_upgrade",
   "categories_upgrade",
   "categories_upgrade_top_card",

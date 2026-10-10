@@ -21,6 +21,7 @@ export function formatPaywallAllocation(percent: number): string {
 }
 
 const allocations = [
+  { experiment: "versy_daily_gift_v1", variant: "daily_gift", paywall: "daily_gift", percent: 100 },
   ...["en", "es", "de", "fr"].map((language) => ({
     experiment: `poky_native_recovery_v3_${language}`, variant: "recovery", paywall: "recovery", percent: 100,
   })),

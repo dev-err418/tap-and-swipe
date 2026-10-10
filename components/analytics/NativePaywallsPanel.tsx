@@ -50,6 +50,14 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
   const groups = report?.groups.filter((g) => g.language === selectedLanguage).sort((a, b) => a.name.localeCompare(b.name)) ?? [];
 
   return <div className="space-y-4">
+    {appId === "versy" && <section aria-label="Configured daily gift paywall" className="space-y-2 pt-2">
+      <h2 className="px-1 text-sm font-semibold">Daily gift</h2>
+      <div className={cn(DASHBOARD_SURFACE_CLASS, "space-y-2 p-5")}>
+        <p className="text-sm font-medium">Sealed envelope → Offer reveal → Purchase</p>
+        <p className="text-xs text-muted-foreground">Configured for all eligible non-premium users after their first 24 hours, once per local day on app open. The discounted yearly offer is separate from onboarding and the historical app-open paywall.</p>
+        <p className="text-xs text-muted-foreground">English, Spanish, Brazilian Portuguese and German. Production results appear after the updated iOS app is released; this configuration is not evidence of live traffic.</p>
+      </div>
+    </section>}
     {appId === "glow" && <section aria-label="Configured paywall allocation" className="space-y-2 pt-2">
       <h2 className="px-1 text-sm font-semibold">Glow paywall allocation</h2>
       <div className={cn(DASHBOARD_SURFACE_CLASS, "space-y-3 p-5")}>
@@ -76,8 +84,10 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
       : !groups.length ? <Empty>{appId === "versy" ? "No verified attribution records yet. New records require the updated iOS app; earlier purchases are not assigned to a placement retroactively. Existing onboarding A/B revenue remains available in A/B tests." : "No production paywall records for this audience and date range yet."}</Empty>
       : groups.map((group) => <div key={group.experiment} className="space-y-4">
         {groups.length > 1 || appId === "versy" ? <h2 className="px-1 pt-2 text-sm font-semibold">{group.name}</h2> : null}
-        {appId === "versy" && <p className="px-1 text-xs text-muted-foreground">USD net proceeds include linked renewals and refunds through today. New onboarding includes everyone enrolled at Welcome, including non-payers; returning users are separate. These all-country outcomes include forced Mexico assignments, so they do not declare a randomized winner. Trials count as conversions; paid users require a paid charge.</p>}
-        <NativePaywallResultsTable title={appId === "versy" ? "Onboarding variants" : group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} showPaidUsers={appId === "versy"} />
+        {appId === "versy" && <p className="px-1 text-xs text-muted-foreground">{group.experiment === "versy_daily_gift_v1"
+          ? "Daily gift reaches count people shown the sealed envelope; views count people who revealed the offer. Repeat daily openings count once. This is a 100% rollout for eligible non-premium users, not an A/B test. Purchases, renewals and refunds stay attributed to the gift; USD proceeds come from Apple."
+          : "USD net proceeds include linked renewals and refunds through today. New onboarding includes everyone enrolled at Welcome, including non-payers; returning users are separate. These all-country outcomes include forced Mexico assignments, so they do not declare a randomized winner. Trials count as conversions; paid users require a paid charge."}</p>}
+        <NativePaywallResultsTable title={appId === "versy" && group.experiment !== "versy_daily_gift_v1" ? "Onboarding variants" : group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} showPaidUsers={appId === "versy"} />
         <NativePaywallResultsTable title="Placements" rows={group.placements} placement showPaidUsers={appId === "versy"} />
       </div>)}
   </div>;

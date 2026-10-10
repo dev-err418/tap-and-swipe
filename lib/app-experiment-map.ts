@@ -155,7 +155,8 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       notes: [
         "New assignments use 10% Bible Widget, 10% Shorter and 80% Bible Scroll. Mexico receives Bible Scroll automatically and is excluded from the comparison, along with uncertain countries.",
         "Bible Scroll uses a dismissible trial timeline with yearly and weekly plans, without onboarding recovery. The saved soft/hard assignment does not control this onboarding screen; access comparisons include widget variants only.",
-        "Yearly price remains a saved independent assignment. Bible Scroll also offers the fixed weekly product. Other upgrade placements use the assigned yearly product and access mode.",
+        "Yearly price remains a saved independent assignment. Bible Scroll also offers the fixed weekly product. Other upgrade placements use the assigned yearly product and access mode, except the daily gift.",
+        "Daily gift: after 24 hours, eligible non-premium users see a sealed envelope then a discounted yearly offer on their first app open each local day. This 100% rollout uses YearlyDiscount, independently of yearly price assignment, and is reported in Paywalls as versy_daily_gift_v1 / daily_gift_app_open; historical app_open remains separate.",
         "Existing widget assignments remain in bible_widget_shorter_v1 and are reported in a separate historical comparison. Current funnels use scroll_the_bible_v1 only. Country grouping uses reported and install geography, not immutable assignment geography.",
       ],
     };
