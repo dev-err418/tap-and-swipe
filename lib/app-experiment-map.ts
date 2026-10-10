@@ -122,8 +122,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
   if (appId === "versy") {
     const yearlyPrices = [
       { id: "com.arthurbuildsstuff.bible.yearly_3999_80", label: "$39.99 Yearly" },
-      { id: "com.arthurbuildsstuff.bible.yearly_2999_80", label: "$29.99 Yearly" },
-      { id: "com.arthurbuildsstuff.bible.yearly_4999_80", label: "$49.99 Yearly" },
+      { id: "com.arthurbuildsstuff.bible.yearly_4999_80", label: "$29.99 Yearly" },
     ];
     return {
       tests: [
@@ -143,19 +142,19 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
         {
-          id: "versy-yearly-price-v1", label: "Yearly price", scope: "One saved yearly price per user", tone: "orange",
-          branches: yearlyPrices.map(({ id, label }) => ({ id, label, percent: 100 / 3 })),
+          id: "versy-yearly-price-v2", label: "Yearly price", scope: "Fresh assignments · $29.99 / $39.99 · 50/50", tone: "orange",
+          branches: yearlyPrices.map(({ id, label }) => ({ id, label, percent: 50 })),
         },
       ],
       combinations: ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ id, label }) => ({
         id: `yearly_only|${access}|${id}`,
         label: `Yearly only · ${access === "hard" ? "Hard" : "Soft"} · ${label}`,
-        percent: 100 / 6,
+        percent: 25,
       }))),
       notes: [
         "New assignments use 10% Bible Widget, 10% Shorter and 80% Bible Scroll. Mexico receives Bible Scroll automatically and is excluded from the comparison, along with uncertain countries.",
         "Bible Scroll uses a dismissible trial timeline with yearly and weekly plans, without onboarding recovery. The saved soft/hard assignment does not control this onboarding screen; access comparisons include widget variants only.",
-        "Yearly price remains a saved independent assignment. Bible Scroll also offers the fixed weekly product. Other upgrade placements use the assigned yearly product and access mode, except the daily gift.",
+        "Yearly price v2 assigns new users equally to actual US $29.99 or $39.99 yearly offers. The former $17.99 SKU is retired from presentation. Migrated users are excluded from the fresh price comparison. Yearly price remains a saved independent assignment. Bible Scroll also offers the fixed weekly product. Other upgrade placements use the assigned yearly product and access mode, except the daily gift.",
         "Daily gift: after 24 hours, eligible non-premium users see a sealed envelope then a discounted yearly offer on their first app open each local day. This 100% rollout uses YearlyDiscount, independently of yearly price assignment, and is reported in Paywalls as versy_daily_gift_v1 / daily_gift_app_open; historical app_open remains separate.",
         "Existing widget assignments remain in bible_widget_shorter_v1 and are reported in a separate historical comparison. Current funnels use scroll_the_bible_v1 only. Country grouping uses reported and install geography, not immutable assignment geography.",
       ],

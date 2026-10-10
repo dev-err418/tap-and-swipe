@@ -83,3 +83,14 @@ Onboarding cards also show **Avg sessions / day**: unique production Superwall `
 ## Daily gift paywall
 
 See [the daily gift contract](versy-daily-gift.md) for its separate `versy_daily_gift_v1` cohort and `daily_gift_app_open` placement, sealed-to-revealed funnel, and Apple purchase attribution. It is a nonrandomized rollout, not another onboarding A/B test.
+
+## Yearly price v2 (October 10, 2026)
+
+The active main-paywall prices are US $29.99 (`yearly_4999_80`) and $39.99
+(`yearly_3999_80`), with 50/50 fresh assignments. `yearly_2999_80` was actually
+$17.99 and is retired from presentation. Product suffixes are not display prices.
+Price and widget configuration cards now use v2 IDs and require
+`yearly_price_allocation=50_50`; migrated users are excluded. Existing $29.99/$39.99
+assignments keep their product, and old $17.99 assignments move to an active price.
+Historical app ledgers remain untouched. Four widget access × price combinations
+replace the previous six. The $16.99 daily gift remains independent.

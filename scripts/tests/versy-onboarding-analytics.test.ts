@@ -39,8 +39,8 @@ test("current funnel uses the 15 current screens and explicit production enrollm
 test("Bible Scroll bypasses the widget soft/hard paywall nodes", () => {
   const flow = appExperimentFlow("versy")!;
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "scroll_the_bible").map((edge) => edge.to), ["scroll-trial"]);
-  assert.equal(flow.edges.filter((edge) => edge.from === "scroll-trial").length, 3);
+  assert.equal(flow.edges.filter((edge) => edge.from === "scroll-trial").length, 2);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["10%", "10%", "80%"]);
-  assert.deepEqual(flow.nodes.filter((node) => node.experimentId === "versy-yearly-price-v1").map((node) => node.variantId), ["yearly_3999_80", "yearly_2999_80", "yearly_4999_80"]);
+  assert.deepEqual(flow.nodes.filter((node) => node.experimentId === "versy-yearly-price-v2").map((node) => node.variantId), ["yearly_3999_80", "yearly_4999_80"]);
   assert.ok(flow.nodes.every((node) => node.y < flow.height));
 });
