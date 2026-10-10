@@ -3,6 +3,7 @@
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ActiveTrials } from "@/lib/active-trials";
 import { DashboardCard } from "./DashboardCard";
+import { TooltipMetric } from "./AppSprintFunnelCharts";
 
 export default function ActiveTrialsChart({ report, windowLabel }: { report: ActiveTrials; windowLabel: string }) {
   return <DashboardCard title="Trials still active" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0">
@@ -16,7 +17,7 @@ export default function ActiveTrialsChart({ report, windowLabel }: { report: Act
           <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/50" />
           <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} interval={0} />
           <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={36} />
-          <Tooltip cursor={{ fill: "var(--muted)", opacity: 0.4 }} formatter={(value) => [Number(value).toLocaleString("en-US"), "Active trials"]} />
+          <Tooltip cursor={{ fill: "var(--muted)", opacity: 0.4 }} content={<ActiveTrialsTooltip />} />
           <Bar dataKey="active" name="Active trials" fill="#1d4ed8" radius={[4, 4, 0, 0]} maxBarSize={52} isAnimationActive={false}>
             <LabelList dataKey="active" position="top" className="fill-foreground" />
           </Bar>
@@ -28,4 +29,20 @@ export default function ActiveTrialsChart({ report, windowLabel }: { report: Act
     {report.unknownExpiry > 0 ? <p className="mt-2 text-xs text-muted-foreground">{report.unknownExpiry.toLocaleString("en-US")} trials excluded because their expiry is unknown.</p> : null}
     {report.older > 0 ? <p className="mt-2 text-xs text-muted-foreground">{report.older.toLocaleString("en-US")} active trials aged 8+ days are included in the total, outside these bars.</p> : null}
   </DashboardCard>;
+}
+
+function ActiveTrialsTooltip({ active, payload }: {
+  active?: boolean;
+  payload?: { payload: ActiveTrials["days"][number] }[];
+}) {
+  if (!active || !payload?.[0]) return null;
+  const point = payload[0].payload;
+  return (
+    <div role="tooltip" className="dashboard-tooltip-shadow w-[16rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-popover text-xs text-popover-foreground ring-1 ring-foreground/5">
+      <div className="grid gap-2 px-2.5 py-2">
+        <div className="font-medium text-foreground">{point.label}</div>
+        <TooltipMetric label="Active trials" value={point.active.toLocaleString("en-US")} color="#1d4ed8" />
+      </div>
+    </div>
+  );
 }
