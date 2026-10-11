@@ -7,7 +7,7 @@ import ExperimentMapDetails from "../../components/analytics/ExperimentMapDetail
 import { appExperimentFlow } from "../../lib/app-experiment-flow";
 import { experimentMapBranchSummary, experimentMapDetailTarget, experimentMapPaywallGroup, experimentMapRecoveryGroup } from "../../lib/experiment-map-details";
 import type { NativePaywallGroup, NativePaywallReport } from "../../lib/native-paywall-analytics";
-import { NATIVE_PAYWALL_DEMO_REPORT } from "../../lib/native-paywall-demo";
+import { NATIVE_PAYWALL_DEMO_REPORT, YEARLY_PRICE_DEMO_REPORT } from "../../lib/native-paywall-demo";
 import type { MobileAppExperiment, MobileAppExperimentVariant } from "../../lib/mobile-app-analytics";
 import { buildGlowOnboardingReport, GLOW_ONBOARDING_ID } from "../../lib/glow-onboarding-experience";
 
@@ -29,14 +29,14 @@ test("test cards open comparisons while the fixed Practice destination is non-in
 
 test("paywall detail lookup keeps the chosen language and experiment version", () => {
   const node = appExperimentFlow("glow")!.nodes.find((node) => node.id === "yr_49")!;
-  const en = experimentMapPaywallGroup(node, NATIVE_PAYWALL_DEMO_REPORT, "en")!;
-  const es = experimentMapPaywallGroup(node, NATIVE_PAYWALL_DEMO_REPORT, "es")!;
+  const en = experimentMapPaywallGroup(node, YEARLY_PRICE_DEMO_REPORT, "en")!;
+  const es = experimentMapPaywallGroup(node, YEARLY_PRICE_DEMO_REPORT, "es")!;
   assert.equal(en.language, "en");
   assert.equal(es.language, "es");
   assert.notEqual(en, es);
   assert.equal(en.experiment, node.paywallMetric!.experiment);
-  assert.equal(experimentMapPaywallGroup(node, { ...NATIVE_PAYWALL_DEMO_REPORT, status: "unavailable" }, "en"), null);
-  assert.equal(experimentMapPaywallGroup(node, { ...NATIVE_PAYWALL_DEMO_REPORT, groups: [es] }, "en"), null);
+  assert.equal(experimentMapPaywallGroup(node, { ...YEARLY_PRICE_DEMO_REPORT, status: "unavailable" }, "en"), null);
+  assert.equal(experimentMapPaywallGroup(node, { ...YEARLY_PRICE_DEMO_REPORT, groups: [es] }, "en"), null);
 });
 
 test("branch summaries agree with weighted map APPU and reject incomplete cohorts", () => {

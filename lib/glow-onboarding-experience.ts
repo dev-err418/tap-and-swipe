@@ -7,22 +7,24 @@ export const GLOW_ONBOARDING_COPY_KEY = "goe1_onboarding_copy_mascot_v2";
 export const GLOW_ONBOARDING_KEY = "goe1_onboarding_manifest_audio_v3";
 export const GLOW_ONBOARDING_LEGACY_ID = "onboarding_mascot_v1";
 export const GLOW_ONBOARDING_LEGACY_KEY = "goe1_onboarding_mascot_v1";
+export const GLOW_PAYWALL_FLOW_ID = "onboarding_paywall_flow_v1";
+export const GLOW_PAYWALL_FLOW_KEY = "gpf1_onboarding_paywall_flow_v1";
 export const DAY_MS = 86_400_000;
-type Variant = "iam" | "manifest-audio" | "current" | "mascot_free";
+type Variant = "standard" | "versy_reminder" | "iam" | "manifest-audio" | "current" | "mascot_free";
 type RecordValue = {
   schema: 1; experiment: string; allocation: "50_50" | "15_85" | "30_70"; environment: string;
   variant: Variant; language: string; randomized: boolean;
-  assignedAt: number; updatedAt: number; completedAt?: number;
+  assignedAt: number; updatedAt: number; completedAt?: number; viewedAt?: number;
   days: Record<string, { sessions: number; active: true }>;
 };
 export type GlowOnboardingRow = {
-  variant: Variant; label: string; users: number; completed: number; paid: number;
+  variant: Variant; label: string; users: number; completed: number; paid: number; viewed: number;
   sessions: number; sessionUserDays: number; sessionsPerUserDay: number | null;
   cancelledUsers: number; avgTimeToCancelMs: number | null;
   proceeds: number | null; arpu: number | null; proceedsVariance: number | null;
 };
 export type GlowOnboardingReport = {
-  experiment?: string; historical?: GlowOnboardingReport;
+  experiment?: string; historical?: GlowOnboardingReport; paywallFlow?: GlowOnboardingReport;
   status: "ready" | "empty" | "unavailable"; asOf: number;
   rows: GlowOnboardingRow[]; warnings: string[];
 };
@@ -34,10 +36,12 @@ function parse(value: string, asOf: number, experiment: string): RecordValue | n
     let r: unknown = JSON.parse(value);
     if (typeof r === "string") r = JSON.parse(r);
     const active = experiment === GLOW_ONBOARDING_ID;
-    if (![GLOW_ONBOARDING_ID, GLOW_ONBOARDING_COPY_ID, GLOW_ONBOARDING_LEGACY_ID].includes(experiment)) return null;
+    const flow = experiment === GLOW_PAYWALL_FLOW_ID;
+    if (flow && object(r)) r = { ...r, days: {} };
+    if (![GLOW_PAYWALL_FLOW_ID, GLOW_ONBOARDING_ID, GLOW_ONBOARDING_COPY_ID, GLOW_ONBOARDING_LEGACY_ID].includes(experiment)) return null;
     if (!object(r) || r.schema !== 1 || r.experiment !== experiment
-      || !(active ? ["50_50"] : ["15_85", "30_70"]).includes(String(r.allocation))
-      || !(active ? ["iam", "manifest-audio"] : ["current", "mascot_free"]).includes(String(r.variant)) || typeof r.environment !== "string"
+      || !(active || flow ? ["50_50"] : ["15_85", "30_70"]).includes(String(r.allocation))
+      || !(flow ? ["standard", "versy_reminder"] : active ? ["iam", "manifest-audio"] : ["current", "mascot_free"]).includes(String(r.variant)) || typeof r.environment !== "string"
       || typeof r.language !== "string" || typeof r.randomized !== "boolean"
       || !timestamp(r.assignedAt) || !timestamp(r.updatedAt) || r.assignedAt > asOf
       || r.updatedAt < r.assignedAt || r.updatedAt > asOf || !object(r.days)
@@ -47,7 +51,8 @@ function parse(value: string, asOf: number, experiment: string): RecordValue | n
         || !object(activity) || activity.active !== true || typeof activity.sessions !== "number"
         || !Number.isSafeInteger(activity.sessions) || activity.sessions < 0 || activity.sessions > 10000) return null;
     }
-    if (!object(r.days["0"]) || Number(r.days["0"].sessions) < 1) return null;
+    if (!flow && (!object(r.days["0"]) || Number(r.days["0"].sessions) < 1)) return null;
+    if (flow && r.viewedAt !== undefined && (!timestamp(r.viewedAt) || r.viewedAt < r.assignedAt || r.viewedAt > r.updatedAt)) return null;
     return r as RecordValue;
   } catch { return null; }
 }
@@ -57,7 +62,7 @@ export function onboardingCohort(attributes: PaywallAttribute[], start: number, 
   const records = new Map<string, RecordValue>();
   const rejected = new Set<string>();
   for (const a of attributes) {
-    if (a.key !== `goe1_${experiment}`) continue;
+    if (a.key !== (experiment === GLOW_PAYWALL_FLOW_ID ? GLOW_PAYWALL_FLOW_KEY : `goe1_${experiment}`)) continue;
     const r = parse(a.value, asOf, experiment);
     if (!r || !a.appUserId) { rejected.add(a.appUserId); continue; }
     const previous = records.get(a.appUserId);
@@ -156,7 +161,7 @@ export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events
     if (!charge || charge.appUserId !== owner) incompleteMoney = true;
   }
   if (incompleteMoney) warnings.push("Some transaction amounts or identities are unavailable. ARPU is withheld until the revenue data is complete.");
-  const variants: Variant[] = experiment === GLOW_ONBOARDING_ID ? ["iam", "manifest-audio"] : ["current", "mascot_free"];
+  const variants: Variant[] = experiment === GLOW_PAYWALL_FLOW_ID ? ["standard", "versy_reminder"] : experiment === GLOW_ONBOARDING_ID ? ["iam", "manifest-audio"] : ["current", "mascot_free"];
   const rows = variants.map((variant): GlowOnboardingRow => {
     const users = [...records].filter(([, r]) => r.variant === variant);
     const sessions = users.reduce((sum, [, r]) => sum + Object.values(r.days).reduce((total, day) => total + day.sessions, 0), 0);
@@ -169,11 +174,14 @@ export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events
       const duration = cancellation.durations.get(id);
       return duration === undefined ? [] : [duration];
     });
-    return { variant, label: experiment === GLOW_ONBOARDING_ID
+    return { variant, label: experiment === GLOW_PAYWALL_FLOW_ID
+      ? (variant === "standard" ? "Current flow · 50%" : "Versy reminder flow · 50%")
+      : experiment === GLOW_ONBOARDING_ID
       ? (variant === "iam" ? "IAM · 50%" : "manifest-audio · 50%")
       : experiment === GLOW_ONBOARDING_LEGACY_ID
       ? (variant === "current" ? "IAM · historical" : "No mascot · IAM wording · historical")
       : (variant === "current" ? "Copy with mascot · historical" : "Copy without mascot · historical"), users: users.length,
+      viewed: users.filter(([, r]) => r.viewedAt !== undefined).length,
       completed: users.filter(([, r]) => r.completedAt !== undefined).length,
       paid: users.filter(([id]) => paid.has(id)).length, sessions, sessionUserDays,
       cancelledUsers: cancelTimes.length,

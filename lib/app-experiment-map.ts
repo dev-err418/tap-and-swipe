@@ -1,4 +1,4 @@
-import { GLOW_ONBOARDING_ID } from "./glow-onboarding-experience";
+import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID } from "./glow-onboarding-experience";
 import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
 
 export type ExperimentMapBranch = { id: string; label: string; percent: number };
@@ -32,6 +32,13 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           branches: [
             { id: "iam", label: "IAM", percent: 50 },
             { id: "manifest-audio", label: "manifest-audio", percent: 50 },
+          ],
+        },
+        {
+          id: GLOW_PAYWALL_FLOW_ID, label: "Paywall flow", scope: "Next app build · both onboarding journeys", tone: "orange", planned: true,
+          branches: [
+            { id: "standard", label: "Current flow", percent: 50 },
+            { id: "versy_reminder", label: "Versy reminder flow", percent: 50 },
           ],
         },
         {

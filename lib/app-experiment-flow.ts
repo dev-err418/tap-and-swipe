@@ -67,35 +67,31 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
 }
 
 function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
-  const [onboarding, paywalls] = map.tests;
-  const centerY = 64 + (paywalls.branches.length - 1) * 52;
+  const [onboarding, paywallFlow, prices] = map.tests;
   const nodes: ExperimentFlowNode[] = [
-    { id: "start", x: 36, y: centerY, width: 0, label: "Prepared", kind: "start", tone: "blue" },
-    { id: "placements", x: 390, y: centerY, width: 162, label: "Paywall entry", detail: "Same variant everywhere", tone: "neutral",
-      statsTarget: { paywallExperiment: paywalls.id, language: "all" } },
+    { id: "start", x: 36, y: 168, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
+    { id: "home", x: 1010, y: 168, width: 140, label: "Practice", detail: "Everyone", tone: "neutral" },
   ];
   const edges: ExperimentFlowEdge[] = [];
   onboarding.branches.forEach((branch, index) => {
-    nodes.push({
-      id: branch.id, x: 164, y: centerY - 56 + index * 112, width: 160, label: branch.label, detail: "Next app build", tone: "blue",
-      experimentId: onboarding.id, variantId: branch.id,
-    });
-    edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` }, { from: branch.id, to: "placements" });
+    nodes.push({ id: branch.id, x: 140, y: 112 + index * 112, width: 160,
+      label: branch.label, detail: "Next app build", tone: "blue", experimentId: onboarding.id, variantId: branch.id });
+    edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` });
   });
-  paywalls.branches.forEach((branch, index) => {
-    nodes.push({
-      id: branch.id, x: 684, y: 64 + index * 104, width: 180, label: branch.label, tone: "orange",
-      paywallMetric: { experiment: paywalls.id, variant: branch.id, language: "all" },
-    });
-    edges.push({ from: "placements", to: branch.id, label: formatPaywallAllocation(branch.percent) });
+  paywallFlow.branches.forEach((branch, index) => {
+    nodes.push({ id: branch.id, x: 414, y: 112 + index * 112, width: 188,
+      label: branch.label, detail: "Paywall introduction", tone: "orange", experimentId: paywallFlow.id, variantId: branch.id });
+    onboarding.branches.forEach((parent) => edges.push({ from: parent.id, to: branch.id, label: "50%" }));
   });
-  nodes.push({ id: "home", x: 960, y: centerY, width: 140, label: "Practice", detail: "Everyone", tone: "neutral" });
-  paywalls.branches.forEach((branch) => edges.push({ from: branch.id, to: "home" }));
-  return {
-    width: 1136, height: 112 + (paywalls.branches.length - 1) * 104, nodes, edges,
-    stages: [{ x: 164, label: "Onboarding flow" }, { x: 390, label: "Placements" }, { x: 684, label: "Native paywalls" }, { x: 960, label: "Practice" }],
-    notes: ["The next app build assigns eligible new users 50% IAM / 50% manifest-audio. Both flows use the cream/orange, mascot-free appearance. Earlier wording and mascot results remain separate.", "The separate yearly-price test assigns $34.99, $49.99 and $59.99 annual offers equally. All three use the same timeline layout. Displayed percentages are rounded; the actual allocation totals 100% within each language.", ...map.notes],
-  };
+  prices.branches.forEach((branch, index) => {
+    nodes.push({ id: branch.id, x: 730, y: 64 + index * 104, width: 180, label: branch.label, tone: "orange",
+      paywallMetric: { experiment: prices.id, variant: branch.id, language: "all" } });
+    paywallFlow.branches.forEach((parent) => edges.push({ from: parent.id, to: branch.id, label: formatPaywallAllocation(branch.percent) }));
+    edges.push({ from: branch.id, to: "home" });
+  });
+  return { width: 1186, height: 320, nodes, edges,
+    stages: [{ x: 140, label: "Onboarding" }, { x: 414, label: "Paywall flow" }, { x: 730, label: "Yearly price" }, { x: 1010, label: "Practice" }],
+    notes: ["The onboarding journey, paywall flow and yearly price are independent saved assignments. The reminder flow is tested in both IAM and manifest-audio.", "The paywall flow comparison enrolls everyone reaching the introduction; the price test also covers other app placements. Their user counts and APPU denominators differ.", ...map.notes] };
 }
 
 function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): ExperimentFlow {

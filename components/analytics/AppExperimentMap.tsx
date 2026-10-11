@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import ExperimentMapDetails from "./ExperimentMapDetails";
 import { experimentMapDetailTarget, experimentMapPaywallGroup } from "@/lib/experiment-map-details";
-import { GLOW_ONBOARDING_ID, type GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
+import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID, type GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import { appExperimentFlow, type ExperimentFlowEdge, type ExperimentFlowNode } from "@/lib/app-experiment-flow";
 import type {
@@ -80,7 +80,11 @@ export default function AppExperimentMap({
     const isPaywallBest = paywallMetrics.get(node.id)?.isBest === true;
     return isExperimentBest || isPaywallBest || cohortMetrics.get(node.id)?.isBest ? [node.id] : [];
   }));
-  const bestPathNodeIds = currentBestPathNodeIds(flow.nodes, flow.edges, candidateBestNodeIds);
+  // Glow's successive stages are independent experiments, not conditional arms.
+  // A price leader remains visible even before either flow test has enough data.
+  const bestPathNodeIds = appId === "glow"
+    ? new Set([...candidateBestNodeIds, "start", "home"])
+    : currentBestPathNodeIds(flow.nodes, flow.edges, candidateBestNodeIds);
 
   return (<>
     <DashboardCard
@@ -155,9 +159,10 @@ export default function AppExperimentMap({
             );
           })}
           {flow.nodes.map((node) => {
-            const isOnboardingExperience = node.experimentId === GLOW_ONBOARDING_ID;
-            const onboardingMetric = isOnboardingExperience && onboardingExperience?.status === "ready"
-              ? onboardingExperience.rows.find((row) => row.variant === node.variantId) : undefined;
+            const isOnboardingExperience = node.experimentId === GLOW_ONBOARDING_ID || node.experimentId === GLOW_PAYWALL_FLOW_ID;
+            const flowReport = node.experimentId === GLOW_PAYWALL_FLOW_ID ? onboardingExperience?.paywallFlow : onboardingExperience;
+            const onboardingMetric = isOnboardingExperience && flowReport?.status === "ready"
+              ? flowReport.rows.find((row) => row.variant === node.variantId) : undefined;
             const tone = TONES[node.tone];
             const bestTone = BEST_TONES[node.tone];
             const bestResult = node.experimentId ? bestVariants.get(node.experimentId) : null;
@@ -185,8 +190,8 @@ export default function AppExperimentMap({
             const label = users == null ? node.label : `${node.label} (${users.toLocaleString("en-US")})`;
             const isBest = isExperimentBest || (bestPathNodeIds.has(node.id) && (paywallMetric?.isBest === true || cohortMetric?.isBest === true));
             const cardDetail = isOnboardingExperience
-                ? onboardingExperience?.status === "ready" ? `ARPU ${formatAppu(onboardingMetric?.arpu)}`
-                  : onboardingExperience?.status === "unavailable" ? "Stats unavailable" : node.detail
+                ? flowReport?.status === "ready" ? `ARPU ${formatAppu(onboardingMetric?.arpu)}`
+                  : flowReport?.status === "unavailable" ? "Stats unavailable" : node.detail
                 : node.cohortMetric
                 ? `APPU ${formatAppu(cohortMetric?.appu)}`
                 : showsPaywallMetrics

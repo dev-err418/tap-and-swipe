@@ -1,7 +1,7 @@
 import type { ExperimentFlowNode } from "./app-experiment-flow";
 import type { MobileAppExperiment } from "./mobile-app-analytics";
 import type { NativePaywallReport } from "./native-paywall-analytics";
-import { GLOW_ONBOARDING_ID } from "./glow-onboarding-experience";
+import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID } from "./glow-onboarding-experience";
 
 const RECOVERY_ROLLOUT_ID = "poky-native-recovery";
 
@@ -27,7 +27,7 @@ export function experimentMapDetailTarget(node: ExperimentFlowNode, language?: s
   const experimentId = node.cohortMetric?.experiment ?? node.experimentId ?? node.statsTarget?.experimentId;
   if (!experimentId) return null;
   return { kind: "experiment" as const,
-    experimentId, language: experimentId === GLOW_ONBOARDING_ID ? "all" : language ?? "all" };
+    experimentId, language: [GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID].includes(experimentId) ? "all" : language ?? "all" };
 }
 
 export function experimentMapPaywallGroup(node: ExperimentFlowNode, report: NativePaywallReport | null, language?: string) {

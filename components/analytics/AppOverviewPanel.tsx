@@ -25,6 +25,7 @@ import AppNotesChart from "@/components/analytics/AppNotesChart";
 import NativePaywallsPanel from "@/components/analytics/NativePaywallsPanel";
 import WinbackPaywallPanel from "@/components/analytics/WinbackPaywallPanel";
 import VersyPaywallPlacementsPanel from "@/components/analytics/VersyPaywallPlacementsPanel";
+import GlowPaywallFlowPanel from "./GlowPaywallFlowPanel";
 import GlowOnboardingExperiencePanel from "./GlowOnboardingExperiencePanel";
 import type { GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
 import UserJourneyFunnel, { JourneyVersionComparison } from "@/components/analytics/UserJourneyFunnel";
@@ -228,7 +229,7 @@ export default function AppOverviewPanel({
           <AnalyticsFreshness updatedAt={loadedBundle?.snapshotUpdatedAt} label="A/B tests" />
           {experimentsLoading ? <TabEmptyState>Loading the last 30 days of A/B tests…</TabEmptyState> : monthFailed ? <TabEmptyState>A/B tests could not be loaded.</TabEmptyState> : <>
             <AppExperimentMap appId={appId} experiments={resolvedExperiments} nativePaywalls={resolvedPaywalls ?? null} onboardingExperience={resolvedOnboarding ?? null} />
-            {appId === "glow" && <GlowOnboardingExperiencePanel report={resolvedOnboarding ?? null} />}
+            {appId === "glow" && <><GlowOnboardingExperiencePanel report={resolvedOnboarding ?? null} /><GlowPaywallFlowPanel report={resolvedOnboarding?.paywallFlow ?? null} /></>}
             {resolvedExperiments.length > 0 ? resolvedExperiments.map((experiment) => (
               <AppExperimentCard
                 key={experiment.id}

@@ -44,11 +44,12 @@ test("Glow keeps onboarding and paywall assignments after retiring the Journal c
   const map = appExperimentMap("glow")!;
   assert.equal(map.tests[0].planned, true);
   assert.deepEqual(map.tests[0].branches.map((b) => b.percent), [50, 50]);
-  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "native_yearly_prices_v4"]);
+  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "onboarding_paywall_flow_v1", "native_yearly_prices_v4"]);
   assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.label, "Practice");
   assert.ok(map.notes.some((note) => note.includes("Earlier five-variant v3")));
-  assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [100 / 3, 100 / 3, 100 / 3]);
-  for (const branch of map.tests[1].branches) {
+  assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [50, 50]);
+  assert.deepEqual(map.tests[2].branches.map((branch) => branch.percent), [100 / 3, 100 / 3, 100 / 3]);
+  for (const branch of map.tests[2].branches) {
     assert.equal(branch.percent, nativePaywallAllocation("native_yearly_prices_v4", branch.id, branch.id));
   }
 });
@@ -415,8 +416,10 @@ test("Poky branches through intro, plan, offer and paywalls before conditional r
 test("Glow shares all three yearly prices after either onboarding flow without clipping nodes", () => {
   const flow = appExperimentFlow("glow")!;
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["50%", "50%"]);
-  assert.equal(flow.edges.filter((edge) => edge.to === "placements").length, 2);
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "placements").map((edge) => edge.label), ["33.33%", "33.33%", "33.33%"]);
+  for (const variant of ["standard", "versy_reminder"]) {
+    assert.deepEqual(flow.edges.filter((edge) => edge.to === variant).map((edge) => edge.label), ["50%", "50%"]);
+    assert.deepEqual(flow.edges.filter((edge) => edge.from === variant).map((edge) => edge.label), ["33.33%", "33.33%", "33.33%"]);
+  }
   assert.ok(flow.nodes.every((node) => node.y + 40 < flow.height));
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "home"), []);
   assert.equal(flow.edges.filter((edge) => edge.to === "home").length, 3);

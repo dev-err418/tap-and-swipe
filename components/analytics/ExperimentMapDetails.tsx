@@ -1,4 +1,5 @@
-import { GLOW_ONBOARDING_ID, type GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
+import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID, type GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
+import GlowPaywallFlowPanel from "./GlowPaywallFlowPanel";
 import GlowOnboardingExperiencePanel from "./GlowOnboardingExperiencePanel";
 import type { ExperimentFlowNode } from "@/lib/app-experiment-flow";
 import type { MobileAppExperiment } from "@/lib/mobile-app-analytics";
@@ -12,6 +13,7 @@ export default function ExperimentMapDetails({ node, language, experiments, nati
   nativePaywalls: NativePaywallReport | null; onboardingExperience?: GlowOnboardingReport | null;
 }) {
   const target = experimentMapDetailTarget(node, language, nativePaywalls);
+  if (target?.experimentId === GLOW_PAYWALL_FLOW_ID) return <GlowPaywallFlowPanel report={onboardingExperience?.paywallFlow ?? null} />;
   if (target?.experimentId === GLOW_ONBOARDING_ID) return <GlowOnboardingExperiencePanel report={onboardingExperience} />;
   if (target?.kind === "paywalls") {
     const group = experimentMapPaywallGroup(node, nativePaywalls, language);

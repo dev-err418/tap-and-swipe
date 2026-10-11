@@ -4,6 +4,16 @@ Glow's separate [Journal VS Practice](journal-practice-experiment.md) activity e
 
 ## Architecture and constraints
 
+### Pending Glow onboarding paywall-flow test
+
+The next app build independently assigns both IAM and manifest-audio paywall sequences **50% current / 50% Versy reminder flow**. The control keeps its introductions and four-step timeline. Treatment uses a trial introduction, reminder timing cards (2 or 3 days before a seven-day trial ends), and a three-step timeline reflecting that selection. Shorter trials adapt their choices. Every yearly price remains equally likely in both flows. This does not add weekly prices, campaigns, placements, or a new backend.
+
+`GlowPaywallFlowAssignment` persists under `glow.onboarding.paywallFlow.v1.<environment>`. It publishes scalar JSON in `gpf1_onboarding_paywall_flow_v1`: schema `1`, experiment `onboarding_paywall_flow_v1`, allocation `50_50`, variant `standard` or `versy_reminder`, environment, frozen language, randomized, assignedAt, updatedAt, optional viewedAt/completedAt, reminderLeadDays, initial priceVariant and onboardingJourney. Timestamps are Unix milliseconds. Enrollment starts when the first paywall introduction appears; a saved but unexposed assignment has no assignedAt and is not published. Debug previews are excluded. Resuming/relaunching does not rerandomize or reset enrollment.
+
+The A/B tab and clickable map cards show a separate all-language comparison: assigned users, unique final-paywall reach, paid users and paid conversion, net proceeds, and total APPU. The denominator includes intro dropouts and non-payers. Production/randomized records only; trials with zero proceeds do not count as paid conversions. The selected rolling 30-day assignment cohort follows all net proceeds through now, including recovery, renewals, and refunds, with the existing deduplication and verified `gp1_t_` cross-checks. The price report retains its separate denominator across all app placements. A flow-only user does not need a v3 onboarding assignment to enter this report; historical records are not relabeled.
+
+The existing paginated Superwall attribute query reads the new key alongside onboarding and transaction keys. No raw user-level data reaches the browser. Empty results remain empty until an updated App Store build enrolls users. App release is separate from dashboard deployment.
+
 ### Pending Glow IAM / manifest-audio release
 
 The next app build uses `onboarding_manifest_audio_v3` / `goe1_onboarding_manifest_audio_v3`: **50% `iam` / 50% `manifest-audio`**, allocation `50_50`. IAM is the existing regular mascot-free journey with current localized wording; manifest-audio is the conversational journey. Both use the cream/orange look without a mascot. This does not restore historical IAM wording.
@@ -21,7 +31,7 @@ The dashboard's existing server-side Superwall Query API connection reads these 
 Related app files (in the sibling `glow-app/glow-app` repo):
 
 - `native/Glow/NativePaywallAnalytics.swift`: persisted local state, scalar-JSON attributes, transaction observer.
-- `native/Glow/GlowProductID.swift`: `GlowPaywallVariant` and persisted `GlowPaywallAssignment`, active v3 five-variant split; historical v1 helpers are retained but no longer drive presentation.
+- `native/Glow/GlowProductID.swift`: `GlowPaywallVariant` and persisted `GlowPaywallAssignment`, active v4 three-price split; historical assignment helpers are retained but no longer drive presentation.
 - `native/Glow/SuperwallService.swift`: custom entry-point reach/dismiss hooks; no SDK placement registration.
 - `native/Glow/Views/GlowPaywallView.swift`: actual appearance hook.
 - `native/Glow/GlowSubscriptionStore.swift`: capture purchase attempt/result.

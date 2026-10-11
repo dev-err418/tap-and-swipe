@@ -1,0 +1,35 @@
+import type { GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
+import { AppExperimentLayout, ExperimentTable, ExperimentTh, ExperimentTd, ExperimentNumberTd, ExperimentVariantLabel } from "./AppExperimentLayout";
+import ExperimentStats from "./ExperimentStats";
+import { analyzeExperiment } from "@/lib/experiment-stats";
+
+const currency = (value: number | null) => value === null ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+const rate = (count: number, total: number) => total ? `${(100 * count / total).toFixed(1)}%` : "—";
+
+export default function GlowPaywallFlowPanel({ report }: { report: GlowOnboardingReport | null }) {
+  const analysis = report?.status === "ready" && !report.warnings.length
+    ? analyzeExperiment(report.rows.map((r) => ({ key: r.variant, label: r.label, exposures: r.users,
+      conversions: r.paid, revenue: r.proceeds ?? 0, variance: r.proceedsVariance ?? 0 })), "revenue_per_visitor", "APPU") : null;
+  return <AppExperimentLayout title="Current vs Versy reminder flow" label="Paywall flow" subtitle="50% current · 50% reminder choice · independent of yearly price">
+    {!report || report.status === "unavailable" ? <p role="status" className="px-4 py-4 text-sm text-muted-foreground">Paywall flow reporting is unavailable. Refresh to retry.</p> : <>
+      {report.status === "empty" && <p role="status" className="px-4 py-4 text-sm text-muted-foreground">No production assignments yet. Results appear after the updated app is released and users reach the paywall introduction.</p>}
+      {report.warnings.map((warning) => <p role="status" key={warning} className="px-4 py-3 text-sm text-muted-foreground">{warning}</p>)}
+      {analysis && <ExperimentStats title="Total APPU" titleClassName="font-bold" analysis={analysis} />}
+      <ExperimentTable caption="Everyone entering the paywall sequence, including non-payers and users who leave before the final paywall" headings={<>
+        <ExperimentTh>Flow</ExperimentTh>
+        {["Assigned users", "Reached paywall", "Paid users", "Paid conversion", "Net proceeds", "Total APPU"].map((label) => <ExperimentTh key={label} right>{label}</ExperimentTh>)}
+      </>}>
+        {report.rows.map((row, index) => <tr key={row.variant} className="border-b border-black/[0.07]">
+          <ExperimentTd><ExperimentVariantLabel index={index}>{row.label}</ExperimentVariantLabel></ExperimentTd>
+          <ExperimentNumberTd>{row.users.toLocaleString()}</ExperimentNumberTd>
+          <ExperimentNumberTd><span title={`${row.viewed} / ${row.users} assigned users`}>{rate(row.viewed, row.users)}</span></ExperimentNumberTd>
+          <ExperimentNumberTd>{row.paid.toLocaleString()}</ExperimentNumberTd>
+          <ExperimentNumberTd>{rate(row.paid, row.users)}</ExperimentNumberTd>
+          <ExperimentNumberTd>{row.users ? currency(row.proceeds) : "—"}</ExperimentNumberTd>
+          <ExperimentNumberTd>{currency(row.arpu)}</ExperimentNumberTd>
+        </tr>)}
+      </ExperimentTable>
+      <p className="px-4 py-3 text-xs text-muted-foreground">Enrollment starts on the first paywall introduction in either IAM or manifest-audio. The reminder flow offers 2 or 3 days before trial expiry (adjusted for shorter trials). Both flows receive the same independent three-way yearly price test. Total APPU includes all post-assignment net proceeds, renewals and refunds, including recovery purchases. Free trial starts are not paid conversions. All languages; rolling 30-day assignment cohort.</p>
+    </>}
+  </AppExperimentLayout>;
+}
