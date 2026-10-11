@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type PointerEvent } from "react";
+import { Fragment, useState, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import {
@@ -12,6 +12,7 @@ import {
   journeyDrops,
   largestDropAttributes,
   type UserJourneyReport,
+  type JourneyVersionCohort,
   type UserJourneyVariantResult,
 } from "@/lib/user-journey";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,11 @@ export default function UserJourneyFunnel({
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   if (!report) return null;
+  if (report.versions?.length) {
+    return <div className="min-w-0 overflow-hidden rounded-[28px] bg-white p-4">
+      <JourneyVersionComparison cohorts={report.versions.filter((entry) => entry.version !== "unknown").slice(0, 5)} />
+    </div>;
+  }
   if ((report.status !== "ready" && report.status !== "empty") || report.variants.length === 0) {
     return (
       <DashboardCard title={report.title} action={<span className="text-xs text-muted-foreground">{windowLabel}</span>}>
@@ -79,6 +85,62 @@ export default function UserJourneyFunnel({
       {report.note ? <p className="mt-3 text-xs text-muted-foreground">{report.note}</p> : null}
     </DashboardCard>
   );
+}
+
+export function JourneyVersionComparison({ cohorts }: { cohorts: JourneyVersionCohort[] }) {
+  if (!cohorts.length) return <p className="text-sm text-muted-foreground">No known first-seen versions in this install window.</p>;
+  return <div className="space-y-3">
+    <div className="min-w-0 overflow-x-auto rounded-xl border border-black/[0.06] scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" role="region" aria-label="Conversions by first-seen version" tabIndex={0}>
+      <table className="w-full min-w-[1120px] text-left text-xs">
+        <thead className="bg-[#f8f8f8]">
+          <tr className="border-b border-black/[0.06]">
+            <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-32 bg-[#f8f8f8] px-4 py-3 font-medium">First version</th>
+            {(["Global", "Ads", "Non-ads"] as const).map((label) => <th key={label} scope="colgroup" colSpan={3} className="border-l border-black/[0.06] px-3 py-3 font-medium">
+              {label}{label === "Non-ads" ? <span className="ml-2 font-normal text-muted-foreground">No recorded ad attribution</span> : null}
+            </th>)}
+          </tr>
+          <tr className="text-muted-foreground">
+            {(["global", "ads", "nonAds"] as const).map((audience) => <Fragment key={audience}>
+              <th scope="col" className="min-w-24 border-l border-black/[0.06] px-3 py-3 text-right font-medium">Installs</th>
+              <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium">Trial conversion</th>
+              <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Paid users / trials whose recorded end has passed">Trial → paid</th>
+            </Fragment>)}
+          </tr>
+        </thead>
+        <tbody>
+          {cohorts.map((cohort) => <tr key={cohort.version} className="border-t border-black/[0.06]">
+            <th scope="row" className="sticky left-0 z-10 bg-white px-4 py-4 font-medium">{cohort.version === "unknown" ? "Unknown" : `v${cohort.version}`}</th>
+            {(["global", "ads", "nonAds"] as const).map((audience) => {
+              const metric = cohort.conversions?.[audience];
+              return <Fragment key={audience}>
+                <td className="border-l border-black/[0.06] px-3 py-4 text-right tabular-nums">{metric ? metric.installs.toLocaleString("en-US") : "—"}</td>
+                {(["trials", "paid"] as const).map((field) => {
+                  const denominator = metric ? (field === "paid" ? metric.finishedTrials : metric.installs) : 0;
+                  const available = metric && denominator > 0 && !(field === "paid" && metric.missingMoney);
+                  const rate = available ? metric[field] / denominator : 0;
+                  const best = rate > 0 && !cohorts.some((other) => {
+                    const candidate = other.conversions?.[audience];
+                    const candidateDenominator = candidate ? (field === "paid" ? candidate.finishedTrials : candidate.installs) : 0;
+                    return candidate && candidateDenominator > 0 && !(field === "paid" && candidate.missingMoney)
+                      && candidate[field] / candidateDenominator > rate;
+                  });
+                  return <td key={field}
+                    title={field === "paid" ? `${metric?.paid ?? 0} paid / ${denominator} finished trials${best ? " · Highest observed rate" : ""}` : best ? "Highest observed conversion rate among these versions" : undefined}
+                    className={cn("whitespace-nowrap px-3 py-4 text-right tabular-nums", best && "bg-orange-100/80 text-orange-900")}>
+                    {!available ? "—" : <>
+                      {best ? <span className="sr-only">Highest observed conversion: </span> : null}
+                      <span className="font-semibold">{formatPercent(rate)}</span>
+                      <span className={cn("ml-1", best ? "text-orange-800/70" : "text-muted-foreground")}>({metric[field].toLocaleString("en-US")}{field === "paid" ? ` / ${denominator.toLocaleString("en-US")}` : ""})</span>
+                    </>}
+                  </td>;
+                })}
+              </Fragment>;
+            })}
+          </tr>)}
+        </tbody>
+      </table>
+    </div>
+  </div>;
 }
 
 function JourneyVariant({ variant }: { variant: UserJourneyVariantResult }) {

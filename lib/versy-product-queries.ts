@@ -1,3 +1,4 @@
+import { analyticsSnapshot } from "./analytics-snapshot";
 import "server-only";
 import { createHash } from "node:crypto";
 import { appAnalyticsPeriodRange } from "./app-analytics-time";
@@ -42,7 +43,6 @@ export type VersyUserJourneyReport = {
 const POSTHOG_HOST = process.env.POSTHOG_VERSY_REGION === "us"
   ? "https://us.posthog.com" : "https://eu.posthog.com";
 const FIRST_INSTRUMENTED_DAY = new Date("2026-09-25T00:00:00Z");
-const CACHE_MS = 90_000;
 const MAX_RECENT_CANCELLATIONS = 25;
 const MAX_HISTORY_ROWS = 5_000;
 const MAX_USER_EVENTS = 250;
@@ -56,8 +56,6 @@ const USER_EVENTS = [...new Set([
   "sw_intro_offer_cancelled", "subscription_feedback_opened", "subscription_feedback_submitted",
   "access_phase_changed",
 ])];
-const cache = new Map<string, { expiresAt: number; report: VersyProductReport }>();
-const inflight = new Map<string, Promise<VersyProductReport>>();
 
 function sqlTime(date: Date): string {
   return date.toISOString().slice(0, 19).replace("T", " ");
@@ -129,21 +127,8 @@ export async function getVersyProductReport(period: VersyProductPeriod): Promise
   if (!key || !projectId || !/^\d+$/.test(projectId)) {
     return emptyVersyProductReport("setup_required", start, end, "Versy product analytics is waiting for PostHog read access.");
   }
-  const cacheKey = `${period}:${projectId}`;
-  const cached = cache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) return cached.report;
-  const pending = inflight.get(cacheKey);
-  if (pending) return pending;
-  const promise = loadVersyProductReport(start, end, projectId, key).then((report) => {
-    cache.set(cacheKey, { expiresAt: Date.now() + CACHE_MS, report });
-    inflight.delete(cacheKey);
-    return report;
-  }, (error) => {
-    inflight.delete(cacheKey);
-    throw error;
-  });
-  inflight.set(cacheKey, promise);
-  return promise;
+  return analyticsSnapshot(`versy-product:${period}:${projectId}`, () =>
+    loadVersyProductReport(start, end, projectId, key));
 }
 
 /** Exact Superwall-ID lookup for an authenticated owner or trusted agent. */

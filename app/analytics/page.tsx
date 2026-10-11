@@ -1,3 +1,4 @@
+import AnalyticsFreshness from "@/components/analytics/AnalyticsFreshness";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -240,7 +241,12 @@ async function AppTotals({ period, access }: { period: Period; access: Analytics
 async function AppDirectoryCard({ period, id }: { period: Period; id: AppId }) {
   const app = await getMobileAppSummary(period, id);
   if (!app) return null;
-  return <MobileAppCard app={app} period={period} />;
+  return (
+    <div className="space-y-2">
+      <MobileAppCard app={app} period={period} />
+      <AnalyticsFreshness updatedAt={app.snapshotUpdatedAt} label={app.name} />
+    </div>
+  );
 }
 
 function LiveWebsiteDirectory({ period }: { period: Period }) {
@@ -595,7 +601,10 @@ async function AppDetail({
               <strong className="font-semibold text-black">{app.name}</strong>
             </h1>
           </div>
-          <AnalyticsPeriodSelect period={period} app={app.id} />
+          <div className="space-y-2 sm:text-right">
+            <AnalyticsPeriodSelect period={period} app={app.id} />
+            <AnalyticsFreshness updatedAt={app.snapshotUpdatedAt} />
+          </div>
         </div>
       </div>
 
@@ -615,7 +624,7 @@ async function AppDetail({
         userJourney={app.userJourney}
         deferExperiments
         productSlot={productPromise ? (
-          <Suspense fallback={<p role="status" className="px-4 py-6 text-sm text-muted-foreground">Loading {app.name} product analytics…</p>}>
+          <Suspense key={`product:${appId}:${period}`} fallback={<p role="status" className="px-4 py-6 text-sm text-muted-foreground">Loading {app.name} product analytics…</p>}>
             <ProductReportReady promise={productPromise} appName={app.name === "Versy" ? "Versy" : "Glow"} />
           </Suspense>
         ) : null}

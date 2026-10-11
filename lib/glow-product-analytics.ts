@@ -140,6 +140,7 @@ export function trialComparison(starts: GlowTrialStart[], events: GlowTrialEvent
 }
 
 export type GlowProductReport = {
+  snapshotUpdatedAt?: string;
   status: "ready" | "empty" | "unavailable" | "setup_required";
   asOf: string;
   windowStart: string;

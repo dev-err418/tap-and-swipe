@@ -46,13 +46,19 @@ export default function AppExperimentMap({
   nativePaywalls?: NativePaywallReport | null;
   onboardingExperience?: GlowOnboardingReport | null;
 }) {
-  const [language, setLanguage] = useState("en");
+  const defaultLanguage = appId === "poky" ? "es" : "en";
+  const [language, setLanguage] = useState(defaultLanguage);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const triggerRef = useRef<SVGGElement | null>(null);
   const dialogContentRef = useRef<HTMLDivElement | null>(null);
   const availableLanguages = [...new Set(
     nativePaywalls?.groups.filter((group) => group.language !== "all").map((group) => group.language) ?? [],
-  )].sort((a, b) => a === b ? 0 : a === "en" ? -1 : b === "en" ? 1 : 0);
+  )].sort((a, b) => {
+    if (a === b) return 0;
+    if (a === defaultLanguage) return -1;
+    if (b === defaultLanguage) return 1;
+    return a === "en" ? -1 : b === "en" ? 1 : 0;
+  });
   const selectedLanguage = availableLanguages.includes(language) ? language : availableLanguages[0];
   const flow = appExperimentFlow(appId, selectedLanguage);
   if (!flow) return null;

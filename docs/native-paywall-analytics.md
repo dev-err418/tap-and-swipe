@@ -4,6 +4,12 @@ Glow's separate [Journal VS Practice](journal-practice-experiment.md) activity e
 
 ## Architecture and constraints
 
+### Pending Glow Copy-only onboarding release
+
+The next app build uses `onboarding_copy_mascot_v2` / `goe1_onboarding_copy_mascot_v2`: 15% Copy with mascot (`current`) and 85% Copy without mascot (`mascot_free`). IAM presentation and the old wording draw are retired, including saved IAM routes and Debug previews. Existing v1 users receive Copy wording without reenrollment or further v1 activity/completion writes. The dashboard loads v2 and historical `onboarding_mascot_v1` separately, displays v1 in a historical section and excludes both keys from the legacy wording comparison. These source changes are not deployed automatically; old App Store clients can still run the previous experiment.
+
+The independent UK five-way paywall allocation is unchanged. The mascot-free arm still skips introductions and asks age before name, so v2 compares complete experiences with shared wording, not only mascot imagery. Historical IAM assignment markers remain available; new presentation/wording attributes describe the updated UI without relabeling legacy IAM users as historical Copy users.
+
 Glow and Poky render native SwiftUI paywalls and hardcode their experiments/traffic splits. Superwall is used only for purchase/subscription infrastructure and custom user-attribute storage. **Do not add Superwall campaigns, placement registration, presentation-result calls, or remotely configured experiments.** No D1/PostgreSQL tables, ingestion routes, or webhook receivers are needed for this feature.
 
 The dashboard's existing server-side Superwall Query API connection reads these records. Never expose `SUPERWALL_GLOW_API_KEY` to the browser or the iOS app. Queries use organization 27020/application 54736, production data only. The existing 90-second analytics cache also caches this report.
@@ -328,6 +334,11 @@ Plan A and are excluded from the new comparison; only fresh `50_50` markers on
 both attributes enter the four-cohort report. Everyone now uses the Warm
 experience; the old background test is retired. Paywall tests remain separate.
 
+### Glow onboarding recovery (October 2026)
+
+Glow's onboarding paywall now changes to a full-screen recovery offer after a primary purchase cancellation or close. Closing recovery completes onboarding. It uses the assigned variant's yearly product and its existing recurring half-price SKU, including when the cancelled primary choice was weekly. The five primary variants and their allocation are unchanged.
+
+The journey includes `onboarding_recovery_screen_seen` as an optional branch after the primary paywall; it is published only when recovery actually appears. It does not alter primary completion or main-path drop-off. The existing `winback_paywall_viewed` / `winback_purchase_completed` events distinguish `onboarding_purchase_cancelled`, `onboarding_paywall_dismissed`, notification and debug sources. Before local midnight October 12, 2026, US/USA and unknown-country users skip recovery; the restriction expires automatically.
 
 ### Versy journey schema 2
 

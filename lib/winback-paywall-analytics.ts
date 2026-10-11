@@ -1,6 +1,7 @@
 export type WinbackPaywallRow = { source: string; productId: string; viewers: number; buyers: number; conversionRate: number | null };
 
 export type WinbackPaywallReport = {
+  snapshotUpdatedAt?: string;
   status: "ready" | "empty" | "setup_required" | "unavailable" | "limited";
   windowStart: string;
   windowEnd: string;

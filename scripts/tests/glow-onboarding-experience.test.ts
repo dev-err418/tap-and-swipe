@@ -3,7 +3,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import GlowOnboardingExperiencePanel from "../../components/analytics/GlowOnboardingExperiencePanel";
-import { buildGlowOnboardingReport, GLOW_ONBOARDING_ID, GLOW_ONBOARDING_KEY, DAY_MS } from "../../lib/glow-onboarding-experience";
+import { buildGlowOnboardingReport, GLOW_ONBOARDING_ID, GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_LEGACY_ID, GLOW_ONBOARDING_LEGACY_KEY, DAY_MS } from "../../lib/glow-onboarding-experience";
 import { loadGlowOnboardingExperience } from "../../lib/glow-onboarding-experience-queries";
 import type { PaywallAttribute, PaywallPurchase, PaywallRevenue } from "../../lib/native-paywall-analytics";
 
@@ -20,13 +20,26 @@ function event(user: string, transaction: string, amount = 10, extra: Partial<Pa
     transactionId: transaction, isRefund: 0, price: amount, proceeds: amount, ts, purchasedAt: ts, attributionTs: ts, ...extra };
 }
 
+test("Copy wording has a separate cohort and historical IAM results remain readable", () => {
+  const historical = { ...assignment("old", "current", start, { experiment: GLOW_ONBOARDING_LEGACY_ID }), key: GLOW_ONBOARDING_LEGACY_KEY };
+  const attributes = [historical, assignment("new", "mascot_free")];
+  const report = buildGlowOnboardingReport(attributes, [], start, asOf, asOf);
+  const old = buildGlowOnboardingReport(attributes, [], start, asOf, asOf, GLOW_ONBOARDING_LEGACY_ID);
+  assert.deepEqual(report.rows.map((r) => r.users), [0, 1]);
+  assert.deepEqual(old.rows.map((r) => r.users), [1, 0]);
+  assert.equal(old.rows[0].label, "IAM · historical");
+  const markup = renderToStaticMarkup(createElement(GlowOnboardingExperiencePanel, { report: { ...report, historical: old } }));
+  assert.match(markup, /Historical IAM wording comparison/);
+  assert.match(markup, /Copy without mascot/);
+});
+
 test("the 15/85 allocation reports both variants and preserves earlier 30/70 records", () => {
   const report = buildGlowOnboardingReport([
     assignment("current"), assignment("treatment", "mascot_free"),
     assignment("earlier", "current", start, { allocation: "30_70" }),
     assignment("unknown", "current", start, { allocation: "50_50" }),
   ], [], start, asOf, asOf);
-  assert.deepEqual(report.rows.map((row) => [row.label, row.users]), [["Current · 15%", 2], ["No mascot · 85%", 1]]);
+  assert.deepEqual(report.rows.map((row) => [row.label, row.users]), [["Copy with mascot · 15%", 2], ["Copy without mascot · 85%", 1]]);
   assert.equal(report.warnings.length, 1);
 });
 
@@ -153,9 +166,9 @@ test("unmatched or invalid cancellation timing never becomes a false average", (
 test("the comparison shows all three metrics with empty and unavailable values kept honest", () => {
   const empty = buildGlowOnboardingReport([], [], start, asOf, asOf);
   const markup = renderToStaticMarkup(createElement(GlowOnboardingExperiencePanel, { report: empty }));
-  assert.match(markup, /enabled in the next app build/);
-  assert.match(markup, /results appear after that build is released/);
-  assert.match(markup, /15% Current · 85% No mascot/);
+  assert.match(markup, /Both variants use Copy wording in the next app build/);
+  assert.match(markup, /results appear after release and enrollment/);
+  assert.match(markup, /15% Copy with mascot · 85% Copy without mascot/);
   assert.match(markup, /ARPU/);
   assert.match(markup, /Sessions \/ user \/ day/);
   assert.match(markup, /Avg time to cancel/);

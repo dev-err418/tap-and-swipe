@@ -1,4 +1,4 @@
-import { buildGlowOnboardingReport, onboardingCohort, GLOW_ONBOARDING_KEY, type GlowOnboardingReport } from "./glow-onboarding-experience";
+import { buildGlowOnboardingReport, onboardingCohort, GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_LEGACY_KEY, GLOW_ONBOARDING_LEGACY_ID, type GlowOnboardingReport } from "./glow-onboarding-experience";
 import type { PaywallAttribute, PaywallRevenue } from "./native-paywall-analytics";
 
 type Query = <T>(sql: string) => Promise<T[]>;
@@ -13,7 +13,7 @@ export async function loadGlowOnboardingExperience(query: Query, applicationId: 
       const rows = await query<PaywallAttribute>(`
 SELECT appUserId, key, value FROM sw.user_attributes_rep FINAL
 WHERE applicationId = ${applicationId} AND isSandbox = 0 AND isDeleted = 0 AND ts < now()
-  AND (key = '${GLOW_ONBOARDING_KEY}' OR startsWith(key, 'gp1_t_'))
+  AND (key IN ('${GLOW_ONBOARDING_KEY}', '${GLOW_ONBOARDING_LEGACY_KEY}') OR startsWith(key, 'gp1_t_'))
   ${cursor === undefined ? "" : `AND (appUserId, key) > (${quote(cursor.appUserId)}, ${quote(cursor.key)})`}
 ORDER BY appUserId, key LIMIT 10000 FORMAT JSON`);
       attributes.push(...rows);
@@ -22,7 +22,8 @@ ORDER BY appUserId, key LIMIT 10000 FORMAT JSON`);
       if (attributes.length >= 200000 || (next.appUserId === cursor?.appUserId && next.key === cursor?.key)) throw new Error("Assignment reporting limit reached");
       cursor = next;
     }
-    const users = [...onboardingCohort(attributes, start, end, asOf).records.keys()];
+    const users = [...new Set([...onboardingCohort(attributes, start, end, asOf).records.keys(),
+      ...onboardingCohort(attributes, start, end, asOf, GLOW_ONBOARDING_LEGACY_ID).records.keys()])];
     const events: PaywallRevenue[] = [];
     // Sequential chunks bound query load and reject partial money results.
     for (let i = 0; i < users.length; i += 500) {
@@ -37,7 +38,8 @@ LIMIT 50001 FORMAT JSON`);
       if (rows.length > 50000) throw new Error("Revenue reporting limit reached");
       events.push(...rows);
     }
-    return buildGlowOnboardingReport(attributes, events, start, end, asOf);
+    return { ...buildGlowOnboardingReport(attributes, events, start, end, asOf),
+      historical: buildGlowOnboardingReport(attributes, events, start, end, asOf, GLOW_ONBOARDING_LEGACY_ID) };
   } catch {
     return { status: "unavailable", asOf, rows: [], warnings: ["Onboarding experience reporting is unavailable. Refresh to retry."] };
   }

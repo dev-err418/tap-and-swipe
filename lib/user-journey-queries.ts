@@ -1,6 +1,7 @@
 import {
   ASSIGNED_KEY,
   buildUserJourney,
+  journeyVersion,
   unsupportedUserJourney,
   userJourneyDefinition,
   type UserJourneyDefinition,
@@ -42,6 +43,7 @@ export function userJourneySql(
   definition: UserJourneyDefinition,
   start: string,
   end: string,
+  byVersion = false,
 ) {
   const variantAttribute = definition.variantAttribute;
   const variantValues = definition.variants.map((variant) => variant.key);
@@ -91,14 +93,15 @@ export function userJourneySql(
     ? `HAVING tuple(${[1, 2, 3].map((part) => `toUInt32OrZero(splitByChar('.', version)[${part}])`).join(", ")}) >= tuple(${[0, 1, 2].map((index) => minimumVersion[index] ?? 0).join(", ")})`
     : "";
   return `
-SELECT variant, step AS key, uniq(appUserId) AS users
+SELECT variant, ${byVersion ? "version, " : ""}step AS key, uniq(appUserId) AS users
 FROM (
   SELECT
     cohort.appUserId AS appUserId,
     cohort.variant AS variant,
+    ${byVersion ? "cohort.version AS version," : ""}
     arrayJoin(arrayFilter(x -> x != '', [${stepFlags.join(", ")}])) AS step
   FROM (
-    SELECT assigned.appUserId AS appUserId, assigned.variant AS variant
+    SELECT assigned.appUserId AS appUserId, assigned.variant AS variant${byVersion ? ", installs.version AS version" : ""}
     FROM (
       SELECT appUserId, any(value) AS variant
       FROM sw.user_attributes_rep FINAL
@@ -111,17 +114,18 @@ FROM (
       GROUP BY appUserId
     ) AS assigned
     INNER JOIN (
-      SELECT appUserId${minimumVersion ? ", argMin(JSONExtractString(meta, 'appVersion'), ts) AS version" : ""}
+      SELECT appUserId,
+        argMin(JSONExtractString(meta, 'appVersion'), ts) AS version,
+        argMin(appInstallDate, ts) AS firstInstallDate
       FROM sw.demand_score_events_rep
       WHERE applicationId = ${applicationId}
         AND isSandbox = 0
         AND name = 'device_attributes'
-        AND appInstallDate >= toDateTime64('${start}', 6, 'UTC')
-        AND appInstallDate < toDateTime64('${end}', 6, 'UTC')
-        AND ts >= toDateTime64('${start}', 6, 'UTC')
         AND ts < now()
       GROUP BY appUserId
-      ${installVersionFilter}
+      HAVING firstInstallDate >= toDateTime64('${start}', 6, 'UTC')
+        AND firstInstallDate < toDateTime64('${end}', 6, 'UTC')
+        ${installVersionFilter ? `AND ${installVersionFilter.replace(/^HAVING /, "")}` : ""}
     ) AS installs ON installs.appUserId = assigned.appUserId${trackingCohortJoin}
   ) AS cohort
   LEFT JOIN (
@@ -133,9 +137,9 @@ FROM (
       AND ts < now()
       AND (${seenFilters.join(" OR ") || "0"})
   ) AS seen ON seen.appUserId = cohort.appUserId
-  GROUP BY cohort.appUserId, cohort.variant
+  GROUP BY cohort.appUserId, cohort.variant${byVersion ? ", cohort.version" : ""}
 )
-GROUP BY variant, step
+GROUP BY variant, step${byVersion ? ", version" : ""}
 FORMAT JSON
 `.trim();
 }
@@ -150,15 +154,31 @@ export async function loadUserJourney(
   const definition = userJourneyDefinition(appId);
   if (!definition) return unsupportedUserJourney(appId);
   try {
-    const rows = await query<{ variant: string; key: string; users: string | number }>(
-      userJourneySql(applicationId, definition, start, end),
+    const rows = await query<{ variant: string; version?: string; key: string; users: string | number }>(
+      userJourneySql(applicationId, definition, start, end, true),
     );
-    const allRows = rows.map((row) => ({
-      variant: row.variant,
-      key: row.key,
-      users: Number(row.users),
-    }));
-    return buildUserJourney(definition, allRows);
+    // Version groups are disjoint: sum counts to preserve the existing all-version view.
+    const totals = new Map<string, { variant: string; key: string; users: number }>();
+    const groups = new Map<string, { variant: string; key: string; users: number }[]>();
+    for (const row of rows) {
+      const users = Number(row.users);
+      if (!Number.isSafeInteger(users) || users < 0) throw new Error("Invalid journey count");
+      const key = `${row.variant}:${row.key}`;
+      const previous = totals.get(key);
+      totals.set(key, { variant: row.variant, key: row.key, users: (previous?.users ?? 0) + users });
+      const version = journeyVersion(row.version ?? "");
+      const group = groups.get(version) ?? [];
+      // Malformed metadata can normalize into the same unknown group.
+      const existing = group.find((entry) => entry.variant === row.variant && entry.key === row.key);
+      if (existing) existing.users += users;
+      else group.push({ variant: row.variant, key: row.key, users });
+      groups.set(version, group);
+    }
+    return { ...buildUserJourney(definition, [...totals.values()]), versions: [...groups].map(([version, group]) => {
+      const report = buildUserJourney(definition, group);
+      const tracked = report.variants.reduce((sum, variant) => sum + variant.assigned, 0);
+      return { version, installs: tracked, tracked, variants: report.variants };
+    }) };
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
       console.warn("tap_and_swipe.user_journey_failed", error instanceof Error ? error.message : error);

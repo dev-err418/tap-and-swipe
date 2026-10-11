@@ -141,6 +141,7 @@ export function trialComparison(starts: VersyTrialStart[], events: VersyTrialEve
 }
 
 export type VersyProductReport = {
+  snapshotUpdatedAt?: string;
   status: "ready" | "empty" | "unavailable" | "setup_required";
   asOf: string;
   windowStart: string;

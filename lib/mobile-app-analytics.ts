@@ -1,13 +1,16 @@
+import { productionAnalyticsFilter } from "./analytics-production";
+import { ACQUISITION_ATTRIBUTE_KEYS, versionCohortConversions } from "./version-cohort-conversions";
+import { analyticsSnapshot, type SnapshotMetadata } from "./analytics-snapshot";
 import { sevenDayTrialSurvival } from "./trial-survival";
 import { onboardingSessionActivity } from "./onboarding-session-activity";
 import { versyOnboardingAudience, versyOnboardingPaywallReached } from "./versy-onboarding-analytics";
 import { loadGlowOnboardingExperience } from "./glow-onboarding-experience-queries";
-import { GLOW_ONBOARDING_KEY, type GlowOnboardingReport } from "./glow-onboarding-experience";
+import { GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_LEGACY_KEY, type GlowOnboardingReport } from "./glow-onboarding-experience";
 import "server-only";
 import { glowMatureCountries } from "./glow-mature-countries";
 import { GLOW_SUPERWALL_HISTORY_START_MS, glowPaywallMigrationExperiment } from "./glow-paywall-migration";
 import { loadUserJourney } from "./user-journey-queries";
-import type { UserJourneyReport } from "./user-journey";
+import { withJourneyInstallVersions, type UserJourneyReport } from "./user-journey";
 import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
 import { loadNativePaywalls } from "./native-paywall-queries";
@@ -147,7 +150,7 @@ export type TrialCancelTiming = {
   buckets: TrialCancelBucket[];
 };
 
-export type MobileAppAnalytics = {
+export type MobileAppAnalytics = SnapshotMetadata & {
   id: "glow" | "poky" | "versy";
   name: string;
   iconUrl: string;
@@ -175,7 +178,6 @@ const VERSY_SUPERWALL_ORGANIZATION_ID = 25476;
 const VERSY_SUPERWALL_APPLICATION_ID = 51393;
 const GLOW_SUPERWALL_ORGANIZATION_ID = 27020;
 const GLOW_SUPERWALL_APPLICATION_ID = 54736;
-const ANALYTICS_CACHE_MS = 90_000;
 const MAX_QUERY_CONCURRENCY = 6;
 const EVENT_DUMP_LIMIT = 50_000;
 const DAY_MS = 86_400_000;
@@ -186,7 +188,7 @@ const VERSY_ICON_URL = "/community-icons/versy.png";
 const GLOW_ICON_URL =
   "/community-icons/glow-wordmark.png";
 
-const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY] as const;
+const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_LEGACY_KEY] as const;
 const VERSY_ATTRIBUTE_KEYS = ["country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
   "bible_widget_widget_screen_seen",
   "onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant", "onboarding_paywall_access_variant",
@@ -273,10 +275,6 @@ type AttributeExperimentDefinition = {
   showDownloadPaid?: boolean;
 };
 
-type CacheEntry<T> = { expiresAt: number; value: T };
-
-const analyticsCache = new Map<string, CacheEntry<MobileAppAnalytics>>();
-const analyticsInflight = new Map<string, Promise<MobileAppAnalytics>>();
 let activeQueries = 0;
 const queryWaiters: Array<() => void> = [];
 
@@ -294,9 +292,7 @@ export async function getMobileAppById(
 
 export async function getMobileAppSummary(period: Period, id: MobileAppAnalytics["id"]) {
   try {
-    if (id === "poky") return await getPokyAnalytics(period);
-    if (id === "glow") return await getGlowAnalytics(period);
-    return await getVersyAnalytics(period);
+    return await getMobileAppById(period, id, { sessions: false, includeReports: false });
   } catch (error) {
     logAnalytics("tap_and_swipe.mobile_app_analytics_failed", {
       app: id,
@@ -379,24 +375,8 @@ async function getSuperwallAppAnalytics(
   includeReports = true,
 ): Promise<MobileAppAnalytics> {
   const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}`;
-  const hit = analyticsCache.get(cacheKey);
-  if (hit && hit.expiresAt > Date.now()) return hit.value;
-  const pending = analyticsInflight.get(cacheKey);
-  if (pending) return pending;
-
-  const promise = loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports).then(
-    (value) => {
-      analyticsCache.set(cacheKey, { expiresAt: Date.now() + ANALYTICS_CACHE_MS, value });
-      analyticsInflight.delete(cacheKey);
-      return value;
-    },
-    (error) => {
-      analyticsInflight.delete(cacheKey);
-      throw error;
-    },
-  );
-  analyticsInflight.set(cacheKey, promise);
-  return promise;
+  return analyticsSnapshot(`mobile:${cacheKey}`, () =>
+    loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports));
 }
 
 async function loadSuperwallAppAnalytics(
@@ -528,6 +508,13 @@ async function loadSuperwallAppAnalytics(
     : [];
   const trialCancelTiming = facts && (app.id === "glow" || app.id === "versy") ? trialCancelFromFacts(facts) : null;
 
+  const journey = journeyResult.status === "fulfilled"
+    ? withJourneyInstallVersions(journeyResult.value, facts?.installs ?? []) : null;
+  const conversions = facts ? versionCohortConversions(facts.installs, facts.events, facts.attributes, startMs, endMs) : null;
+  if (journey?.versions && conversions) journey.versions = journey.versions.map((cohort) => ({
+    ...cohort, conversions: conversions.get(cohort.version),
+  }));
+
   return {
     id: app.id,
     name: app.name,
@@ -556,7 +543,7 @@ async function loadSuperwallAppAnalytics(
     nativePaywalls: paywallResult.status === "fulfilled" ? paywallResult.value : {
       status: "unavailable", asOf: Date.now(), groups: [], warnings: ["Paywall reporting is temporarily unavailable."],
     },
-    userJourney: journeyResult.status === "fulfilled" ? journeyResult.value : null,
+    userJourney: journey,
   };
 }
 
@@ -569,7 +556,8 @@ async function loadAppFacts(
   includeSessions: boolean,
   includeReports: boolean,
 ): Promise<AppFacts> {
-  const keys = includeReports ? attributeKeysFor(app.id) : [];
+  const environmentKey = app.id === "versy" ? "versy_tracking_environment" : app.id === "poky" ? "poky_tracking_environment" : null;
+  const keys = [...new Set([...(includeReports ? attributeKeysFor(app.id) : ACQUISITION_ATTRIBUTE_KEYS), ...(environmentKey ? [environmentKey] : [])])];
   const hasMigrationHistory = includeReports && (app.id === "poky" || app.id === "glow");
   const historyStartMs = app.id === "poky" ? pokyExperimentStart(0) - 30 * DAY_MS
     : app.id === "glow" ? GLOW_SUPERWALL_HISTORY_START_MS : startMs;
@@ -602,26 +590,32 @@ async function loadAppFacts(
   if (attributeResult.status === "rejected") throw attributeResult.reason;
   if (eventResult.status === "rejected") throw eventResult.reason;
 
+  const attributes = attributeMap(attributeResult.value);
+  const production = productionAnalyticsFilter(attributes, environmentKey, eventResult.value);
+  const installs = installResult.value.filter((row) => production.user(row.appUserId));
+  const events = eventResult.value.filter(production.event);
+
   return {
     migrationHistory: hasMigrationHistory
-      ? { installs: installResult.value, events: eventResult.value, startMs: historyStartMs } : undefined,
+      ? { installs, events, startMs: historyStartMs } : undefined,
     startMs,
     endMs,
     sessionDays: sessionRange.days,
     sessionFromMs: sessionRange.from,
     sessionToMs: sessionRange.to,
     sessionDataAvailable: fetchSessions && sessionResult.status === "fulfilled",
-    installs: installResult.value.filter((row) => row.installedAt >= startMs),
-    attributes: attributeMap(attributeResult.value),
-    events: eventResult.value.filter((row) => row.eventTs >= startMs),
-    sessions: sessionResult.status === "fulfilled" ? sessionResult.value : [],
+    installs: installs.filter((row) => row.installedAt >= startMs),
+    attributes,
+    events: events.filter((row) => row.eventTs >= startMs),
+    sessions: sessionResult.status === "fulfilled" ? sessionResult.value.filter((row) => production.user(row.appUserId)) : [],
   };
 }
 
 function attributeKeysFor(id: SuperwallAppConfig["id"]) {
-  if (id === "glow") return [...GLOW_ATTRIBUTE_KEYS];
-  if (id === "poky") return [...POKY_ATTRIBUTE_KEYS];
-  return [...VERSY_ATTRIBUTE_KEYS];
+  const acquisition = ACQUISITION_ATTRIBUTE_KEYS;
+  if (id === "glow") return [...GLOW_ATTRIBUTE_KEYS, ...acquisition];
+  if (id === "poky") return [...POKY_ATTRIBUTE_KEYS, ...acquisition];
+  return [...VERSY_ATTRIBUTE_KEYS, ...acquisition];
 }
 
 async function fetchInstallCohort(app: SuperwallAppConfig, start: string, end: string): Promise<InstallRow[]> {
@@ -643,11 +637,10 @@ FROM sw.demand_score_events_rep
 WHERE applicationId = ${app.applicationId}
   AND isSandbox = 0
   AND name = 'device_attributes'
-  AND appInstallDate >= toDateTime64('${start}', 6, 'UTC')
-  AND appInstallDate < toDateTime64('${end}', 6, 'UTC')
-  AND ts >= toDateTime64('${start}', 6, 'UTC')
   AND ts < now()
 GROUP BY appUserId
+HAVING installedAt >= toDateTime64('${start}', 6, 'UTC')
+  AND installedAt < toDateTime64('${end}', 6, 'UTC')
 LIMIT 30000
 FORMAT JSON
 `.trim(),
@@ -1157,7 +1150,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   ]));
   const variantIndexFor = (attrs: Record<string, string> | undefined) => {
     if (!attrs) return null;
-    if (definition.id === "glow-onboarding-copy" && attrs[GLOW_ONBOARDING_KEY] !== undefined) return null;
+    if (definition.id === "glow-onboarding-copy" && (attrs[GLOW_ONBOARDING_KEY] !== undefined || attrs[GLOW_ONBOARDING_LEGACY_KEY] !== undefined)) return null;
     if (definition.id.startsWith("poky-") && attrs.poky_tracking_environment !== "production") return null;
     if (definition.id.startsWith("versy-") && attrs.versy_tracking_environment === "development") return null;
     const matched = definition.variants.find((variant) =>

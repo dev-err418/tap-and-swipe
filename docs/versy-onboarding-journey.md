@@ -28,3 +28,56 @@ Read-only verification on October 9, 2026 found 3,767 production Superwall annua
 price assignments across the three SKUs (all-time, not the dashboard's 30-day
 install cohort), but no `scroll_the_bible` production route assignments yet.
 The live signed-in website was not inspected; its login gate remained intact.
+
+## First-seen version comparison
+
+The dashboard automatically discovers versions from each user's first production
+`device_attributes` event (`meta.appVersion`). Both the install-cohort query and
+journey query select that earliest event before filtering its install date to the
+selected window. Later updates do not move users into another version cohort.
+Missing or malformed first-version metadata stays Unknown; a later valid version
+is not substituted. This is the earliest version in retained source history, not
+a newly collected current-version user attribute.
+
+The version table shows the latest five numerically ordered first-seen versions
+observed among installs in the selected window, with one row per version. The
+horizontal table groups metrics under Global, Ads, and Non-ads. It has no picker
+or detailed onboarding flow. Highest positive conversion rates in each column
+are tinted orange, including ties; these are observed rates, not significance claims.
+Snapshot schema v7 includes the finished-trial denominator.
+
+### Version-cohort trial and paid conversion
+
+Trial conversion is distinct trial starters / all installs in the version cohort.
+Trial → paid is distinct paid users / finished first trials. A trial is finished
+only once its recorded expiration has passed; early cancellation does not make
+an active trial mature. Missing or invalid expiration dates are excluded. Direct
+purchases without a trial are excluded from this rate. A positive verified charge
+must belong to the same original transaction chain, follow trial start, and be
+a non-trial charge. It only enters the rate once the trial expiration has passed. Rates with no finished trials show a dash.
+
+Outcomes run through report time, including renewals after the selected install
+window and after app updates. Transaction chains resolve identity-free renewals;
+duplicates count once and refunds do not undo a past paid conversion. Missing
+eligible charge amounts suppress the affected paid rate rather than imply zero.
+All routes, languages, and countries are included.
+
+Ads currently means `acquisition_source=meta` or
+`apple_search_ads_attribution=true` in Superwall user metadata. These keys are read
+for the Data tab as well as the full monthly report. At the owner's explicit
+request, everyone without either marker is Non-ads, including missing/unknown
+attribution; the UI labels this as no recorded ad attribution, not verified organic.
+Global counts equal Ads plus Non-ads. Acquisition uses the recorded attribution
+metadata available at refresh; first-seen version remains based on the earliest
+device event. There is no IP/country/device-language inference of ad origin.
+
+The selected date window may contain fewer than five observed versions. Only
+observed versions are shown. Comparing conversion across releases is descriptive:
+recent cohorts have had less time to start or finish a trial.
+
+Versy install, transaction, and session facts additionally require the user's
+`versy_tracking_environment=production` marker (Poky uses its corresponding key).
+Sandbox records remain excluded in SQL. Missing or non-production markers are
+excluded, so older versions can lose users whose environment cannot be confirmed.
+Identity-free renewals are retained only through a production initial-purchase
+chain. Schema v7 invalidates older snapshots that lacked this check.

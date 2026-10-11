@@ -28,17 +28,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
     return {
       tests: [
         {
-          id: GLOW_ONBOARDING_ID, label: "Onboarding experience", scope: "Prepared · enrollment off · new eligible installations", tone: "blue", planned: true,
+          id: GLOW_ONBOARDING_ID, label: "Copy onboarding experience", scope: "Next app build · new eligible installations", tone: "blue", planned: true,
           branches: [
-            { id: "current", label: "Current", percent: 15 },
-            { id: "mascot_free", label: "No mascot", percent: 85 },
-          ],
-        },
-        {
-          id: "glow-onboarding-copy", label: "Onboarding", scope: "New onboarding assignments", tone: "blue",
-          branches: [
-            { id: "iam", label: "IAM", percent: 50 },
-            { id: "copy", label: "Copy", percent: 50 },
+            { id: "current", label: "Copy with mascot", percent: 15 },
+            { id: "mascot_free", label: "Copy without mascot", percent: 85 },
           ],
         },
         {
@@ -53,7 +46,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       notes: [
         "Results start September 20, 2026 at 08:00 GMT+2; earlier cohorts and proceeds are excluded.",
         "Practice is the only Home experience in the next Glow release. The Journal comparison has ended.",
-        "V3 starts a new sticky paywall assignment on upgrade; v1/v2 results and pending purchases stay separate. Onboarding assignments are unchanged.",
+        "IAM wording is retired in the next app build. Both onboarding arms use Copy wording under a new experiment ID; historical comparisons stay separate.",
         "Glow 1.7.3 extends English yearly-only yr_59 presentations through September 28 under the separate legacy experiment; saved v3 assignments resume September 29 (device local time).",
         "The split shows app configuration, not observed traffic. StoreKit determines which subscriptions are available and their displayed prices.",
       ],

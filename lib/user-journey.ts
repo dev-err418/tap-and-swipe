@@ -1,3 +1,5 @@
+import type { VersionConversions } from "./version-cohort-conversions";
+import { versionParts } from "./app-version";
 export type UserJourneyStep = {
   attribute: string;
   label: string;
@@ -55,7 +57,16 @@ export type UserJourneyDrop = {
   branch: boolean;
 };
 
+export type JourneyVersionCohort = {
+  conversions?: VersionConversions;
+  version: string;
+  installs: number;
+  tracked: number;
+  variants: UserJourneyVariantResult[];
+};
+
 export type UserJourneyReport = {
+  versions?: JourneyVersionCohort[];
   status: "ready" | "empty" | "unavailable" | "unsupported";
   title: string;
   variants: UserJourneyVariantResult[];
@@ -121,6 +132,10 @@ function glowVariant(key: string, label: string, placement: string): UserJourney
       label: "Paywall",
       paywall: true,
       attributeSuffix: `__${placement}`,
+    }, {
+      attribute: "onboarding_recovery_screen_seen",
+      label: "Recovery offer",
+      branch: true,
     }],
   };
 }
@@ -353,3 +368,36 @@ export function largestDropAttributes(drops: UserJourneyDrop[], count = 3) {
 }
 
 export { ASSIGNED_KEY };
+
+/** Numeric release ordering; unknown first-seen versions never become a later version. */
+export function journeyVersion(value: string): string {
+  return versionParts(value.trim()) ? value.trim() : "unknown";
+}
+
+export function withJourneyInstallVersions(
+  report: UserJourneyReport | null,
+  installs: { appVersion: string }[],
+): UserJourneyReport | null {
+  if (!report || report.status === "unavailable" || report.status === "unsupported") return report;
+  const counts = new Map<string, number>();
+  for (const install of installs) {
+    const version = journeyVersion(install.appVersion);
+    counts.set(version, (counts.get(version) ?? 0) + 1);
+  }
+  const versions = new Map((report.versions ?? []).map((entry) => [entry.version, entry]));
+  for (const [version, count] of counts) {
+    const existing = versions.get(version);
+    versions.set(version, { version, installs: count, tracked: existing?.tracked ?? 0, variants: existing?.variants ?? [] });
+  }
+  return { ...report, versions: [...versions.values()].sort((a, b) => {
+    if (a.version === "unknown") return 1;
+    if (b.version === "unknown") return -1;
+    const left = versionParts(a.version)!;
+    const right = versionParts(b.version)!;
+    for (let i = 0; i < Math.max(left.length, right.length); i++) {
+      const difference = (right[i] ?? 0) - (left[i] ?? 0);
+      if (difference) return difference;
+    }
+    return a.version.localeCompare(b.version);
+  }) };
+}

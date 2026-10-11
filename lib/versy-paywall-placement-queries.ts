@@ -1,14 +1,18 @@
+import { analyticsSnapshot } from "./analytics-snapshot";
 import "server-only";
 import { appAnalyticsPeriodRange } from "./app-analytics-time";
 import { summarizeVersyPlacements, type VersyPlacementEvent, type VersyPlacementReport } from "./versy-paywall-placements";
 
 const MAX_GROUPS = 20_000;
-const cache = new Map<string, { expiresAt: number; report: VersyPlacementReport }>();
 
 function sqlTime(date: Date) { return date.toISOString().slice(0, 19).replace("T", " "); }
 function count(value: unknown) { const n = Number(value); return Number.isFinite(n) && n >= 0 ? n : 0; }
 
-export async function getVersyPaywallPlacements(): Promise<VersyPlacementReport> {
+export function getVersyPaywallPlacements(): Promise<VersyPlacementReport> {
+  return analyticsSnapshot("versy-placements", loadVersyPaywallPlacements);
+}
+
+async function loadVersyPaywallPlacements(): Promise<VersyPlacementReport> {
   const { since, before } = appAnalyticsPeriodRange("month");
   const base = summarizeVersyPlacements([], since.toISOString(), before.toISOString());
   const key = process.env.POSTHOG_VERSY_READ_KEY?.trim();
@@ -17,8 +21,6 @@ export async function getVersyPaywallPlacements(): Promise<VersyPlacementReport>
   if (!key || !projectId || !/^\d+$/.test(projectId) || !superwallKey) {
     return { ...base, status: "setup_required", note: "Versy paywall reporting access is not configured." };
   }
-  const cached = cache.get(projectId);
-  if (cached && cached.expiresAt > Date.now()) return cached.report;
   const host = process.env.POSTHOG_VERSY_REGION === "us" ? "https://us.posthog.com" : "https://eu.posthog.com";
   const sql = `SELECT distinct_id, placement,
       countIf(event = 'paywall_reached') AS reaches,
@@ -72,7 +74,6 @@ export async function getVersyPaywallPlacements(): Promise<VersyPlacementReport>
       attempts: count(row[4]), purchases: count(row[5]), firstView: count(row[6]), lastPurchase: count(row[7]),
     }));
     const report = summarizeVersyPlacements(events, base.windowStart, base.windowEnd);
-    cache.set(projectId, { expiresAt: Date.now() + 90_000, report });
     return report;
   } catch (error) {
     console.error("tap_and_swipe.versy_paywall_placements_failed", { error: error instanceof Error ? error.message : String(error) });

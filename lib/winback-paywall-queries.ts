@@ -1,3 +1,4 @@
+import { analyticsSnapshot } from "./analytics-snapshot";
 import "server-only";
 import { appAnalyticsPeriodRange } from "./app-analytics-time";
 import { summarizeWinbackPaywall, type WinbackPaywallReport } from "./winback-paywall-analytics";
@@ -5,8 +6,6 @@ import { summarizeWinbackPaywall, type WinbackPaywallReport } from "./winback-pa
 type AppId = "glow" | "versy";
 const HOST = "https://eu.posthog.com";
 const MAX_GROUPS = 20_000;
-const cache = new Map<string, { expiresAt: number; report: WinbackPaywallReport }>();
-const inflight = new Map<string, Promise<WinbackPaywallReport>>();
 
 function sqlTime(date: Date): string { return date.toISOString().slice(0, 19).replace("T", " "); }
 function text(value: unknown): string { return String(value ?? ""); }
@@ -63,16 +62,5 @@ async function load(appId: AppId): Promise<WinbackPaywallReport> {
 }
 
 export function getWinbackPaywallReport(appId: AppId): Promise<WinbackPaywallReport> {
-  const cacheKey = appId;
-  const cached = cache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.report);
-  const pending = inflight.get(cacheKey);
-  if (pending) return pending;
-  const promise = load(appId).then((report) => {
-    cache.set(cacheKey, { report, expiresAt: Date.now() + 90_000 });
-    inflight.delete(cacheKey);
-    return report;
-  }, (error) => { inflight.delete(cacheKey); throw error; });
-  inflight.set(cacheKey, promise);
-  return promise;
+  return analyticsSnapshot(`winback:${appId}`, () => load(appId));
 }

@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
   try {
     const app = await getMobileAppById("month", appId as MobileAppAnalytics["id"]);
     return NextResponse.json({
+      snapshotUpdatedAt: app.snapshotUpdatedAt,
       experiments: app.experiments,
       countries: app.countries,
       nativePaywalls: app.nativePaywalls ?? null,

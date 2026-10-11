@@ -24,7 +24,7 @@ COPY --from=builder /app/content ./content
 # next/image writes optimized images to .next/cache at runtime. The COPYs
 # above run as root, so .next is root-owned and nextjs (uid 1001) can't
 # create the cache subdir. Pre-create + chown so image optimization works.
-RUN mkdir -p .next/cache && chown -R nextjs:nodejs .next/cache
+RUN mkdir -p .next/cache /app/analytics-cache && chown -R nextjs:nodejs .next/cache /app/analytics-cache
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000 HOSTNAME="0.0.0.0"

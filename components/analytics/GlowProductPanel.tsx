@@ -1,3 +1,4 @@
+import AnalyticsFreshness from "./AnalyticsFreshness";
 import type { GlowCancellationReport, GlowProductReport } from "@/lib/glow-product-analytics";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 
@@ -19,6 +20,7 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
   if (!report) return null;
   return (
     <div className="space-y-4">
+      <AnalyticsFreshness updatedAt={report.snapshotUpdatedAt} label="Product activity" />
       <DashboardCard title={`${appName} product use`} action={<span className="text-xs text-muted-foreground">PostHog · native app</span>}>
         {report.status === "setup_required" || report.status === "unavailable" ? (
           <p role="status" className="py-5 text-sm text-muted-foreground">{report.note}</p>

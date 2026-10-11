@@ -45,3 +45,6 @@ next-env.d.ts
 # Local agent state
 /.claude/scheduled_tasks.lock
 /.codex/config.toml
+
+# Private analytics snapshots
+.cache/analytics/

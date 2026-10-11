@@ -1,5 +1,7 @@
 "use client";
 
+import AnalyticsFreshness from "./AnalyticsFreshness";
+
 import { useEffect, useState, type ReactNode } from "react";
 import type { FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
 import { totalCohortAppu, overviewForLanguage, overviewLanguageLabel, type AppOverviewCohorts } from "@/lib/app-overview-cohorts";
@@ -54,6 +56,7 @@ const LANGUAGE_FLAGS: Record<string, string> = {
 };
 
 type MonthExperimentBundle = {
+  snapshotUpdatedAt?: string;
   experiments: MobileAppExperiment[];
   countries: MobileAppCountryRow[];
   nativePaywalls: NativePaywallReport | null;
@@ -238,6 +241,7 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-experiments"
           className="space-y-4"
         >
+          <AnalyticsFreshness updatedAt={loadedBundle?.snapshotUpdatedAt} label="A/B tests" />
           {experimentsLoading ? <TabEmptyState>Loading the last 30 days of A/B tests…</TabEmptyState> : monthFailed ? <TabEmptyState>A/B tests could not be loaded.</TabEmptyState> : <>
             <AppExperimentMap appId={appId} experiments={resolvedExperiments} nativePaywalls={resolvedPaywalls ?? null} onboardingExperience={resolvedOnboarding ?? null} />
             {appId === "glow" && <GlowOnboardingExperiencePanel report={resolvedOnboarding ?? null} />}
@@ -261,6 +265,7 @@ export default function AppOverviewPanel({
         >
           {appId === "glow" && <WinbackPaywallPanel appId={appId} />}
           {appId === "versy" && <p className="px-1 text-sm text-muted-foreground">Compare onboarding routes by paid conversions and net proceeds in A/B tests. Below, verified purchases link revenue, renewals and refunds to the original route and purchase placement. Revenue per user makes different traffic shares comparable.</p>}
+          <AnalyticsFreshness updatedAt={loadedBundle?.snapshotUpdatedAt} label="Paywalls" />
           {experimentsLoading ? <TabEmptyState>Loading paywalls…</TabEmptyState> : monthFailed ? <TabEmptyState>Paywalls could not be loaded.</TabEmptyState>
             : <NativePaywallsPanel appId={appId} report={resolvedPaywalls ?? null} />}
           {appId === "versy" && <details className="space-y-4"><summary className="cursor-pointer text-sm font-medium">App event history · includes older builds</summary><VersyPaywallPlacementsPanel /></details>}

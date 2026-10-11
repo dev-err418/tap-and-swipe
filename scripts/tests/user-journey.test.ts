@@ -9,13 +9,18 @@ import { loadUserJourney, userJourneySql } from "../../lib/user-journey-queries"
 test("glow and versy journeys follow each onboarding variant", () => {
   const glow = userJourneyDefinition("glow")!;
   assert.deepEqual(glow.variants.map((variant) => variant.key), ["iam", "copy"]);
-  assert.equal(glow.variants[0].steps.length, 45);
+  assert.equal(glow.variants[0].steps.length, 46);
   assert.equal(glow.variants[0].steps[0].attribute, "welcome_screen_seen");
-  assert.equal(glow.variants[0].steps.at(-1)?.attribute, "paywall_seen");
-  assert.equal(glow.variants[0].steps.at(-1)?.attributeSuffix, "__onboarding_iam_complete");
-  assert.equal(glow.variants[1].steps.at(-1)?.attributeSuffix, "__onboarding_complete_copy");
+  assert.equal(glow.variants[0].steps.at(-2)?.attribute, "paywall_seen");
+  assert.equal(glow.variants[0].steps.at(-2)?.attributeSuffix, "__onboarding_iam_complete");
+  assert.equal(glow.variants[1].steps.at(-2)?.attributeSuffix, "__onboarding_complete_copy");
   assert.equal(glow.variants[0].steps.some((step) => step.attribute.includes("notification")), true);
   assert.equal(glow.variants[0].steps.some((step) => step.attribute.startsWith("source")), false);
+
+  for (const variant of glow.variants) {
+    assert.equal(variant.steps.at(-1)?.attribute, "onboarding_recovery_screen_seen");
+    assert.equal(variant.steps.at(-1)?.branch, true);
+  }
 
   const versy = userJourneyDefinition("versy")!;
   assert.deepEqual(versy.variants.map((variant) => variant.key), ["bible_widget", "bible_widget_shorter", "scroll_the_bible"]);
@@ -61,7 +66,7 @@ test("Poky SQL requires production enrollment and keeps views separate from requ
   assert.match(sql, /countIf\(key = 'poky_tracking_environment' AND value = 'production'\) > 0/);
   assert.match(sql, /countIf\(key = 'poky_onboarding_journey_schema' AND value = '1'\) > 0/);
   assert.match(sql, /onboarding_paywall_screen_seen/);
-  assert.match(sql, /appInstallDate >=/);
+  assert.match(sql, /firstInstallDate >=/);
   assert.doesNotMatch(sql, /gp1_p_|paywall_placement|firstName|profileCurrentWeightLb/);
 });
 
@@ -77,7 +82,7 @@ test("Poky reports all assigned users and actual paywall views in each variant",
   ] as T[], "poky", 49771, "2026-10-01 00:00:00.000", "2026-10-04 00:00:00.000");
   assert.equal(report.status, "ready");
   assert.deepEqual(report.variants.map((variant) => variant.completionShare), [0.4, 0.25]);
-  const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report, windowLabel: "Last 7 days" }));
+  const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
   assert.match(html, /No intro · Plan B/);
   assert.match(html, /Animated intro · Plan A/);
   assert.match(html, /Earlier journeys cannot be reconstructed/);
@@ -113,7 +118,7 @@ test("screen reach is a share of assigned installs in that variant", () => {
   assert.equal(copy.steps.find((step) => step.attribute === "age_screen_seen")?.users, 0);
   assert.equal(copy.completionShare, 0);
 
-  const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report, windowLabel: "Last 7 days" }));
+  const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
   assert.match(html, /User journey/);
   assert.match(html, /Copy/);
   assert.match(html, /\(0%\)/);
@@ -151,7 +156,7 @@ test("completion is paywall reach, and the three steepest main-path drops are ma
   assert.equal(drops.find((drop) => drop.attribute === "paywall_seen")?.lost, 10);
   assert.equal(drops.find((drop) => drop.attribute === "c")?.branch, true);
   assert.deepEqual(largestDropAttributes(drops), ["b", "a", "paywall_seen"]);
-  const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report, windowLabel: "Last 7 days" }));
+  const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
   assert.match(html, /IAM/);
   assert.match(html, /\(40%\)/);
   assert.match(html, /#40/);
@@ -161,7 +166,7 @@ test("a variant with no screen attributes stays out of the chart", () => {
   const report = buildUserJourney(userJourneyDefinition("versy")!, [
     { variant: "bible_widget_shorter", key: ASSIGNED_KEY, users: 12 },
   ]);
-  const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report, windowLabel: "Last 7 days" }));
+  const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
   assert.match(html, /none of them have a screen-reached attribute yet/);
   assert.doesNotMatch(html, /bible_widget_entry_screen_seen/);
 });
@@ -170,7 +175,7 @@ test("journey sql stays inside the install window and the variant list", () => {
   const glow = userJourneyDefinition("glow")!;
   const sql = userJourneySql(54736, glow, "2026-09-18 00:00:00.000", "2026-09-25 00:00:00.000");
   assert.match(sql, /applicationId = 54736/);
-  assert.match(sql, /appInstallDate >=/);
+  assert.match(sql, /firstInstallDate >=/);
   assert.match(sql, /'iam', 'copy'/);
   assert.match(sql, /welcome_screen_seen/);
   assert.match(sql, /endsWith\(key, '__onboarding_iam_complete'\)/);

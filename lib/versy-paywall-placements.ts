@@ -36,6 +36,7 @@ export type VersyPlacementRow = {
 };
 
 export type VersyPlacementReport = {
+  snapshotUpdatedAt?: string;
   status: "ready" | "empty" | "setup_required" | "unavailable" | "limited";
   windowStart: string;
   windowEnd: string;

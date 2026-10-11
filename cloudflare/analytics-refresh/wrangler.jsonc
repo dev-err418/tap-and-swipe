@@ -1,0 +1,11 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tap-and-swipe-analytics-refresh",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-11",
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": { "ANALYTICS_ORIGIN": "https://tap-and-swipe.com" },
+  "triggers": { "crons": ["0,30 * * * *", "10,40 * * * *", "20,50 * * * *"] },
+  "observability": { "enabled": true }
+}

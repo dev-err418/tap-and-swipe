@@ -1,8 +1,10 @@
 import { parsePaywallAttributes, type PaywallAttribute, type PaywallRevenue } from "./native-paywall-analytics";
 import { observedSessionDays, sessionsPerUserDay } from "./experiment-session-rate";
 
-export const GLOW_ONBOARDING_ID = "onboarding_mascot_v1";
-export const GLOW_ONBOARDING_KEY = "goe1_onboarding_mascot_v1";
+export const GLOW_ONBOARDING_ID = "onboarding_copy_mascot_v2";
+export const GLOW_ONBOARDING_KEY = "goe1_onboarding_copy_mascot_v2";
+export const GLOW_ONBOARDING_LEGACY_ID = "onboarding_mascot_v1";
+export const GLOW_ONBOARDING_LEGACY_KEY = "goe1_onboarding_mascot_v1";
 export const DAY_MS = 86_400_000;
 type Variant = "current" | "mascot_free";
 type RecordValue = {
@@ -18,17 +20,18 @@ export type GlowOnboardingRow = {
   proceeds: number | null; arpu: number | null; proceedsVariance: number | null;
 };
 export type GlowOnboardingReport = {
+  experiment?: string; historical?: GlowOnboardingReport;
   status: "ready" | "empty" | "unavailable"; asOf: number;
   rows: GlowOnboardingRow[]; warnings: string[];
 };
 const object = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
 const timestamp = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v > 0;
 
-function parse(value: string, asOf: number): RecordValue | null {
+function parse(value: string, asOf: number, experiment: string): RecordValue | null {
   try {
     let r: unknown = JSON.parse(value);
     if (typeof r === "string") r = JSON.parse(r);
-    if (!object(r) || r.schema !== 1 || r.experiment !== GLOW_ONBOARDING_ID
+    if (!object(r) || r.schema !== 1 || r.experiment !== experiment
       || (r.allocation !== "15_85" && r.allocation !== "30_70")
       || !["current", "mascot_free"].includes(String(r.variant)) || typeof r.environment !== "string"
       || typeof r.language !== "string" || typeof r.randomized !== "boolean"
@@ -46,12 +49,12 @@ function parse(value: string, asOf: number): RecordValue | null {
 }
 
 /** Validate immutable assignment before filtering its dates; never mix old copy cohorts. */
-export function onboardingCohort(attributes: PaywallAttribute[], start: number, end: number, asOf: number) {
+export function onboardingCohort(attributes: PaywallAttribute[], start: number, end: number, asOf: number, experiment = GLOW_ONBOARDING_ID) {
   const records = new Map<string, RecordValue>();
   const rejected = new Set<string>();
   for (const a of attributes) {
-    if (a.key !== GLOW_ONBOARDING_KEY) continue;
-    const r = parse(a.value, asOf);
+    if (a.key !== `goe1_${experiment}`) continue;
+    const r = parse(a.value, asOf, experiment);
     if (!r || !a.appUserId) { rejected.add(a.appUserId); continue; }
     const previous = records.get(a.appUserId);
     if (previous && JSON.stringify(previous) !== JSON.stringify(r)) { rejected.add(a.appUserId); continue; }
@@ -105,8 +108,8 @@ function cancellationDurations(records: Map<string, RecordValue>, events: Paywal
 }
 
 /** All post-assignment net proceeds / assigned users, regardless of paywall or payment. */
-export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events: PaywallRevenue[], start: number, end: number, asOf: number): GlowOnboardingReport {
-  const { records, warnings } = onboardingCohort(attributes, start, end, asOf);
+export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events: PaywallRevenue[], start: number, end: number, asOf: number, experiment = GLOW_ONBOARDING_ID): GlowOnboardingReport {
+  const { records, warnings } = onboardingCohort(attributes, start, end, asOf, experiment);
   const cancellation = cancellationDurations(records, events, asOf);
   if (cancellation.incomplete) warnings.push("Some cancellations are missing a valid matching subscription start. Average time to cancel is withheld until these events are complete.");
   const unique = new Map<string, PaywallRevenue>();
@@ -161,7 +164,9 @@ export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events
       const duration = cancellation.durations.get(id);
       return duration === undefined ? [] : [duration];
     });
-    return { variant, label: variant === "current" ? "Current · 15%" : "No mascot · 85%", users: users.length,
+    return { variant, label: experiment === GLOW_ONBOARDING_LEGACY_ID
+      ? (variant === "current" ? "IAM · historical" : "No mascot · IAM wording · historical")
+      : (variant === "current" ? "Copy with mascot · 15%" : "Copy without mascot · 85%"), users: users.length,
       completed: users.filter(([, r]) => r.completedAt !== undefined).length,
       paid: users.filter(([id]) => paid.has(id)).length, sessions, sessionUserDays,
       cancelledUsers: cancelTimes.length,
@@ -170,5 +175,5 @@ export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events
       proceeds: incompleteMoney ? null : total, arpu: incompleteMoney ? null : mean,
       proceedsVariance: !incompleteMoney && users.length > 1 ? values.reduce((sum, value) => sum + (value - mean!) ** 2, 0) / (users.length - 1) : null };
   });
-  return { status: records.size ? "ready" : "empty", asOf, rows, warnings };
+  return { status: records.size ? "ready" : "empty", experiment, asOf, rows, warnings };
 }

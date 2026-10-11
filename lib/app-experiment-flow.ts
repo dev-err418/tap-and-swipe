@@ -67,7 +67,7 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
 }
 
 function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
-  const [onboarding, , paywalls] = map.tests;
+  const [onboarding, paywalls] = map.tests;
   const centerY = 64 + (paywalls.branches.length - 1) * 52;
   const nodes: ExperimentFlowNode[] = [
     { id: "start", x: 36, y: centerY, width: 0, label: "Prepared", kind: "start", tone: "blue" },
@@ -77,7 +77,7 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   const edges: ExperimentFlowEdge[] = [];
   onboarding.branches.forEach((branch, index) => {
     nodes.push({
-      id: branch.id, x: 164, y: centerY - 56 + index * 112, width: 160, label: branch.label, detail: "Enrollment off", tone: "blue",
+      id: branch.id, x: 164, y: centerY - 56 + index * 112, width: 160, label: branch.label, detail: "Next app build", tone: "blue",
       experimentId: onboarding.id, variantId: branch.id,
     });
     edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` }, { from: branch.id, to: "placements" });
@@ -94,7 +94,7 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   return {
     width: 1136, height: 112 + (paywalls.branches.length - 1) * 104, nodes, edges,
     stages: [{ x: 164, label: "Onboarding flow" }, { x: 390, label: "Placements" }, { x: 684, label: "Native paywalls" }, { x: 960, label: "Practice" }],
-    notes: ["The new onboarding experience is prepared at 15% Current / 85% No mascot. Enrollment remains off until the treatment is complete; the current IAM / Copy experiment is reported separately.", "Each Yearly/Weekly design receives 25%; yr_49, yr_59 and yr_34 share the remaining 50% equally (~17% each). Displayed percentages are rounded; the actual allocation totals 100%. The split applies within each language, independently of onboarding experience.", ...map.notes],
+    notes: ["The next app build compares 15% Copy with mascot / 85% Copy without mascot. IAM wording is retired; historical results remain separate.", "Each Yearly/Weekly design receives 25%; yr_49, yr_59 and yr_34 share the remaining 50% equally (~17% each). Displayed percentages are rounded; the actual allocation totals 100%. The split applies within each language, independently of onboarding experience.", ...map.notes],
   };
 }
 

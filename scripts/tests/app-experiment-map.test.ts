@@ -44,12 +44,11 @@ test("Glow keeps onboarding and paywall assignments after retiring the Journal c
   const map = appExperimentMap("glow")!;
   assert.equal(map.tests[0].planned, true);
   assert.deepEqual(map.tests[0].branches.map((b) => b.percent), [15, 85]);
-  assert.deepEqual(map.tests.map((experiment) => experiment.id), ["onboarding_mascot_v1", "glow-onboarding-copy", "native_paywalls_v3"]);
+  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "native_paywalls_v3"]);
   assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.label, "Practice");
   assert.ok(map.notes.some((note) => note.includes("Glow 1.7.3 extends English yearly-only yr_59 presentations through September 28")));
-  assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [50, 50]);
-  assert.deepEqual(map.tests[2].branches.map((branch) => branch.percent), [100 / 6, 100 / 6, 100 / 6, 25, 25]);
-  for (const branch of map.tests[2].branches) {
+  assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [100 / 6, 100 / 6, 100 / 6, 25, 25]);
+  for (const branch of map.tests[1].branches) {
     assert.equal(branch.percent, nativePaywallAllocation("native_paywalls_v3", branch.id, branch.id));
   }
 });
@@ -111,7 +110,7 @@ test("unsupported apps do not show invented experiments", () => {
 });
 
 test("active A/B counts include the new plan design and trial offer assignments", () => {
-  assert.equal(activeABTestCount("glow"), 2);
+  assert.equal(activeABTestCount("glow"), 1);
   assert.equal(activeABTestCount("poky"), 4);
   assert.equal(activeABTestCount("versy"), 3);
 });
@@ -156,7 +155,7 @@ test("configured maps render their percentage badges without analytics data", ()
     if (app === "glow") {
       assert.match(markup, />15%<\/text>/);
       assert.match(markup, />85%<\/text>/);
-      assert.match(markup, /Enrollment off/);
+      assert.match(markup, /Next app build/);
     } else assert.match(markup, />50%<\/text>/);
     assert.match(markup, /Start/);
     assert.match(markup, /onboarding/);
@@ -234,14 +233,14 @@ test("Poky intro parents use observed cohort weights and missing data stays unav
   assert.equal(partial.get("plan-animated_plan_a")?.isBest, false);
 });
 
-test("Poky map uses the selected language's plan cohorts", () => {
+test("Poky map defaults to Spanish and uses its plan cohorts", () => {
   const cohorts = experiment("poky-plan-design-combinations", "appu", [
     variant("animated_plan_a", { installs: 10, proceeds: 1000 }),
     variant("animated_plan_b", { installs: 10, proceeds: 1000 }),
     variant("no_intro_plan_a", { installs: 10, proceeds: 1000 }),
     variant("no_intro_plan_b", { installs: 10, proceeds: 1000 }),
   ]);
-  cohorts.languageVariants = { en: [
+  cohorts.languageVariants = { es: [
     variant("animated_plan_a", { installs: 30, proceeds: 30 }),
     variant("animated_plan_b", { installs: 10, proceeds: 30 }),
     variant("no_intro_plan_a", { installs: 5, proceeds: 0 }),
@@ -250,6 +249,8 @@ test("Poky map uses the selected language's plan cohorts", () => {
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
     appId: "poky", experiments: [cohorts], nativePaywalls: NATIVE_PAYWALL_DEMO_REPORT,
   }));
+  assert.match(markup, /<button[^>]*aria-pressed="true"[^>]*><span[^>]*>🇪🇸<\/span>Spanish<\/button>/);
+  assert.ok(markup.indexOf("Spanish</button>") < markup.indexOf("English</button>"));
   assert.match(markup, /APPU \$1\.50/);
   assert.match(markup, /40 users · \$60\.00 net proceeds/);
   assert.doesNotMatch(markup, /APPU \$100\.00/);
@@ -348,7 +349,7 @@ test("Glow's experience map uses all assigned users regardless of paywall langua
     appId: "glow", experiments: [localized], nativePaywalls: NATIVE_PAYWALL_DEMO_REPORT, onboardingExperience: report,
   }));
   assert.match(markup, /ARPU \$0\.00/);
-  assert.match(markup, /No mascot \(1\)/);
+  assert.match(markup, /Copy without mascot \(1\)/);
   assert.doesNotMatch(markup, /APPU \$9\.00|APPU \$8\.00|APPU \$0\.10|APPU \$0\.20/);
 });
 
