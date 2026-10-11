@@ -21,7 +21,13 @@ export function completeAnalyticsReport(value: unknown): boolean {
   if (value === null || typeof value !== "object") return true;
   if (Array.isArray(value)) return value.every(completeAnalyticsReport);
   const record = value as Record<string, unknown>;
-  if (["unavailable", "setup_required", "limited", "truncated"].includes(String(record.status))) return false;
+  // A valid experiment can lack enough observations to estimate statistical
+  // readiness. That is different from a failed data fetch and is safe to cache.
+  const statisticalReadiness = typeof record.observed === "number"
+    && typeof record.minimumDetectableEffect === "number"
+    && typeof record.confidenceLevel === "number" && typeof record.power === "number";
+  if (["unavailable", "setup_required", "limited", "truncated"].includes(String(record.status))
+    && !(record.status === "unavailable" && statisticalReadiness)) return false;
   if (record.truncated === true || record.cohortDataAvailable === false || record.sessionsAvailable === false) return false;
   return Object.values(record).every(completeAnalyticsReport);
 }

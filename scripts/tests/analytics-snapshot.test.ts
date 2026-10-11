@@ -98,3 +98,15 @@ test("production persistence requires an explicitly configured volume", () => {
     assert.equal(analyticsSnapshotDirectory(), null);
   } finally { process.env = original; }
 });
+
+
+test("an unavailable statistical estimate does not reject a complete experiment report", async (t) => {
+  const { cache } = await fixture(t);
+  const report = { status: "ready", estimate: { readiness: {
+    status: "unavailable", observed: 3, minimumDetectableEffect: 0.5,
+    confidenceLevel: 0.95, power: 0.8, reason: "Waiting for a non-zero control baseline.",
+  } } };
+  const saved = await refreshAnalyticsSnapshots(() => cache("experiment", async () => report));
+  assert.ok(saved.snapshotUpdatedAt);
+  assert.equal(completeAnalyticsReport({ ...report, product: { status: "unavailable" } }), false);
+});
