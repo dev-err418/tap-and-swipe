@@ -4,7 +4,7 @@ import { useState } from "react";
 import { type NativePaywallReport, type NativePaywallRow } from "@/lib/native-paywall-analytics";
 import { DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS } from "./dashboard-surface";
 import { cn } from "@/lib/utils";
-import { GLOW_PAYWALL_EXPERIMENT, formatPaywallAllocation, nativePaywallAllocation } from "@/lib/native-paywall-allocation";
+import { GLOW_PAYWALL_EXPERIMENT, GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES, formatPaywallAllocation, glowYearlyPrice, nativePaywallAllocation } from "@/lib/native-paywall-allocation";
 import { ReadinessIndicator } from "@/components/analytics/ExperimentStats";
 
 const languages: Record<string, string> = { all: "All languages", en: "English", es: "Spanish", de: "German", fr: "French", pt: "Portuguese" };
@@ -47,7 +47,10 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
   const availableLanguages = [...new Set(report?.groups.filter((g) => appId === "versy" || g.language !== "all").map((g) => g.language) ?? [])]
     .sort((a, b) => a === b ? 0 : a === "en" ? -1 : b === "en" ? 1 : 0);
   const selectedLanguage = availableLanguages.includes(language) ? language : availableLanguages[0];
-  const groups = report?.groups.filter((g) => g.language === selectedLanguage).sort((a, b) => a.name.localeCompare(b.name)) ?? [];
+  const groups = report?.groups.filter((g) => g.language === selectedLanguage).sort((a, b) =>
+    appId === "glow"
+      ? Number(b.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id) - Number(a.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id) || a.name.localeCompare(b.name)
+      : a.name.localeCompare(b.name)) ?? [];
 
   return <div className="space-y-4">
     {appId === "versy" && <section aria-label="Configured daily gift paywall" className="space-y-2 pt-2">
@@ -58,15 +61,16 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
         <p className="text-xs text-muted-foreground">English, Spanish, Brazilian Portuguese and German. Production results appear after the updated iOS app is released; this configuration is not evidence of live traffic.</p>
       </div>
     </section>}
-    {appId === "glow" && <section aria-label="Configured paywall allocation" className="space-y-2 pt-2">
-      <h2 className="px-1 text-sm font-semibold">Glow paywall allocation</h2>
+    {appId === "glow" && <section aria-label="Configured yearly price comparison" className="space-y-2 pt-2">
+      <h2 className="px-1 text-sm font-semibold">Glow yearly price comparison</h2>
       <div className={cn(DASHBOARD_SURFACE_CLASS, "space-y-3 p-5")}>
         <div className="flex flex-wrap gap-2">
-          {GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => <span key={id} className="rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-2 py-1 text-xs text-[#1d4ed8]">
-            {id} <span className="ml-1 font-semibold tabular-nums">{formatPaywallAllocation(percent)}</span>
+          {GLOW_YEARLY_PRICES.map(({ id, price }) => <span key={id} className="rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-2 py-1 text-xs text-[#1d4ed8]">
+            {price} <span className="ml-1 font-semibold tabular-nums">{formatPaywallAllocation(GLOW_YEARLY_PRICE_EXPERIMENT.variants.find((variant) => variant.id === id)!.percent)}</span>
           </span>)}
         </div>
-        <p className="text-xs text-muted-foreground">In the updated Glow app, English paywall views through October 5 use the yearly-only yr_59 offer and are reported separately. The saved five-way v3 assignment resumes presentations October 6 (device local time).</p>
+        <p className="text-xs text-muted-foreground">The next Glow app build assigns these three annual-only offers equally under a new test. Prices are US references; localized StoreKit prices may differ. Earlier five-variant assignments and purchases remain in their own historical report.</p>
+        <p className="text-xs text-muted-foreground">The October 7–11 US yearly-only presentation on older builds remains a separate, nonrandomized cohort. It is never mixed into this three-price test.</p>
       </div>
     </section>}
     <section className="space-y-2 pt-2">
@@ -87,7 +91,18 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
         {appId === "versy" && <p className="px-1 text-xs text-muted-foreground">{group.experiment === "versy_daily_gift_v1"
           ? "Daily gift reaches count people shown the sealed envelope; views count people who revealed the offer. Repeat daily openings count once. This is a 100% rollout for eligible non-premium users, not an A/B test. Purchases, renewals and refunds stay attributed to the gift; USD proceeds come from Apple."
           : "USD net proceeds include linked renewals and refunds through today. New onboarding includes everyone enrolled at Welcome, including non-payers; returning users are separate. These all-country outcomes include forced Mexico assignments, so they do not declare a randomized winner. Trials count as conversions; paid users require a paid charge."}</p>}
-        <NativePaywallResultsTable title={appId === "versy" && group.experiment !== "versy_daily_gift_v1" ? "Onboarding variants" : group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} showPaidUsers={appId === "versy"} />
+        {appId === "glow" && (group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id || group.experiment === GLOW_PAYWALL_EXPERIMENT.id || group.experiment === "native_paywall_us_yearly_oct2026") ? <>
+          <p className="px-1 text-xs text-muted-foreground">{group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id
+            ? "Current randomized test: three annual-only prices, one-third of assignments each. Outcomes are comparable within this cohort."
+            : group.experiment === GLOW_PAYWALL_EXPERIMENT.id
+              ? "Historical annual-only arms from the five-variant test. The five-arm probability-of-best statistic is omitted from this subset."
+              : "Temporary US annual-only presentations. These inherit earlier five-way assignments, so compare their outcomes descriptively; do not treat this as a randomized three-price test."}</p>
+          <NativePaywallResultsTable title="Yearly prices" rows={group.paywalls.filter((row) => glowYearlyPrice(row.id, row.paywall) !== null)} experiment={group.experiment} language={group.language} showProbabilityBest={group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id} showGlowYearlyPrice />
+          {group.experiment === GLOW_PAYWALL_EXPERIMENT.id && group.paywalls.some((row) => glowYearlyPrice(row.id, row.paywall) === null) && <details className="space-y-2">
+            <summary className="cursor-pointer px-1 text-xs text-muted-foreground">Other paywall layouts in this five-variant test</summary>
+            <NativePaywallResultsTable title="Annual + weekly layouts" rows={group.paywalls.filter((row) => glowYearlyPrice(row.id, row.paywall) === null)} experiment={group.experiment} language={group.language} showProbabilityBest={false} />
+          </details>}
+        </> : <NativePaywallResultsTable title={appId === "versy" && group.experiment !== "versy_daily_gift_v1" ? "Onboarding variants" : group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} showPaidUsers={appId === "versy"} />}
         <NativePaywallResultsTable title="Placements" rows={group.placements} placement showPaidUsers={appId === "versy"} />
       </div>)}
   </div>;
@@ -97,7 +112,7 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <div className={cn(DASHBOARD_SURFACE_CLASS, "flex min-h-48 items-center justify-center p-8 text-center text-sm text-muted-foreground")}>{children}</div>;
 }
 
-export function NativePaywallResultsTable({ title, rows, experiment, language, placement = false, flow = false, showPaidUsers = false }: { title: string; rows: NativePaywallRow[]; experiment?: string; language?: string; placement?: boolean; flow?: boolean; showPaidUsers?: boolean }) {
+export function NativePaywallResultsTable({ title, rows, experiment, language, placement = false, flow = false, showPaidUsers = false, showProbabilityBest = true, showGlowYearlyPrice = false }: { title: string; rows: NativePaywallRow[]; experiment?: string; language?: string; placement?: boolean; flow?: boolean; showPaidUsers?: boolean; showProbabilityBest?: boolean; showGlowYearlyPrice?: boolean }) {
   const sortedRows = [...rows].sort((a, b) => {
     const appuA = a.users ? a.proceeds / a.users : Number.NEGATIVE_INFINITY;
     const appuB = b.users ? b.proceeds / b.users : Number.NEGATIVE_INFINITY;
@@ -115,10 +130,10 @@ export function NativePaywallResultsTable({ title, rows, experiment, language, p
     const interval = estimate.credibleInterval;
     return Math.max(bound, Math.abs(estimate.relativeDelta ?? 0), ...(interval ? interval.map(Math.abs) : [0]));
   }, 0.25);
-  const readiness = placement ? null : sortedRows.find((row) => row.estimate.readiness)?.estimate.readiness ?? null;
+  const readiness = placement || !showProbabilityBest ? null : sortedRows.find((row) => row.estimate.readiness)?.estimate.readiness ?? null;
   const columns = [
     ["Total APPU", flow ? "All net proceeds after recovery assignment, from any paywall, divided by unique assigned users. Each person counts once, including non-payers." : "All net proceeds attributed to this paywall through today, including renewals and refunds, divided by every assigned user."],
-    ["Probability best", placement ? "Placements have different audiences and are not randomized." : "Approximate probability of the highest total APPU. Shown early; treat it as unstable until every variant has 20 users and 3 paid users. The bar is the 95% confidence interval for APPU lift versus the first paywall."],
+    ...(showProbabilityBest ? [["Probability best", placement ? "Placements have different audiences and are not randomized." : "Approximate probability of the highest total APPU. Shown early; treat it as unstable until every variant has 20 users and 3 paid users. The bar is the 95% confidence interval for APPU lift versus the first paywall."]] : []),
     ["Conv. rate", flow ? "Users with a verified new purchase after assignment divided by all assigned users. Includes regular and recovery purchases." : "Conversions divided by unique viewers. The bar is a 95% confidence interval for the true conversion rate, not a daily high/low range."],
     ["Users", placement ? "Assigned users who reached this placement. A user may reach several placements." : "All users assigned to this variant, including non-viewers and non-payers."],
     [flow ? "Recovery views" : "Views", "Unique users who actually saw the native paywall; repeat openings count once."],
@@ -148,20 +163,20 @@ export function NativePaywallResultsTable({ title, rows, experiment, language, p
             "border-b border-black/[0.04] last:border-0",
             highRefundRate && "border-red-200 bg-red-100/80 text-red-950 [&_.text-muted-foreground]:text-red-700",
           )}>
-            <td className="px-5 py-4"><div className="flex items-center gap-2 font-medium"><span>{row.label}</span>{allocation != null && <span
+            <td className="px-5 py-4"><div className="flex items-center gap-2 font-medium"><span>{showGlowYearlyPrice ? glowYearlyPrice(row.id, row.paywall) ?? row.label : row.label}</span>{allocation != null && <span
               className="inline-flex shrink-0 rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-[#1d4ed8]"
               title="Hardcoded allocation in the app, not observed traffic or confirmation of App Store rollout."
               aria-label={`${formatPaywallAllocation(allocation)} configured allocation`}
             >{formatPaywallAllocation(allocation)}</span>}</div>{row.paywall && <div className="mt-1 text-[10px] text-muted-foreground">{row.paywall}</div>}</td>
             <Cell>{row.users ? currency(row.proceeds / row.users) : "—"}</Cell>
-            <ProbabilityBestCell
+            {showProbabilityBest && <ProbabilityBestCell
               chance={placement ? null : estimate.chanceBest}
               isLeader={!placement && estimate.chanceBest != null && estimate.chanceBest === uniqueHighestChance}
               relativeDelta={placement ? null : estimate.relativeDelta}
               interval={placement ? null : estimate.credibleInterval}
               bound={probabilityBound}
               reason={placement ? "Placements are not randomly assigned." : estimate.reason}
-            />
+            />}
             <ConversionRateCell conversions={row.conversions} views={flow ? row.users : row.views} domain={conversionDomain} />
             <Cell>{count(row.users)}</Cell><Cell>{count(row.views)}</Cell>
             <Cell><span title={`${count(row.paid)} users have paid`}>{count(row.conversions)}</span></Cell>

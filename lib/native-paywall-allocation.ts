@@ -1,7 +1,7 @@
 /**
  * Mirrors the hardcoded Glow and Poky allocations in app code.
  * Not remote app config or observed traffic. Glow 1.7.2 ships the v3 split,
- * The updated Glow app extends the English presentation override through October 5, 2026.
+ * Glow also has a separate US yearly-only presentation cohort through October 11, 2026.
  * Historical native_yearly_v1 retains its original 50/50 allocation.
  */
 export const GLOW_PAYWALL_EXPERIMENT = {
@@ -15,6 +15,24 @@ export const GLOW_PAYWALL_EXPERIMENT = {
     { id: "yr_wk_34", percent: 25 },
   ],
 } as const;
+
+/** US reference prices for the three annual-only StoreKit products. */
+export const GLOW_YEARLY_PRICES = [
+  { id: "yr_34", price: "$34.99/year" },
+  { id: "yr_49", price: "$49.99/year" },
+  { id: "yr_59", price: "$59.99/year" },
+] as const;
+
+export const GLOW_YEARLY_PRICE_EXPERIMENT = {
+  id: "native_yearly_prices_v4",
+  name: "Yearly prices · 3 variants",
+  variants: GLOW_YEARLY_PRICES.map(({ id }) => ({ id, percent: 100 / 3 })),
+} as const;
+
+export function glowYearlyPrice(variant: string, paywall: string): string | null {
+  const match = GLOW_YEARLY_PRICES.find(({ id }) => (variant === id || variant === `${id}|${id}`) && paywall === id);
+  return match?.price ?? null;
+}
 
 export function formatPaywallAllocation(percent: number): string {
   return Math.abs(percent - 100 / 6) < 1e-9 ? "~17%" : `${Number(percent.toFixed(2))}%`;
@@ -30,6 +48,9 @@ const allocations = [
   }))),
   ...GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => ({
     experiment: GLOW_PAYWALL_EXPERIMENT.id, variant: id, paywall: id, percent,
+  })),
+  ...GLOW_YEARLY_PRICE_EXPERIMENT.variants.map(({ id, percent }) => ({
+    experiment: GLOW_YEARLY_PRICE_EXPERIMENT.id, variant: id, paywall: id, percent,
   })),
   { experiment: "native_paywall_legacy_en_sep2026", variant: "yr_59", paywall: "yr_59", language: "en", percent: 100 },
   { experiment: "native_yearly_v1", variant: "annual", paywall: "native_timeline_annual_v1", percent: 50 },

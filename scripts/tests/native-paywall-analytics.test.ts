@@ -17,6 +17,19 @@ function fixture(owner: string, overrides: Partial<PaywallRecord> = {}, tx = "10
 const money = (overrides: Partial<PaywallRevenue> = {}): PaywallRevenue => ({ id: "charge", name: "initial_purchase", originalTransactionId: "100", transactionId: "100", isRefund: 0, price: 10, proceeds: 8.5, ts: iso(2), purchasedAt: iso(2), attributionTs: iso(2), ...overrides });
 const report = (attrs: PaywallAttribute[], events: PaywallRevenue[]) => buildNativePaywallReport(attrs, events, start, start + DAY, start + 10 * DAY);
 
+test("v4 annual price assignments keep a readable group name and three separate variants", () => {
+  const attrs = (["yr_34", "yr_49", "yr_59"] as const).map((variant, index) => attribute(`v4-${index}`,
+    "gp1_a_native_yearly_prices_v4", record({
+      experiment: "native_yearly_prices_v4", experimentName: "native_yearly_prices_v4",
+      variant, variantName: variant, paywall: variant, variantCount: 3,
+      expectedProduct: ["yearly34", "annual", "proYearly"][index],
+      allowedProducts: [["yearly34"], ["annual"], ["proYearly"]][index],
+    })));
+  const group = report(attrs, []).groups.find((item) => item.language === "en")!;
+  assert.equal(group.name, "Yearly prices · 3 variants");
+  assert.deepEqual(group.paywalls.map((row) => row.id), ["yr_34|yr_34", "yr_49|yr_49", "yr_59|yr_59"]);
+});
+
 test("APPU includes non-viewers/non-payers; views are unique; language is frozen", () => {
   const attrs = [...fixture("u1"), attribute("u2", "gp1_a_price_v1", record()), ...fixture("u3", { language: "es" }, "200")];
   const result = report(attrs, [money()]);

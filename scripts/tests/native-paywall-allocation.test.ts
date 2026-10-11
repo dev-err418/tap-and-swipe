@@ -3,7 +3,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import NativePaywallsPanel from "../../components/analytics/NativePaywallsPanel";
-import { GLOW_PAYWALL_EXPERIMENT, formatPaywallAllocation, nativePaywallAllocation } from "../../lib/native-paywall-allocation";
+import { GLOW_PAYWALL_EXPERIMENT, GLOW_YEARLY_PRICE_EXPERIMENT, formatPaywallAllocation, glowYearlyPrice, nativePaywallAllocation } from "../../lib/native-paywall-allocation";
 import { NATIVE_PAYWALL_DEMO_REPORT } from "../../lib/native-paywall-demo";
 
 test("every fixture audience mirrors all five v3 allocations", () => {
@@ -27,17 +27,50 @@ test("v3 composite rows use exact equal yearly weights and readable percentage l
   assert.equal(nativePaywallAllocation("native_paywalls_v3", "yr_wk_34", "yr_wk_59"), null);
 });
 
-test("the live paywall panel shows the released allocation and English override even before data arrives", () => {
+test("the live paywall panel shows the new equal three-price allocation", () => {
   const markup = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "glow", report: null }));
-  for (const { id } of GLOW_PAYWALL_EXPERIMENT.variants) assert.ok(markup.includes(id));
-  assert.match(markup, /~17%/);
-  assert.match(markup, /25%/);
+  for (const price of ["$34.99/year", "$49.99/year", "$59.99/year"]) assert.ok(markup.includes(price));
+  assert.equal((markup.match(/33\.33%/g) ?? []).length, 3);
   assert.doesNotMatch(markup, /166666/);
-  assert.match(markup, /Glow paywall allocation/);
-  assert.match(markup, /In the updated Glow app, English paywall views through October 5 use the yearly-only yr_59 offer/);
-  assert.match(markup, /resumes presentations October 6 \(device local time\)/);
+  assert.match(markup, /Glow yearly price comparison/);
+  assert.match(markup, /next Glow app build assigns these three annual-only offers equally/);
+  assert.match(markup, /never mixed into this three-price test/);
   const poky = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "poky", report: null }));
   assert.doesNotMatch(poky, /yr_wk_34/);
+});
+
+test("v4 allocates one third to each yearly price and leaves v3 history untouched", () => {
+  const allocations = GLOW_YEARLY_PRICE_EXPERIMENT.variants.map(({ id }) =>
+    nativePaywallAllocation(GLOW_YEARLY_PRICE_EXPERIMENT.id, `${id}|${id}`, id));
+  assert.deepEqual(allocations, [100 / 3, 100 / 3, 100 / 3]);
+  assert.equal(allocations.reduce<number>((sum, value) => sum + (value ?? 0), 0), 100);
+  assert.equal(nativePaywallAllocation(GLOW_YEARLY_PRICE_EXPERIMENT.id, "yr_wk_34|yr_wk_34", "yr_wk_34"), null);
+  assert.equal(nativePaywallAllocation(GLOW_PAYWALL_EXPERIMENT.id, "yr_wk_34|yr_wk_34", "yr_wk_34"), 25);
+});
+
+test("annual-only prices are exact and weekly layouts cannot enter the price comparison", () => {
+  assert.equal(glowYearlyPrice("yr_34|yr_34", "yr_34"), "$34.99/year");
+  assert.equal(glowYearlyPrice("yr_49", "yr_49"), "$49.99/year");
+  assert.equal(glowYearlyPrice("yr_59|yr_59", "yr_59"), "$59.99/year");
+  assert.equal(glowYearlyPrice("yr_wk_59|yr_wk_59", "yr_wk_59"), null);
+  assert.equal(glowYearlyPrice("yr_34|yr_34", "yr_wk_34"), null);
+});
+
+test("the temporary US yearly cohort is labeled as observational with no allocation badge or winner estimate", () => {
+  const report = {
+    ...NATIVE_PAYWALL_DEMO_REPORT,
+    groups: [{
+      ...NATIVE_PAYWALL_DEMO_REPORT.groups.find((group) => group.language === "en")!,
+      experiment: "native_paywall_us_yearly_oct2026",
+      name: "US yearly-only through October 11",
+      paywalls: NATIVE_PAYWALL_DEMO_REPORT.groups.find((group) => group.language === "en")!.paywalls.slice(0, 3),
+      placements: [],
+    }],
+  };
+  const markup = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "glow", report }));
+  assert.match(markup, /do not treat this as a randomized three-price test/);
+  assert.match(markup, /\$34\.99\/year/);
+  assert.doesNotMatch(markup, /configured allocation|chance to win/);
 });
 
 test("the temporary English presentation is a separate single-offer experiment", () => {
@@ -48,6 +81,9 @@ test("the temporary English presentation is a separate single-offer experiment",
 test("the paywall panel uses one total APPU metric without fixed-day windows", () => {
   const markup = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "glow", report: NATIVE_PAYWALL_DEMO_REPORT }));
   assert.match(markup, /Total APPU/);
+  assert.match(markup, /Yearly prices/);
+  assert.match(markup, /Other paywall layouts in this five-variant test/);
+  assert.equal((markup.match(/Probability best/g) ?? []).length, 1); // Placements retain their existing columns.
   assert.doesNotMatch(markup, /APPU window|Estimated APPU D7|Estimated APPU D14|Estimated APPU D30/);
 });
 

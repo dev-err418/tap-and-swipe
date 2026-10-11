@@ -1,5 +1,5 @@
 import { GLOW_ONBOARDING_ID } from "./glow-onboarding-experience";
-import { GLOW_PAYWALL_EXPERIMENT } from "./native-paywall-allocation";
+import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
 
 export type ExperimentMapBranch = { id: string; label: string; percent: number };
 export type ExperimentMapTest = {
@@ -18,7 +18,7 @@ export type AppExperimentMapDefinition = {
 
 /**
  * Configuration snapshot, not observed traffic or a remote app configuration.
- * Verified 2026-09-19 against Glow's OnboardingExperiment/GlowProductID,
+ * Verified 2026-10-11 against Glow's OnboardingExperiment/GlowProductID,
  * Poky's independent onboarding intro, plan screen, and paywall routing.
  * Update this alongside app/campaign allocation changes.
  * Historical result cards are deliberately not the source of active tests.
@@ -35,10 +35,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
         {
-          id: GLOW_PAYWALL_EXPERIMENT.id, label: "Native paywalls", scope: "Glow 1.7.2 · English / fallback · Spanish · German", tone: "orange",
-          branches: GLOW_PAYWALL_EXPERIMENT.variants.map(({ id, percent }) => ({
+          id: GLOW_YEARLY_PRICE_EXPERIMENT.id, label: "Yearly price", scope: "Next app build · three annual-only offers · all languages", tone: "orange", planned: true,
+          branches: GLOW_YEARLY_PRICE_EXPERIMENT.variants.map(({ id, percent }) => ({
             id,
-            label: id,
+            label: GLOW_YEARLY_PRICES.find((price) => price.id === id)!.price,
             percent,
           })),
         },
@@ -47,7 +47,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         "Results start September 20, 2026 at 08:00 GMT+2; earlier cohorts and proceeds are excluded.",
         "Practice is the only Home experience in the next Glow release. The Journal comparison has ended.",
         "IAM wording is retired in the next app build. Both onboarding arms use Copy wording under a new experiment ID; historical comparisons stay separate.",
-        "Glow 1.7.3 extends English yearly-only yr_59 presentations through September 28 under the separate legacy experiment; saved v3 assignments resume September 29 (device local time).",
+        "The new price test saves a v4 assignment. Earlier five-variant v3 and temporary US yearly-only presentations remain separate in Paywalls, along with their purchase attribution.",
         "The split shows app configuration, not observed traffic. StoreKit determines which subscriptions are available and their displayed prices.",
       ],
     };

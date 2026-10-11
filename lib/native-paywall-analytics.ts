@@ -168,7 +168,7 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
     const id = `${r.experiment}|${language}`;
     let group = groups.get(id);
     if (!group) {
-      group = { experiment: r.experiment, name: isRecoveryExperiment(r.experiment)
+      group = { experiment: r.experiment, name: r.experiment === "native_yearly_prices_v4" ? "Yearly prices · 3 variants" : isRecoveryExperiment(r.experiment)
         ? r.experiment.includes("_v2_") ? "Regular flow vs recovery · retired 50/50" : "Recovery after cancellation · legacy 50/50"
         : r.experimentName, language, paywalls: new Map(), placements: new Map() };
       groups.set(id, group);

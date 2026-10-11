@@ -94,7 +94,7 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   return {
     width: 1136, height: 112 + (paywalls.branches.length - 1) * 104, nodes, edges,
     stages: [{ x: 164, label: "Onboarding flow" }, { x: 390, label: "Placements" }, { x: 684, label: "Native paywalls" }, { x: 960, label: "Practice" }],
-    notes: ["The next app build assigns eligible new users 50% IAM / 50% manifest-audio. Both flows use the cream/orange, mascot-free appearance. Earlier wording and mascot results remain separate.", "Each Yearly/Weekly design receives 25%; yr_49, yr_59 and yr_34 share the remaining 50% equally (~17% each). Displayed percentages are rounded; the actual allocation totals 100%. The split applies within each language, independently of onboarding experience.", ...map.notes],
+    notes: ["The next app build assigns eligible new users 50% IAM / 50% manifest-audio. Both flows use the cream/orange, mascot-free appearance. Earlier wording and mascot results remain separate.", "The separate yearly-price test assigns $34.99, $49.99 and $59.99 annual offers equally. All three use the same timeline layout. Displayed percentages are rounded; the actual allocation totals 100% within each language.", ...map.notes],
   };
 }
 

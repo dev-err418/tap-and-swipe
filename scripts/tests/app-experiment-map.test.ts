@@ -6,7 +6,7 @@ import AppExperimentMap, { currentBestPathNodeIds, currentBestVariants, currentC
 import { activeABTestCount, appExperimentMap } from "../../lib/app-experiment-map";
 import { appExperimentFlow } from "../../lib/app-experiment-flow";
 import type { MobileAppExperiment, MobileAppExperimentVariant } from "../../lib/mobile-app-analytics";
-import { NATIVE_PAYWALL_DEMO_REPORT } from "../../lib/native-paywall-demo";
+import { NATIVE_PAYWALL_DEMO_REPORT, YEARLY_PRICE_DEMO_REPORT } from "../../lib/native-paywall-demo";
 import { nativePaywallAllocation } from "../../lib/native-paywall-allocation";
 import { orderAppExperiments } from "../../lib/app-experiment-order";
 import { GLOW_EXPERIMENT_START_MS, glowExperimentStart } from "../../lib/glow-experiment-window";
@@ -44,12 +44,12 @@ test("Glow keeps onboarding and paywall assignments after retiring the Journal c
   const map = appExperimentMap("glow")!;
   assert.equal(map.tests[0].planned, true);
   assert.deepEqual(map.tests[0].branches.map((b) => b.percent), [50, 50]);
-  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "native_paywalls_v3"]);
+  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "native_yearly_prices_v4"]);
   assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.label, "Practice");
-  assert.ok(map.notes.some((note) => note.includes("Glow 1.7.3 extends English yearly-only yr_59 presentations through September 28")));
-  assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [100 / 6, 100 / 6, 100 / 6, 25, 25]);
+  assert.ok(map.notes.some((note) => note.includes("Earlier five-variant v3")));
+  assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [100 / 3, 100 / 3, 100 / 3]);
   for (const branch of map.tests[1].branches) {
-    assert.equal(branch.percent, nativePaywallAllocation("native_paywalls_v3", branch.id, branch.id));
+    assert.equal(branch.percent, nativePaywallAllocation("native_yearly_prices_v4", branch.id, branch.id));
   }
 });
 
@@ -110,7 +110,7 @@ test("unsupported apps do not show invented experiments", () => {
 });
 
 test("active A/B counts include the new plan design and trial offer assignments", () => {
-  assert.equal(activeABTestCount("glow"), 1);
+  assert.equal(activeABTestCount("glow"), 0); // Both next-build assignments are prepared, not released.
   assert.equal(activeABTestCount("poky"), 4);
   assert.equal(activeABTestCount("versy"), 3);
 });
@@ -278,24 +278,24 @@ test("the map falls back to overall APPU when fixed-age branches are not mature"
 
 test("paywall variants use compact APPU/CR cards and highlight the unique APPU leader", () => {
   const flow = appExperimentFlow("glow")!;
-  const metrics = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT);
-  assert.equal(metrics.size, 5);
+  const metrics = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT);
+  assert.equal(metrics.size, 3);
   assert.ok([...metrics.values()].every((metric) => metric.appu != null && metric.conversionRate != null));
   assert.ok([...metrics.values()].every((metric) => metric.users != null));
 
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
     appId: "glow",
-    nativePaywalls: NATIVE_PAYWALL_DEMO_REPORT,
+    nativePaywalls: YEARLY_PRICE_DEMO_REPORT,
   }));
   assert.match(markup, /Experiment map language audience/);
   assert.match(markup, /English/);
   assert.match(markup, /Spanish/);
   assert.match(markup, /German/);
-  assert.equal(markup.match(/APPU \$/g)?.length, 5);
-  assert.equal(markup.match(/ · CR /g)?.length, 5);
+  assert.equal(markup.match(/APPU \$/g)?.length, 3);
+  assert.equal(markup.match(/ · CR /g)?.length, 3);
   assert.match(markup, /fill="#fff0e4"/);
-  const englishUsers = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT, "en").get("yr_49")!.users!;
-  assert.match(markup, new RegExp(`yr_49 \\(${englishUsers.toLocaleString("en-US")}\\)`));
+  const englishUsers = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "en").get("yr_49")!.users!;
+  assert.match(markup, new RegExp(`\\$49\\.99/year \\(${englishUsers.toLocaleString("en-US")}\\)`));
   assert.match(markup, /stroke="#d98245"/);
   assert.match(markup, /stroke-width="3"/);
   assert.doesNotMatch(markup, /height="68"/);
@@ -304,10 +304,10 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
 
 test("the map language picker scopes paywall metrics to the selected audience", () => {
   const flow = appExperimentFlow("glow")!;
-  const english = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT, "en");
-  const spanish = currentPaywallMetrics(flow.nodes, NATIVE_PAYWALL_DEMO_REPORT, "es");
-  assert.equal(english.size, 5);
-  assert.equal(spanish.size, 5);
+  const english = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "en");
+  const spanish = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "es");
+  assert.equal(english.size, 3);
+  assert.equal(spanish.size, 3);
   assert.notEqual(english.get("yr_49")?.appu, spanish.get("yr_49")?.appu);
 
   const poky = appExperimentFlow("poky")!;
@@ -346,7 +346,7 @@ test("Glow's experience map uses all assigned users regardless of paywall langua
   ]);
   localized.languageVariants = { en: [variant("iam", { installs: 10, proceeds: 1 }), variant("copy", { installs: 10, proceeds: 2 })] };
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
-    appId: "glow", experiments: [localized], nativePaywalls: NATIVE_PAYWALL_DEMO_REPORT, onboardingExperience: report,
+    appId: "glow", experiments: [localized], nativePaywalls: YEARLY_PRICE_DEMO_REPORT, onboardingExperience: report,
   }));
   assert.match(markup, /ARPU \$0\.00/);
   assert.match(markup, /manifest-audio \(1\)/);
@@ -412,14 +412,14 @@ test("Poky branches through intro, plan, offer and paywalls before conditional r
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "cancel").map((edge) => edge.label), ["100%"]);
 });
 
-test("Glow shares all five paywalls after either onboarding flow without clipping nodes", () => {
+test("Glow shares all three yearly prices after either onboarding flow without clipping nodes", () => {
   const flow = appExperimentFlow("glow")!;
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["50%", "50%"]);
   assert.equal(flow.edges.filter((edge) => edge.to === "placements").length, 2);
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "placements").map((edge) => edge.label), ["~17%", "~17%", "~17%", "25%", "25%"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "placements").map((edge) => edge.label), ["33.33%", "33.33%", "33.33%"]);
   assert.ok(flow.nodes.every((node) => node.y + 40 < flow.height));
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "home"), []);
-  assert.equal(flow.edges.filter((edge) => edge.to === "home").length, 5);
+  assert.equal(flow.edges.filter((edge) => edge.to === "home").length, 3);
   assert.ok(flow.nodes.every((node) => node.x + node.width < flow.width));
   assert.ok(flow.nodes.every((node) => node.experimentId !== "journal_vs_practice_v1"));
 });

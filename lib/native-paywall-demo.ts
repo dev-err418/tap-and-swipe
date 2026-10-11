@@ -1,5 +1,5 @@
 import { type NativePaywallGroup, type NativePaywallReport, type NativePaywallRow } from "./native-paywall-analytics";
-import { GLOW_PAYWALL_EXPERIMENT } from "./native-paywall-allocation";
+import { GLOW_PAYWALL_EXPERIMENT, GLOW_YEARLY_PRICE_EXPERIMENT } from "./native-paywall-allocation";
 
 // UI-only synthetic data. Never send this to Superwall or merge it with live reports.
 // A seeded generator keeps the preview stable across renders and hydration.
@@ -87,3 +87,18 @@ function createDemoReport(): NativePaywallReport {
 }
 
 export const NATIVE_PAYWALL_DEMO_REPORT = createDemoReport();
+
+/** Isolated v4 fixture for the current three-price experiment map. */
+export const YEARLY_PRICE_DEMO_REPORT: NativePaywallReport = {
+  ...NATIVE_PAYWALL_DEMO_REPORT,
+  groups: NATIVE_PAYWALL_DEMO_REPORT.groups.map((group) => ({
+    ...group,
+    experiment: GLOW_YEARLY_PRICE_EXPERIMENT.id,
+    name: GLOW_YEARLY_PRICE_EXPERIMENT.name,
+    paywalls: group.paywalls.slice(0, 3).map((row, index) => ({
+      ...row,
+      estimate: { ...row.estimate, chanceBest: [0.2, 0.3, 0.5][index] },
+    })),
+    placements: [],
+  })),
+};
