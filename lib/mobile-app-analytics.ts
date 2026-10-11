@@ -1,3 +1,4 @@
+import { buildDailyAppReport } from "./daily-app-report";
 import { buildAnalyticsMarkets, marketLanguage, marketCountry, type AnalyticsMarkets } from "./analytics-markets";
 import { productionAnalyticsFilter } from "./analytics-production";
 import { ACQUISITION_ATTRIBUTE_KEYS, versionCohortConversions } from "./version-cohort-conversions";
@@ -6,7 +7,7 @@ import { sevenDayTrialSurvival } from "./trial-survival";
 import { onboardingSessionActivity } from "./onboarding-session-activity";
 import { versyOnboardingAudience, versyOnboardingPaywallReached } from "./versy-onboarding-analytics";
 import { loadGlowOnboardingExperience } from "./glow-onboarding-experience-queries";
-import { GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_LEGACY_KEY, type GlowOnboardingReport } from "./glow-onboarding-experience";
+import { GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_COPY_KEY, GLOW_ONBOARDING_LEGACY_KEY, type GlowOnboardingReport } from "./glow-onboarding-experience";
 import "server-only";
 import { glowMatureCountries } from "./glow-mature-countries";
 import { GLOW_SUPERWALL_HISTORY_START_MS, glowPaywallMigrationExperiment } from "./glow-paywall-migration";
@@ -190,7 +191,7 @@ const VERSY_ICON_URL = "/community-icons/versy.png";
 const GLOW_ICON_URL =
   "/community-icons/glow-wordmark.png";
 
-const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_LEGACY_KEY] as const;
+const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_COPY_KEY, GLOW_ONBOARDING_LEGACY_KEY] as const;
 const VERSY_ATTRIBUTE_KEYS = ["country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
   "bible_widget_widget_screen_seen",
   "onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant", "onboarding_paywall_access_variant",
@@ -569,6 +570,22 @@ async function loadSuperwallAppAnalytics(
     },
     userJourney: journey,
   };
+}
+
+
+/** Fresh rolling windows for the morning Slack report; all production languages. */
+export async function getDailyMobileAppReport(id: "glow" | "versy" | "poky", endMs: number) {
+  const configs = {
+    glow: { name: "Glow", iconUrl: GLOW_ICON_URL, organizationId: GLOW_SUPERWALL_ORGANIZATION_ID, applicationId: GLOW_SUPERWALL_APPLICATION_ID },
+    versy: { name: "Versy", iconUrl: VERSY_ICON_URL, organizationId: VERSY_SUPERWALL_ORGANIZATION_ID, applicationId: VERSY_SUPERWALL_APPLICATION_ID },
+    poky: { name: "Poky", iconUrl: POKY_ICON_URL, organizationId: SUPERWALL_ORGANIZATION_ID, applicationId: POKY_APPLICATION_ID },
+  };
+  const apiKey = process.env[`SUPERWALL_${id.toUpperCase()}_API_KEY`]?.trim();
+  if (!apiKey) throw new Error("Daily app analytics credentials missing");
+  const startMs = endMs - 2 * DAY_MS;
+  const facts = await loadAppFacts({ id, ...configs[id], apiKey },
+    clickhouseDate(new Date(startMs)), clickhouseDate(new Date(endMs)), startMs, endMs, false, false);
+  return { appId: id, generatedAt: new Date().toISOString(), ...buildDailyAppReport(facts, endMs) };
 }
 
 async function loadAppFacts(
@@ -1016,8 +1033,8 @@ function glowExperiments(facts: AppFacts): MobileAppExperiment[] {
 function glowOnboardingExperiment(facts: AppFacts): MobileAppExperiment {
   return attributeExperiment(facts, {
     id: "glow-onboarding-copy",
-    title: "Onboarding copy A/B test",
-    subtitle: "IAM vs Copy",
+    title: "Historical IAM vs Copy",
+    subtitle: "Retired wording comparison",
     attributeKeys: ["onboarding_variant"],
     variants: [
       { key: "iam", label: "IAM", attributes: { onboarding_variant: "iam" } },
@@ -1174,7 +1191,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
   ]));
   const variantIndexFor = (attrs: Record<string, string> | undefined) => {
     if (!attrs) return null;
-    if (definition.id === "glow-onboarding-copy" && (attrs[GLOW_ONBOARDING_KEY] !== undefined || attrs[GLOW_ONBOARDING_LEGACY_KEY] !== undefined)) return null;
+    if (definition.id === "glow-onboarding-copy" && (attrs[GLOW_ONBOARDING_KEY] !== undefined || attrs[GLOW_ONBOARDING_COPY_KEY] !== undefined || attrs[GLOW_ONBOARDING_LEGACY_KEY] !== undefined)) return null;
     if (definition.id.startsWith("poky-") && attrs.poky_tracking_environment !== "production") return null;
     if (definition.id.startsWith("versy-") && attrs.versy_tracking_environment === "development") return null;
     const matched = definition.variants.find((variant) =>

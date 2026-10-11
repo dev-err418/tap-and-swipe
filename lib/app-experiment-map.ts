@@ -28,10 +28,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
     return {
       tests: [
         {
-          id: GLOW_ONBOARDING_ID, label: "Copy onboarding experience", scope: "Next app build · new eligible installations", tone: "blue", planned: true,
+          id: GLOW_ONBOARDING_ID, label: "IAM vs manifest-audio", scope: "Next app build · new eligible installations", tone: "blue", planned: true,
           branches: [
-            { id: "current", label: "Copy with mascot", percent: 15 },
-            { id: "mascot_free", label: "Copy without mascot", percent: 85 },
+            { id: "iam", label: "IAM", percent: 50 },
+            { id: "manifest-audio", label: "manifest-audio", percent: 50 },
           ],
         },
         {

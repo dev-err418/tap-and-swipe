@@ -1,4 +1,4 @@
-import { buildGlowOnboardingReport, onboardingCohort, GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_LEGACY_KEY, GLOW_ONBOARDING_LEGACY_ID, type GlowOnboardingReport } from "./glow-onboarding-experience";
+import { buildGlowOnboardingReport, onboardingCohort, GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_COPY_KEY, GLOW_ONBOARDING_COPY_ID, GLOW_ONBOARDING_LEGACY_KEY, GLOW_ONBOARDING_LEGACY_ID, type GlowOnboardingReport } from "./glow-onboarding-experience";
 import type { PaywallAttribute, PaywallRevenue } from "./native-paywall-analytics";
 
 type Query = <T>(sql: string) => Promise<T[]>;
@@ -13,7 +13,7 @@ export async function loadGlowOnboardingExperience(query: Query, applicationId: 
       const rows = await query<PaywallAttribute>(`
 SELECT appUserId, key, value FROM sw.user_attributes_rep FINAL
 WHERE applicationId = ${applicationId} AND isSandbox = 0 AND isDeleted = 0 AND ts < now()
-  AND (key IN ('${GLOW_ONBOARDING_KEY}', '${GLOW_ONBOARDING_LEGACY_KEY}') OR startsWith(key, 'gp1_t_'))
+  AND (key IN ('${GLOW_ONBOARDING_KEY}', '${GLOW_ONBOARDING_COPY_KEY}', '${GLOW_ONBOARDING_LEGACY_KEY}') OR startsWith(key, 'gp1_t_'))
   ${cursor === undefined ? "" : `AND (appUserId, key) > (${quote(cursor.appUserId)}, ${quote(cursor.key)})`}
 ORDER BY appUserId, key LIMIT 10000 FORMAT JSON`);
       attributes.push(...rows);
@@ -23,6 +23,7 @@ ORDER BY appUserId, key LIMIT 10000 FORMAT JSON`);
       cursor = next;
     }
     const users = [...new Set([...onboardingCohort(attributes, start, end, asOf).records.keys(),
+      ...onboardingCohort(attributes, start, end, asOf, GLOW_ONBOARDING_COPY_ID).records.keys(),
       ...onboardingCohort(attributes, start, end, asOf, GLOW_ONBOARDING_LEGACY_ID).records.keys()])];
     const events: PaywallRevenue[] = [];
     // Sequential chunks bound query load and reject partial money results.
@@ -39,7 +40,8 @@ LIMIT 50001 FORMAT JSON`);
       events.push(...rows);
     }
     return { ...buildGlowOnboardingReport(attributes, events, start, end, asOf),
-      historical: buildGlowOnboardingReport(attributes, events, start, end, asOf, GLOW_ONBOARDING_LEGACY_ID) };
+      historical: { ...buildGlowOnboardingReport(attributes, events, start, end, asOf, GLOW_ONBOARDING_COPY_ID),
+        historical: buildGlowOnboardingReport(attributes, events, start, end, asOf, GLOW_ONBOARDING_LEGACY_ID) } };
   } catch {
     return { status: "unavailable", asOf, rows: [], warnings: ["Onboarding experience reporting is unavailable. Refresh to retry."] };
   }

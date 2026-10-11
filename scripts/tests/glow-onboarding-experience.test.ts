@@ -3,15 +3,15 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import GlowOnboardingExperiencePanel from "../../components/analytics/GlowOnboardingExperiencePanel";
-import { buildGlowOnboardingReport, GLOW_ONBOARDING_ID, GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_LEGACY_ID, GLOW_ONBOARDING_LEGACY_KEY, DAY_MS } from "../../lib/glow-onboarding-experience";
+import { buildGlowOnboardingReport, GLOW_ONBOARDING_ID, GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_COPY_ID, GLOW_ONBOARDING_COPY_KEY, GLOW_ONBOARDING_LEGACY_ID, GLOW_ONBOARDING_LEGACY_KEY, DAY_MS } from "../../lib/glow-onboarding-experience";
 import { loadGlowOnboardingExperience } from "../../lib/glow-onboarding-experience-queries";
 import type { PaywallAttribute, PaywallPurchase, PaywallRevenue } from "../../lib/native-paywall-analytics";
 
 const start = Date.parse("2026-10-01T00:00:00Z");
 const asOf = start + 10 * DAY_MS;
-function assignment(id: string, variant = "current", at = start, extra: Record<string, unknown> = {}): PaywallAttribute {
+function assignment(id: string, variant = "iam", at = start, extra: Record<string, unknown> = {}): PaywallAttribute {
   return { appUserId: id, key: GLOW_ONBOARDING_KEY, value: JSON.stringify({ schema: 1, experiment: GLOW_ONBOARDING_ID,
-    allocation: "15_85", variant, environment: "production", language: "en", randomized: true,
+    allocation: "50_50", variant, environment: "production", language: "en", randomized: true,
     assignedAt: at, updatedAt: at, days: { "0": { sessions: 1, active: true } }, ...extra }) };
 }
 function event(user: string, transaction: string, amount = 10, extra: Partial<PaywallRevenue> = {}): PaywallRevenue {
@@ -20,31 +20,35 @@ function event(user: string, transaction: string, amount = 10, extra: Partial<Pa
     transactionId: transaction, isRefund: 0, price: amount, proceeds: amount, ts, purchasedAt: ts, attributionTs: ts, ...extra };
 }
 
-test("Copy wording has a separate cohort and historical IAM results remain readable", () => {
-  const historical = { ...assignment("old", "current", start, { experiment: GLOW_ONBOARDING_LEGACY_ID }), key: GLOW_ONBOARDING_LEGACY_KEY };
-  const attributes = [historical, assignment("new", "mascot_free")];
+test("IAM / manifest-audio is separate from both historical cohorts", () => {
+  const historical = { ...assignment("v1", "current", start, { experiment: GLOW_ONBOARDING_LEGACY_ID, allocation: "30_70" }), key: GLOW_ONBOARDING_LEGACY_KEY };
+  const copy = { ...assignment("v2", "mascot_free", start, { experiment: GLOW_ONBOARDING_COPY_ID, allocation: "15_85" }), key: GLOW_ONBOARDING_COPY_KEY };
+  const earlierCopy = { ...assignment("v2-earlier", "current", start, { experiment: GLOW_ONBOARDING_COPY_ID, allocation: "30_70" }), key: GLOW_ONBOARDING_COPY_KEY };
+  const attributes = [historical, copy, earlierCopy, assignment("new", "manifest-audio"), assignment("control")];
   const report = buildGlowOnboardingReport(attributes, [], start, asOf, asOf);
   const old = buildGlowOnboardingReport(attributes, [], start, asOf, asOf, GLOW_ONBOARDING_LEGACY_ID);
-  assert.deepEqual(report.rows.map((r) => r.users), [0, 1]);
+  const previous = buildGlowOnboardingReport(attributes, [], start, asOf, asOf, GLOW_ONBOARDING_COPY_ID);
+  assert.deepEqual(report.rows.map((r) => [r.label, r.users]), [["IAM · 50%", 1], ["manifest-audio · 50%", 1]]);
   assert.deepEqual(old.rows.map((r) => r.users), [1, 0]);
-  assert.equal(old.rows[0].label, "IAM · historical");
-  const markup = renderToStaticMarkup(createElement(GlowOnboardingExperiencePanel, { report: { ...report, historical: old } }));
+  assert.deepEqual(previous.rows.map((r) => r.users), [1, 1]);
+  const markup = renderToStaticMarkup(createElement(GlowOnboardingExperiencePanel, { report: { ...report, historical: { ...previous, historical: old } } }));
   assert.match(markup, /Historical IAM wording comparison/);
-  assert.match(markup, /Copy without mascot/);
+  assert.match(markup, /Historical Copy mascot comparison/);
+  assert.match(markup, /IAM vs manifest-audio/);
 });
 
-test("the 15/85 allocation reports both variants and preserves earlier 30/70 records", () => {
+test("new experiment rejects historical arms and allocations instead of relabeling them", () => {
   const report = buildGlowOnboardingReport([
-    assignment("current"), assignment("treatment", "mascot_free"),
-    assignment("earlier", "current", start, { allocation: "30_70" }),
-    assignment("unknown", "current", start, { allocation: "50_50" }),
+    assignment("control"), assignment("treatment", "manifest-audio"),
+    assignment("old-allocation", "iam", start, { allocation: "15_85" }),
+    assignment("old-arm", "current"), assignment("old-treatment", "mascot_free"),
   ], [], start, asOf, asOf);
-  assert.deepEqual(report.rows.map((row) => [row.label, row.users]), [["Copy with mascot · 15%", 2], ["Copy without mascot · 85%", 1]]);
+  assert.deepEqual(report.rows.map((row) => row.users), [1, 1]);
   assert.equal(report.warnings.length, 1);
 });
 
 test("ARPU includes non-payers and every post-assignment purchase, renewal and refund once", () => {
-  const a = [assignment("payer"), assignment("nonpayer"), assignment("new", "mascot_free")];
+  const a = [assignment("payer"), assignment("nonpayer"), assignment("new", "manifest-audio")];
   const charge = event("payer", "charge", 20);
   const renewal = event("payer", "renewal", 8, { name: "renewal" });
   const refund = event("payer", "charge", 5, { isRefund: 1, name: "cancellation" });
@@ -63,9 +67,9 @@ test("ARPU includes non-payers and every post-assignment purchase, renewal and r
 });
 
 test("sessions use Poky's observed person-day denominator including inactive users", () => {
-  const attrs = [assignment("old", "current", start, { updatedAt: asOf, days: {
+  const attrs = [assignment("old", "iam", start, { updatedAt: asOf, days: {
     "0": { sessions: 1, active: true }, "9": { sessions: 4, active: true } } }),
-    assignment("recent", "current", start + 5 * DAY_MS)];
+    assignment("recent", "iam", start + 5 * DAY_MS)];
   const row = buildGlowOnboardingReport(attrs, [], start, asOf, asOf).rows[0];
   assert.equal(row.sessions, 6);
   assert.equal(row.sessionUserDays, 15);
@@ -77,10 +81,10 @@ test("sessions use Poky's observed person-day denominator including inactive use
 
 test("historical copy, sandbox, forced, future and invalid records cannot enter the cohort", () => {
   const valid = assignment("valid");
-  const report = buildGlowOnboardingReport([valid, valid, assignment("sandbox", "current", start, { environment: "sandbox" }),
-    assignment("forced", "current", start, { randomized: false }), assignment("dev", "current", start, { environment: "development" }),
-    assignment("copy", "copy"), assignment("bad-day", "current", start, { days: { "0": { sessions: -1, active: true } } }),
-    assignment("conflict"), assignment("conflict", "mascot_free"), assignment("future", "current", asOf + 1),
+  const report = buildGlowOnboardingReport([valid, valid, assignment("sandbox", "iam", start, { environment: "sandbox" }),
+    assignment("forced", "iam", start, { randomized: false }), assignment("dev", "iam", start, { environment: "development" }),
+    assignment("copy", "copy"), assignment("bad-day", "iam", start, { days: { "0": { sessions: -1, active: true } } }),
+    assignment("conflict"), assignment("conflict", "manifest-audio"), assignment("future", "iam", asOf + 1),
     { appUserId: "legacy", key: "onboarding_variant", value: "iam" }], [], start, asOf, asOf);
   assert.equal(report.rows[0].users, 1);
   assert.equal(report.rows[1].users, 0);
@@ -102,9 +106,9 @@ test("latest attribution revision wins and incomplete money withholds ARPU", () 
 });
 
 test("cohort dates select assignment; unfinished onboarding stays in the denominator", () => {
-  const attrs = [assignment("first", "current", start, { completedAt: start + DAY_MS, updatedAt: start + DAY_MS }),
-    assignment("abandoned"), assignment("before", "current", start - 1, { updatedAt: asOf }),
-    assignment("end", "current", start + 2 * DAY_MS)];
+  const attrs = [assignment("first", "iam", start, { completedAt: start + DAY_MS, updatedAt: start + DAY_MS }),
+    assignment("abandoned"), assignment("before", "iam", start - 1, { updatedAt: asOf }),
+    assignment("end", "iam", start + 2 * DAY_MS)];
   const report = buildGlowOnboardingReport(attrs, [], start, start + 2 * DAY_MS, asOf);
   assert.equal(report.rows[0].users, 2);
   assert.equal(report.rows[0].completed, 1);
@@ -166,9 +170,9 @@ test("unmatched or invalid cancellation timing never becomes a false average", (
 test("the comparison shows all three metrics with empty and unavailable values kept honest", () => {
   const empty = buildGlowOnboardingReport([], [], start, asOf, asOf);
   const markup = renderToStaticMarkup(createElement(GlowOnboardingExperiencePanel, { report: empty }));
-  assert.match(markup, /Both variants use Copy wording in the next app build/);
-  assert.match(markup, /results appear after release and enrollment/);
-  assert.match(markup, /15% Copy with mascot · 85% Copy without mascot/);
+  assert.match(markup, /No production assignments in this date range/);
+  assert.match(markup, /results appear after the updated app is released/);
+  assert.match(markup, /50% IAM · 50% manifest-audio/);
   assert.match(markup, /ARPU/);
   assert.match(markup, /Sessions \/ user \/ day/);
   assert.match(markup, /Avg time to cancel/);
@@ -182,7 +186,7 @@ test("query failure never returns partial revenue or false zero", async () => {
   let calls = 0;
   const query = async <T,>(): Promise<T[]> => {
     calls++;
-    if (calls === 1) return [assignment("payer", "current", Date.now() - DAY_MS)] as T[];
+    if (calls === 1) return [assignment("payer", "iam", Date.now() - DAY_MS)] as T[];
     throw new Error("money unavailable");
   };
   const report = await loadGlowOnboardingExperience(query, 54736, 0, Date.now());
@@ -194,13 +198,32 @@ test("query fetches outcomes by assignment regardless of product, with productio
   const sqls: string[] = [];
   const query = async <T,>(sql: string): Promise<T[]> => {
     sqls.push(sql);
-    return (sqls.length === 1 ? [assignment("O'Reilly", "current", Date.now() - DAY_MS)] : []) as T[];
+    return (sqls.length === 1 ? [assignment("O'Reilly", "iam", Date.now() - DAY_MS)] : []) as T[];
   };
   const report = await loadGlowOnboardingExperience(query, 54736, 0, Date.now());
   assert.equal(report.status, "ready");
+  for (const key of [GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_COPY_KEY, GLOW_ONBOARDING_LEGACY_KEY]) assert.ok(sqls[0].includes(key));
   assert.match(sqls[0], /isSandbox = 0 AND isDeleted = 0/);
   assert.match(sqls[1], /source = 'integration' AND isFamilyShare = 0/);
   assert.match(sqls[1], /O\\'Reilly/);
   assert.doesNotMatch(sqls[1], /productId\s*=/);
   assert.match(sqls[1], /'cancellation'/);
+});
+
+
+test("loader keeps v3 and both historical cohorts separate while fetching every cohort's revenue", async () => {
+  const at = Date.now() - DAY_MS;
+  const attributes = [assignment("new", "manifest-audio", at),
+    { ...assignment("copy", "current", at, { experiment: GLOW_ONBOARDING_COPY_ID, allocation: "15_85" }), key: GLOW_ONBOARDING_COPY_KEY },
+    { ...assignment("original", "mascot_free", at, { experiment: GLOW_ONBOARDING_LEGACY_ID, allocation: "30_70" }), key: GLOW_ONBOARDING_LEGACY_KEY }];
+  const sqls: string[] = [];
+  const query = async <T,>(sql: string): Promise<T[]> => {
+    sqls.push(sql);
+    return (sqls.length === 1 ? attributes : []) as T[];
+  };
+  const report = await loadGlowOnboardingExperience(query, 54736, 0, Date.now());
+  assert.deepEqual(report.rows.map((r) => r.users), [0, 1]);
+  assert.deepEqual(report.historical?.rows.map((r) => r.users), [1, 0]);
+  assert.deepEqual(report.historical?.historical?.rows.map((r) => r.users), [0, 1]);
+  for (const user of ["new", "copy", "original"]) assert.ok(sqls[1].includes(`'${user}'`));
 });

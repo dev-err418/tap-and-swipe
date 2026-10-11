@@ -82,7 +82,7 @@ test("missing paywall and experiment results show an empty state instead of anot
 });
 
 test("Glow experience cards open the new comparison with an all-language audience", () => {
-  const node = appExperimentFlow("glow")!.nodes.find((node) => node.id === "mascot_free")!;
+  const node = appExperimentFlow("glow")!.nodes.find((node) => node.id === "manifest-audio")!;
   assert.deepEqual(experimentMapDetailTarget(node, "es"), { kind: "experiment", experimentId: GLOW_ONBOARDING_ID, language: "all" });
   const html = renderToStaticMarkup(createElement(ExperimentMapDetails, {
     node, language: "es", experiments: [], nativePaywalls: null,

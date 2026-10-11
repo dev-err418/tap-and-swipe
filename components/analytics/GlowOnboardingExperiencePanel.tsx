@@ -1,4 +1,4 @@
-import { GLOW_ONBOARDING_LEGACY_ID, type GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
+import { GLOW_ONBOARDING_ID, GLOW_ONBOARDING_LEGACY_ID, type GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
 import { AppExperimentLayout, ExperimentTable, ExperimentTh, ExperimentTd, ExperimentNumberTd, ExperimentVariantLabel } from "./AppExperimentLayout";
 import ExperimentStats from "./ExperimentStats";
 import { analyzeExperiment } from "@/lib/experiment-stats";
@@ -8,13 +8,14 @@ const duration = (ms: number | null) => ms === null ? "—" : ms < 60_000 ? `${M
   : ms < 3_600_000 ? `${(ms / 60_000).toFixed(1)} min` : ms < 86_400_000 ? `${(ms / 3_600_000).toFixed(1)} hr` : `${(ms / 86_400_000).toFixed(1)} days`;
 
 export default function GlowOnboardingExperiencePanel({ report }: { report: GlowOnboardingReport | null }) {
-  const historical = report?.experiment === GLOW_ONBOARDING_LEGACY_ID;
+  const historical = !!report?.experiment && report.experiment !== GLOW_ONBOARDING_ID;
+  const original = report?.experiment === GLOW_ONBOARDING_LEGACY_ID;
   const analysis = report?.status === "ready" && report.warnings.length === 0
     ? analyzeExperiment(report.rows.map((r) => ({ key: r.variant, label: r.label, exposures: r.users,
       conversions: r.paid, revenue: r.proceeds ?? 0, variance: r.proceedsVariance ?? 0 })), "revenue_per_visitor", "ARPU") : null;
-  return <><AppExperimentLayout title={historical ? "Historical onboarding experience" : "Copy onboarding experience"} label="Onboarding experience" subtitle={historical ? "IAM wording · retired in the next app build" : "15% Copy with mascot · 85% Copy without mascot"}>
+  return <><AppExperimentLayout title={historical ? "Historical onboarding experience" : "IAM vs manifest-audio"} label="Onboarding experience" subtitle={historical ? (original ? "Original IAM wording · historical" : "Copy mascot comparison · historical") : "50% IAM · 50% manifest-audio"}>
     {!report || report.status === "unavailable" ? <p role="status" className="px-4 py-4 text-sm text-muted-foreground">Onboarding reporting is unavailable. Refresh to retry.</p> : <>
-      {report.status === "empty" && <p role="status" className="px-4 py-4 text-sm text-muted-foreground">{historical ? "No historical assignments in this date range." : "Both variants use Copy wording in the next app build. No production assignments in the new comparison yet; results appear after release and enrollment."}</p>}
+      {report.status === "empty" && <p role="status" className="px-4 py-4 text-sm text-muted-foreground">{historical ? "No historical assignments in this date range." : "No production assignments in this date range; results appear after the updated app is released and eligible new users enroll."}</p>}
       {report.warnings.map((warning) => <p role="status" key={warning} className="px-4 py-3 text-sm text-muted-foreground">{warning}</p>)}
       {analysis && <ExperimentStats title="ARPU" titleClassName="font-bold" analysis={analysis} />}
       <ExperimentTable caption="All assigned users, including non-payers and unfinished onboarding" headings={<>
@@ -34,6 +35,6 @@ export default function GlowOnboardingExperiencePanel({ report }: { report: Glow
       <p className="px-4 py-3 text-xs text-muted-foreground">Sessions cover each user’s first 31 days. Time to cancel starts at the first subscription or trial and averages only users who cancelled, through today; active subscriptions and refunds are excluded.</p>
     </>}
   </AppExperimentLayout>
-    {report?.historical && <details className="mt-4"><summary>Historical IAM wording comparison</summary><GlowOnboardingExperiencePanel report={report.historical} /></details>}
+    {report?.historical && <details className="mt-4"><summary>{report.historical.experiment === GLOW_ONBOARDING_LEGACY_ID ? "Historical IAM wording comparison" : "Historical Copy mascot comparison"}</summary><GlowOnboardingExperiencePanel report={report.historical} /></details>}
   </>;
 }

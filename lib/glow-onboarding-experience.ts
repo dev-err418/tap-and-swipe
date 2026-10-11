@@ -1,14 +1,16 @@
 import { parsePaywallAttributes, type PaywallAttribute, type PaywallRevenue } from "./native-paywall-analytics";
 import { observedSessionDays, sessionsPerUserDay } from "./experiment-session-rate";
 
-export const GLOW_ONBOARDING_ID = "onboarding_copy_mascot_v2";
-export const GLOW_ONBOARDING_KEY = "goe1_onboarding_copy_mascot_v2";
+export const GLOW_ONBOARDING_ID = "onboarding_manifest_audio_v3";
+export const GLOW_ONBOARDING_COPY_ID = "onboarding_copy_mascot_v2";
+export const GLOW_ONBOARDING_COPY_KEY = "goe1_onboarding_copy_mascot_v2";
+export const GLOW_ONBOARDING_KEY = "goe1_onboarding_manifest_audio_v3";
 export const GLOW_ONBOARDING_LEGACY_ID = "onboarding_mascot_v1";
 export const GLOW_ONBOARDING_LEGACY_KEY = "goe1_onboarding_mascot_v1";
 export const DAY_MS = 86_400_000;
-type Variant = "current" | "mascot_free";
+type Variant = "iam" | "manifest-audio" | "current" | "mascot_free";
 type RecordValue = {
-  schema: 1; experiment: string; allocation: "15_85" | "30_70"; environment: string;
+  schema: 1; experiment: string; allocation: "50_50" | "15_85" | "30_70"; environment: string;
   variant: Variant; language: string; randomized: boolean;
   assignedAt: number; updatedAt: number; completedAt?: number;
   days: Record<string, { sessions: number; active: true }>;
@@ -31,9 +33,11 @@ function parse(value: string, asOf: number, experiment: string): RecordValue | n
   try {
     let r: unknown = JSON.parse(value);
     if (typeof r === "string") r = JSON.parse(r);
+    const active = experiment === GLOW_ONBOARDING_ID;
+    if (![GLOW_ONBOARDING_ID, GLOW_ONBOARDING_COPY_ID, GLOW_ONBOARDING_LEGACY_ID].includes(experiment)) return null;
     if (!object(r) || r.schema !== 1 || r.experiment !== experiment
-      || (r.allocation !== "15_85" && r.allocation !== "30_70")
-      || !["current", "mascot_free"].includes(String(r.variant)) || typeof r.environment !== "string"
+      || !(active ? ["50_50"] : ["15_85", "30_70"]).includes(String(r.allocation))
+      || !(active ? ["iam", "manifest-audio"] : ["current", "mascot_free"]).includes(String(r.variant)) || typeof r.environment !== "string"
       || typeof r.language !== "string" || typeof r.randomized !== "boolean"
       || !timestamp(r.assignedAt) || !timestamp(r.updatedAt) || r.assignedAt > asOf
       || r.updatedAt < r.assignedAt || r.updatedAt > asOf || !object(r.days)
@@ -152,7 +156,8 @@ export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events
     if (!charge || charge.appUserId !== owner) incompleteMoney = true;
   }
   if (incompleteMoney) warnings.push("Some transaction amounts or identities are unavailable. ARPU is withheld until the revenue data is complete.");
-  const rows = (["current", "mascot_free"] as const).map((variant): GlowOnboardingRow => {
+  const variants: Variant[] = experiment === GLOW_ONBOARDING_ID ? ["iam", "manifest-audio"] : ["current", "mascot_free"];
+  const rows = variants.map((variant): GlowOnboardingRow => {
     const users = [...records].filter(([, r]) => r.variant === variant);
     const sessions = users.reduce((sum, [, r]) => sum + Object.values(r.days).reduce((total, day) => total + day.sessions, 0), 0);
     // Same observed-person-day normalization as Poky. Activity is bounded to 31 elapsed days.
@@ -164,9 +169,11 @@ export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events
       const duration = cancellation.durations.get(id);
       return duration === undefined ? [] : [duration];
     });
-    return { variant, label: experiment === GLOW_ONBOARDING_LEGACY_ID
+    return { variant, label: experiment === GLOW_ONBOARDING_ID
+      ? (variant === "iam" ? "IAM · 50%" : "manifest-audio · 50%")
+      : experiment === GLOW_ONBOARDING_LEGACY_ID
       ? (variant === "current" ? "IAM · historical" : "No mascot · IAM wording · historical")
-      : (variant === "current" ? "Copy with mascot · 15%" : "Copy without mascot · 85%"), users: users.length,
+      : (variant === "current" ? "Copy with mascot · historical" : "Copy without mascot · historical"), users: users.length,
       completed: users.filter(([, r]) => r.completedAt !== undefined).length,
       paid: users.filter(([id]) => paid.has(id)).length, sessions, sessionUserDays,
       cancelledUsers: cancelTimes.length,

@@ -4,11 +4,15 @@ Glow's separate [Journal VS Practice](journal-practice-experiment.md) activity e
 
 ## Architecture and constraints
 
-### Pending Glow Copy-only onboarding release
+### Pending Glow IAM / manifest-audio release
 
-The next app build uses `onboarding_copy_mascot_v2` / `goe1_onboarding_copy_mascot_v2`: 15% Copy with mascot (`current`) and 85% Copy without mascot (`mascot_free`). IAM presentation and the old wording draw are retired, including saved IAM routes and Debug previews. Existing v1 users receive Copy wording without reenrollment or further v1 activity/completion writes. The dashboard loads v2 and historical `onboarding_mascot_v1` separately, displays v1 in a historical section and excludes both keys from the legacy wording comparison. These source changes are not deployed automatically; old App Store clients can still run the previous experiment.
+The next app build uses `onboarding_manifest_audio_v3` / `goe1_onboarding_manifest_audio_v3`: **50% `iam` / 50% `manifest-audio`**, allocation `50_50`. IAM is the existing regular mascot-free journey with current localized wording; manifest-audio is the conversational journey. Both use the cream/orange look without a mascot. This does not restore historical IAM wording.
 
-The independent UK five-way paywall allocation is unchanged. The mascot-free arm still skips introductions and asks age before name, so v2 compares complete experiences with shared wording, not only mascot imagery. Historical IAM assignment markers remain available; new presentation/wording attributes describe the updated UI without relabeling legacy IAM users as historical Copy users.
+Assignments are sticky for eligible new users. Existing v2 users retain `onboarding_copy_mascot_v2` / `goe1_onboarding_copy_mascot_v2`, their `current` / `mascot_free` variants and `30_70` or `15_85` allocations. They continue reporting under v2, without reenrollment. Existing v1 users keep their presentation without further v1 activity/completion writes. Legacy assignments, saved drafts and completed profiles are excluded from fresh enrollment. Debug previews cannot record completion; completion requires the assigned journey.
+
+The Glow A/B test card and experiment map compare IAM with manifest-audio, with assigned users, completion, net proceeds/ARPU, sessions per observed user-day and average time to cancellation. V2 and v1 reports remain separate historical sections. All three assignment keys exclude users from the legacy wording comparison. Purchase attribution, the independent five-way paywall allocation and transaction joins are unchanged. Both new arms use the same native paywall placement.
+
+These source changes are not deployed automatically: release the updated app and deploy the dashboard. Older App Store clients can still run their previous experiment. Empty states do not imply enrollment is already live.
 
 Glow and Poky render native SwiftUI paywalls and hardcode their experiments/traffic splits. Superwall is used only for purchase/subscription infrastructure and custom user-attribute storage. **Do not add Superwall campaigns, placement registration, presentation-result calls, or remotely configured experiments.** No D1/PostgreSQL tables, ingestion routes, or webhook receivers are needed for this feature.
 
