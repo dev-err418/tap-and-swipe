@@ -1,5 +1,6 @@
 "use client";
 
+import { DEFAULT_APP_LANGUAGE, marketKey, marketCountryLabel, type AnalyticsMarkets } from "@/lib/analytics-markets";
 import AnalyticsFreshness from "./AnalyticsFreshness";
 
 import { useEffect, useState, type ReactNode } from "react";
@@ -26,7 +27,7 @@ import WinbackPaywallPanel from "@/components/analytics/WinbackPaywallPanel";
 import VersyPaywallPlacementsPanel from "@/components/analytics/VersyPaywallPlacementsPanel";
 import GlowOnboardingExperiencePanel from "./GlowOnboardingExperiencePanel";
 import type { GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
-import UserJourneyFunnel from "@/components/analytics/UserJourneyFunnel";
+import UserJourneyFunnel, { JourneyVersionComparison } from "@/components/analytics/UserJourneyFunnel";
 import type { UserJourneyReport } from "@/lib/user-journey";
 import type { NativePaywallReport } from "@/lib/native-paywall-analytics";
 import {
@@ -35,12 +36,8 @@ import {
   DASHBOARD_TAB_CLASS,
   DASHBOARD_TAB_INACTIVE_CLASS,
   DASHBOARD_TAB_LIST_CLASS,
-  DASHBOARD_PICKER_TRIGGER_CLASS,
-  DASHBOARD_POPOVER_CLASS,
-  DASHBOARD_POPOVER_ITEM_CLASS,
 } from "@/components/analytics/dashboard-surface";
 import { cn } from "@/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type AnalyticsTab = "data" | "experiments" | "paywalls";
 
@@ -49,11 +46,6 @@ const ANALYTICS_TABS: { id: AnalyticsTab; label: string }[] = [
   { id: "experiments", label: "AB tests" },
   { id: "paywalls", label: "Paywalls" },
 ];
-
-const LANGUAGE_FLAGS: Record<string, string> = {
-  en: "🇬🇧", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷",
-  it: "🇮🇹", pt: "🇵🇹", ja: "🇯🇵", ko: "🇰🇷", zh: "🇨🇳",
-};
 
 type MonthExperimentBundle = {
   snapshotUpdatedAt?: string;
@@ -65,10 +57,10 @@ type MonthExperimentBundle = {
 
 export default function AppOverviewPanel({
   appId,
-  installs,
   windowLabel,
   trend,
   overviewCohorts = null,
+  markets,
   countries,
   dataCountries = countries,
   experimentCountries = countries,
@@ -87,6 +79,7 @@ export default function AppOverviewPanel({
   windowLabel: string;
   trend: FunnelTrendPoint[];
   overviewCohorts?: AppOverviewCohorts | null;
+  markets?: AnalyticsMarkets;
   countries: MobileAppCountryRow[];
   dataCountries?: MobileAppCountryRow[];
   cohortDataAvailable?: boolean;
@@ -102,14 +95,16 @@ export default function AppOverviewPanel({
   productSlot?: ReactNode;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
-  const [languageChoice, setLanguageChoice] = useState({ appId, language: "es" });
-  const languages = [...new Set(["es", ...Object.keys(overviewCohorts?.languages ?? {})])].sort((a, b) =>
-    a === "unknown" ? 1 : b === "unknown" ? -1 : overviewLanguageLabel(a).localeCompare(overviewLanguageLabel(b)));
-  const language = languageChoice.appId === appId
-    && (languageChoice.language === "all" || languages.includes(languageChoice.language))
-    ? languageChoice.language : "es";
-  const selectedOverview = overviewCohorts ? overviewForLanguage(overviewCohorts, language) : null;
-  const installLabel = language === "all" ? "Installs" : "Tracked installs";
+  const language = DEFAULT_APP_LANGUAGE[appId];
+  const country = "all";
+  const market = markets?.slices[marketKey(language, country)];
+  const selectedOverview = markets ? market?.overview ?? (overviewCohorts ? { ...overviewForLanguage(overviewCohorts, "absent"), available: true } : null)
+    : overviewCohorts ? overviewForLanguage(overviewCohorts, language) : null;
+  const selectedCountries = markets ? market?.dataCountries ?? [] : dataCountries;
+  const selectedPlans = markets ? market?.plans ?? [] : plans;
+  const selectedRetention = markets ? market?.retention ?? [] : retention;
+  const selectedTrialTiming = markets ? market?.trialCancelTiming : trialCancelTiming;
+  const installLabel = "Tracked installs";
   const [monthBundle, setMonthBundle] = useState<{ appId: string; bundle: MonthExperimentBundle } | null>(null);
   const [monthFailedAppId, setMonthFailedAppId] = useState<string | null>(null);
   useEffect(() => {
@@ -140,8 +135,8 @@ export default function AppOverviewPanel({
   const appu = total && cohortAvailable ? totalCohortAppu(total) : null;
   const installToPaid = cohortAvailable && total && total.installs > 0 && total.missingMoney === 0
     ? total.paid / total.installs : null;
-  const showPlans = plans.some((row) => row.yearlySubs + row.weeklySubs > 0);
-  const showRetention = retention.some((row) => row.overall.d1.eligible > 0);
+  const showPlans = selectedPlans.some((row) => row.yearlySubs + row.weeklySubs > 0);
+  const showRetention = selectedRetention.some((row) => row.overall.d1.eligible > 0);
   const topCountries = resolvedExperimentCountries
     .map((row) => row.country)
     .filter((country) => country !== "unknown")
@@ -152,27 +147,13 @@ export default function AppOverviewPanel({
       <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-[28px] border-0 bg-white shadow-none">
         <div className="min-w-0 border-b border-black/[0.08]">
           <div className="grid grid-cols-3 divide-x divide-black/[0.08]">
-            <MetricSummary label={installLabel} value={formatInt(language === "all" ? installs : total?.installs ?? 0)} detail={language === "all" ? windowLabel : `${overviewLanguageLabel(language)} · ${windowLabel}`} />
+            <MetricSummary label={installLabel} value={formatInt(total?.installs ?? 0)} detail={`${overviewLanguageLabel(language)} · ${marketCountryLabel(country)} · ${windowLabel}`} />
             <MetricSummary label="APPU" value={appu == null ? "—" : formatPreciseCurrency(appu)} detail={!cohortAvailable || !total ? "Cohort data unavailable" : total.missingMoney > 0 ? "Proceeds data unavailable" : total.installs > 0 ? `${formatInt(total.installs)} tracked installs · through today` : "No tracked installs"} />
             <MetricSummary label="Conversion to paid" value={installToPaid == null ? "—" : formatRate(installToPaid)} detail={!cohortAvailable || !total ? "Cohort data unavailable" : total.missingMoney > 0 ? "Payment data unavailable" : `${formatInt(total.paid)} paid / ${formatInt(total.installs)} tracked installs · through today`} />
           </div>
         </div>
         <div className="min-w-0 p-4 sm:p-6">
-          <AppNotesChart appId={appId} data={trend} cohorts={selectedOverview} installLabel={installLabel}
-            languagePicker={
-              <Select value={language} onValueChange={(value) => setLanguageChoice({ appId, language: value })}>
-                <SelectTrigger aria-label="Graph language" className={`${DASHBOARD_PICKER_TRIGGER_CLASS} h-8 w-[180px] border border-black/10 text-xs`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent position="popper" align="start" className={DASHBOARD_POPOVER_CLASS}>
-                  {["all", ...languages].map((code) => (
-                    <SelectItem key={code} value={code} className={DASHBOARD_POPOVER_ITEM_CLASS}>
-                      <span className="inline-flex items-center gap-1.5"><span aria-hidden="true">{LANGUAGE_FLAGS[code] ?? "🌐"}</span>{overviewLanguageLabel(code)}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            } />
+          <AppNotesChart appId={appId} data={trend} cohorts={selectedOverview} installLabel={installLabel} />
         </div>
       </div>
 
@@ -213,20 +194,22 @@ export default function AppOverviewPanel({
               <span className="font-medium">View A/B tests →</span>
             </button>
           ) : null}
-          <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} />
-          {trialCancelTiming ? <ActiveTrialsChart report={trialCancelTiming.activeTrials} windowLabel={windowLabel} /> : null}
-          {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
-          {productSlot}
+          {markets ? <div className="min-w-0 overflow-hidden rounded-[28px] bg-white p-4">
+            <JourneyVersionComparison showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
+          </div> : <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} />}
+          {selectedTrialTiming ? <ActiveTrialsChart report={selectedTrialTiming.activeTrials} windowLabel={windowLabel} /> : null}
+          {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={windowLabel} /> : null}
+          {productSlot ? <details><summary className="cursor-pointer px-4 text-sm text-muted-foreground">Product activity · all languages and countries</summary>{productSlot}</details> : null}
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-            <AppCountryBreakdown countries={dataCountries} />
-            <AppConversionBreakdown countries={dataCountries} conversion="paid" />
+            <AppCountryBreakdown countries={selectedCountries} />
+            <AppConversionBreakdown countries={selectedCountries} conversion="paid" />
           </div>
           {showPlans || showRetention ? (
             <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-              {showPlans ? <AppPlanBreakdown plans={plans} /> : null}
+              {showPlans ? <AppPlanBreakdown plans={selectedPlans} /> : null}
               {showRetention ? (
                 <AppRetentionBreakdown
-                  rows={retention}
+                  rows={selectedRetention}
                 />
               ) : null}
             </div>
@@ -241,6 +224,7 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-experiments"
           className="space-y-4"
         >
+          <p className="px-4 text-xs text-muted-foreground">A/B tests use their own language and country breakdowns below.</p>
           <AnalyticsFreshness updatedAt={loadedBundle?.snapshotUpdatedAt} label="A/B tests" />
           {experimentsLoading ? <TabEmptyState>Loading the last 30 days of A/B tests…</TabEmptyState> : monthFailed ? <TabEmptyState>A/B tests could not be loaded.</TabEmptyState> : <>
             <AppExperimentMap appId={appId} experiments={resolvedExperiments} nativePaywalls={resolvedPaywalls ?? null} onboardingExperience={resolvedOnboarding ?? null} />
@@ -263,6 +247,7 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-paywalls"
           className="min-w-0 space-y-4"
         >
+          <p className="px-4 text-xs text-muted-foreground">Paywalls use their own language filters · all countries.</p>
           {appId === "glow" && <WinbackPaywallPanel appId={appId} />}
           {appId === "versy" && <p className="px-1 text-sm text-muted-foreground">Compare onboarding routes by paid conversions and net proceeds in A/B tests. Below, verified purchases link revenue, renewals and refunds to the original route and purchase placement. Revenue per user makes different traffic shares comparable.</p>}
           <AnalyticsFreshness updatedAt={loadedBundle?.snapshotUpdatedAt} label="Paywalls" />

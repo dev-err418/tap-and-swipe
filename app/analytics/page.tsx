@@ -614,6 +614,7 @@ async function AppDetail({
         windowLabel={windowLabel}
         trend={trend}
         overviewCohorts={app.overviewCohorts}
+        markets={app.markets}
         countries={app.countries}
         dataCountries={app.dataCountries}
         cohortDataAvailable={app.cohortDataAvailable}

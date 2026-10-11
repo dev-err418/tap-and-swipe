@@ -1,3 +1,4 @@
+import { buildAnalyticsMarkets, marketLanguage, marketCountry, type AnalyticsMarkets } from "./analytics-markets";
 import { productionAnalyticsFilter } from "./analytics-production";
 import { ACQUISITION_ATTRIBUTE_KEYS, versionCohortConversions } from "./version-cohort-conversions";
 import { analyticsSnapshot, type SnapshotMetadata } from "./analytics-snapshot";
@@ -159,6 +160,7 @@ export type MobileAppAnalytics = SnapshotMetadata & {
   paid: number;
   trend: MobileAppTrendPoint[];
   overviewCohorts: AppOverviewCohorts | null;
+  markets?: AnalyticsMarkets;
   countries: MobileAppCountryRow[];
   /** Countries/APPU and CR charts; Glow uses fully observed 72-hour cohorts. */
   dataCountries?: MobileAppCountryRow[];
@@ -515,6 +517,27 @@ async function loadSuperwallAppAnalytics(
     ...cohort, conversions: conversions.get(cohort.version),
   }));
 
+  const markets = facts ? buildAnalyticsMarkets({ period, startMs, endMs, installs: facts.installs, events: facts.events, attributes: facts.attributes, downloads: [] }) : undefined;
+  if (facts && markets) {
+    const owners = new Map<string, { user: string; at: number }>();
+    for (const event of facts.events) {
+      if (event.name !== "initial_purchase" || event.isRefund || !event.appUserId) continue;
+      const owner = owners.get(event.originalTransactionId);
+      if (!owner || event.eventTs < owner.at) owners.set(event.originalTransactionId, { user: event.appUserId, at: event.eventTs });
+    }
+    for (const slice of Object.values(markets.slices)) {
+      const installs = facts.installs.filter((row) => (slice.language === "all" || marketLanguage(row.language) === slice.language)
+        && (slice.country === "all" || marketCountry(row.country) === slice.country));
+      const users = new Set(installs.map((row) => row.appUserId));
+      const subset = { ...facts, installs, events: facts.events.filter((row) => users.has(owners.get(row.originalTransactionId)?.user ?? row.appUserId)),
+        sessions: facts.sessions.filter((row) => users.has(row.appUserId)) };
+      slice.dataCountries = app.id === "glow" ? glowMatureCountries(subset) : installCohortCountries(subset);
+      slice.plans = app.id === "glow" ? [] : plansFromFacts(subset);
+      slice.retention = app.id === "glow" ? [] : retentionFromFacts(subset);
+      slice.trialCancelTiming = app.id === "poky" ? null : trialCancelFromFacts(subset);
+    }
+  }
+
   return {
     id: app.id,
     name: app.name,
@@ -530,6 +553,7 @@ async function loadSuperwallAppAnalytics(
       downloads: trend,
       available: Boolean(facts),
     }) : null,
+    markets,
     countries,
     dataCountries,
     cohortDataAvailable: Boolean(facts),

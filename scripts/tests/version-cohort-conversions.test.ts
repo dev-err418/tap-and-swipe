@@ -32,9 +32,9 @@ test("denominators include nonpayers, conversions stay with first version and fo
   ], new Map([["a", { acquisition_source: "meta" }], ["b", { acquisition_source: "meta" }]]), start, end, asOf);
   const version = report.get("1.2.1")!;
   assert.equal(report.has("1.2.2"), false);
-  assert.deepEqual(version.global, { installs: 4, trials: 1, finishedTrials: 1, paid: 1, installPaid: 2, missingInstallMoney: false, missingMoney: false });
-  assert.deepEqual(version.ads, { installs: 2, trials: 1, finishedTrials: 1, paid: 1, installPaid: 1, missingInstallMoney: false, missingMoney: false });
-  assert.deepEqual(version.nonAds, { installs: 2, trials: 0, finishedTrials: 0, paid: 0, installPaid: 1, missingInstallMoney: false, missingMoney: false });
+  assert.deepEqual(version.global, { installs: 4, trials: 1, finishedTrials: 1, paid: 1, installPaid: 2, proceeds: 10, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
+  assert.deepEqual(version.ads, { installs: 2, trials: 1, finishedTrials: 1, paid: 1, installPaid: 1, proceeds: 5, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
+  assert.deepEqual(version.nonAds, { installs: 2, trials: 0, finishedTrials: 0, paid: 0, installPaid: 1, proceeds: 5, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
 });
 
 test("deduplicates transaction revisions and refunds do not undo paid conversion", () => {
@@ -95,4 +95,29 @@ test("install outcomes stay in their original version cohort and exclude unrelat
   assert.equal(reports.get("2.0")!.global.installs, 2);
   assert.equal(reports.get("2.0")!.global.trials, 0);
   assert.equal(reports.get("2.0")!.global.installPaid, 1);
+});
+
+
+test("APPU includes nonpayers, corrected charges, refunds and post-update renewals in the original cohort", () => {
+  const reports = versionCohortConversions([
+    install("payer"), install("free"), install("payer", "2.0", start + 2 * day),
+    install("missing", "3.0"), install("trial", "4.0"),
+  ], [
+    event("payer", { netProceeds: 10 }),
+    event("payer", { netProceeds: 12, attributionTs: start + 2 * day }),
+    event("", { originalTransactionId: "payer", name: "renewal", transactionId: "renewal", eventTs: start + 10 * day, netProceeds: 8 }),
+    event("payer", { name: "cancellation", isRefund: true, netProceeds: -12 }),
+    event("outsider", { netProceeds: 100 }),
+    event("missing", { netProceeds: null }),
+    event("trial", { periodType: "trial", netProceeds: null }),
+  ], new Map([["payer", { acquisition_source: "meta" }]]), start, end, asOf);
+  const report = reports.get("1.2.1")!;
+  assert.equal(report.global.proceeds / report.global.installs, 4);
+  assert.equal(report.ads.proceeds / report.ads.installs, 8);
+  assert.equal(report.nonAds.proceeds / report.nonAds.installs, 0);
+  assert.equal(report.global.missingProceeds, false);
+  assert.equal(reports.has("2.0"), false);
+  assert.equal(reports.get("3.0")!.global.missingProceeds, true);
+  assert.equal(reports.get("4.0")!.global.missingProceeds, false);
+  assert.equal(reports.get("4.0")!.global.proceeds, 0);
 });

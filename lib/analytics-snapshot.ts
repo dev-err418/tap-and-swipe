@@ -10,7 +10,7 @@ export const refreshAnalyticsSnapshots = <T>(load: () => Promise<T>) => refreshC
 
 // Bump when report shapes or metric definitions change. These are disposable reports,
 // never source events. Keep the directory outside public/ and mount it in Coolify.
-const VERSION = "v8";
+const VERSION = "v10";
 export function analyticsSnapshotDirectory() {
   return process.env.ANALYTICS_SNAPSHOT_DIR?.trim()
     || (process.env.NODE_ENV === "production" ? null : path.join(process.cwd(), ".cache/analytics"));

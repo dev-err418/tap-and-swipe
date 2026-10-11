@@ -5,7 +5,7 @@ import { journeyVersion } from "./user-journey";
 export const ACQUISITION_ATTRIBUTE_KEYS = ["acquisition_source", "apple_search_ads_attribution"] as const;
 
 export type AcquisitionGroup = "ads" | "nonAds";
-export type VersionConversionMetric = { installs: number; trials: number; finishedTrials: number; paid: number; installPaid: number; missingInstallMoney: boolean; missingMoney: boolean };
+export type VersionConversionMetric = { installs: number; trials: number; finishedTrials: number; paid: number; installPaid: number; proceeds: number; missingProceeds: boolean; missingInstallMoney: boolean; missingMoney: boolean };
 export type VersionConversions = Record<"global" | AcquisitionGroup, VersionConversionMetric>;
 type Outcome = Parameters<typeof buildAppOverviewCohorts>[0]["events"][number];
 type Install = { appUserId: string; appVersion: string; installedAt: number };
@@ -27,7 +27,7 @@ export function versionCohortConversions(installs: Install[], events: Outcome[],
   }
   const selected = new Map([...first].filter(([, install]) => install.installedAt >= startMs && install.installedAt < endMs && install.installedAt <= asOf));
   const reports = new Map<string, VersionConversions>();
-  const metric = (): VersionConversionMetric => ({ installs: 0, trials: 0, finishedTrials: 0, paid: 0, installPaid: 0, missingInstallMoney: false, missingMoney: false });
+  const metric = (): VersionConversionMetric => ({ installs: 0, trials: 0, finishedTrials: 0, paid: 0, installPaid: 0, proceeds: 0, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
   for (const install of selected.values()) {
     const version = journeyVersion(install.appVersion);
     const report = reports.get(version) ?? { global: metric(), ads: metric(), nonAds: metric() };
@@ -71,6 +71,12 @@ export function versionCohortConversions(installs: Install[], events: Outcome[],
     }
   }
   for (const { event, user } of money.values()) {
+    // Free trial starts need no amount; all other cohort money includes refunds and renewals.
+    const freeTrial = event.name === "initial_purchase" && event.periodType === "trial" && !event.isRefund;
+    for (const metric of targets(user)) {
+      if (event.netProceeds != null && Number.isFinite(event.netProceeds)) metric.proceeds += event.netProceeds;
+      else if (!freeTrial) metric.missingProceeds = true;
+    }
     if (!event.isRefund && event.periodType !== "trial" && isMobileMoneyEvent(event)) {
       if (event.netProceeds == null || !Number.isFinite(event.netProceeds)) {
         for (const metric of targets(user)) metric.missingInstallMoney = true;

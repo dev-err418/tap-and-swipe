@@ -89,35 +89,47 @@ export default function UserJourneyFunnel({
   );
 }
 
-export function JourneyVersionComparison({ cohorts, showInstallPaid = false }: { cohorts: JourneyVersionCohort[]; showInstallPaid?: boolean }) {
+export function JourneyVersionComparison({ cohorts, showInstallPaid = false, rowHeading = "First version", rowLabels }: { cohorts: JourneyVersionCohort[]; showInstallPaid?: boolean; rowHeading?: string; rowLabels?: Record<string, string> }) {
   const fields = showInstallPaid ? ["trials", "paid", "installPaid"] as const : ["trials", "paid"] as const;
   if (!cohorts.length) return <p className="text-sm text-muted-foreground">No known first-seen versions in this install window.</p>;
   return <div className="space-y-3">
-    <div className="min-w-0 overflow-x-auto rounded-xl border border-black/[0.06] scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" role="region" aria-label="Conversions by first-seen version" tabIndex={0}>
-      <table className={cn("w-full text-left text-xs", showInstallPaid ? "min-w-[1480px]" : "min-w-[1120px]")}>
+    <div className="min-w-0 overflow-x-auto rounded-xl border border-black/[0.06] scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" role="region" aria-label={rowHeading === "First version" ? "Conversions by first-seen version" : `Conversions by ${rowHeading.toLowerCase()}`} tabIndex={0}>
+      <table className={cn("w-full text-left text-xs", showInstallPaid ? "min-w-[1816px]" : "min-w-[1456px]")}>
         <thead className="bg-[#f8f8f8]">
           <tr className="border-b border-black/[0.06]">
-            <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-32 bg-[#f8f8f8] px-4 py-3 font-medium">First version</th>
-            {(["Global", "Ads", "Non-ads"] as const).map((label) => <th key={label} scope="colgroup" colSpan={showInstallPaid ? 4 : 3} className="border-l border-black/[0.06] px-3 py-3 font-medium">
+            <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-32 bg-[#f8f8f8] px-4 py-3 font-medium">{rowHeading}</th>
+            {(["All users", "Ads", "Non-ads"] as const).map((label) => <th key={label} scope="colgroup" colSpan={showInstallPaid ? 5 : 4} className="border-l border-black/[0.06] px-3 py-3 font-medium">
               {label}{label === "Non-ads" ? <span className="ml-2 font-normal text-muted-foreground">No recorded ad attribution</span> : null}
             </th>)}
           </tr>
           <tr className="text-muted-foreground">
             {(["global", "ads", "nonAds"] as const).map((audience) => <Fragment key={audience}>
               <th scope="col" className="min-w-24 border-l border-black/[0.06] px-3 py-3 text-right font-medium">Installs</th>
+              <th scope="col" className="min-w-28 px-3 py-3 text-right font-medium" title="Net proceeds in USD / all installs in this cohort, including non-payers">APPU</th>
               <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium">Trial start</th>
               <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Paid users / trials whose recorded end has passed">Trial → paid</th>
-              {showInstallPaid ? <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Paid users from this first-seen version cohort / installs in this cohort">Install → paid</th> : null}
+              {showInstallPaid ? <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Paid users from this cohort / installs in this cohort">Install → paid</th> : null}
             </Fragment>)}
           </tr>
         </thead>
         <tbody>
           {cohorts.map((cohort) => <tr key={cohort.version} className="border-t border-black/[0.06]">
-            <th scope="row" className="sticky left-0 z-10 bg-white px-4 py-4 font-medium">{cohort.version === "unknown" ? "Unknown" : `v${cohort.version}`}</th>
+            <th scope="row" className="sticky left-0 z-10 bg-white px-4 py-4 font-medium">{rowLabels?.[cohort.version] ?? (cohort.version === "unknown" ? "Unknown" : `v${cohort.version}`)}</th>
             {(["global", "ads", "nonAds"] as const).map((audience) => {
               const metric = cohort.conversions?.[audience];
+              const appu = metric && metric.installs > 0 && !metric.missingProceeds && Number.isFinite(metric.proceeds)
+                ? metric.proceeds / metric.installs : null;
+              const bestAppu = appu != null && appu > 0 && !cohorts.some((other) => {
+                const candidate = other.conversions?.[audience];
+                return candidate && candidate.installs > 0 && !candidate.missingProceeds
+                  && candidate.proceeds / candidate.installs > appu;
+              });
               return <Fragment key={audience}>
                 <td className="border-l border-black/[0.06] px-3 py-4 text-right tabular-nums">{metric ? metric.installs.toLocaleString("en-US") : "—"}</td>
+                <td title={bestAppu ? "Highest average proceeds per user among these versions" : "Average proceeds per user (USD)"}
+                  className={cn("whitespace-nowrap px-3 py-4 text-right font-semibold tabular-nums", bestAppu && "bg-orange-100/80 text-orange-900")}>
+                  {appu == null ? "—" : appu.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
                 {fields.map((field) => {
                   const denominator = metric ? (field === "paid" ? metric.finishedTrials : metric.installs) : 0;
                   const available = metric && denominator > 0 && !(field === "paid" && metric.missingMoney) && !(field === "installPaid" && metric.missingInstallMoney);

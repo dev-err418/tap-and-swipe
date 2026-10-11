@@ -62,7 +62,7 @@ test("recent-only periods have no mature results instead of borrowing older user
   assert.deepEqual(glowMatureCountries(input, now), []);
 });
 
-test("country charts use mature data while the top dashboard defaults to Spanish cohorts", () => {
+test("country charts use mature data while the top dashboard defaults to English cohorts for Glow", () => {
   const countries = [{ country: "US", installs: 99, proceeds: 99, trials: 10, converted: 1, paid: 1 }];
   const dataCountries = [{ country: "ES", installs: 4, proceeds: 20, trials: 2, converted: 1, paid: 1 }];
   const overviewCohorts = buildAppOverviewCohorts({
@@ -78,10 +78,10 @@ test("country charts use mature data while the top dashboard defaults to Spanish
   const markup = renderToStaticMarkup(createElement(AppOverviewPanel, { ...props, dataCountries }));
   const chartMarkup = markup.split('id="app-analytics-panel-data"')[1];
   const topMarkup = markup.split('id="app-analytics-panel-data"')[0];
-  assert.match(topMarkup, /Spanish · Last 30 days/);
+  assert.match(topMarkup, /English · All countries · Last 30 days/);
   assert.match(topMarkup, /Tracked installs/);
-  assert.match(topMarkup, />4<\/p>/);
-  assert.match(topMarkup, /\$5\.00/);
+  assert.match(topMarkup, />1<\/p>/);
+  assert.match(topMarkup, /\$0\.00/);
   assert.doesNotMatch(topMarkup, />99<\/p>|More metrics|APPU shows each day/);
   // Each chart renders its country label twice to contrast against the bars.
   assert.equal(chartMarkup.match(/Spain/g)?.length, 4);

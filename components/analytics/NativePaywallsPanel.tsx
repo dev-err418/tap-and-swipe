@@ -43,7 +43,7 @@ function makeConversionDomain(rows: NativePaywallRow[]): ConversionDomain {
 }
 
 export default function NativePaywallsPanel({ appId, report }: { appId: "glow" | "poky" | "versy"; report: NativePaywallReport | null }) {
-  const [language, setLanguage] = useState(appId === "versy" ? "all" : "en");
+  const [language, setLanguage] = useState(appId === "versy" ? "pt" : appId === "poky" ? "es" : "en");
   const availableLanguages = [...new Set(report?.groups.filter((g) => appId === "versy" || g.language !== "all").map((g) => g.language) ?? [])]
     .sort((a, b) => a === b ? 0 : a === "en" ? -1 : b === "en" ? 1 : 0);
   const selectedLanguage = availableLanguages.includes(language) ? language : availableLanguages[0];
