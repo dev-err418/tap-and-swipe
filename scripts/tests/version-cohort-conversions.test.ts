@@ -32,9 +32,9 @@ test("denominators include nonpayers, conversions stay with first version and fo
   ], new Map([["a", { acquisition_source: "meta" }], ["b", { acquisition_source: "meta" }]]), start, end, asOf);
   const version = report.get("1.2.1")!;
   assert.equal(report.has("1.2.2"), false);
-  assert.deepEqual(version.global, { installs: 4, trials: 1, finishedTrials: 1, paid: 1, missingMoney: false });
-  assert.deepEqual(version.ads, { installs: 2, trials: 1, finishedTrials: 1, paid: 1, missingMoney: false });
-  assert.deepEqual(version.nonAds, { installs: 2, trials: 0, finishedTrials: 0, paid: 0, missingMoney: false });
+  assert.deepEqual(version.global, { installs: 4, trials: 1, finishedTrials: 1, paid: 1, installPaid: 2, missingInstallMoney: false, missingMoney: false });
+  assert.deepEqual(version.ads, { installs: 2, trials: 1, finishedTrials: 1, paid: 1, installPaid: 1, missingInstallMoney: false, missingMoney: false });
+  assert.deepEqual(version.nonAds, { installs: 2, trials: 0, finishedTrials: 0, paid: 0, installPaid: 1, missingInstallMoney: false, missingMoney: false });
 });
 
 test("deduplicates transaction revisions and refunds do not undo paid conversion", () => {
@@ -76,4 +76,23 @@ test("paid conversion only includes finished first trials and matching subsequen
   assert.equal(report.trials, 5);
   assert.equal(report.finishedTrials, 3);
   assert.equal(report.paid, 1);
+});
+
+
+test("install outcomes stay in their original version cohort and exclude unrelated users and old subscriptions", () => {
+  const reports = versionCohortConversions([
+    install("old", "1.0"), install("new", "2.0"), install("nonpayer", "2.0"),
+    install("old", "2.0", start + 2 * day),
+  ], [
+    event("old", { periodType: "trial", netProceeds: 0, expiresAt: start + 8 * day }),
+    event("", { originalTransactionId: "old", name: "renewal", transactionId: "renewal", eventTs: start + 10 * day }),
+    event("new"), event("new"), event("outsider"),
+    event("nonpayer", { eventTs: start - day }),
+    event("nonpayer", { name: "renewal", transactionId: "old-renewal", eventTs: start + 3 * day }),
+  ], new Map(), start, end, asOf);
+  assert.equal(reports.get("1.0")!.global.trials, 1);
+  assert.equal(reports.get("1.0")!.global.installPaid, 1);
+  assert.equal(reports.get("2.0")!.global.installs, 2);
+  assert.equal(reports.get("2.0")!.global.trials, 0);
+  assert.equal(reports.get("2.0")!.global.installPaid, 1);
 });

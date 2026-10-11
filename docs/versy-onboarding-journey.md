@@ -81,3 +81,12 @@ Sandbox records remain excluded in SQL. Missing or non-production markers are
 excluded, so older versions can lose users whose environment cannot be confirmed.
 Identity-free renewals are retained only through a production initial-purchase
 chain. Schema v7 invalidates older snapshots that lacked this check.
+
+The shared version table labels installs-to-trial as **Trial start**, with the
+cohort denominator visible. Poky additionally shows **Install → paid**: unique
+users with a positive non-trial charge / installs in the same first-seen version
+and acquisition cohort. It includes direct hard-paywall purchases and paid trial
+outcomes, independently of the finished-trial-only **Trial → paid** metric.
+Events from other users, pre-install subscription chains, and subsequent app
+versions do not move outcomes into a different install cohort. Schema v8 adds
+these install-to-paid counts and their money-availability flag.

@@ -5,7 +5,7 @@ import { journeyVersion } from "./user-journey";
 export const ACQUISITION_ATTRIBUTE_KEYS = ["acquisition_source", "apple_search_ads_attribution"] as const;
 
 export type AcquisitionGroup = "ads" | "nonAds";
-export type VersionConversionMetric = { installs: number; trials: number; finishedTrials: number; paid: number; missingMoney: boolean };
+export type VersionConversionMetric = { installs: number; trials: number; finishedTrials: number; paid: number; installPaid: number; missingInstallMoney: boolean; missingMoney: boolean };
 export type VersionConversions = Record<"global" | AcquisitionGroup, VersionConversionMetric>;
 type Outcome = Parameters<typeof buildAppOverviewCohorts>[0]["events"][number];
 type Install = { appUserId: string; appVersion: string; installedAt: number };
@@ -27,7 +27,7 @@ export function versionCohortConversions(installs: Install[], events: Outcome[],
   }
   const selected = new Map([...first].filter(([, install]) => install.installedAt >= startMs && install.installedAt < endMs && install.installedAt <= asOf));
   const reports = new Map<string, VersionConversions>();
-  const metric = (): VersionConversionMetric => ({ installs: 0, trials: 0, finishedTrials: 0, paid: 0, missingMoney: false });
+  const metric = (): VersionConversionMetric => ({ installs: 0, trials: 0, finishedTrials: 0, paid: 0, installPaid: 0, missingInstallMoney: false, missingMoney: false });
   for (const install of selected.values()) {
     const version = journeyVersion(install.appVersion);
     const report = reports.get(version) ?? { global: metric(), ads: metric(), nonAds: metric() };
@@ -44,6 +44,7 @@ export function versionCohortConversions(installs: Install[], events: Outcome[],
   }
   const trials = new Map<string, Outcome>();
   const paidUsers = new Set<string>();
+  const installPaidUsers = new Set<string>();
   const money = new Map<string, { event: Outcome; user: string }>();
   const targets = (user: string) => {
     const report = reports.get(journeyVersion(selected.get(user)!.appVersion))!;
@@ -70,6 +71,14 @@ export function versionCohortConversions(installs: Install[], events: Outcome[],
     }
   }
   for (const { event, user } of money.values()) {
+    if (!event.isRefund && event.periodType !== "trial" && isMobileMoneyEvent(event)) {
+      if (event.netProceeds == null || !Number.isFinite(event.netProceeds)) {
+        for (const metric of targets(user)) metric.missingInstallMoney = true;
+      } else if (event.netProceeds > 0 && !installPaidUsers.has(user)) {
+        installPaidUsers.add(user);
+        for (const metric of targets(user)) metric.installPaid++;
+      }
+    }
     const trial = trials.get(user);
     // Wait for the scheduled trial end, even if cancelled early. Unknown ends are excluded.
     if (!trial || !Number.isFinite(trial.expiresAt) || trial.expiresAt <= trial.eventTs || trial.expiresAt > asOf

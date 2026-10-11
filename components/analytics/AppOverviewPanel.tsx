@@ -213,7 +213,7 @@ export default function AppOverviewPanel({
               <span className="font-medium">View A/B tests →</span>
             </button>
           ) : null}
-          <UserJourneyFunnel report={userJourney} windowLabel={windowLabel} />
+          <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} />
           {trialCancelTiming ? <ActiveTrialsChart report={trialCancelTiming.activeTrials} windowLabel={windowLabel} /> : null}
           {trialCancelTiming ? <TrialCancelChart timing={trialCancelTiming} windowLabel={windowLabel} /> : null}
           {productSlot}
