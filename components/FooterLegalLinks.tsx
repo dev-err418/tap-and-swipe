@@ -39,6 +39,16 @@ export function FooterLegalLinks() {
           Privacy Policy
         </Link>
       </li>
+      <li>
+        <Link href="/postiz/terms" className={LINK_CLASS}>
+          Postiz Terms of Service
+        </Link>
+      </li>
+      <li>
+        <Link href="/postiz/privacy" className={LINK_CLASS}>
+          Postiz Privacy Policy
+        </Link>
+      </li>
     </ul>
   );
 }

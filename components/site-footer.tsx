@@ -73,6 +73,14 @@ export function SiteFooter() {
                 Community
               </Link>
             </li>
+            <li>
+              <Link
+                href="/postiz"
+                className="inline-block px-2 py-1.5 transition-colors hover:text-foreground/70"
+              >
+                Postiz social publishing
+              </Link>
+            </li>
           </ul>
         </div>
         <div>

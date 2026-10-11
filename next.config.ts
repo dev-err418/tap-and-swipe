@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
         headers: noTransformHeaders,
       },
       {
-        source: "/:app(versy|glow|divvy|netpay|lua|notify)/:path*",
+        source: "/:app(versy|glow|divvy|netpay|lua|notify|postiz)/:path*",
         headers: noTransformHeaders,
       },
       {
