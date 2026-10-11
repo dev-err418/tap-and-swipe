@@ -26,7 +26,8 @@ const worker = {
           method: "POST",
           headers: { Authorization: `Bearer ${env.CRON_SECRET}`, "Content-Type": "application/json" },
           body: JSON.stringify(job),
-          redirect: "error",
+          // Workers supports manual redirects; a 3xx fails response.ok below.
+          redirect: "manual",
           signal: AbortSignal.timeout(Math.min(110_000, remaining)),
         });
         // Consume every body, but never log report content or credentials.

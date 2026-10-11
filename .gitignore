@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Private analytics snapshots
 .cache/analytics/
+
+# Cloudflare local build and preview artifacts
+**/.wrangler/

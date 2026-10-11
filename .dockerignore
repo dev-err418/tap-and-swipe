@@ -9,3 +9,6 @@ lib/generated/prisma
 
 # Private analytics snapshots
 .cache/analytics/
+
+# Cloudflare local build and preview artifacts
+**/.wrangler/

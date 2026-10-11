@@ -108,3 +108,19 @@ or database access. Deployment and successful live warmup are separate checks.
 
 Cloudflare references: [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
 and [Worker limits](https://developers.cloudflare.com/workers/platform/limits/).
+
+## Production rollout
+
+Enabled on October 11, 2026 for `https://tap-and-swipe.com`:
+- Coolify mounts its named `analytics-cache` volume at `/app/analytics-cache`.
+- Product report read credentials are configured as runtime-only environment values.
+- Worker `tap-and-swipe-analytics-refresh` uses the application's existing cron secret.
+- Cloudflare's scheduled Versy invocation and a remote Poky scheduled-handler test
+  both completed successfully. The cron endpoint rejects unauthenticated requests.
+
+Workers uses `redirect: "manual"`; redirects fail the HTTP success check without
+forwarding the secret. An unavailable statistical sample-size estimate is valid
+report output and does not block caching. Actual missing/failed/truncated source
+reports still fail refresh. Glow's trial comparison retains explicit query caps
+(5,000 starts and 100,000 activity rows), with an extra row to detect truncation;
+its original 300-start cap was below the production monthly cohort size.

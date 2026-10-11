@@ -45,8 +45,8 @@ const FIRST_INSTRUMENTED_DAY = new Date("2026-09-25T00:00:00Z");
 const MAX_RECENT_CANCELLATIONS = 25;
 const MAX_HISTORY_ROWS = 5_000;
 const MAX_USER_EVENTS = 250;
-const MAX_TRIAL_STARTS = 300;
-const MAX_TRIAL_ACTIVITY = 15_000;
+const MAX_TRIAL_STARTS = 5_000;
+const MAX_TRIAL_ACTIVITY = 100_000;
 const USER_EVENTS = [...new Set([
   ...journeyEvents(), "app_state_snapshot", "notification_permission_requested", "widget_prompt_action",
   "widget_removed_detected", "quote_reading_session", "practice_session_ended", "premium_status_changed",
@@ -109,7 +109,11 @@ async function queryPostHog(sql: string, projectId: string, key: string): Promis
     signal: AbortSignal.timeout(25_000),
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`PostHog query returned HTTP ${response.status}`);
+  if (!response.ok) {
+    const error = await response.json().catch(() => null) as { detail?: unknown } | null;
+    const detail = typeof error?.detail === "string" ? error.detail.slice(0, 300) : "";
+    throw new Error(`PostHog query returned HTTP ${response.status}: ${detail}`);
+  }
   const data: unknown = await response.json();
   if (!data || typeof data !== "object" || !Array.isArray((data as { results?: unknown }).results)) {
     throw new Error("PostHog returned an invalid query result");
