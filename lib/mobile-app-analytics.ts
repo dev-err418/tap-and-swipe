@@ -1,3 +1,4 @@
+import { buildDailyAppReport } from "./daily-app-report";
 import { buildAnalyticsMarkets, marketLanguage, marketCountry, type AnalyticsMarkets } from "./analytics-markets";
 import { productionAnalyticsFilter } from "./analytics-production";
 import { ACQUISITION_ATTRIBUTE_KEYS, versionCohortConversions } from "./version-cohort-conversions";
@@ -569,6 +570,22 @@ async function loadSuperwallAppAnalytics(
     },
     userJourney: journey,
   };
+}
+
+
+/** Fresh rolling windows for the morning Slack report; all production languages. */
+export async function getDailyMobileAppReport(id: "glow" | "versy" | "poky", endMs: number) {
+  const configs = {
+    glow: { name: "Glow", iconUrl: GLOW_ICON_URL, organizationId: GLOW_SUPERWALL_ORGANIZATION_ID, applicationId: GLOW_SUPERWALL_APPLICATION_ID },
+    versy: { name: "Versy", iconUrl: VERSY_ICON_URL, organizationId: VERSY_SUPERWALL_ORGANIZATION_ID, applicationId: VERSY_SUPERWALL_APPLICATION_ID },
+    poky: { name: "Poky", iconUrl: POKY_ICON_URL, organizationId: SUPERWALL_ORGANIZATION_ID, applicationId: POKY_APPLICATION_ID },
+  };
+  const apiKey = process.env[`SUPERWALL_${id.toUpperCase()}_API_KEY`]?.trim();
+  if (!apiKey) throw new Error("Daily app analytics credentials missing");
+  const startMs = endMs - 2 * DAY_MS;
+  const facts = await loadAppFacts({ id, ...configs[id], apiKey },
+    clickhouseDate(new Date(startMs)), clickhouseDate(new Date(endMs)), startMs, endMs, false, false);
+  return { appId: id, generatedAt: new Date().toISOString(), ...buildDailyAppReport(facts, endMs) };
 }
 
 async function loadAppFacts(
