@@ -30,6 +30,29 @@ test("v4 annual price assignments keep a readable group name and three separate 
   assert.deepEqual(group.paywalls.map((row) => row.id), ["yr_34|yr_34", "yr_49|yr_49", "yr_59|yr_59"]);
 });
 
+test("v4 Weekly alternatives preserve earlier annual revenue but reject a different annual bucket", () => {
+  const annual = "com.arthurbuildsstuff.glow.yearly.3499";
+  const weekly = "com.arthurbuildsstuff.glow.Weekly";
+  const base = record({ experiment: "native_yearly_prices_v4", variant: "yr_34", paywall: "yr_34",
+    expectedProduct: annual, allowedProducts: [annual], variantCount: 3 });
+  const context = { ...base, placement: "onboarding_iam_complete", reachedAt: start + DAY, viewedAt: start + DAY };
+  const purchase: PaywallPurchase = { context, productID: annual, startedAt: start + 2 * DAY,
+    purchasedAt: start + 2 * DAY, transactionID: "100", originalTransactionID: "100" };
+  const attrs = [attribute("u1", "gp1_a_native_yearly_prices_v4", { ...base, allowedProducts: [annual, weekly] }),
+    attribute("u1", "gp1_p_native_yearly_prices_v4__onboarding_iam_complete", context),
+    attribute("u1", "gp1_t_100", purchase)];
+  const row = report(attrs, [money()]).groups.find((g) => g.language === "all")!.paywalls[0];
+  assert.equal(row.proceeds, 8.5);
+  assert.equal(row.paid, 1);
+  const weeklyPurchase = { ...purchase, productID: weekly,
+    context: { ...context, allowedProducts: [annual, weekly], displayedProduct: weekly } };
+  const withWeekly = report([...attrs.slice(0, 2), attribute("u1", "gp1_t_100", weeklyPurchase)], [money()]);
+  assert.equal(withWeekly.groups.find((g) => g.language === "all")!.paywalls[0].proceeds, 8.5);
+  const wrongBucket = { ...purchase, context: { ...context, expectedProduct: "another-annual", allowedProducts: ["another-annual", weekly] } };
+  const wrong = report([...attrs.slice(0, 2), attribute("u1", "gp1_t_100", wrongBucket)], [money()]);
+  assert.equal(wrong.groups.find((g) => g.language === "all")!.paywalls[0].proceeds, 0);
+});
+
 test("APPU includes non-viewers/non-payers; views are unique; language is frozen", () => {
   const attrs = [...fixture("u1"), attribute("u2", "gp1_a_price_v1", record()), ...fixture("u3", { language: "es" }, "200")];
   const result = report(attrs, [money()]);

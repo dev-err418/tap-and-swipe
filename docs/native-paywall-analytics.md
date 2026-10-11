@@ -372,3 +372,11 @@ existing A/B results retain their geography exclusions. The Paywalls tab exposes
 paid users separately from trial-inclusive conversions and defaults to all
 languages, including Portuguese. Legacy PostHog placement counts remain below
 the verified tables. The read-only smoke check accepts `--app=versy`.
+
+### Glow reminder-flow plan sheet
+
+The Versy reminder treatment now offers “View all plans”: the same assigned annual SKU plus the fixed Weekly SKU, with annual selected by default. Weekly has no introductory trial. This is part of the paywall-flow treatment, not a randomized weekly-price arm. The annual-price experiment remains three equally likely annual anchors.
+
+On reaching that treatment, the native ledger permits Weekly in the assignment and current placement's `allowedProducts`; existing pending/completed purchase snapshots remain unchanged. For `native_yearly_prices_v4` only, the report accepts offer-list evolution from the assigned annual SKU to that same SKU plus `com.arthurbuildsstuff.glow.Weekly` when matching attribution. Experiment, variant, paywall, language, assignment timestamp and expected annual product must still match. Other product changes remain mismatches; no historical experiment rule is relaxed.
+
+Splash loading awaits all three annual prices, Weekly and recovery-offer preloads. The app keeps the full catalog separate from the annual-only primary presentation.

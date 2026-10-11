@@ -340,10 +340,18 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
 }
 
 function sameAssignment(a: PaywallRecord, b: PaywallRecord) {
+  const allowedA = a.allowedProducts ?? [a.expectedProduct];
+  const allowedB = b.allowedProducts ?? [b.expectedProduct];
+  // V4 still randomizes only the annual price. The independent reminder-flow
+  // treatment adds a fixed Weekly alternative; preserve earlier annual purchases.
+  const reminderPlanEvolution = a.experiment === "native_yearly_prices_v4"
+    && allowedA.includes(a.expectedProduct) && allowedB.includes(b.expectedProduct)
+    && [...allowedA, ...allowedB].every((id) => id === a.expectedProduct
+      || id === "com.arthurbuildsstuff.glow.Weekly");
   return a.experiment === b.experiment && a.variant === b.variant && a.paywall === b.paywall
     && a.language === b.language && a.assignedAt === b.assignedAt
     && a.expectedProduct === b.expectedProduct
-    && JSON.stringify(a.allowedProducts ?? [a.expectedProduct]) === JSON.stringify(b.allowedProducts ?? [b.expectedProduct]);
+    && (reminderPlanEvolution || JSON.stringify(allowedA) === JSON.stringify(allowedB));
 }
 
 function totalMoments(row: WorkingRow, asOf: number) {
