@@ -41,8 +41,9 @@ a newly collected current-version user attribute.
 
 The version table shows the latest five numerically ordered first-seen versions
 observed among installs in the selected window, with one row per version. The
-horizontal table groups metrics under Global, Ads, and Non-ads. It has no picker
-or detailed onboarding flow. Highest positive conversion rates in each column
+horizontal table groups metrics under Global, Ads, and Non-ads. The screen-by-screen journey is restored below this table, with Bible Widget and
+Bible Scroll tabs and Full/Shorter Widget routes. It includes all languages and
+countries regardless of the market selected for the conversion table. Highest positive conversion rates in each column
 are tinted orange, including ties; these are observed rates, not significance claims.
 Snapshot schema v7 includes the finished-trial denominator.
 

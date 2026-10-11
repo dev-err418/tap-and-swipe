@@ -2,25 +2,30 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
 import UserJourneyFunnel from "../../components/analytics/UserJourneyFunnel";
 import { ASSIGNED_KEY, buildUserJourney, journeyDrops, largestDropAttributes, userJourneyDefinition, type UserJourneyDefinition } from "../../lib/user-journey";
 import { loadUserJourney, userJourneySql } from "../../lib/user-journey-queries";
 
 test("glow and versy journeys follow each onboarding variant", () => {
   const glow = userJourneyDefinition("glow")!;
-  assert.deepEqual(glow.variants.map((variant) => variant.key), ["iam", "copy"]);
-  assert.equal(glow.variants[0].steps.length, 46);
-  assert.equal(glow.variants[0].steps[0].attribute, "welcome_screen_seen");
-  assert.equal(glow.variants[0].steps.at(-2)?.attribute, "paywall_seen");
-  assert.equal(glow.variants[0].steps.at(-2)?.attributeSuffix, "__onboarding_iam_complete");
-  assert.equal(glow.variants[1].steps.at(-2)?.attributeSuffix, "__onboarding_complete_copy");
-  assert.equal(glow.variants[0].steps.some((step) => step.attribute.includes("notification")), true);
-  assert.equal(glow.variants[0].steps.some((step) => step.attribute.startsWith("source")), false);
-
+  assert.deepEqual(glow.variants.map((variant) => variant.key), ["iam", "manifest-audio"]);
+  assert.equal(glow.variantAttribute, "glow_onboarding_journey_variant");
+  assert.deepEqual(glow.cohortAttributes, { glow_onboarding_journey_schema: "1", glow_tracking_environment: "production" });
+  assert.equal(glow.variants[0].steps.length, 42);
+  assert.equal(glow.variants[1].steps.length, 45);
   for (const variant of glow.variants) {
-    assert.equal(variant.steps.at(-1)?.attribute, "onboarding_recovery_screen_seen");
-    assert.equal(variant.steps.at(-1)?.branch, true);
+    assert.equal(variant.steps[0].attribute, "glow_journey_welcome_screen_seen");
+    assert.equal(variant.steps.find((step) => step.paywall)?.attribute, "glow_journey_paywall_screen_seen");
+    assert.equal(variant.steps.at(-2)?.attribute, "glow_journey_recovery_screen_seen");
+    assert.equal(variant.steps.at(-2)?.branch, true);
+    assert.equal(variant.steps.at(-1)?.attribute, "glow_journey_completed");
+    assert.equal(variant.steps.find((step) => step.attribute.includes("notifications_denied"))?.branch, true);
+    assert.equal(new Set(variant.steps.map((step) => step.attribute)).size, variant.steps.length);
+    assert.equal(variant.steps.some((step) => /source|religion|zodiac|brain/.test(step.attribute)), false);
   }
+  assert.equal(glow.variants[0].steps.some((step) => step.attribute.includes("affirmation_preview")), false);
+  assert.equal(glow.variants[1].steps.some((step) => step.attribute.includes("affirmation_preview")), true);
 
   const versy = userJourneyDefinition("versy")!;
   assert.deepEqual(versy.variants.map((variant) => variant.key), ["bible_widget", "bible_widget_shorter", "scroll_the_bible"]);
@@ -101,30 +106,30 @@ test("Poky empty and failed queries remain explicit", async () => {
 test("screen reach is a share of assigned installs in that variant", () => {
   const definition = userJourneyDefinition("glow")!;
   const report = buildUserJourney(definition, [
-    { variant: "copy", key: ASSIGNED_KEY, users: 100 },
-    { variant: "copy", key: "welcome_screen_seen", users: 100 },
-    { variant: "copy", key: "widget_screen_seen", users: 40 },
-    { variant: "copy", key: "trial_reminder_screen_seen", users: 70 },
+    { variant: "manifest-audio", key: ASSIGNED_KEY, users: 100 },
+    { variant: "manifest-audio", key: "glow_journey_welcome_screen_seen", users: 100 },
+    { variant: "manifest-audio", key: "glow_journey_widget_screen_seen", users: 40 },
+    { variant: "manifest-audio", key: "glow_journey_trial_reminder_screen_seen", users: 70 },
     { variant: "iam", key: ASSIGNED_KEY, users: 0 },
     { variant: "other", key: ASSIGNED_KEY, users: 9 },
   ]);
   assert.equal(report.status, "ready");
-  assert.deepEqual(report.variants.map((variant) => variant.key), ["copy"]);
-  const copy = report.variants[0];
+  assert.deepEqual(report.variants.map((variant) => variant.key), ["iam", "manifest-audio"]);
+  const copy = report.variants[1];
   assert.equal(copy.assigned, 100);
   assert.equal(copy.steps[0].share, 1);
-  assert.equal(copy.steps.find((step) => step.attribute === "widget_screen_seen")?.share, 0.4);
-  assert.equal(copy.steps.find((step) => step.attribute === "trial_reminder_screen_seen")?.users, 70);
-  assert.equal(copy.steps.find((step) => step.attribute === "age_screen_seen")?.users, 0);
+  assert.equal(copy.steps.find((step) => step.attribute === "glow_journey_widget_screen_seen")?.share, 0.4);
+  assert.equal(copy.steps.find((step) => step.attribute === "glow_journey_trial_reminder_screen_seen")?.users, 70);
+  assert.equal(copy.steps.find((step) => step.attribute === "glow_journey_age_screen_seen")?.users, 0);
   assert.equal(copy.completionShare, 0);
 
   const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
   assert.match(html, /User journey/);
-  assert.match(html, /Copy/);
+  assert.match(html, /manifest-audio/);
   assert.match(html, /\(0%\)/);
   assert.match(html, /100/);
   assert.match(html, /Widget/);
-  assert.doesNotMatch(html, /IAM/);
+  assert.match(html, /IAM/);
 });
 
 test("completion is paywall reach, and the three steepest main-path drops are marked", () => {
@@ -176,10 +181,13 @@ test("journey sql stays inside the install window and the variant list", () => {
   const sql = userJourneySql(54736, glow, "2026-09-18 00:00:00.000", "2026-09-25 00:00:00.000");
   assert.match(sql, /applicationId = 54736/);
   assert.match(sql, /firstInstallDate >=/);
-  assert.match(sql, /'iam', 'copy'/);
+  assert.match(sql, /'iam', 'manifest-audio'/);
   assert.match(sql, /welcome_screen_seen/);
-  assert.match(sql, /endsWith\(key, '__onboarding_iam_complete'\)/);
-  assert.match(sql, /endsWith\(key, '__onboarding_complete_copy'\)/);
+  assert.match(sql, /glow_journey_paywall_screen_seen/);
+  assert.match(sql, /glow_onboarding_journey_variant/);
+  assert.match(sql, /countIf\(key = 'glow_tracking_environment' AND value = 'production'\) > 0/);
+  assert.match(sql, /countIf\(key = 'glow_onboarding_journey_schema' AND value = '1'\) > 0/);
+  assert.doesNotMatch(sql, /gp1_p_|__onboarding_complete_copy/);
   const versy = userJourneySql(51393, userJourneyDefinition("versy")!, "2026-09-18 00:00:00.000", "2026-09-25 00:00:00.000");
   assert.match(versy, /bible_widget_paywall_screen_seen/);
   assert.match(versy, /'bible_widget', 'bible_widget_shorter'/);
@@ -210,3 +218,28 @@ test("Versy shows both families before data arrives and keeps the shorter route 
   ]);
   assert.equal(report.variants[2].completionShare, 0, "old screen flags cannot become current-flow visits");
 });
+
+for (const appId of ["glow", "versy"] as const) {
+  test(`${appId} retains the screen funnel when version metrics exist`, () => {
+    const report = buildUserJourney(userJourneyDefinition(appId)!, []);
+    report.versions = [{ version: "1.2.3", installs: 0, tracked: 0, variants: [] }];
+    const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { appId, report, windowLabel: "Last 7 days" }));
+    assert.match(html, /Onboarding variant/);
+    assert.match(html, appId === "glow" ? /manifest-audio/ : /Bible Scroll/);
+    assert.match(html, /No tracked/);
+    assert.doesNotMatch(html, /Conversions by first-seen version/);
+  });
+}
+
+for (const appId of ["glow", "versy"] as const) {
+  test(`${appId} Data tab renders a journey below market version metrics`, () => {
+    const html = renderToStaticMarkup(createElement(AppOverviewPanel, {
+      appId, installs: 0, windowLabel: "Last 7 days", trend: [], countries: [], plans: [], retention: [],
+      userJourney: buildUserJourney(userJourneyDefinition(appId)!, []),
+      markets: { slices: {} } as NonNullable<Parameters<typeof AppOverviewPanel>[0]["markets"]>,
+    }));
+    assert.match(html, /No known first-seen versions/);
+    assert.match(html, /Onboarding variant/);
+    assert.match(html, appId === "glow" ? /manifest-audio/ : /Bible Scroll/);
+  });
+}

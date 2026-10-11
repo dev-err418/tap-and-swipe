@@ -75,37 +75,37 @@ export type UserJourneyReport = {
 
 const ASSIGNED_KEY = "__assigned__";
 
-/** Glow IAM and Copy walk the same screens. Order is IAMStep.activeSequence. */
-const GLOW_STEPS: UserJourneyStep[] = [
+/** Matches the two shipping sequences, not the retired IAM/Copy experiment. */
+const glowScreens = (rows: [string, string, boolean?][]): UserJourneyStep[] => rows.map(([name, label, branch]) => ({
+  attribute: `glow_journey_${name}_screen_seen`, label, ...(branch ? { branch: true } : {}),
+}));
+
+const GLOW_IAM_STEPS = glowScreens([
   ["welcome", "Welcome"],
-  ["glow_intro", "Glow intro"],
-  ["glow_setup", "Glow setup"],
-  ["first_name", "Name"],
   ["age", "Age"],
+  ["first_name", "Name"],
   ["gender", "Gender"],
   ["relationship", "Relationship"],
   ["employment", "Employment"],
-  ["religion", "Religion"],
-  ["zodiac", "Zodiac"],
-  ["definition", "Definition"],
+  ["definition", "Affirmations intro"],
   ["affirmation_familiarity", "Familiarity"],
   ["habit_helpers", "Habit helpers"],
   ["repetition_intro", "Repetition"],
   ["notifications", "Notifications"],
-  ["needs", "Needs"],
+  ["notifications_denied", "Notifications denied", true],
+  ["needs", "Feelings intro"],
   ["current_mood", "Mood"],
   ["mood_causes", "Mood causes"],
-  ["confidence", "Confidence"],
+  ["confidence", "Encouragement"],
   ["mental_health", "Mental health"],
   ["barriers", "Barriers"],
   ["small_steps", "Small steps"],
   ["minutes", "Minutes"],
   ["streak_goal", "Streak goal"],
-  ["streak_intro", "Streak intro"],
-  ["future_outlook", "Outlook"],
+  ["streak_intro", "Streak preview"],
+  ["future_outlook", "Future outlook"],
   ["manifestation", "Manifestation"],
   ["thoughts", "Thoughts"],
-  ["brain_rewiring", "Brain"],
   ["benefits", "Benefits"],
   ["change", "Change"],
   ["topics", "Topics"],
@@ -116,28 +116,63 @@ const GLOW_STEPS: UserJourneyStep[] = [
   ["letting_go", "Letting go"],
   ["confront", "Confront"],
   ["goals", "Goals"],
-  ["glow_goals", "Glow goals"],
+  ["glow_goals", "Make room for"],
   ["widget", "Widget"],
-  ["resilience", "Resilience"],
-  ["trial_access", "Trial access"],
-  ["trial_reminder", "Trial reminder"],
-].map(([name, label]) => ({ attribute: `${name}_screen_seen`, label }));
+  ["trial_access", "Trial introduction"],
+  ["trial_reminder", "Trial reminder / timing"],
+]);
 
-function glowVariant(key: string, label: string, placement: string): UserJourneyVariant {
-  return {
-    key,
-    label,
-    steps: [...GLOW_STEPS, {
-      attribute: "paywall_seen",
-      label: "Paywall",
-      paywall: true,
-      attributeSuffix: `__${placement}`,
-    }, {
-      attribute: "onboarding_recovery_screen_seen",
-      label: "Recovery offer",
-      branch: true,
-    }],
-  };
+const GLOW_MANIFEST_AUDIO_STEPS = glowScreens([
+  ["welcome", "Welcome"],
+  ["first_name", "Name"],
+  ["glow_intro", "Meet Glow"],
+  ["age", "Age"],
+  ["gender", "Gender"],
+  ["employment", "Employment"],
+  ["relationship", "Relationship"],
+  ["needs", "Feelings intro"],
+  ["current_mood", "Mood"],
+  ["mood_causes", "Mood causes"],
+  ["confidence", "Encouragement"],
+  ["mental_health", "Mental health"],
+  ["barriers", "Barriers"],
+  ["areas_to_improve", "Improve"],
+  ["letting_go", "Letting go"],
+  ["confront", "Confront"],
+  ["glow_setup", "Dream transition"],
+  ["future_outlook", "Future outlook"],
+  ["change", "Change"],
+  ["glow_goals", "Make room for"],
+  ["goals", "Goals"],
+  ["topics", "Topics"],
+  ["resilience", "Personal summary"],
+  ["affirmation_familiarity", "Familiarity"],
+  ["definition", "Affirmations intro"],
+  ["affirmation_preview", "Audio preview"],
+  ["thoughts", "Thoughts"],
+  ["manifestation", "Manifestation"],
+  ["repetition_intro", "Repetition"],
+  ["habit_helpers", "Habit helpers"],
+  ["practice", "Practice"],
+  ["small_steps", "Small steps"],
+  ["minutes", "Minutes"],
+  ["streak_goal", "Streak goal"],
+  ["streak_intro", "Streak preview"],
+  ["theme_background", "Theme"],
+  ["app_icon", "App icon"],
+  ["widget", "Widget"],
+  ["notifications", "Notifications"],
+  ["notifications_denied", "Notifications denied", true],
+  ["trial_access", "Trial introduction"],
+  ["trial_reminder", "Trial reminder / timing"],
+]);
+
+function glowVariant(key: string, label: string, steps: UserJourneyStep[]): UserJourneyVariant {
+  return { key, label, steps: [...steps,
+    { attribute: "glow_journey_paywall_screen_seen", label: "Paywall", paywall: true },
+    { attribute: "glow_journey_recovery_screen_seen", label: "Recovery offer", branch: true },
+    { attribute: "glow_journey_completed", label: "Onboarding completed" },
+  ] };
 }
 
 /** Bible widget order is WidgetStep declaration order. Attributes are bible_widget_<case>_screen_seen. */
@@ -229,10 +264,13 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
   if (appId === "glow") {
     return {
       title: "User journey",
-      variantAttribute: "onboarding_variant",
+      variantAttribute: "glow_onboarding_journey_variant",
+      showEmptyVariants: true,
+      cohortAttributes: { glow_onboarding_journey_schema: "1", glow_tracking_environment: "production" },
+      note: "All languages and countries. Journeys starting at Welcome in the updated app only; earlier visits cannot be reconstructed. IAM and manifest-audio stay separate. Notification denial and recovery are optional branches. Trial reminder includes both paywall-flow treatments. Completion percentage means paywall seen, not purchase; existing subscribers can finish without a paywall.",
       variants: [
-        glowVariant("iam", "IAM", "onboarding_iam_complete"),
-        glowVariant("copy", "Copy", "onboarding_complete_copy"),
+        glowVariant("iam", "IAM", GLOW_IAM_STEPS),
+        glowVariant("manifest-audio", "manifest-audio", GLOW_MANIFEST_AUDIO_STEPS),
       ],
     };
   }
@@ -242,7 +280,7 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
       variantAttribute: "versy_onboarding_journey_variant",
       showEmptyVariants: true,
       cohortAttributes: { versy_onboarding_journey_schema: "2", versy_tracking_environment: "production" },
-      note: "Journeys starting at Welcome in the updated app only; earlier visits are not reconstructed. Widget full and shorter routes stay separate. Reviews are optional for the soft Widget paywall. Includes Mexico’s forced Scroll assignments; this is a descriptive funnel, not an A/B result.",
+      note: "All languages and countries. Journeys starting at Welcome in the updated app only; earlier visits are not reconstructed. Widget full and shorter routes stay separate. Reviews are optional for the soft Widget paywall. Includes Mexico’s forced Scroll assignments; this is a descriptive funnel, not an A/B result.",
       variants: [
         { key: "bible_widget", label: "Full", family: "Bible Widget", steps: VERSY_WIDGET_STEPS },
         { key: "bible_widget_shorter", label: "Shorter", family: "Bible Widget", steps: VERSY_WIDGET_STEPS.filter(

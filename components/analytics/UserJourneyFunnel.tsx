@@ -23,14 +23,16 @@ export default function UserJourneyFunnel({
   report,
   windowLabel,
   appId,
+  funnelOnly = false,
 }: {
   appId?: "glow" | "poky" | "versy";
+  funnelOnly?: boolean;
   report: UserJourneyReport | null;
   windowLabel: string;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   if (!report) return null;
-  if (report.versions?.length) {
+  if (!funnelOnly && appId !== "glow" && appId !== "versy" && report.versions?.length) {
     return <div className="min-w-0 overflow-hidden rounded-[28px] bg-white p-4">
       <JourneyVersionComparison showInstallPaid={appId === "poky"} cohorts={report.versions.filter((entry) => entry.version !== "unknown").slice(0, 5)} />
     </div>;
@@ -70,7 +72,7 @@ export default function UserJourneyFunnel({
             )}
           >
             {name}
-            {!variant.family ? <span className="ml-1.5 tabular-nums">({formatPercent(report.variants.find((row) => row.label === name)!.completionShare)})</span> : null}
+            {!variant.family ? <span className="ml-1.5 tabular-nums">({report.variants.find((row) => row.label === name)!.assigned > 0 ? formatPercent(report.variants.find((row) => row.label === name)!.completionShare) : "—"})</span> : null}
           </button>
         ))}
       </div>

@@ -198,7 +198,10 @@ export default function AppOverviewPanel({
           ) : null}
           {markets ? <div className="min-w-0 overflow-hidden rounded-[28px] bg-white p-4">
             <JourneyVersionComparison showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
-          </div> : <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} />}
+          </div> : userJourney?.versions?.length ? <div className="min-w-0 overflow-hidden rounded-[28px] bg-white p-4">
+            <JourneyVersionComparison showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
+          </div> : appId === "poky" ? <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} /> : null}
+          {appId === "glow" || appId === "versy" ? <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} funnelOnly /> : null}
           {selectedTrialTiming ? <ActiveTrialsChart report={selectedTrialTiming.activeTrials} windowLabel={windowLabel} /> : null}
           {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={windowLabel} /> : null}
           {productSlot ? <details><summary className="cursor-pointer px-4 text-sm text-muted-foreground">Product activity · all languages and countries</summary>{productSlot}</details> : null}
