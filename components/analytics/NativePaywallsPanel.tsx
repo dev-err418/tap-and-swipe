@@ -69,7 +69,7 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
             {price} <span className="ml-1 font-semibold tabular-nums">{formatPaywallAllocation(GLOW_YEARLY_PRICE_EXPERIMENT.variants.find((variant) => variant.id === id)!.percent)}</span>
           </span>)}
         </div>
-        <p className="text-xs text-muted-foreground">The next Glow app build assigns these three annual-only offers equally under a new test. Prices are US references; localized StoreKit prices may differ. Earlier five-variant assignments and purchases remain in their own historical report.</p>
+        <p className="text-xs text-muted-foreground">The next Glow app build assigns these three yearly prices equally under a new test. The Versy reminder flow also offers a fixed Weekly plan in “View all plans”; Weekly is not a price-test arm. Prices are US references; localized StoreKit prices may differ. Earlier five-variant assignments and purchases remain in their own historical report.</p>
         <p className="text-xs text-muted-foreground">The October 7–11 US yearly-only presentation on older builds remains a separate, nonrandomized cohort. It is never mixed into this three-price test.</p>
       </div>
     </section>}
@@ -93,7 +93,7 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
           : "USD net proceeds include linked renewals and refunds through today. New onboarding includes everyone enrolled at Welcome, including non-payers; returning users are separate. These all-country outcomes include forced Mexico assignments, so they do not declare a randomized winner. Trials count as conversions; paid users require a paid charge."}</p>}
         {appId === "glow" && (group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id || group.experiment === GLOW_PAYWALL_EXPERIMENT.id || group.experiment === "native_paywall_us_yearly_oct2026") ? <>
           <p className="px-1 text-xs text-muted-foreground">{group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id
-            ? "Current randomized test: three annual-only prices, one-third of assignments each. Outcomes are comparable within this cohort."
+            ? "Current randomized test: three yearly prices, one-third of assignments each. Weekly purchases from the reminder flow stay attributed to the assigned yearly-price arm; they do not create another arm."
             : group.experiment === GLOW_PAYWALL_EXPERIMENT.id
               ? "Historical annual-only arms from the five-variant test. The five-arm probability-of-best statistic is omitted from this subset."
               : "Temporary US annual-only presentations. These inherit earlier five-way assignments, so compare their outcomes descriptively; do not treat this as a randomized three-price test."}</p>

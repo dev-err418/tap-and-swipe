@@ -42,7 +42,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
         {
-          id: GLOW_YEARLY_PRICE_EXPERIMENT.id, label: "Yearly price", scope: "Next app build · three annual-only offers · all languages", tone: "orange", planned: true,
+          id: GLOW_YEARLY_PRICE_EXPERIMENT.id, label: "Yearly price", scope: "Next app build · three yearly prices · all languages", tone: "orange", planned: true,
           branches: GLOW_YEARLY_PRICE_EXPERIMENT.variants.map(({ id, percent }) => ({
             id,
             label: GLOW_YEARLY_PRICES.find((price) => price.id === id)!.price,
@@ -55,6 +55,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         "Practice is the only Home experience in the next Glow release. The Journal comparison has ended.",
         "IAM wording is retired in the next app build. Both onboarding arms use Copy wording under a new experiment ID; historical comparisons stay separate.",
         "The new price test saves a v4 assignment. Earlier five-variant v3 and temporary US yearly-only presentations remain separate in Paywalls, along with their purchase attribution.",
+        "The Versy reminder flow also offers a fixed Weekly plan in View all plans, with the assigned annual plan selected by default. Weekly is not randomized; its purchases remain attributed to the saved flow and yearly-price assignments.",
         "The split shows app configuration, not observed traffic. StoreKit determines which subscriptions are available and their displayed prices.",
       ],
     };

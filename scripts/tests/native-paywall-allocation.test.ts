@@ -33,7 +33,7 @@ test("the live paywall panel shows the new equal three-price allocation", () => 
   assert.equal((markup.match(/33\.33%/g) ?? []).length, 3);
   assert.doesNotMatch(markup, /166666/);
   assert.match(markup, /Glow yearly price comparison/);
-  assert.match(markup, /next Glow app build assigns these three annual-only offers equally/);
+  assert.match(markup, /next Glow app build assigns these three yearly prices equally/);
   assert.match(markup, /never mixed into this three-price test/);
   const poky = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "poky", report: null }));
   assert.doesNotMatch(poky, /yr_wk_34/);
