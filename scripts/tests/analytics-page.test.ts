@@ -50,7 +50,7 @@ function pageFixture() {
       getMobileAppSummary: async (_period: string, appId: string) => {
         calls.push(appId);
         assert.equal(appId, "poky");
-        return { id: "poky", name: "Poky", downloads: 25, revenueCents: 12000, trend: [], iconUrl: "/poky.png" };
+        return { id: "poky", name: "Poky", downloads: 25, revenueCents: 12000, trend: [], iconUrl: "/poky.png", snapshotUpdatedAt: "2026-10-12T10:00:00Z" };
       },
       getMobileAppById: forbiddenData,
     },
@@ -62,7 +62,7 @@ function pageFixture() {
     "@/components/analytics/AnalyticsDetailSkeleton": { AnalyticsDetailSkeleton: passthrough },
   };
   for (const component of [
-    "analytics/AppOverviewPanel", "analytics/GlowProductPanel", "analytics/AnalyticsPeriodSelect", "analytics/AnalyticsFreshness",
+    "analytics/AppOverviewPanel", "analytics/GlowProductPanel", "analytics/AnalyticsPeriodSelect",
     "analytics/DeadProjectsDisclosure", "analytics/AppSprintFunnelPanel", "aso-debug/LicensesModal",
     "aso-debug/ProxyAnalyticsPanel", "aso-debug/ProxyHealthPanel", "aso-debug/LicenseUsagePanel",
     "aso-debug/FeedbackPanel", "aso-debug/TrialAbusePanel",
@@ -78,6 +78,7 @@ test("Alberto's rendered directory greets him and totals only Poky", async () =>
   assert.match(html, /25 downloads/);
   assert.match(html, /\$120/);
   assert.match(html, /Poky/);
+  assert.doesNotMatch(html, /updated|Refreshes every 30 min/i);
   assert.doesNotMatch(html, /Arthur|Glow|Versy|All websites|tab=appsprint/);
   assert.ok(f.calls.length > 0);
   assert.ok(f.calls.every((id) => id === "poky"));

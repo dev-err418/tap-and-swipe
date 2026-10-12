@@ -1,7 +1,5 @@
 "use client";
 
-import AnalyticsFreshness from "./AnalyticsFreshness";
-
 import { useEffect, useState } from "react";
 import type { VersyPlacementReport, VersyPlacementRow } from "@/lib/versy-paywall-placements";
 import { DASHBOARD_SURFACE_CLASS } from "./dashboard-surface";
@@ -50,7 +48,6 @@ export default function VersyPaywallPlacementsPanel() {
   }, []);
 
   return <section aria-label="Versy paywall placements" className="space-y-2">
-    <AnalyticsFreshness updatedAt={report?.snapshotUpdatedAt} label="Placement history" />
     <div className="px-1">
       <h2 className="text-sm font-semibold">App purchase events</h2>
       <p className="text-xs text-muted-foreground">Production · last 30 days · unique people per placement</p>

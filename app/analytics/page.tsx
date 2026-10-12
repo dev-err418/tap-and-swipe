@@ -1,4 +1,3 @@
-import AnalyticsFreshness from "@/components/analytics/AnalyticsFreshness";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -241,12 +240,7 @@ async function AppTotals({ period, access }: { period: Period; access: Analytics
 async function AppDirectoryCard({ period, id }: { period: Period; id: AppId }) {
   const app = await getMobileAppSummary(period, id);
   if (!app) return null;
-  return (
-    <div className="space-y-2">
-      <MobileAppCard app={app} period={period} />
-      <AnalyticsFreshness updatedAt={app.snapshotUpdatedAt} label={app.name} />
-    </div>
-  );
+  return <MobileAppCard app={app} period={period} />;
 }
 
 function LiveWebsiteDirectory({ period }: { period: Period }) {
@@ -601,10 +595,7 @@ async function AppDetail({
               <strong className="font-semibold text-black">{app.name}</strong>
             </h1>
           </div>
-          <div className="space-y-2 sm:text-right">
-            <AnalyticsPeriodSelect period={period} app={app.id} />
-            <AnalyticsFreshness updatedAt={app.snapshotUpdatedAt} />
-          </div>
+          <AnalyticsPeriodSelect period={period} app={app.id} />
         </div>
       </div>
 

@@ -1,7 +1,5 @@
 "use client";
 
-import AnalyticsFreshness from "./AnalyticsFreshness";
-
 import { useEffect, useState } from "react";
 import type { WinbackPaywallReport, WinbackPaywallRow } from "@/lib/winback-paywall-analytics";
 import { DASHBOARD_SURFACE_CLASS } from "./dashboard-surface";
@@ -30,7 +28,6 @@ export default function WinbackPaywallPanel({ appId }: { appId: "glow" | "versy"
   }, [appId]);
 
   return <section aria-label="50% win-back offer" className="space-y-2">
-    <AnalyticsFreshness updatedAt={report?.snapshotUpdatedAt} label="Win-back" />
     <div className="px-1">
       <h2 className="text-sm font-semibold">50% win-back offer</h2>
       <p className="text-xs text-muted-foreground">Production · last 30 days · verified purchases after an offer view</p>
