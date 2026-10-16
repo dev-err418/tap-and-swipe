@@ -25,14 +25,23 @@ type PricingRow = NonNullable<AppSprintFunnelAnalytics["pricingExperiment"]>[num
 const row = (variant: string, label: string, currency: string): PricingRow => ({ variant, label, currency, visitors: 100, paymentPageViews: 10, trials: 0, paid: 2, revenue: 216 });
 const activeRows = [row("annual_108", "$108/year · VAT extra · includes prior test", "USD"), row("annual_108_eur", "€108/year · VAT extra", "EUR")];
 
-function render(pricingExperiment: PricingRow[]) {
+function render(pricingExperiment: PricingRow[], pricingPageUpdate?: AppSprintFunnelAnalytics["pricingPageUpdate"], generatedAt = "2026-10-05T12:00:00Z", showPricingExperiment = true) {
   const analytics: AppSprintFunnelAnalytics = {
-    generatedAt: "2026-10-05T12:00:00Z", windowDays: 30,
+    generatedAt, windowDays: 30,
     totals: { appsprintVisits: 0, asoVisits: 200, bookCallClicks: 0, bookCallStarted: 0, asoCheckouts: 20, asoTrials: 0, asoPaid: 4 },
-    byChannel: [], byCountry: [], byReferrer: [], daily: [], recentConversions: [], heroPreviewExperiment: [], pricingExperiment,
+    byChannel: [], byCountry: [], byReferrer: [], daily: [], recentConversions: [], heroPreviewExperiment: [], pricingExperiment, pricingPageUpdate,
   };
-  return renderToStaticMarkup(createElement(Panel, { analytics, showPricingExperiment: true, showHeroExperiment: false }));
+  return renderToStaticMarkup(createElement(Panel, { analytics, showPricingExperiment, showHeroExperiment: false }));
 }
+
+test("AppSprint analytics hides the retired pricing comparison and page update", () => {
+  const html = render(activeRows, {
+    cutoffAt: "2026-10-14T22:00:00.000Z",
+    before: activeRows,
+    after: activeRows,
+  }, "2026-10-16T12:00:00Z", false);
+  assert.doesNotMatch(html, /Pricing A\/B test|October 15 page update|50% \$108/);
+});
 
 test("AppSprint pricing shows two offers, a 50/50 allocation, and each billing currency", () => {
   const html = render(activeRows);
@@ -80,4 +89,36 @@ test("pricing offers with no visitors keep the comparison visible without invali
   const html = render(activeRows.map((offer) => ({ ...offer, visitors: 0, paymentPageViews: 0, paid: 0, revenue: 0 })));
   assert.equal((html.match(/chance to win/g) ?? []).length, 2);
   assert.doesNotMatch(html, /NaN|Infinity/);
+});
+
+test("October 15 comparison shows both periods for each currency with empty after data", () => {
+  const before = [
+    { ...activeRows[0], visitors: 1566, paymentPageViews: 111, paid: 17, revenue: 1836 },
+    { ...activeRows[1], visitors: 607, paymentPageViews: 36, paid: 4, revenue: 432 },
+  ];
+  const after = activeRows.map((offer) => ({ ...offer, visitors: 0, paymentPageViews: 0, paid: 0, revenue: 0 }));
+  const html = render(activeRows, { cutoffAt: "2026-10-14T22:00:00.000Z", before, after });
+  assert.match(html, /October 15 page update/);
+  assert.match(html, /15 Oct 2026 · Paris time/);
+  assert.match(html, /After starts on 15 October/);
+  assert.equal((html.match(/>Before</g) ?? []).length, 2);
+  assert.equal((html.match(/>After</g) ?? []).length, 2);
+  assert.match(html, /1,566/);
+  assert.match(html, /€432\.00/);
+  assert.doesNotMatch(html, /NaN|Infinity/);
+});
+
+test("October 15 comparison displays new visitor and paid results after the update", () => {
+  const html = render(activeRows, {
+    cutoffAt: "2026-10-14T22:00:00.000Z",
+    before: activeRows,
+    after: [
+      { ...activeRows[0], visitors: 40, paymentPageViews: 6, paid: 2, revenue: 216 },
+      { ...activeRows[1], visitors: 20, paymentPageViews: 4, paid: 1, revenue: 108 },
+    ],
+  }, "2026-10-16T12:00:00Z");
+  assert.match(html, /Compare visitors who saw the pricing page before and from 15 October onward/);
+  assert.match(html, /5\.00%/);
+  assert.match(html, /€108\.00/);
+  assert.doesNotMatch(html, /After starts on 15 October|NaN|Infinity/);
 });

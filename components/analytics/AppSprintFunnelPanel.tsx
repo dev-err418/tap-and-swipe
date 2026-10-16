@@ -3,7 +3,7 @@
 import { useState, type PointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ArrowDownRight, Maximize2 } from "lucide-react";
-import type { AppSprintFunnelAnalytics, AppSprintFunnelBreakdownRow } from "@/lib/appsprint-funnel";
+import type { AppSprintFunnelAnalytics, AppSprintFunnelBreakdownRow, AppSprintPricingRow } from "@/lib/appsprint-funnel";
 import { VisitorsRevenueChart } from "@/components/analytics/AppSprintFunnelCharts";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import ExperimentStats, { ExperimentWarningBadge } from "@/components/analytics/ExperimentStats";
@@ -75,6 +75,7 @@ export default function AppSprintFunnelPanel({
   const cumulativePricing = experimentAnalytics.pricingExperiment?.some((row) => row.variant === "annual_108_eur") ?? false;
   // Also hide retired C when reading an older AppSprint analytics response.
   const pricingRows = (experimentAnalytics.pricingExperiment ?? []).filter((row) => row.variant !== "annual_144_usd_vat");
+  const pricingPageUpdate = experimentAnalytics.pricingPageUpdate;
   // Compare paid conversion across currencies; cumulative history is directional only.
   const pricingAnalysis = analyzeExperiment(toRevenueArms(pricingRows), "conversion_rate", "Paid conversion rate", readinessWindow);
   const heroAnalysis = analyzeExperiment(toRevenueArms(experimentAnalytics.heroPreviewExperiment), "revenue_per_visitor", "Revenue / visitor", readinessWindow);
@@ -110,6 +111,29 @@ export default function AppSprintFunnelPanel({
                 </tr>
               ))}
               {!pricingRows.length ? <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Pricing experiment data is not available yet.</td></tr> : null}
+            </tbody>
+          </table>
+        </div>
+      </DashboardCard> : null}
+
+      {showPricingExperiment && pricingPageUpdate ? <DashboardCard title="October 15 page update" titleAccessory={<span className="text-xs text-muted-foreground">Before vs after</span>} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">15 Oct 2026 · Paris time</span>} contentClassName="min-w-0 p-0">
+        <p className="border-b border-black/[0.08] px-4 py-3 text-xs text-black/55">
+          {Date.parse(experimentAnalytics.generatedAt) < Date.parse(pricingPageUpdate.cutoffAt)
+            ? "After starts on 15 October. The new page has no visitors yet."
+            : "Compare visitors who saw the pricing page before and from 15 October onward."}
+          {" "}The earlier $108 test is included in Before. Payments stay with their originating checkout. Traffic and offer mix can change, so this is a directional comparison.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-max min-w-full text-sm">
+            <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Period</Th><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-black">Revenue / visitor</Th></tr></thead>
+            <tbody>
+              {pricingPageUpdate.before.filter(isActivePricingRow).flatMap((beforeRow) => {
+                const afterRow = pricingPageUpdate.after.find((row) => row.variant === beforeRow.variant);
+                return [
+                  <PricingPageUpdateRow key={`${beforeRow.variant}-before`} period="Before" row={beforeRow} />,
+                  <PricingPageUpdateRow key={`${beforeRow.variant}-after`} period="After" row={afterRow ?? { ...beforeRow, visitors: 0, paymentPageViews: 0, trials: 0, paid: 0, revenue: 0 }} />,
+                ];
+              })}
             </tbody>
           </table>
         </div>
@@ -208,6 +232,25 @@ export default function AppSprintFunnelPanel({
       </div>
     </section>
   );
+}
+
+function isActivePricingRow(row: AppSprintPricingRow) {
+  return row.variant === "annual_108" || row.variant === "annual_108_eur";
+}
+
+function PricingPageUpdateRow({ period, row }: { period: "Before" | "After"; row: AppSprintPricingRow }) {
+  return <tr className={cn("border-b border-black/[0.07]", period === "After" && "bg-black/[0.015]")}>
+    <Td><Badge>{period}</Badge></Td>
+    <Td><span className="font-medium">{row.currency === "EUR" ? "€108/year" : "$108/year"}</span></Td>
+    <NumberTd>{formatInt(row.visitors)}</NumberTd>
+    <NumberTd>{formatInt(row.paymentPageViews)}</NumberTd>
+    <NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd>
+    <NumberTd>{formatInt(row.trials)}</NumberTd>
+    <NumberTd>{formatInt(row.paid)}</NumberTd>
+    <NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd>
+    <NumberTd>{formatPreciseCurrency(row.revenue, row.currency)}</NumberTd>
+    <NumberTd className="font-bold">{formatPreciseCurrency(ratio(row.revenue, row.visitors), row.currency)}</NumberTd>
+  </tr>;
 }
 
 function MetricSummary({ label, value, detail }: { label: string; value: string; detail: string }) {

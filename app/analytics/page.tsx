@@ -324,7 +324,7 @@ function websiteData(
         visitors: row.visits,
         revenue: row.revenue,
       }));
-  return { site, domain, metrics, trend, activeTests: activeWebsiteABTestCount(analytics) };
+  return { site, domain, metrics, trend, activeTests: activeWebsiteABTestCount(analytics, site !== "appsprint") };
 }
 
 function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Period }) {
@@ -430,7 +430,7 @@ async function WebsiteDetail({
           analytics={analytics}
           experimentAnalytics={experimentAnalytics ?? analytics}
           showHeroExperiment={false}
-          showPricingExperiment={site === "appsprint" || site === "community"}
+          showPricingExperiment={site === "community"}
           showTrialExperiment={site === "postback"}
           showOnboardingExperiment={site === "postback"}
           showCtaExperiment={site === "appsprint"}

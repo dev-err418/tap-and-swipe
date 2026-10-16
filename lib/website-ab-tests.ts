@@ -6,9 +6,9 @@ export function activeWebsiteABTestCount(analytics: {
   trialExperiment?: VariantRows;
   onboardingExperiment?: VariantRows;
   ctaExperiment?: readonly { experiment: string; page: string; placement: string; variant: string }[];
-}) {
+}, includePricing = true) {
   const websiteTests = [
-    analytics.pricingExperiment,
+    includePricing ? analytics.pricingExperiment : undefined,
     analytics.heroPreviewExperiment,
     analytics.trialExperiment,
     analytics.onboardingExperiment,

@@ -18,6 +18,17 @@ export type AppSprintFunnelBreakdownRow = {
   asoPaid: number;
 };
 
+export type AppSprintPricingRow = {
+  variant: string;
+  label: string;
+  visitors: number;
+  paymentPageViews: number;
+  trials: number;
+  paid: number;
+  revenue: number;
+  currency: string;
+};
+
 export type AppSprintFunnelAnalytics = {
   generatedAt: string;
   windowDays: number;
@@ -70,16 +81,12 @@ export type AppSprintFunnelAnalytics = {
     path: string | null;
     referrerHost: string | null;
   }[];
-  pricingExperiment?: {
-    variant: string;
-    label: string;
-    visitors: number;
-    paymentPageViews: number;
-    trials: number;
-    paid: number;
-    revenue: number;
-    currency: string;
-  }[];
+  pricingExperiment?: AppSprintPricingRow[];
+  pricingPageUpdate?: {
+    cutoffAt: string;
+    before: AppSprintPricingRow[];
+    after: AppSprintPricingRow[];
+  };
   ctaExperiment?: {
     experiment: string;
     page: string;

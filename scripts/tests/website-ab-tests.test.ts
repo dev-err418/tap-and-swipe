@@ -12,3 +12,7 @@ test("missing CTA data and single-variant groups do not invent another A/B test"
   assert.equal(activeWebsiteABTestCount({}), 0);
   assert.equal(activeWebsiteABTestCount({ ctaExperiment: [{ experiment: "test", page: "/page", placement: "result", variant: "control" }] }), 0);
 });
+
+test("retired AppSprint pricing does not count as a live website test", () => {
+  assert.equal(activeWebsiteABTestCount({ pricingExperiment: [{ variant: "annual_108" }, { variant: "annual_108_eur" }] }, false), 0);
+});
