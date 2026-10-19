@@ -91,3 +91,7 @@ outcomes, independently of the finished-trial-only **Trial → paid** metric.
 Events from other users, pre-install subscription chains, and subsequent app
 versions do not move outcomes into a different install cohort. Schema v8 adds
 these install-to-paid counts and their money-availability flag.
+
+### Optional benefits branch (next build)
+
+The next build can insert `benefits` between `goDeeper` and `remindPromise` for half of newly enrolled Bible Scroll journeys. `versy_journey_scroll_bible_benefits_screen_seen` is an optional branch: its visits never change the previous main-path baseline for reminder drop-off and it is excluded from largest-drop highlights. Assignment and completion are also published to Superwall under `scroll_benefits_*`; see `versy-product-analytics.md` for the cohort contract. Existing journeys are not randomized retroactively.

@@ -193,6 +193,8 @@ const GLOW_ICON_URL =
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_COPY_KEY, GLOW_ONBOARDING_LEGACY_KEY] as const;
 const VERSY_ATTRIBUTE_KEYS = ["country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
+  "scroll_benefits_experiment_id", "scroll_benefits_variant", "scroll_benefits_allocation",
+  "scroll_benefits_assigned_at", "scroll_benefits_screen_seen", "scroll_benefits_completed",
   "bible_widget_widget_screen_seen",
   "onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant", "onboarding_paywall_access_variant",
   "yearly_price_experiment_id", "yearly_price_product_id", "yearly_price_allocation",
@@ -1117,6 +1119,25 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
       scoreMetrics: ["appu", "download_paid"],
       showTrials: true,
       showCompletion: true,
+    }),
+    attributeExperiment(facts, {
+      id: "versy-scroll-benefits-v1",
+      title: "Bible Scroll · Benefits screen",
+      subtitle: "Current flow vs added benefits screen · 50/50 · next app build",
+      attributeKeys: ["scroll_benefits_experiment_id", "scroll_benefits_variant", "scroll_benefits_allocation"],
+      variants: [
+        { key: "control", label: "Current flow", attributes: {
+          onboarding_variant: "scroll_the_bible", versy_tracking_environment: "production",
+          scroll_benefits_experiment_id: "versy_scroll_benefits_v1", scroll_benefits_variant: "control", scroll_benefits_allocation: "50_50",
+        } },
+        { key: "benefits", label: "Added benefits screen", attributes: {
+          onboarding_variant: "scroll_the_bible", versy_tracking_environment: "production",
+          scroll_benefits_experiment_id: "versy_scroll_benefits_v1", scroll_benefits_variant: "benefits", scroll_benefits_allocation: "50_50",
+        } },
+      ],
+      countAssignedUsers: true, showUsers: true,
+      scoreMetrics: ["appu", "download_paid"], showTrials: true,
+      showCompletion: true, completionLabel: "Paywall reached", completionCheck: versyOnboardingPaywallReached,
     }),
     attributeExperiment(facts, {
       id: "versy-yearly-price-v3",

@@ -292,8 +292,9 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
           ["goal", "Learning goal"], ["obstacle", "Reading obstacle"],
           ["reassurance", "The Bible can make sense"], ["verseStory", "Verse explanation"],
           ["readingHabit", "Reading habit"], ["notifications", "Daily reminders"], ["reviews", "Reviews"],
-          ["goDeeper", "Premium preview"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
+          ["goDeeper", "Premium preview"], ["benefits", "Benefits (test branch)"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
         ].map(([name, label]) => ({ attribute: `scroll_bible_${name}_screen_seen`, label,
+          ...(name === "benefits" ? { branch: true } : {}),
           ...(name === "trial" ? { paywall: true } : {}) })) },
       ].map((variant) => ({ ...variant, steps: variant.steps.map((step) => ({
         ...step, attribute: `versy_journey_${step.attribute}`,

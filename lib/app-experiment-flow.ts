@@ -32,7 +32,7 @@ export function appExperimentFlow(appId: string, selectedLanguage?: string): Exp
 }
 
 function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
-  const [onboarding, access, price] = map.tests;
+  const [onboarding, access, price, benefits] = map.tests;
   const nodes: ExperimentFlowNode[] = [
     { id: "start", x: 36, y: 212, width: 0, label: "New install", kind: "start", tone: "blue" },
   ];
@@ -48,20 +48,27 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
       label: branch.label, tone: "orange", experimentId: access.id, variantId: branch.id });
     onboarding.branches.filter((parent) => parent.id !== "scroll_the_bible").forEach((parent) => edges.push({ from: parent.id, to: id, label: "50%" }));
   });
-  nodes.push({ id: "scroll-trial", x: 430, y: 348, width: 190,
+  benefits.branches.forEach((branch, index) => {
+    const id = `benefits-${branch.id}`;
+    nodes.push({ id, x: 430, y: 348 + index * 136, width: 190,
+      label: branch.label, detail: "Next app build · after Premium preview", tone: "orange",
+      experimentId: benefits.id, variantId: branch.id });
+    edges.push({ from: "scroll_the_bible", to: id, label: `${branch.percent}%` });
+    edges.push({ from: id, to: "scroll-trial" });
+  });
+  nodes.push({ id: "scroll-trial", x: 692, y: 416, width: 190,
     label: "Bible Scroll trial", detail: "Dismissible · yearly + weekly", tone: "orange" });
-  edges.push({ from: "scroll_the_bible", to: "scroll-trial" });
   price.branches.forEach((branch, index) => {
     const id = `price-${index}`;
-    nodes.push({ id, x: 692, y: 80 + index * 136, width: 190,
+    nodes.push({ id, x: 956, y: 80 + index * 136, width: 190,
       label: branch.label, tone: "orange", experimentId: price.id, variantId: branch.id.split(".").at(-1) });
-    access.branches.forEach((parent) => edges.push({ from: `access-${parent.id}`, to: id, label: "⅓" }));
+    access.branches.forEach((parent) => edges.push({ from: `access-${parent.id}`, to: id, label: `${branch.percent}%` }));
     edges.push({ from: "scroll-trial", to: id });
   });
   return {
-    width: 928, height: 424, nodes, edges,
+    width: 1192, height: 560, nodes, edges,
     stages: [{ x: 168, label: "Onboarding flow" }, { x: 430, label: "Onboarding paywall" },
-      { x: 692, label: "Yearly price" }],
+      { x: 692, label: "Reminder & paywall" }, { x: 956, label: "Yearly price" }],
     notes: map.notes,
   };
 }

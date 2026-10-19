@@ -107,3 +107,13 @@ Price and widget configuration cards now use v2 IDs and require
 assignments keep their product, and old $17.99 assignments move to an active price.
 Historical app ledgers remain untouched. Four widget access × price combinations
 replace the previous six. The $16.99 daily gift remains independent.
+
+## Optional Bible Scroll benefits screen (next build)
+
+`versy_scroll_benefits_v1` independently assigns new Bible Scroll journeys 50/50 at their first Welcome: `control` keeps the current flow; `benefits` inserts a benefits summary after “Make the Bible your daily habit” (`goDeeper`) and before the trial reminder (`remindPromise`). Assignment persists across back navigation and relaunches, and does not affect the yearly price assignment. Resumed journeys without an assignment remain control with allocation `legacy` and are excluded from the comparison.
+
+Superwall receives `scroll_benefits_experiment_id`, `scroll_benefits_variant` (`control` / `benefits`), `scroll_benefits_allocation` (`50_50` / `legacy`), `scroll_benefits_assigned_at` (Unix milliseconds), `scroll_benefits_screen_seen`, and `scroll_benefits_completed`. Seen is recorded only on the added screen; completed is recorded only on its Continue after a recorded view. Both flags persist. Screen reach also uses `scroll_bible_benefits_screen_seen` and the enrolled-journey key `versy_journey_scroll_bible_benefits_screen_seen`. Assignment storage is separated by tracking environment. Debug screen previews do not publish experiment or journey progress.
+
+The added screen uses the existing cream and gold design, three localized benefits groups, the shared Continue button, and “No payment due now”; legal links remain on the final pricing screen. It has no artwork above the title. All four app languages are supported. A non-trial offering retains the existing reminder skip after the optional benefits screen.
+
+The dashboard comparison `versy-scroll-benefits-v1` requires Bible Scroll, production tracking, the exact experiment ID, and allocation `50_50`. It compares assigned users, trials, paid conversion, APPU and final paywall reach using the existing install-cohort reports. The journey marks benefits as an optional branch so users who skip it do not create a false main-path drop. The experiment map labels this as prepared for the next build. The app must be released and dashboard changes deployed before production results appear.

@@ -89,20 +89,22 @@ test("Poky retires the engine comparison and routes every current offer to nativ
 test("Versy separates Bible Scroll trial routing from widget soft/hard paywalls", () => {
   const map = appExperimentMap("versy")!;
   assert.deepEqual(map.tests.map((row) => row.id), [
-    "versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v3",
+    "versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v3", "versy-scroll-benefits-v1",
   ]);
   assert.deepEqual(map.tests.map((row) => row.branches.map((branch) => branch.percent)),
-    [[10, 10, 80], [50, 50], [50, 50]]);
+    [[10, 10, 80], [50, 50], [50, 50], [50, 50]]);
   assert.deepEqual(map.tests[0].branches.map((branch) => branch.id), ["bible_widget", "bible_widget_shorter", "scroll_the_bible"]);
   assert.deepEqual(map.tests[1].branches.map((branch) => branch.id), ["dismissible", "hard"]);
   assert.deepEqual(map.tests[2].branches.map((branch) => branch.id), [
     "com.arthurbuildsstuff.bible.yearly_3999_80",
     "com.arthurbuildsstuff.bible.yearly_4999",
   ]);
+  assert.equal(map.tests[3].planned, true);
+  assert.deepEqual(map.tests[3].branches.map((branch) => branch.id), ["control", "benefits"]);
   assert.equal(map.combinations?.length, 4);
   assert.ok(map.combinations?.every((branch) => branch.id.startsWith("yearly_only|") && branch.percent === 25));
   assert.ok(map.tests.every((row) => row.branches.every((branch) => branch.id !== "yearly_weekly")));
-  assert.equal(appExperimentFlow("versy")?.nodes.filter((node) => node.experimentId).length, 7);
+  assert.equal(appExperimentFlow("versy")?.nodes.filter((node) => node.experimentId).length, 9);
   assert.equal(activeABTestCount("versy"), 3);
 });
 
@@ -120,7 +122,7 @@ test("result cards follow the onboarding-to-paywall progression without mutating
   for (const [app, expected] of Object.entries({
     glow: ["glow-onboarding-copy", "glow-native-paywall", "glow-yearly-price"],
     poky: ["poky-plan-design-combinations", "poky-animated-plan", "poky-trial-vs-current"],
-    versy: ["versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v3", "versy-yearly-paywall-configuration-v3"],
+    versy: ["versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-scroll-benefits-v1", "versy-yearly-price-v3", "versy-yearly-paywall-configuration-v3"],
   })) {
     const input = [...expected].reverse().map((id) => ({ id }));
     assert.deepEqual(orderAppExperiments(app, input).map((row) => row.id), expected);
