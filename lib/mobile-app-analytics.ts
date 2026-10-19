@@ -1049,7 +1049,7 @@ function glowOnboardingExperiment(facts: AppFacts): MobileAppExperiment {
 function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
   const yearlyPrices = [
     { key: "yearly_3999_80", label: "$39.99", productID: "com.arthurbuildsstuff.bible.yearly_3999_80" },
-    { key: "yearly_4999_80", label: "$29.99", productID: "com.arthurbuildsstuff.bible.yearly_4999_80" },
+    { key: "yearly_4999", label: "$49.99", productID: "com.arthurbuildsstuff.bible.yearly_4999" },
   ];
   const audienceFacts = (audience: ReturnType<typeof versyOnboardingAudience>): AppFacts => ({
     ...facts,
@@ -1119,26 +1119,26 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
       showCompletion: true,
     }),
     attributeExperiment(facts, {
-      id: "versy-yearly-price-v2",
+      id: "versy-yearly-price-v3",
       title: "Yearly price A/B test",
-      subtitle: "$29.99 vs $39.99 · fresh assignments · 50/50",
+      subtitle: "$39.99 vs $49.99 · fresh assignments · 50/50",
       attributeKeys: ["yearly_price_experiment_id", "yearly_price_product_id", "yearly_price_allocation"],
       variants: yearlyPrices.map(({ key, label, productID }) => ({
         key, label,
-        attributes: { yearly_price_experiment_id: "versy_yearly_price_v2", yearly_price_product_id: productID, yearly_price_allocation: "50_50" },
+        attributes: { yearly_price_experiment_id: "versy_yearly_price_v3", yearly_price_product_id: productID, yearly_price_allocation: "50_50" },
       })),
       scoreMetrics: ["appu", "download_paid"],
       showTrials: true,
     }),
     attributeExperiment(widgetFacts, {
-      id: "versy-yearly-paywall-configuration-v2",
+      id: "versy-yearly-paywall-configuration-v3",
       title: "Widget paywall combinations",
       subtitle: "Yearly only · access × yearly price · 4 fresh cohorts",
       attributeKeys: ["paywall_configuration_experiment_id", "paywall_configuration_variant", "yearly_price_allocation"],
       variants: ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ key, label, productID }) => ({
         key: `yearly_only|${access}|${key}`,
         label: `Yearly · ${access === "hard" ? "Hard" : "Soft"} · ${label}`,
-        attributes: { paywall_configuration_experiment_id: "versy_yearly_paywall_configuration_v2", yearly_price_allocation: "50_50",
+        attributes: { paywall_configuration_experiment_id: "versy_yearly_paywall_configuration_v3", yearly_price_allocation: "50_50",
           paywall_configuration_variant: `yearly_only|${access}|${productID}` },
       }))),
       scoreMetrics: ["appu", "download_paid"],

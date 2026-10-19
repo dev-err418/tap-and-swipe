@@ -41,6 +41,6 @@ test("Bible Scroll bypasses the widget soft/hard paywall nodes", () => {
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "scroll_the_bible").map((edge) => edge.to), ["scroll-trial"]);
   assert.equal(flow.edges.filter((edge) => edge.from === "scroll-trial").length, 2);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["10%", "10%", "80%"]);
-  assert.deepEqual(flow.nodes.filter((node) => node.experimentId === "versy-yearly-price-v2").map((node) => node.variantId), ["yearly_3999_80", "yearly_4999_80"]);
+  assert.deepEqual(flow.nodes.filter((node) => node.experimentId === "versy-yearly-price-v3").map((node) => node.variantId), ["yearly_3999_80", "yearly_4999"]);
   assert.ok(flow.nodes.every((node) => node.y < flow.height));
 });

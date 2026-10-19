@@ -89,7 +89,7 @@ test("Poky retires the engine comparison and routes every current offer to nativ
 test("Versy separates Bible Scroll trial routing from widget soft/hard paywalls", () => {
   const map = appExperimentMap("versy")!;
   assert.deepEqual(map.tests.map((row) => row.id), [
-    "versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v2",
+    "versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v3",
   ]);
   assert.deepEqual(map.tests.map((row) => row.branches.map((branch) => branch.percent)),
     [[10, 10, 80], [50, 50], [50, 50]]);
@@ -97,7 +97,7 @@ test("Versy separates Bible Scroll trial routing from widget soft/hard paywalls"
   assert.deepEqual(map.tests[1].branches.map((branch) => branch.id), ["dismissible", "hard"]);
   assert.deepEqual(map.tests[2].branches.map((branch) => branch.id), [
     "com.arthurbuildsstuff.bible.yearly_3999_80",
-    "com.arthurbuildsstuff.bible.yearly_4999_80",
+    "com.arthurbuildsstuff.bible.yearly_4999",
   ]);
   assert.equal(map.combinations?.length, 4);
   assert.ok(map.combinations?.every((branch) => branch.id.startsWith("yearly_only|") && branch.percent === 25));
@@ -120,7 +120,7 @@ test("result cards follow the onboarding-to-paywall progression without mutating
   for (const [app, expected] of Object.entries({
     glow: ["glow-onboarding-copy", "glow-native-paywall", "glow-yearly-price"],
     poky: ["poky-plan-design-combinations", "poky-animated-plan", "poky-trial-vs-current"],
-    versy: ["versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v2", "versy-yearly-paywall-configuration-v2"],
+    versy: ["versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v3", "versy-yearly-paywall-configuration-v3"],
   })) {
     const input = [...expected].reverse().map((id) => ({ id }));
     assert.deepEqual(orderAppExperiments(app, input).map((row) => row.id), expected);

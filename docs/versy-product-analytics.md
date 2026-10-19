@@ -84,7 +84,20 @@ Onboarding cards also show **Avg sessions / day**: unique production Superwall `
 
 See [the daily gift contract](versy-daily-gift.md) for its separate `versy_daily_gift_v1` cohort and `daily_gift_app_open` placement, sealed-to-revealed funnel, and Apple purchase attribution. It is a nonrandomized rollout, not another onboarding A/B test.
 
-## Yearly price v2 (October 10, 2026)
+## Yearly price v3 (next app update, October 19, 2026)
+
+The next app build uses US $39.99 (`yearly_3999_80`) and $49.99 (`yearly_4999`),
+with 50/50 fresh assignments and the same seven-day US trial. The dashboard's
+price/configuration cards, map and result order now use v3 IDs and require
+`yearly_price_allocation=50_50`. Existing users migrate outside this comparison;
+the app preserves prior local assignment records and pending purchase contexts.
+The $29.99 `yearly_4999_80` product is retired from main presentation, without
+changing its App Store price or existing subscriber billing. Daily gift remains
+independent. The $49.99 SKU has no recovery promotion and skips widget recovery;
+the price test therefore compares these complete offer paths. Deploy this
+dashboard update alongside the next iOS release; v3 has no results before enrollment.
+
+## Historical yearly price v2 (October 10, 2026)
 
 The active main-paywall prices are US $29.99 (`yearly_4999_80`) and $39.99
 (`yearly_3999_80`), with 50/50 fresh assignments. `yearly_2999_80` was actually
