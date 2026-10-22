@@ -81,10 +81,11 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         plan,
         planDesign,
         {
-          id: "poky-trial-vs-current", label: "Onboarding offer", scope: "New installs · saved 50/50 assignment", tone: "orange",
+          id: "poky-trial-vs-current", label: "Onboarding offer", scope: "New installs · saved 25/25/50 assignment", tone: "orange",
           branches: [
-            { id: "current", label: "Current paywall flow", percent: 50 },
-            { id: "trial", label: "3-day trial · native", percent: 50 },
+            { id: "current", label: "Current paywall flow", percent: 25 },
+            { id: "trial", label: "3-day trial · native", percent: 25 },
+            { id: "trial_7d", label: "7-day trial · native", percent: 50 },
           ],
         },
         {
@@ -112,7 +113,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       }))),
       notes: [
         "Results start September 20, 2026 at 16:00 GMT+2. Everyone now uses the Warm experience.",
-        "The 50/50 onboarding offer assigns the current native paywall flow or a single hardcoded three-day trial paywall. The trial arm skips the High/Name and recovery tests.",
+        "The v2 onboarding offer assigns HP 25%, three-day trial 25% and seven-day trial 50%. Both trial arms skip High/Name and recovery. Saved v1 50/50 assignments remain in a separate historical report.",
         "The plan design draw is a new independent 50/50 assignment. Combined with the existing intro draw, it creates four 25% cohorts. Plan B currently displays a placeholder screen.",
         "The updated app uses native paywalls for everyone, including former Superwall cohorts. The Superwall/native comparison is retired; historical assignments remain stored.",
         "Every non-trial user is eligible for native recovery after cancelling a main purchase, once per install. Former holdouts are included; trial paywalls skip automatic recovery. The home-screen shortcut is separate.",

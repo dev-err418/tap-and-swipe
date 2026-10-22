@@ -4,8 +4,8 @@ import { POKY_TRIAL_OFFER_ATTRIBUTE_KEYS, pokyTrialOfferExperiment } from "../..
 
 const DAY = 86_400_000;
 const START = Date.parse("2026-09-27T00:00:00Z");
-const attributes = (variant: string, assignedAt = START + 1_000, allocation = "50_50", environment = "production") => ({
-  onboarding_offer_experiment: "poky_onboarding_trial_v1", onboarding_offer_variant: variant,
+const attributes = (variant: string, assignedAt = START + 1_000, allocation = "25_25_50", environment = "production") => ({
+  onboarding_offer_experiment: "poky_onboarding_trial_v2", onboarding_offer_variant: variant,
   onboarding_offer_assigned_at: String(assignedAt), onboarding_offer_allocation: allocation,
   onboarding_offer_language: "en",
   poky_tracking_environment: environment,
@@ -26,12 +26,12 @@ test("trial and current use only fresh production assignments, including nonview
     attributes: new Map([
       ["current", attributes("current")], ["trial", attributes("trial")],
       ["legacy", attributes("current", START + 1_000, "legacy")],
-      ["sandbox", attributes("trial", START + 1_000, "50_50", "sandbox")],
+      ["sandbox", attributes("trial", START + 1_000, "25_25_50", "sandbox")],
     ]),
     events: [],
   }, START + DAY);
-  assert.deepEqual(report.variants.map((row) => row.users), [1, 1]);
-  assert.deepEqual(report.languageVariants?.en?.map((row) => row.users), [1, 1]);
+  assert.deepEqual(report.variants.map((row) => row.users), [1, 1, 0]);
+  assert.deepEqual(report.languageVariants?.en?.map((row) => row.users), [1, 1, 0]);
   assert.equal(report.randomized, true);
 });
 
@@ -52,11 +52,11 @@ test("free trial start and later paid renewal count once; historical money is ex
       event("current", "paid", "paid", "initial_purchase", 30),
     ],
   }, START + 6 * DAY);
-  assert.deepEqual(report.variants.map((row) => row.users), [1, 2]);
-  assert.deepEqual(report.variants.map((row) => row.trials), [0, 1]);
-  assert.deepEqual(report.variants.map((row) => row.converted), [0, 1]);
-  assert.deepEqual(report.variants.map((row) => row.paid), [1, 1]);
-  assert.deepEqual(report.variants.map((row) => row.proceeds), [30, 35]);
+  assert.deepEqual(report.variants.map((row) => row.users), [1, 2, 0]);
+  assert.deepEqual(report.variants.map((row) => row.trials), [0, 1, 0]);
+  assert.deepEqual(report.variants.map((row) => row.converted), [0, 1, 0]);
+  assert.deepEqual(report.variants.map((row) => row.paid), [1, 1, 0]);
+  assert.deepEqual(report.variants.map((row) => row.proceeds), [30, 35, 0]);
   assert.equal(report.variants[1].proceedsVariance, 612.5);
 });
 
@@ -74,4 +74,25 @@ test("assignment date selects the cohort while eligible revenue follows through 
   assert.equal(report.variants[1].users, 1);
   assert.equal(report.variants[1].proceeds, 20);
   assert.equal(report.languageVariants?.fr?.[1].proceeds, 20);
+});
+
+test("seven-day assignments use the new product and remain separate from historical 50/50", () => {
+  const facts = { startMs: START, endMs: START + DAY,
+    installs: ["seven", "free", "old"].map((appUserId) => ({ appUserId, country: "FR", installedAt: START })),
+    attributes: new Map([
+      ["seven", attributes("trial_7d")], ["free", attributes("trial_7d")],
+      ["old", { ...attributes("trial", START + 1000, "50_50"), onboarding_offer_experiment: "poky_onboarding_trial_v1" }],
+    ]),
+    events: [event("seven", "seven", "start", "initial_purchase", 0, START + 2000,
+      { trial: true, productId: "arthurbuildsstuff.peptides.yearly.trial7" }),
+      event("seven", "seven", "paid", "renewal", 30, START + 8 * DAY),
+      event("seven", "seven", "refund", "cancellation", -5, START + 9 * DAY, { refund: true })],
+  };
+  const report = pokyTrialOfferExperiment(facts, START + 10 * DAY);
+  assert.deepEqual(report.variants.map((row) => row.users), [0, 0, 2]);
+  assert.equal(report.variants[2].trials, 1);
+  assert.equal(report.variants[2].converted, 1);
+  assert.equal(report.variants[2].proceeds / report.variants[2].users, 12.5);
+  const old = pokyTrialOfferExperiment(facts, START + 10 * DAY, true);
+  assert.deepEqual(old.variants.map((row) => row.users), [0, 1]);
 });

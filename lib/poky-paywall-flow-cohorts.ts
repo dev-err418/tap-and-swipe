@@ -1,7 +1,9 @@
-import { POKY_ONBOARDING_OFFER_EXPERIMENT } from "./poky-trial-offer";
+import { isPokyOfferAssignment, pokyOfferVariants } from "./poky-onboarding-offer";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
+
+export type PokyPaywallFlowComparison = PaywallCohortComparison & { legacy?: PaywallCohortComparison };
 
 /** Keep saved offer assignments independent of onboarding route and purchased product. */
 export function buildPokyPaywallFlowComparison(
@@ -11,19 +13,19 @@ export function buildPokyPaywallFlowComparison(
   startMs: number,
   endMs: number,
   asOf = Date.now(),
-): PaywallCohortComparison {
+  legacy = false,
+): PokyPaywallFlowComparison {
   const eligible = experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.poky, asOf);
   let invalidTimes = 0;
   const enrolled = eligible.flatMap((install) => {
     if (install.installedAt < startMs || install.installedAt >= endMs || install.installedAt > asOf) return [];
     const values = attributes.get(install.appUserId);
-    if (values?.poky_tracking_environment !== "production" || values.onboarding_offer_experiment !== POKY_ONBOARDING_OFFER_EXPERIMENT
-      || values.onboarding_offer_allocation !== "50_50" || !["current", "trial"].includes(values.onboarding_offer_variant)) return [];
+    if (!isPokyOfferAssignment(values, legacy) || !values) return [];
     const assignedAt = Number(values.onboarding_offer_assigned_at);
     if (!Number.isFinite(assignedAt) || assignedAt <= 0 || assignedAt > asOf) { invalidTimes++; return []; }
     return [{ install, assignedAt, variant: values.onboarding_offer_variant }];
   });
-  const labels = { current: "HP (hard paywall)", trial: "3-day trial" };
+  const labels = Object.fromEntries(pokyOfferVariants(legacy).map(({ key, label }) => [key, label]));
   const rows = Object.keys(labels).map((variant) => {
     const members = enrolled.filter((row) => row.variant === variant);
     const conversions = versionCohortConversions(members.map(({ install }) => ({ ...install, appVersion: "0" })), events,
@@ -31,6 +33,8 @@ export function buildPokyPaywallFlowComparison(
       ?? emptyVersionConversions();
     return { version: variant, installs: conversions.global.installs, tracked: conversions.global.installs, variants: [], conversions };
   });
+  const previous = legacy ? undefined : buildPokyPaywallFlowComparison(installs, events, attributes, startMs, endMs, asOf, true);
   return { status: rows.some((row) => row.installs > 0) ? "ready" : "empty", rows, labels,
-    warnings: invalidTimes ? [`${invalidTimes} paywall assignments have an invalid or missing assignment time and were excluded.`] : [] };
+    warnings: invalidTimes ? [`${invalidTimes} paywall assignments have an invalid or missing assignment time and were excluded.`] : [],
+    ...(previous?.status === "ready" ? { legacy: previous } : {}) };
 }

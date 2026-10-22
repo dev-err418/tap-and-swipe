@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DashboardCard } from "./DashboardCard";
 import { JourneyVersionComparison } from "./UserJourneyFunnel";
-import type { PaywallCohortComparison } from "@/lib/glow-paywall-cohort-comparisons";
+import type { PokyPaywallFlowComparison } from "@/lib/poky-paywall-flow-cohorts";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 import { AppuReadinessIndicator } from "./AppuReadinessIndicator";
 
@@ -24,30 +24,40 @@ const FLOW_PREVIEWS = {
       { file: "paywall", label: "3-day trial paywall" },
     ],
   },
+  trial_7d: {
+    title: "7-day trial",
+    description: "Poky’s 7-day flow: free trial introduction, dated reminder, then the trial timeline and yearly paywall.",
+    screens: [
+      { file: "intro", label: "Free trial introduction" },
+      { file: "reminder", label: "Trial reminder introduction" },
+      { file: "paywall", label: "7-day trial timeline and paywall" },
+    ],
+  },
 } as const;
 
-export default function PokyPaywallFlowTable({ report, windowLabel }: { report: PaywallCohortComparison | null; windowLabel: string }) {
+export default function PokyPaywallFlowTable({ report, windowLabel }: { report: PokyPaywallFlowComparison | null; windowLabel: string }) {
   const [selectedFlow, setSelectedFlow] = useState<keyof typeof FLOW_PREVIEWS | null>(null);
   const previewTrigger = useRef<HTMLButtonElement | null>(null);
   const preview = selectedFlow ? FLOW_PREVIEWS[selectedFlow] : null;
   return <Dialog open={selectedFlow !== null} onOpenChange={(open) => { if (!open) setSelectedFlow(null); }}>
-    <DashboardCard title="Paywall flows" contentClassName="pt-0"
-    titleAccessory={report && report.status !== "unavailable" ? <AppuReadinessIndicator cohorts={report.rows} /> : null}
+    {[report, ...(report?.legacy ? [report.legacy] : [])].map((comparison, index) => <DashboardCard key={index} title={index ? "Previous paywall flows · 50/50" : "Paywall flows"} contentClassName="pt-0"
+    titleAccessory={comparison && comparison.status !== "unavailable" ? <AppuReadinessIndicator cohorts={comparison.rows} /> : null}
     action={<span className="text-xs text-muted-foreground">{experimentCohortLabel("poky") ?? windowLabel}</span>}>
-    {!report || report.status === "unavailable"
+    {!comparison || comparison.status === "unavailable"
       ? <p role="status" className="py-2 text-sm text-muted-foreground">Paywall flow reporting is unavailable. Refresh to retry.</p>
       : <>
-        {report.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
-        <JourneyVersionComparison cohorts={report.rows} rowLabels={report.labels} rowHeading="Paywall flow"
+        {!index ? <p className="pb-2 text-xs text-muted-foreground">HP 25% · 3-day trial 25% · 7-day trial 50%{comparison.status === "empty" ? " · Waiting for new assignments" : ""}</p> : null}
+        {comparison.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
+        <JourneyVersionComparison cohorts={comparison.rows} rowLabels={comparison.labels} rowHeading="Paywall flow"
           allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate
           onRowClick={(key, trigger) => {
-            if (key !== "current" && key !== "trial") return;
+            if (key !== "current" && key !== "trial" && key !== "trial_7d") return;
             previewTrigger.current = trigger;
             setSelectedFlow(key);
           }} />
       </>}
-    </DashboardCard>
-    <DialogContent className={`max-h-[90vh] overflow-y-auto rounded-2xl ${selectedFlow === "trial" ? "sm:max-w-[min(96vw,1000px)]" : "sm:max-w-md"}`}
+    </DashboardCard>)}
+    <DialogContent className={`max-h-[90vh] overflow-y-auto rounded-2xl ${selectedFlow !== "current" ? "sm:max-w-[min(96vw,1000px)]" : "sm:max-w-md"}`}
       onCloseAutoFocus={(event) => { event.preventDefault(); previewTrigger.current?.focus(); }}>
       <DialogHeader>
         <DialogTitle>{preview?.title}</DialogTitle>
@@ -56,7 +66,7 @@ export default function PokyPaywallFlowTable({ report, windowLabel }: { report: 
       {preview && selectedFlow ? <ol className="flex min-w-0 gap-4 overflow-x-auto pb-1 scrollbar-none sm:gap-6" aria-label={`${preview.title} screens`}>
         {preview.screens.map((screen, index) => <li key={screen.file} className="w-[min(68vw,260px)] shrink-0 sm:w-0 sm:flex-1">
           {preview.screens.length > 1 ? <p className="mb-3 text-xs font-medium text-muted-foreground">{index + 1}. {screen.label}</p> : null}
-          <Image src={`/analytics/poky/paywall-flows/${selectedFlow}/${screen.file}.png`}
+          <Image src={`/analytics/poky/paywall-flows/${selectedFlow}/${screen.file}.${selectedFlow === "trial_7d" ? "jpg" : "png"}`}
             alt={`Poky ${preview.title}, step ${index + 1}: ${screen.label}`} width={368} height={800} sizes="320px"
             className="mx-auto h-[min(65vh,640px)] max-h-[calc(90vh-10rem)] w-auto max-w-full rounded-2xl object-contain" />
         </li>)}

@@ -50,14 +50,14 @@ Dashboard files:
 - `lib/mobile-app-analytics.ts`: loads this report for Glow and Poky's detail views.
 
 Poky uses the same contract from `peptides/Subscription/PokyNativePaywallAnalytics.swift`.
-Its new onboarding offer test assigns fresh installs 50/50 to the current flow
-or one hardcoded three-day trial paywall. The trial purchase and restore use
-StoreKit directly; Superwall observer mode supplies transaction association,
-analytics attributes and subscription state, but no trial paywall campaign or
-placement is registered. The trial arm
-does not enter the High/Name or recovery tests. The primary
-`poky-trial-vs-current` card reads the scalar onboarding offer assignment,
-counts assigned nonviewers, free trial starts, later paid renewals and refunds,
+Its updated onboarding offer test assigns fresh installs to HP (25%), a three-day
+trial (25%) or a seven-day trial (50%). Purchases and restores use the existing
+Superwall SDK with observer mode disabled, alongside verified StoreKit access.
+No trial campaign or placement is registered. Both trial arms skip High/Name and
+recovery. The primary `poky-trial-vs-current` card reads fresh
+`poky_onboarding_trial_v2` / `25_25_50` scalar assignments (`current`, `trial`,
+`trial_7d`). A separate historical card reads v1 / `50_50`; populations are never
+pooled. Each report counts assigned nonviewers, trial starts, renewals and refunds,
 and excludes returning `legacy` assignments. The current flow now uses only native
 paywalls, including for former Superwall cohorts. Its recovery rollout is reported separately; the retired Superwall/native engine
 comparison is no longer loaded, displayed or counted as an active test.
@@ -440,9 +440,12 @@ only. The joint table uses the same compact metrics and version-based install co
 
 Poky Data shows all four tracked onboarding combinations (No intro × Plan A/B,
 Animated intro × Plan A/B), including empty rows. Clicking a row opens its screen
-funnel. The following Paywall flows table compares saved fresh 50/50
-`poky_onboarding_trial_v1` assignments: `current` is HP (hard paywall), `trial` is
-the 3-day trial. There is no price-point comparison. Both tables use first installs
+funnel. Paywall flows prepares three rows for fresh `poky_onboarding_trial_v2`
+assignments with allocation `25_25_50`: `current` is HP (25%), `trial` is the 3-day
+trial (25%) and `trial_7d` is the 7-day trial (50%). Until the app release enrolls
+users, the new rows stay empty with a waiting message. Previous v1 / `50_50`
+results stay in a separate historical table, also when selecting a country.
+There is no price-point comparison. Both tables use first installs
 on v1.1.5 or newer, across all time and all languages/countries. Later upgrades
 do not reenroll older installs, and unknown first versions are excluded. The
 date picker still controls the overview, App versions and country charts. Explicit production markers
@@ -450,6 +453,17 @@ are required; legacy offer assignments are excluded. All assigned nonpayers coun
 and outcomes follow through report time after both install and assignment,
 including linked renewals/refunds. APPU, lift, Win %, trial conversion, paid
 conversion and transaction-count refund rate reuse the other compact tables.
+
+The new seven-day SKU is `arthurbuildsstuff.peptides.yearly.trial7`. Its annual
+price and every localized storefront price must match the existing three-day
+`arthurbuildsstuff.peptides.yearly.trial` SKU; HP's existing regional prices stay
+unchanged. Configure a seven-day free introductory offer before releasing the app.
+The app validates the assigned SKU and trial period, uses StoreKit's localized
+prices, and keeps existing v1 assignments/timestamps intact. The seven-day preview
+shows its own introduction, dated reminder and annual timeline/paywall screenshots,
+using Poky’s rounded font and selected-compound headline. Poky snapshot keys include
+`offer-v2` so old cached reports cannot
+hide the waiting rows. Dashboard deployment and iOS release are separate steps.
 
 The app detail page now shows the overview and compact tables directly, without
 the Data / AB tests / Paywalls selector or its deferred report requests. The

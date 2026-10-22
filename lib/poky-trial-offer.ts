@@ -1,4 +1,6 @@
 import type { MobileAppExperiment, MobileAppExperimentSlice, MobileAppExperimentVariant } from "./mobile-app-analytics";
+import { isPokyOfferAssignment, pokyOfferVariants, POKY_OFFER_VARIANTS } from "./poky-onboarding-offer";
+export { POKY_ONBOARDING_OFFER_EXPERIMENT } from "./poky-onboarding-offer";
 
 export const POKY_TRIAL_OFFER_ATTRIBUTE_KEYS = [
   "onboarding_offer_experiment",
@@ -8,9 +10,6 @@ export const POKY_TRIAL_OFFER_ATTRIBUTE_KEYS = [
   "onboarding_offer_language",
 ] as const;
 
-export const POKY_ONBOARDING_OFFER_EXPERIMENT = "poky_onboarding_trial_v1";
-const TRIAL_PRODUCT = "arthurbuildsstuff.peptides.yearly.trial";
-type Arm = "current" | "trial";
 type Language = "en" | "es" | "de" | "fr";
 type Install = { appUserId: string; country: string; installedAt: number; language?: string };
 type Outcome = {
@@ -24,18 +23,15 @@ type Facts = {
 };
 
 const empty = (): MobileAppExperimentSlice => ({ users: 0, sessions: 0, installs: 0, completed: 0, trials: 0, converted: 0, paid: 0, proceeds: 0, installsD7: 0, proceedsD7: 0, eligibleD7: 0, retainedD7: 0, installsD14: 0, proceedsD14: 0, eligibleD14: 0, retainedD14: 0, installsD30: 0, proceedsD30: 0, eligibleD30: 0, retainedD30: 0 });
-const variants = (): MobileAppExperimentVariant[] => [
-  { ...empty(), key: "current", label: "Current paywall", countries: {} },
-  { ...empty(), key: "trial", label: "3-day trial · native", countries: {} },
-];
+const variants = (legacy: boolean): MobileAppExperimentVariant[] => pokyOfferVariants(legacy).map(({ key, label }) => ({ ...empty(), key, label, countries: {} }));
 
 /** Assignment time selects the cohort; Apple money follows each new subscription through today. */
-export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now()): MobileAppExperiment {
-  const overall = variants();
+export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now(), legacy = false): MobileAppExperiment {
+  const overall = variants(legacy);
   const languageComparisons = ([
     ["en", "🇬🇧 English APPU"], ["es", "🇪🇸 Spanish APPU"],
     ["de", "🇩🇪 German APPU"], ["fr", "🇫🇷 French APPU"],
-  ] as const).map(([language, label]) => ({ language, label, variants: variants() }));
+  ] as const).map(([language, label]) => ({ language, label, variants: variants(legacy) }));
   const firstInstalls = new Map<string, Install>();
   for (const install of facts.installs) {
     if (!install.appUserId || !Number.isFinite(install.installedAt)) continue;
@@ -48,14 +44,10 @@ export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now()): Mobil
   for (const [appUserId, attrs] of facts.attributes) {
     const variant = attrs.onboarding_offer_variant;
     const assignedAt = Number(attrs.onboarding_offer_assigned_at);
-    if (attrs.onboarding_offer_experiment !== POKY_ONBOARDING_OFFER_EXPERIMENT ||
-        attrs.onboarding_offer_allocation !== "50_50" ||
-        (variant !== "current" && variant !== "trial") ||
-        attrs.poky_tracking_environment !== "production" ||
+    if (!isPokyOfferAssignment(attrs, legacy) ||
         !Number.isFinite(assignedAt) || assignedAt <= 0 ||
         assignedAt < facts.startMs || assignedAt >= facts.endMs || assignedAt > asOf) continue;
-    const arm: Arm = variant;
-    const index = arm === "current" ? 0 : 1;
+    const index = overall.findIndex((row) => row.key === variant);
     const country = firstInstalls.get(appUserId)?.country ?? "unknown";
     const language = attrs.onboarding_offer_language as Language | undefined;
     const localized = languageComparisons.find((row) => row.language === language);
@@ -73,7 +65,7 @@ export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now()): Mobil
         event.eventTs < user.assignedAt || event.eventTs > asOf || event.isRefund ||
         !["initial_purchase", "non_renewing_purchase"].includes(event.name)) continue;
     eligibleOriginals.add(`${event.appUserId}|${event.originalTransactionId}`);
-    if (event.name === "initial_purchase" && event.productId === TRIAL_PRODUCT && event.periodType === "trial") {
+    if (event.name === "initial_purchase" && POKY_OFFER_VARIANTS.some((variant) => variant.product === event.productId) && event.periodType === "trial") {
       trialUsers.add(event.appUserId);
     }
   }
@@ -117,8 +109,8 @@ export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now()): Mobil
       ? Math.max(0, (sumOfSquares - slice.proceeds * slice.proceeds / slice.users) / (slice.users - 1)) : 0;
   }
   return {
-    id: "poky-trial-vs-current", title: "Paywalls · 3-day trial vs current",
-    subtitle: "Fresh 50/50 assignment · one hardcoded trial paywall · all four languages",
+    id: legacy ? "poky-trial-vs-current-legacy" : "poky-trial-vs-current", title: legacy ? "Previous paywall test · 50/50" : "Paywalls · HP vs 3-day vs 7-day trial",
+    subtitle: legacy ? "Historical fresh 50/50 assignments" : "Fresh assignments · HP 25% · 3-day 25% · 7-day 50% · all languages",
     planningNote: "Trial starts are free. APPU includes later paid renewals and refunds from subscriptions that began after assignment. All assigned users count, including people who never opened a paywall. Legacy assignments and sandbox events are excluded.",
     variants: overall, languageComparisons,
     languageVariants: Object.fromEntries(languageComparisons.map((row) => [row.language, row.variants])),
