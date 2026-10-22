@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const APP_IDS = new Set<MobileAppAnalytics["id"]>(["glow", "poky", "versy"]);
 
-/** A/B tests and paywalls: version-based install cohorts for Glow/Versy; rolling month for Poky. */
+/** Detailed experiments and paywalls use each app’s minimum first-install version cohort. */
 export async function GET(request: NextRequest) {
   const access = await getAnalyticsViewer();
   if (!access) {

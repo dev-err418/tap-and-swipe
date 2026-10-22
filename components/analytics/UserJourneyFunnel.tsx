@@ -157,7 +157,7 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
   if (!cohorts.length) return <p className="text-sm text-muted-foreground">No known first-seen versions in this install window.</p>;
   return <Tooltip.Provider delayDuration={150}><div className="space-y-3">
     <div className="min-w-0 overflow-x-auto rounded-xl border border-black/[0.06] scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" role="region" aria-label={rowHeading === "First version" ? "Conversions by first-seen version" : `Conversions by ${rowHeading.toLowerCase()}`} tabIndex={0}>
-      <table className="w-full text-left text-xs" style={{ minWidth: 136 + audiences.length * ((showInstallPaid ? 560 : 440) + (showAppuComparison ? showArpuGraph ? 336 : 176 : 0) + (showRefundRate ? 112 : 0)) }}>
+      <table className="w-full text-left text-xs" style={{ minWidth: 136 + audiences.length * ((showInstallPaid ? 560 : 440) + (showAppuComparison ? showArpuGraph ? 540 : 176 : 0) + (showRefundRate ? 112 : 0)) }}>
         <thead className="bg-[#f8f8f8]">
           {!allUsersOnly ? <tr className="border-b border-black/[0.06]">
             <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-32 bg-[#f8f8f8] px-4 py-3 font-medium">{rowHeading}</th>
@@ -170,7 +170,7 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
             {audiences.map(({ key: audience }) => <Fragment key={audience}>
               <th scope="col" className="min-w-24 border-l border-black/[0.06] px-3 py-3 text-right font-medium">Installs</th>
               {showAppuComparison ? <>
-                <th scope="col" className={cn("whitespace-nowrap px-3 py-3 text-right font-medium", showArpuGraph ? "min-w-64" : "min-w-24")} title="Observed APPU lift and approximate 95% interval versus the first populated row. Hover for details.">APPU lift</th>
+                <th scope="col" className={cn("whitespace-nowrap px-3 py-3 text-right font-medium", showArpuGraph ? "min-w-[460px]" : "min-w-24")} title="Observed APPU lift and approximate 95% interval versus the first populated row. Hover for details.">APPU lift</th>
                 <th scope="col" className="min-w-20 whitespace-nowrap px-3 py-3 text-right font-medium" title="Estimated chance of highest APPU among populated rows in this audience">Win %</th>
               </> : null}
               <th scope="col" className="min-w-28 px-3 py-3 text-right font-medium" title="Average proceeds per user: net proceeds in USD / all installs in this cohort, including non-payers">APPU</th>

@@ -1,6 +1,7 @@
 import { POKY_ONBOARDING_OFFER_EXPERIMENT } from "./poky-trial-offer";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
+import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
 
 /** Keep saved offer assignments independent of onboarding route and purchased product. */
 export function buildPokyPaywallFlowComparison(
@@ -11,15 +12,9 @@ export function buildPokyPaywallFlowComparison(
   endMs: number,
   asOf = Date.now(),
 ): PaywallCohortComparison {
-  const first = new Map<string, (typeof installs)[number]>();
-  for (const install of installs) {
-    const previous = first.get(install.appUserId);
-    if (install.appUserId && Number.isFinite(install.installedAt) && (!previous || install.installedAt < previous.installedAt)) {
-      first.set(install.appUserId, install);
-    }
-  }
+  const eligible = experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.poky, asOf);
   let invalidTimes = 0;
-  const enrolled = [...first.values()].flatMap((install) => {
+  const enrolled = eligible.flatMap((install) => {
     if (install.installedAt < startMs || install.installedAt >= endMs || install.installedAt > asOf) return [];
     const values = attributes.get(install.appUserId);
     if (values?.poky_tracking_environment !== "production" || values.onboarding_offer_experiment !== POKY_ONBOARDING_OFFER_EXPERIMENT

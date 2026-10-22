@@ -10,6 +10,7 @@ import {
 } from "./user-journey";
 import { versionParts } from "./app-version";
 import { installVersionAtLeast, installVersionPredicateSql } from "./app-experiment-cohort";
+import { marketCountry } from "./analytics-markets";
 
 type Query = <T>(sql: string) => Promise<T[]>;
 
@@ -45,6 +46,7 @@ export function userJourneySql(
   start: string,
   end: string,
   byVersion = false,
+  byCountry = false,
 ) {
   const variantAttribute = definition.variantAttribute;
   const variantValues = definition.variants.map((variant) => variant.key);
@@ -94,15 +96,16 @@ export function userJourneySql(
     ? `HAVING ${installVersionPredicateSql("version", definition.minimumInstallVersion!)}`
     : "";
   return `
-SELECT variant, ${byVersion ? "version, " : ""}step AS key, uniq(appUserId) AS users
+SELECT variant, ${byVersion ? "version, " : ""}${byCountry ? "country, " : ""}step AS key, uniq(appUserId) AS users
 FROM (
   SELECT
     cohort.appUserId AS appUserId,
     cohort.variant AS variant,
     ${byVersion ? "cohort.version AS version," : ""}
+    ${byCountry ? "cohort.country AS country," : ""}
     arrayJoin(arrayFilter(x -> x != '', [${stepFlags.join(", ")}])) AS step
   FROM (
-    SELECT assigned.appUserId AS appUserId, assigned.variant AS variant${byVersion ? ", installs.version AS version" : ""}
+    SELECT assigned.appUserId AS appUserId, assigned.variant AS variant${byVersion ? ", installs.version AS version" : ""}${byCountry ? ", installs.country AS country" : ""}
     FROM (
       SELECT appUserId, any(value) AS variant
       FROM sw.user_attributes_rep FINAL
@@ -117,6 +120,7 @@ FROM (
     INNER JOIN (
       SELECT appUserId,
         argMin(JSONExtractString(meta, 'appVersion'), ts) AS version,
+        ${byCountry ? "argMin(upper(ifNull(nullIf(JSONExtractString(headers, 'Cf-Ipcountry'), ''), 'unknown')), ts) AS country," : ""}
         argMin(appInstallDate, ts) AS firstInstallDate
       FROM sw.demand_score_events_rep
       WHERE applicationId = ${applicationId}
@@ -138,9 +142,9 @@ FROM (
       AND ts < now()
       AND (${seenFilters.join(" OR ") || "0"})
   ) AS seen ON seen.appUserId = cohort.appUserId
-  GROUP BY cohort.appUserId, cohort.variant${byVersion ? ", cohort.version" : ""}
+  GROUP BY cohort.appUserId, cohort.variant${byVersion ? ", cohort.version" : ""}${byCountry ? ", cohort.country" : ""}
 )
-GROUP BY variant, step${byVersion ? ", version" : ""}
+GROUP BY variant, step${byVersion ? ", version" : ""}${byCountry ? ", country" : ""}
 FORMAT JSON
 `.trim();
 }
@@ -152,24 +156,32 @@ export async function loadUserJourney(
   start: string,
   end: string,
   minimumInstallVersion?: string,
-): Promise<UserJourneyReport> {
+  includeCountries = false,
+): Promise<UserJourneyReport & { countries?: Record<string, UserJourneyReport> }> {
   const original = userJourneyDefinition(appId);
   if (!original) return unsupportedUserJourney(appId);
   const definition = minimumInstallVersion ? { ...original, minimumInstallVersion: original.minimumInstallVersion
     && installVersionAtLeast(original.minimumInstallVersion, minimumInstallVersion) ? original.minimumInstallVersion : minimumInstallVersion } : original;
   try {
-    const rows = await query<{ variant: string; version?: string; key: string; users: string | number }>(
-      userJourneySql(applicationId, definition, start, end, true),
+    const rows = await query<{ variant: string; version?: string; country?: string; key: string; users: string | number }>(
+      userJourneySql(applicationId, definition, start, end, true, includeCountries),
     );
     // Version groups are disjoint: sum counts to preserve the existing all-version view.
     const totals = new Map<string, { variant: string; key: string; users: number }>();
     const groups = new Map<string, { variant: string; key: string; users: number }[]>();
+    const countryGroups = new Map<string, Map<string, { variant: string; key: string; users: number }>>();
     for (const row of rows) {
       const users = Number(row.users);
       if (!Number.isSafeInteger(users) || users < 0) throw new Error("Invalid journey count");
       const key = `${row.variant}:${row.key}`;
       const previous = totals.get(key);
       totals.set(key, { variant: row.variant, key: row.key, users: (previous?.users ?? 0) + users });
+      if (includeCountries) {
+        const country = marketCountry(row.country ?? "");
+        const countryTotals = countryGroups.get(country) ?? new Map();
+        countryTotals.set(key, { variant: row.variant, key: row.key, users: (countryTotals.get(key)?.users ?? 0) + users });
+        countryGroups.set(country, countryTotals);
+      }
       const version = journeyVersion(row.version ?? "");
       const group = groups.get(version) ?? [];
       // Malformed metadata can normalize into the same unknown group.
@@ -178,7 +190,10 @@ export async function loadUserJourney(
       else group.push({ variant: row.variant, key: row.key, users });
       groups.set(version, group);
     }
-    return { ...buildUserJourney(definition, [...totals.values()]), versions: [...groups].map(([version, group]) => {
+    return { ...buildUserJourney(definition, [...totals.values()]),
+      ...(includeCountries ? { countries: Object.fromEntries([...countryGroups].map(([country, totals]) =>
+        [country, buildUserJourney(definition, [...totals.values()])])) } : {}),
+      versions: [...groups].map(([version, group]) => {
       const report = buildUserJourney(definition, group);
       const tracked = report.variants.reduce((sum, variant) => sum + variant.assigned, 0);
       return { version, installs: tracked, tracked, variants: report.variants };

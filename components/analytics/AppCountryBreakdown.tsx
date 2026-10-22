@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { Maximize2 } from "lucide-react";
 import type { MobileAppCountryRow } from "@/lib/mobile-app-analytics";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
-import { DashboardCardMetricPicker } from "@/components/analytics/DashboardCardMetricPicker";
 import {
   Dialog,
   DialogContent,
@@ -15,53 +14,38 @@ import {
 } from "@/components/ui/dialog";
 
 const INSTALL_COLOR = "#1d4ed8";
-const PROCEEDS_COLOR = "#f97316";
+const APPU_COLOR = "#f97316";
 const INSTALL_BAR_SHARE = 72;
-const PROCEEDS_BAR_SHARE = 100 - INSTALL_BAR_SHARE;
+const APPU_BAR_SHARE = 100 - INSTALL_BAR_SHARE;
 const PREVIEW_ROWS = 10;
 
-type CountryMetric = "installs" | "proceeds";
-
-export default function AppCountryBreakdown({ countries }: { countries: MobileAppCountryRow[] }) {
-  const [metric, setMetric] = useState<CountryMetric>("installs");
-  const sorted = [...countries].sort((a, b) => {
-    const primary = metric === "proceeds" ? b.proceeds - a.proceeds : b.installs - a.installs;
-    const secondary = metric === "proceeds" ? b.installs - a.installs : b.proceeds - a.proceeds;
-    return primary || secondary;
-  });
+export default function AppCountryBreakdown({ countries, windowLabel, available = true }: { countries: MobileAppCountryRow[]; windowLabel?: string; available?: boolean }) {
+  const sorted = countries.filter((row) => row.installs >= 50).sort((a, b) => appu(b) - appu(a) || b.installs - a.installs);
   const preview = sorted.slice(0, PREVIEW_ROWS);
 
   return (
     <DashboardCard
-      title="Countries"
-      titleAccessory={
-        <DashboardCardMetricPicker
-          ariaLabel="Countries metric"
-          value={metric}
-          options={["installs", "proceeds"] as const}
-          labels={{ installs: "Installs", proceeds: "Proceeds" }}
-          onValueChange={setMetric}
-        />
-      }
+      title="APPU"
+      action={windowLabel ? <span className="text-xs text-muted-foreground">{windowLabel}</span> : null}
       headerClassName="h-[46px] border-b-0 py-0 pr-2"
       contentClassName="h-[24.5rem] space-y-0 p-0 pr-0.5"
       footer={
         sorted.length > PREVIEW_ROWS ? (
-          <CountryDetails rows={sorted} metric={metric} />
+          <CountryDetails rows={sorted} windowLabel={windowLabel} />
         ) : undefined
       }
     >
-      <CountryTable rows={preview} />
+      {available ? <CountryTable rows={preview} /> : <p role="status" className="flex h-full items-center justify-center text-sm text-muted-foreground">APPU reporting is unavailable. Refresh to retry.</p>}
     </DashboardCard>
   );
 }
 
 function CountryDetails({
   rows,
-  metric,
+  windowLabel,
 }: {
   rows: MobileAppCountryRow[];
-  metric: CountryMetric;
+  windowLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -78,9 +62,9 @@ function CountryDetails({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden bg-white p-0 sm:max-w-3xl">
           <DialogHeader className="px-6 pt-6 pr-16">
-            <DialogTitle>Country details</DialogTitle>
+            <DialogTitle>APPU by country</DialogTitle>
             <DialogDescription>
-              {rows.length.toLocaleString("en-US")} {rows.length === 1 ? "country" : "countries"} for the selected period, sorted by {metric}.
+              {rows.length.toLocaleString("en-US")} {rows.length === 1 ? "country" : "countries"} for {windowLabel?.toLowerCase() ?? "the selected period"}, sorted by average proceeds per user.
             </DialogDescription>
           </DialogHeader>
           <div className="min-h-0 max-h-[65dvh] overflow-auto overscroll-contain border-t border-black/[0.06] p-0 pr-0.5">
@@ -106,10 +90,10 @@ function CountryTable({
   rows: MobileAppCountryRow[];
 }) {
   const [tooltip, setTooltip] = useState<CountryTooltipState | null>(null);
+  const maxAppu = Math.max(0, ...rows.map(appu));
   const maxInstalls = Math.max(0, ...rows.map((row) => row.installs));
-  const maxProceeds = Math.max(0, ...rows.map((row) => row.proceeds));
   if (rows.length === 0) {
-    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No country data yet.</div>;
+    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No countries with at least 50 installs in this period.</div>;
   }
 
   return (
@@ -119,8 +103,8 @@ function CountryTable({
           <CountryRow
             key={row.country}
             row={row}
+            maxAppu={maxAppu}
             maxInstalls={maxInstalls}
-            maxProceeds={maxProceeds}
             onTooltipChange={setTooltip}
           />
         ))}
@@ -134,19 +118,18 @@ function CountryTable({
 
 function CountryRow({
   row,
+  maxAppu,
   maxInstalls,
-  maxProceeds,
   onTooltipChange,
 }: {
   row: MobileAppCountryRow;
+  maxAppu: number;
   maxInstalls: number;
-  maxProceeds: number;
   onTooltipChange: (tooltip: CountryTooltipState | null) => void;
 }) {
-  const hasProceedsScale = maxProceeds > 0;
-  const installWidth = barPercent(row.installs, maxInstalls, hasProceedsScale ? INSTALL_BAR_SHARE : 100);
-  const proceedsWidth = barPercent(row.proceeds, maxProceeds, PROCEEDS_BAR_SHARE);
-  const barWidth = Math.min(100, installWidth + proceedsWidth);
+  const installWidth = barPercent(row.installs, maxInstalls, maxAppu > 0 ? INSTALL_BAR_SHARE : 100);
+  const appuWidth = barPercent(appu(row), maxAppu, APPU_BAR_SHARE);
+  const barWidth = Math.min(100, installWidth + appuWidth);
   const label = countryName(row.country);
   const marker = row.country === "unknown" ? "??" : countryFlag(row.country);
   const metricValue = formatPreciseCurrency(row.installs > 0 ? row.proceeds / row.installs : 0);
@@ -176,16 +159,11 @@ function CountryRow({
       <div className="relative h-8 min-w-0 overflow-hidden rounded-r-md">
         <span
           aria-hidden="true"
-          className={`pointer-events-none absolute inset-y-0 left-0 ${proceedsWidth > 0 ? "" : "rounded-r-md"}`}
+          className={`pointer-events-none absolute inset-y-0 left-0 ${appuWidth > 0 ? "" : "rounded-r-md"}`}
           style={{ width: `${installWidth}%`, backgroundColor: INSTALL_COLOR, opacity: 0.88 }}
         />
-        {proceedsWidth > 0 ? (
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 rounded-r-md"
-            style={{ left: `${installWidth}%`, width: `${proceedsWidth}%`, backgroundColor: PROCEEDS_COLOR, opacity: 0.88 }}
-          />
-        ) : null}
+        {appuWidth > 0 ? <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 rounded-r-md"
+          style={{ left: `${installWidth}%`, width: `${appuWidth}%`, backgroundColor: APPU_COLOR, opacity: 0.88 }} /> : null}
         <div className="relative z-10 flex h-full min-w-0 items-center gap-2 px-3 text-sm font-medium text-foreground">
           <span className="flex size-5 shrink-0 items-center justify-center text-base">{marker}</span>
           <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -219,8 +197,8 @@ function CountryTooltip({ tooltip }: { tooltip: CountryTooltipState }) {
   const appu = tooltip.row.installs > 0 ? tooltip.row.proceeds / tooltip.row.installs : 0;
   const metrics = [
     { label: "Installs", value: formatInt(tooltip.row.installs), color: INSTALL_COLOR },
-    { label: "Proceeds", value: formatCurrency(tooltip.row.proceeds), color: PROCEEDS_COLOR },
-    { label: "APPU", value: formatPreciseCurrency(appu) },
+    { label: "Proceeds", value: formatCurrency(tooltip.row.proceeds) },
+    { label: "APPU", value: formatPreciseCurrency(appu), color: APPU_COLOR },
   ];
 
   return (
@@ -236,7 +214,7 @@ function CountryTooltip({ tooltip }: { tooltip: CountryTooltipState }) {
         {metrics.map((item) => (
           <div key={item.label} className="flex items-center justify-between gap-6 text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
-              <span className="size-2 rounded-sm" style={{ backgroundColor: item.color }} />
+              {item.color ? <span className="size-2 rounded-sm" style={{ backgroundColor: item.color }} /> : null}
               {item.label}
             </span>
             <span className="font-mono font-medium tabular-nums text-foreground">{item.value}</span>
@@ -250,6 +228,10 @@ function CountryTooltip({ tooltip }: { tooltip: CountryTooltipState }) {
 function barPercent(value: number, max: number, share: number) {
   if (max <= 0 || value <= 0) return 0;
   return (value / max) * share;
+}
+
+function appu(row: MobileAppCountryRow) {
+  return row.installs > 0 ? row.proceeds / row.installs : 0;
 }
 
 function countryFlag(code: string) {

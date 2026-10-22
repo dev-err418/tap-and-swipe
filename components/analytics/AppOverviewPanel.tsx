@@ -1,66 +1,33 @@
 "use client";
 
+import { useState, type ReactNode } from "react";
 import { DEFAULT_APP_LANGUAGE, marketKey, marketCountryLabel, type AnalyticsMarkets } from "@/lib/analytics-markets";
+import type { AppCountryComparisons } from "@/lib/app-country-comparisons";
+import { DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS, DASHBOARD_TAB_LIST_CLASS } from "./dashboard-surface";
+import { cn } from "@/lib/utils";
+import { countryFlag } from "@/lib/stats-helpers";
 
-import { useEffect, useState } from "react";
 import type { FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
 import { totalCohortAppu, overviewForLanguage, overviewLanguageLabel, type AppOverviewCohorts } from "@/lib/app-overview-cohorts";
 import AppCountryBreakdown from "@/components/analytics/AppCountryBreakdown";
 import AppConversionBreakdown from "@/components/analytics/AppConversionBreakdown";
 import type {
   MobileAppCountryRow,
-  MobileAppExperiment,
   MobileAppPlanCountryRow,
   MobileAppRetentionCountryRow,
   TrialCancelTiming,
 } from "@/lib/mobile-app-analytics";
-import AppExperimentCard from "@/components/analytics/AppExperimentCard";
-import AppExperimentMap from "@/components/analytics/AppExperimentMap";
 import TrialCancelChart from "@/components/analytics/TrialCancelChart";
-import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
-import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
 import AppNotesChart from "@/components/analytics/AppNotesChart";
-import NativePaywallsPanel from "@/components/analytics/NativePaywallsPanel";
-import WinbackPaywallPanel from "@/components/analytics/WinbackPaywallPanel";
-import VersyPaywallPlacementsPanel from "@/components/analytics/VersyPaywallPlacementsPanel";
-import GlowYearlyPricePanel from "./GlowYearlyPricePanel";
 import GlowPaywallCohortTables from "./GlowPaywallCohortTables";
 import VersyYearlyPriceTable from "./VersyYearlyPriceTable";
 import PokyPaywallFlowTable from "./PokyPaywallFlowTable";
 import type { PaywallCohortComparison } from "@/lib/glow-paywall-cohort-comparisons";
 import type { GlowPaywallCohortComparisons } from "@/lib/glow-paywall-cohort-comparisons";
-import GlowPaywallFlowPanel from "./GlowPaywallFlowPanel";
-import GlowOnboardingExperiencePanel from "./GlowOnboardingExperiencePanel";
-import type { GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import UserJourneyFunnel, { JourneyVersionComparison } from "@/components/analytics/UserJourneyFunnel";
 import type { UserJourneyReport } from "@/lib/user-journey";
-import type { NativePaywallReport } from "@/lib/native-paywall-analytics";
-import {
-  DASHBOARD_SURFACE_CLASS,
-  DASHBOARD_TAB_ACTIVE_CLASS,
-  DASHBOARD_TAB_CLASS,
-  DASHBOARD_TAB_INACTIVE_CLASS,
-  DASHBOARD_TAB_LIST_CLASS,
-} from "@/components/analytics/dashboard-surface";
-import { cn } from "@/lib/utils";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
-
-type AnalyticsTab = "data" | "experiments" | "paywalls";
-
-const ANALYTICS_TABS: { id: AnalyticsTab; label: string }[] = [
-  { id: "data", label: "Data" },
-  { id: "experiments", label: "AB tests" },
-  { id: "paywalls", label: "Paywalls" },
-];
-
-type MonthExperimentBundle = {
-  snapshotUpdatedAt?: string;
-  experiments: MobileAppExperiment[];
-  countries: MobileAppCountryRow[];
-  nativePaywalls: NativePaywallReport | null;
-  onboardingExperience: GlowOnboardingReport | null;
-};
 
 export default function AppOverviewPanel({
   appId,
@@ -70,18 +37,15 @@ export default function AppOverviewPanel({
   markets,
   countries,
   dataCountries = countries,
-  experimentCountries = countries,
-  plans,
-  retention,
-  experiments = [],
   trialCancelTiming = null,
-  nativePaywalls = null,
-  onboardingExperience = null,
   userJourney = null,
   paywallCohortComparisons = null,
   yearlyPriceComparison = null,
   paywallFlowComparison = null,
-  deferExperiments = false,
+  countryComparisons,
+  countryBreakdown,
+  headerStart,
+  headerEnd,
 }: {
   appId: "glow" | "poky" | "versy";
   installs: number;
@@ -92,70 +56,58 @@ export default function AppOverviewPanel({
   countries: MobileAppCountryRow[];
   dataCountries?: MobileAppCountryRow[];
   cohortDataAvailable?: boolean;
-  experimentCountries?: MobileAppCountryRow[];
   plans: MobileAppPlanCountryRow[];
   retention: MobileAppRetentionCountryRow[];
-  experiments?: MobileAppExperiment[];
   trialCancelTiming?: TrialCancelTiming | null;
-  nativePaywalls?: NativePaywallReport | null;
-  onboardingExperience?: GlowOnboardingReport | null;
   userJourney?: UserJourneyReport | null;
   paywallCohortComparisons?: GlowPaywallCohortComparisons | null;
   yearlyPriceComparison?: PaywallCohortComparison | null;
   paywallFlowComparison?: PaywallCohortComparison | null;
-  deferExperiments?: boolean;
+  countryComparisons?: AppCountryComparisons;
+  countryBreakdown?: { countries: MobileAppCountryRow[]; available: boolean; windowLabel: string };
+  headerStart?: ReactNode;
+  headerEnd?: ReactNode;
 }) {
-  const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
   const language = DEFAULT_APP_LANGUAGE[appId];
-  const country = "all";
+  const [pickedCountry, setPickedCountry] = useState("all");
+  const country = countryComparisons?.options.some((option) => option.code === pickedCountry) ? pickedCountry : "all";
+  const countrySlice = country !== "all" ? countryComparisons?.slices[country] : null;
   const market = markets?.slices[marketKey(language, country)];
   const selectedOverview = markets ? market?.overview ?? (overviewCohorts ? { ...overviewForLanguage(overviewCohorts, "absent"), available: true } : null)
     : overviewCohorts ? overviewForLanguage(overviewCohorts, language) : null;
-  const selectedCountries = markets ? market?.dataCountries ?? [] : dataCountries;
-  const selectedPlans = markets ? market?.plans ?? [] : plans;
-  const selectedRetention = markets ? market?.retention ?? [] : retention;
+  const selectedCountries = countryBreakdown
+    ? countryBreakdown.countries.filter((row) => country === "all" || row.country === country)
+    : markets ? market?.dataCountries ?? [] : dataCountries;
   const comparisonLabel = experimentCohortLabel(appId);
-  const selectedTrialTiming = comparisonLabel ? trialCancelTiming : markets ? market?.trialCancelTiming : trialCancelTiming;
+  const selectedTrialTiming = country !== "all" ? countrySlice?.trialCancelTiming
+    : comparisonLabel ? trialCancelTiming : markets ? market?.trialCancelTiming : trialCancelTiming;
+  const selectedJourney = country === "all" ? userJourney : countrySlice?.userJourney ?? null;
+  const selectedGlowPaywalls = country === "all" ? paywallCohortComparisons : countrySlice?.paywallCohortComparisons ?? null;
+  const selectedYearlyPrices = country === "all" ? yearlyPriceComparison : countrySlice?.yearlyPriceComparison ?? null;
+  const selectedPokyPaywalls = country === "all" ? paywallFlowComparison : countrySlice?.paywallFlowComparison ?? null;
   const installLabel = "Tracked installs";
-  const [monthBundle, setMonthBundle] = useState<{ appId: string; bundle: MonthExperimentBundle } | null>(null);
-  const [monthFailedAppId, setMonthFailedAppId] = useState<string | null>(null);
-  useEffect(() => {
-    if (!deferExperiments || activeTab === "data"
-      || monthBundle?.appId === appId || monthFailedAppId === appId) return;
-    const controller = new AbortController();
-    fetch(`/api/analytics/mobile-app?appId=${appId}`, { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("App experiments failed to load");
-        return response.json() as Promise<MonthExperimentBundle>;
-      })
-      .then((bundle) => setMonthBundle({ appId, bundle }))
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setMonthFailedAppId(appId);
-      });
-    return () => controller.abort();
-  }, [activeTab, appId, deferExperiments, monthBundle, monthFailedAppId]);
-  const loadedBundle = monthBundle?.appId === appId ? monthBundle.bundle : null;
-  const monthFailed = monthFailedAppId === appId;
-  const resolvedExperiments = deferExperiments ? loadedBundle?.experiments ?? experiments : experiments;
-  const resolvedPaywalls = deferExperiments ? loadedBundle?.nativePaywalls ?? nativePaywalls : nativePaywalls;
-  const resolvedOnboarding = deferExperiments ? loadedBundle?.onboardingExperience ?? onboardingExperience : onboardingExperience;
-  const resolvedExperimentCountries = deferExperiments ? loadedBundle?.countries ?? experimentCountries : experimentCountries;
-  const experimentsLoading = deferExperiments && !loadedBundle && !monthFailed;
   const cohortAvailable = Boolean(selectedOverview?.available);
   const total = selectedOverview?.total;
   const appu = total && cohortAvailable ? totalCohortAppu(total) : null;
   const installToPaid = cohortAvailable && total && total.installs > 0 && total.missingMoney === 0
     ? total.paid / total.installs : null;
-  const showPlans = selectedPlans.some((row) => row.yearlySubs + row.weeklySubs > 0);
-  const showRetention = selectedRetention.some((row) => row.overall.d1.eligible > 0);
-  const topCountries = resolvedExperimentCountries
-    .map((row) => row.country)
-    .filter((country) => country !== "unknown")
-    .slice(0, 5);
-
+  const countryPicker = countryComparisons?.options.length ? <div className="flex min-w-0 overflow-x-auto scrollbar-none">
+        <div className={cn(DASHBOARD_TAB_LIST_CLASS, "mx-auto h-auto min-h-[30px] shrink-0")} role="group" aria-label="Country">
+          {[{ code: "all", installs: 0 }, ...countryComparisons.options].map((option) => <button key={option.code}
+            type="button" aria-pressed={country === option.code} onClick={() => setPickedCountry(option.code)}
+            className={cn(DASHBOARD_TAB_CLASS, "whitespace-nowrap px-3", country === option.code ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS)}>
+            <span aria-hidden="true" className="mr-1.5">{option.code === "all" ? "🌍" : countryFlag(option.code)}</span>
+            {marketCountryLabel(option.code)}
+          </button>)}
+        </div>
+      </div> : null;
   return (
     <section className="w-full min-w-0 space-y-4">
+      {headerStart || headerEnd ? <div className="sticky top-4 z-30 flex min-h-[60px] w-full flex-col gap-3 rounded-[30px] border-0 bg-white px-4 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.05),0_12px_32px_rgba(0,0,0,0.08)] sm:top-6 sm:grid sm:h-[60px] sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:px-6 [&_[data-slot=select-trigger]]:bg-transparent" data-analytics-header>
+        <div className="min-w-0">{headerStart}</div>
+        {countryPicker ?? <div />}
+        <div className="sm:justify-self-end">{headerEnd}</div>
+      </div> : countryPicker}
       <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-[28px] border-0 bg-white shadow-none">
         <div className="min-w-0 border-b border-black/[0.08]">
           <div className="grid grid-cols-3 divide-x divide-black/[0.08]">
@@ -169,109 +121,26 @@ export default function AppOverviewPanel({
         </div>
       </div>
 
-      <div className="flex justify-center px-4">
-        <div className={DASHBOARD_TAB_LIST_CLASS} role="tablist" aria-label="App analytics">
-          {ANALYTICS_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              id={`app-analytics-tab-${tab.id}`}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              aria-controls={`app-analytics-panel-${tab.id}`}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                DASHBOARD_TAB_CLASS,
-                "px-4",
-                activeTab === tab.id ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS,
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <div
+        id="app-analytics-panel-data"
+        className="space-y-4"
+      >
+        {markets ? <DashboardCard title="App versions" contentClassName="pt-0">
+          <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
+        </DashboardCard> : userJourney?.versions?.length ? <DashboardCard title="App versions" contentClassName="pt-0">
+          <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
+        </DashboardCard> : null}
+        <UserJourneyFunnel key={`${appId}:${country}`} appId={appId} report={selectedJourney} windowLabel={windowLabel} funnelOnly />
+        {appId === "glow" ? <GlowPaywallCohortTables key={country} report={selectedGlowPaywalls} windowLabel={windowLabel} /> : null}
+        {appId === "versy" ? <VersyYearlyPriceTable key={country} report={selectedYearlyPrices} /> : null}
+        {appId === "poky" ? <PokyPaywallFlowTable key={country} report={selectedPokyPaywalls} windowLabel={windowLabel} /> : null}
+        {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={comparisonLabel ?? windowLabel} /> : null}
+        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+          <AppCountryBreakdown countries={selectedCountries} windowLabel={countryBreakdown?.windowLabel} available={countryBreakdown?.available} />
+          <AppConversionBreakdown countries={selectedCountries} conversion="paid" windowLabel={countryBreakdown?.windowLabel} available={countryBreakdown?.available} />
         </div>
       </div>
-
-      {activeTab === "data" ? (
-        <div
-          id="app-analytics-panel-data"
-          role="tabpanel"
-          aria-labelledby="app-analytics-tab-data"
-          className="space-y-4"
-        >
-          {markets ? <DashboardCard title="App versions" contentClassName="pt-0">
-            <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
-          </DashboardCard> : userJourney?.versions?.length ? <DashboardCard title="App versions" contentClassName="pt-0">
-            <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
-          </DashboardCard> : null}
-          <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} funnelOnly />
-          {appId === "glow" ? <GlowPaywallCohortTables report={paywallCohortComparisons} windowLabel={windowLabel} /> : null}
-          {appId === "versy" ? <VersyYearlyPriceTable report={yearlyPriceComparison} /> : null}
-          {appId === "poky" ? <PokyPaywallFlowTable report={paywallFlowComparison} windowLabel={windowLabel} /> : null}
-          {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={comparisonLabel ?? windowLabel} /> : null}
-          <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-            <AppCountryBreakdown countries={selectedCountries} />
-            <AppConversionBreakdown countries={selectedCountries} conversion="paid" />
-          </div>
-          {showPlans || showRetention ? (
-            <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-              {showPlans ? <AppPlanBreakdown plans={selectedPlans} /> : null}
-              {showRetention ? (
-                <AppRetentionBreakdown
-                  rows={selectedRetention}
-                />
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {activeTab === "experiments" ? (
-        <div
-          id="app-analytics-panel-experiments"
-          role="tabpanel"
-          aria-labelledby="app-analytics-tab-experiments"
-          className="space-y-4"
-        >
-          <p className="px-4 text-xs text-muted-foreground">{comparisonLabel ? `${comparisonLabel} · ` : ""}A/B tests use their own language and country breakdowns below.</p>
-          {experimentsLoading ? <TabEmptyState>{comparisonLabel ? "Loading A/B tests for this install cohort…" : "Loading the last 30 days of A/B tests…"}</TabEmptyState> : monthFailed ? <TabEmptyState>A/B tests could not be loaded.</TabEmptyState> : <>
-            <AppExperimentMap appId={appId} experiments={resolvedExperiments} nativePaywalls={resolvedPaywalls ?? null} onboardingExperience={resolvedOnboarding ?? null} />
-            {appId === "glow" && <><GlowOnboardingExperiencePanel report={resolvedOnboarding ?? null} /><GlowPaywallFlowPanel report={resolvedOnboarding?.paywallFlow ?? null} /><GlowYearlyPricePanel report={resolvedPaywalls ?? null} /></>}
-            {resolvedExperiments.length > 0 ? resolvedExperiments.map((experiment) => (
-              <AppExperimentCard
-                key={experiment.id}
-                experiment={experiment}
-                topCountries={topCountries}
-              />
-            )) : appId !== "glow" ? <TabEmptyState>No AB test data yet.</TabEmptyState> : null}
-          </>}
-        </div>
-      ) : null}
-
-      {activeTab === "paywalls" ? (
-        <div
-          id="app-analytics-panel-paywalls"
-          role="tabpanel"
-          aria-labelledby="app-analytics-tab-paywalls"
-          className="min-w-0 space-y-4"
-        >
-          <p className="px-4 text-xs text-muted-foreground">{comparisonLabel ? `${comparisonLabel} · ` : ""}Paywalls use their own language filters · all countries.</p>
-          {appId === "glow" && <WinbackPaywallPanel appId={appId} />}
-          {appId === "versy" && <p className="px-1 text-sm text-muted-foreground">Compare onboarding routes by paid conversions and net proceeds in A/B tests. Below, verified purchases link revenue, renewals and refunds to the original route and purchase placement. Revenue per user makes different traffic shares comparable.</p>}
-          {experimentsLoading ? <TabEmptyState>Loading paywalls…</TabEmptyState> : monthFailed ? <TabEmptyState>Paywalls could not be loaded.</TabEmptyState>
-            : <NativePaywallsPanel appId={appId} report={resolvedPaywalls ?? null} />}
-          {appId === "versy" && <details className="space-y-4"><summary className="cursor-pointer text-sm font-medium">App purchase events</summary><VersyPaywallPlacementsPanel /></details>}
-        </div>
-      ) : null}
     </section>
-  );
-}
-
-function TabEmptyState({ children }: { children: React.ReactNode }) {
-  return (
-    <div className={cn(DASHBOARD_SURFACE_CLASS, "flex min-h-72 items-center justify-center p-6 text-sm text-muted-foreground")}>
-      {children}
-    </div>
   );
 }
 

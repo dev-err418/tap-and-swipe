@@ -12,7 +12,7 @@ export function ArpuComparisonCells({ result, metric, label, baselineLabel, exte
   result: ArpuComparison; metric?: VersionConversionMetric; label: string; baselineLabel: string; extent: number; showGraph: boolean;
 }) {
   return <>
-    <td className={`${showGraph ? "min-w-64" : "min-w-24"} px-3 text-right tabular-nums`}>
+    <td className={`${showGraph ? "min-w-[460px]" : "min-w-24"} px-3 text-right tabular-nums`}>
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
           <button type="button" className="flex w-full cursor-help items-center justify-end gap-3 rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
@@ -50,7 +50,7 @@ export function ArpuComparisonCells({ result, metric, label, baselineLabel, exte
 
 function LiftDistribution({ result, extent }: { result: ArpuComparison; extent: number }) {
   const id = useId().replace(/:/g, "");
-  const width = 156;
+  const width = 360;
   const x = (value: number) => width / 2 + value / extent * (width / 2 - 4);
   const lift = result.lift;
   const se = result.interval ? (result.interval[1] - result.interval[0]) / (2 * 1.96) : 0;
@@ -59,7 +59,7 @@ function LiftDistribution({ result, extent }: { result: ArpuComparison; extent: 
     return { x: x(value), h: 10 * Math.exp(-0.5 * ((value - lift) / se) ** 2) };
   }) : [];
   const path = points.length ? `M${points.map((point) => `${point.x},${16 - point.h}`).join(" L")} L${[...points].reverse().map((point) => `${point.x},${16 + point.h}`).join(" L")} Z` : "";
-  return <svg width={width} height="16" preserveAspectRatio="none" viewBox={`0 0 ${width} 32`} className="shrink-0 overflow-hidden" aria-hidden="true">
+  return <svg width={width} height="24" preserveAspectRatio="none" viewBox={`0 0 ${width} 32`} className="shrink-0 overflow-hidden" aria-hidden="true">
     <defs><clipPath id={`${id}-negative`}><rect width={width / 2} height="32" /></clipPath><clipPath id={`${id}-positive`}><rect x={width / 2} width={width / 2} height="32" /></clipPath></defs>
     <line x1="0" x2={width} y1="16" y2="16" stroke="currentColor" opacity="0.06" />
     <line x1={width / 2} x2={width / 2} y1="2" y2="30" stroke="currentColor" opacity="0.2" />

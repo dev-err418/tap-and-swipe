@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { Maximize2 } from "lucide-react";
 import type { MobileAppCountryRow } from "@/lib/mobile-app-analytics";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
-import { DashboardCardMetricPicker } from "@/components/analytics/DashboardCardMetricPicker";
 import {
   Dialog,
   DialogContent,
@@ -37,43 +36,29 @@ const METRIC_LABELS: Record<ConversionMetric, string> = {
   trial_to_paid: "Trial → paid",
 };
 
-const BASE_OPTIONS = ["installs", "paid", "install_to_paid"] as const;
-const TRIAL_OPTIONS = ["trials", "install_to_trial", "trial_to_paid"] as const;
-
 type ConversionTarget = "paid" | "trial";
 
-export default function AppConversionBreakdown({ countries, conversion = "paid" }: { countries: MobileAppCountryRow[]; conversion?: ConversionTarget }) {
-  const hasTrials = countries.some((row) => row.trials > 0);
-  const options: ConversionMetric[] = conversion === "trial" ? ["installs", "trials", "install_to_trial"]
-    : hasTrials ? [...BASE_OPTIONS, ...TRIAL_OPTIONS] : [...BASE_OPTIONS];
-  const [metric, setMetric] = useState<ConversionMetric>("installs");
-  const sorted = [...countries].sort((a, b) => metricValue(b, metric) - metricValue(a, metric) || b.installs - a.installs);
+export default function AppConversionBreakdown({ countries, conversion = "paid", windowLabel, available = true }: { countries: MobileAppCountryRow[]; conversion?: ConversionTarget; windowLabel?: string; available?: boolean }) {
+  const metric: ConversionMetric = conversion === "trial" ? "install_to_trial" : "install_to_paid";
+  const sorted = countries.filter((row) => row.installs >= 50).sort((a, b) => metricValue(b, metric) - metricValue(a, metric) || b.installs - a.installs);
   const preview = sorted.slice(0, PREVIEW_ROWS);
 
   return (
     <DashboardCard
-      title="CR"
-      titleAccessory={
-        <DashboardCardMetricPicker
-          ariaLabel="Conversion metric"
-          value={metric}
-          options={options}
-          labels={METRIC_LABELS}
-          onValueChange={setMetric}
-        />
-      }
+      title={conversion === "trial" ? "Downloads → Trial" : "Downloads → Paid"}
+      action={windowLabel ? <span className="text-xs text-muted-foreground">{windowLabel}</span> : null}
       headerClassName="h-[46px] border-b-0 py-0 pr-2"
       contentClassName="h-[24.5rem] space-y-0 p-0 pr-0.5"
       footer={
-        sorted.length > PREVIEW_ROWS ? <ConversionDetails rows={sorted} metric={metric} conversion={conversion} /> : undefined
+        sorted.length > PREVIEW_ROWS ? <ConversionDetails rows={sorted} metric={metric} conversion={conversion} windowLabel={windowLabel} /> : undefined
       }
     >
-      <ConversionTable rows={preview} metric={metric} conversion={conversion} />
+      {available ? <ConversionTable rows={preview} metric={metric} conversion={conversion} /> : <p role="status" className="flex h-full items-center justify-center text-sm text-muted-foreground">Paid conversion reporting is unavailable. Refresh to retry.</p>}
     </DashboardCard>
   );
 }
 
-function ConversionDetails({ rows, metric, conversion }: { rows: MobileAppCountryRow[]; metric: ConversionMetric; conversion: ConversionTarget }) {
+function ConversionDetails({ rows, metric, conversion, windowLabel }: { rows: MobileAppCountryRow[]; metric: ConversionMetric; conversion: ConversionTarget; windowLabel?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -89,9 +74,9 @@ function ConversionDetails({ rows, metric, conversion }: { rows: MobileAppCountr
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden bg-white p-0 sm:max-w-3xl">
           <DialogHeader className="px-6 pt-6 pr-16">
-            <DialogTitle>{conversion === "trial" ? "Install → trial" : "Conversion details"}</DialogTitle>
+            <DialogTitle>{conversion === "trial" ? "Downloads → Trial" : "Downloads → Paid"}</DialogTitle>
             <DialogDescription>
-              {rows.length.toLocaleString("en-US")} {rows.length === 1 ? "country" : "countries"} for the selected period, sorted by {METRIC_LABELS[metric].toLowerCase()}.
+              {rows.length.toLocaleString("en-US")} {rows.length === 1 ? "country" : "countries"} for {windowLabel?.toLowerCase() ?? "the selected period"}, sorted by {METRIC_LABELS[metric].toLowerCase()}.
             </DialogDescription>
           </DialogHeader>
           <div className="min-h-0 max-h-[65dvh] overflow-auto overscroll-contain border-t border-black/[0.06] p-0 pr-0.5">
@@ -116,7 +101,7 @@ function ConversionTable({ rows, metric, conversion }: { rows: MobileAppCountryR
   const maxInstalls = Math.max(0, ...rows.map((row) => row.installs));
   const maxConversions = Math.max(0, ...rows.map((row) => conversion === "trial" ? row.trials : row.paid));
   if (rows.length === 0) {
-    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No conversion data yet.</div>;
+    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No countries with at least 50 installs in this period.</div>;
   }
 
   return (

@@ -62,9 +62,13 @@ test("recent-only periods have no mature results instead of borrowing older user
   assert.deepEqual(glowMatureCountries(input, now), []);
 });
 
-test("country charts use mature data while the top dashboard defaults to English cohorts for Glow", () => {
+test("country charts use mature data while the top dashboard includes all languages for Glow", () => {
   const countries = [{ country: "US", installs: 99, proceeds: 99, trials: 10, converted: 1, paid: 1 }];
-  const dataCountries = [{ country: "ES", installs: 4, proceeds: 20, trials: 2, converted: 1, paid: 1 }];
+  const dataCountries = [
+    { country: "ES", installs: 52, proceeds: 260, trials: 20, converted: 13, paid: 13 },
+    { country: "DE", installs: 50, proceeds: 25, trials: 10, converted: 5, paid: 5 },
+    { country: "FR", installs: 49, proceeds: 4900, trials: 49, converted: 49, paid: 49 },
+  ];
   const overviewCohorts = buildAppOverviewCohorts({
     period: "month", startMs: start, endMs: now, asOf: now,
     installs: [
@@ -78,15 +82,17 @@ test("country charts use mature data while the top dashboard defaults to English
   const markup = renderToStaticMarkup(createElement(AppOverviewPanel, { ...props, dataCountries }));
   const chartMarkup = markup.split('id="app-analytics-panel-data"')[1];
   const topMarkup = markup.split('id="app-analytics-panel-data"')[0];
-  assert.match(topMarkup, /English · All countries · Last 30 days/);
+  assert.match(topMarkup, /All languages · All countries · Last 30 days/);
   assert.match(topMarkup, /Tracked installs/);
-  assert.match(topMarkup, />1<\/p>/);
-  assert.match(topMarkup, /\$0\.00/);
+  assert.match(topMarkup, />5<\/p>/);
+  assert.match(topMarkup, /\$4\.00/);
   assert.doesNotMatch(topMarkup, />99<\/p>|More metrics|APPU shows each day/);
   // Each chart renders its country label twice to contrast against the bars.
   assert.equal(chartMarkup.match(/Spain/g)?.length, 4);
+  assert.equal(chartMarkup.match(/Germany/g)?.length, 4);
+  assert.doesNotMatch(chartMarkup, /France/);
   assert.doesNotMatch(chartMarkup, /United States/);
-  assert.match(chartMarkup, /25%/); // CR = 1 paid user / 4 mature installs.
+  assert.match(chartMarkup, /25%/); // CR = 13 paid users / 52 mature installs.
   assert.doesNotMatch(chartMarkup, /50%|10\.1%/);
   const empty = renderToStaticMarkup(createElement(AppOverviewPanel, { ...props, dataCountries: [] })).split('id="app-analytics-panel-data"')[1];
   assert.doesNotMatch(empty, /Spain/);
@@ -99,4 +105,15 @@ test("country charts use mature data while the top dashboard defaults to English
   }));
   assert.match(unavailable, /Cohort data unavailable/);
   assert.doesNotMatch(unavailable, /0 paid \/ 0 cohort installs/);
+  for (const appId of ["glow", "poky", "versy"] as const) {
+    const monthly = renderToStaticMarkup(createElement(AppOverviewPanel, {
+      ...props, appId, windowLabel: "Last 7 days", dataCountries,
+      countryBreakdown: { countries, available: true, windowLabel: "Last 30 days" },
+    }));
+    const bottom = monthly.split('id="app-analytics-panel-data"')[1];
+    assert.equal((bottom.match(/Last 30 days/g) ?? []).length, 2);
+    assert.equal((bottom.match(/United States/g) ?? []).length, 4);
+    assert.doesNotMatch(bottom, /Spain|Germany|France/);
+    assert.match(monthly, /All countries · Last 7 days/);
+  }
 });

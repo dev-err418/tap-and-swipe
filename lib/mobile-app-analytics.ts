@@ -27,6 +27,7 @@ import type { NativePaywallReport } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_TRIAL_OFFER_ATTRIBUTE_KEYS, pokyTrialOfferExperiment } from "./poky-trial-offer";
 import { buildPokyPaywallFlowComparison } from "./poky-paywall-flow-cohorts";
+import { buildAppCountryComparisons, type AppCountryComparisons } from "./app-country-comparisons";
 import { paidSubscriptionActivity } from "./paid-subscription-activity";
 import { installCohortCountries } from "./install-cohort-countries";
 import { subscriptionActiveAt } from "./subscription-retention";
@@ -182,6 +183,7 @@ export type MobileAppAnalytics = SnapshotMetadata & {
   paywallCohortComparisons?: GlowPaywallCohortComparisons | null;
   yearlyPriceComparison?: PaywallCohortComparison | null;
   paywallFlowComparison?: PaywallCohortComparison | null;
+  countryComparisons?: AppCountryComparisons;
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -485,6 +487,7 @@ async function loadSuperwallAppAnalytics(
           minimumInstallVersion ? clickhouseDate(new Date(0)) : start,
           minimumInstallVersion ? clickhouseDate(new Date(comparisonEndMs)) : end,
           minimumInstallVersion,
+          true,
         )
       : Promise.resolve(null),
     includeCountries && includeReports && app.id === "glow"
@@ -532,11 +535,14 @@ async function loadSuperwallAppAnalytics(
         ? pokyExperiments(comparisonFacts)
         : versyExperiments(comparisonFacts)
     : [];
-  const trialCancelTiming = comparisonFacts && minimumInstallVersion
+  const trialCancelTiming = app.id !== "poky" && comparisonFacts && minimumInstallVersion
     ? installCohortTrialSurvival(comparisonFacts.installs, comparisonFacts.events, minimumInstallVersion, comparisonEndMs) : null;
 
-  let journey = journeyResult.status === "fulfilled"
-    ? withJourneyInstallVersions(journeyResult.value, comparisonFacts?.installs ?? []) : null;
+  const journeyResponse = journeyResult.status === "fulfilled" ? journeyResult.value : null;
+  const journeyCountries = journeyResponse?.countries;
+  const journeyBase: UserJourneyReport | null = journeyResponse ? { status: journeyResponse.status, title: journeyResponse.title,
+    variants: journeyResponse.variants, versions: journeyResponse.versions, note: journeyResponse.note } : null;
+  let journey = withJourneyInstallVersions(journeyBase, comparisonFacts?.installs ?? []);
   if (journey && comparisonFacts) journey = withJourneyConversions(journey, app.id, comparisonFacts.installs, comparisonFacts.events,
     comparisonFacts.attributes, comparisonStartMs, comparisonEndMs, comparisonEndMs);
   const conversions = comparisonFacts ? versionCohortConversions(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonStartMs, comparisonEndMs, comparisonEndMs) : null;
@@ -600,8 +606,12 @@ async function loadSuperwallAppAnalytics(
           comparisonStartMs, comparisonEndMs, comparisonEndMs) : null,
     yearlyPriceComparison: app.id === "versy" && comparisonFacts
       ? buildVersyYearlyPriceComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonEndMs) : null,
-    paywallFlowComparison: app.id === "poky" && facts
-      ? buildPokyPaywallFlowComparison(facts.installs, facts.events, facts.attributes, startMs, endMs) : null,
+    paywallFlowComparison: app.id === "poky" && comparisonFacts
+      ? buildPokyPaywallFlowComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes,
+          comparisonStartMs, comparisonEndMs, comparisonEndMs) : null,
+    countryComparisons: comparisonFacts ? buildAppCountryComparisons({ appId: app.id, installs: comparisonFacts.installs,
+      events: comparisonFacts.events, attributes: comparisonFacts.attributes, asOf: comparisonEndMs,
+      journey: journeyBase, journeyCountries }) : undefined,
   };
 }
 

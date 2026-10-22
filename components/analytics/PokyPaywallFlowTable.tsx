@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { DashboardCard } from "./DashboardCard";
 import { JourneyVersionComparison } from "./UserJourneyFunnel";
 import type { PaywallCohortComparison } from "@/lib/glow-paywall-cohort-comparisons";
+import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 
 const FLOW_PREVIEWS = {
   current: {
@@ -30,7 +31,7 @@ export default function PokyPaywallFlowTable({ report, windowLabel }: { report: 
   const preview = selectedFlow ? FLOW_PREVIEWS[selectedFlow] : null;
   return <Dialog open={selectedFlow !== null} onOpenChange={(open) => { if (!open) setSelectedFlow(null); }}>
     <DashboardCard title="Paywall flows" contentClassName="pt-0"
-    action={<span className="text-xs text-muted-foreground">Installs {windowLabel.toLowerCase()}</span>}>
+    action={<span className="text-xs text-muted-foreground">{experimentCohortLabel("poky") ?? windowLabel}</span>}>
     {!report || report.status === "unavailable"
       ? <p role="status" className="py-2 text-sm text-muted-foreground">Paywall flow reporting is unavailable. Refresh to retry.</p>
       : <>

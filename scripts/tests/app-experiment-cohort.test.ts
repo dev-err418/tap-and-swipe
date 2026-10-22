@@ -16,13 +16,13 @@ const day = 86_400_000;
 test("comparison cohorts use the configured minimum first-install version, including future releases", () => {
   assert.equal(experimentMinimumInstallVersion("glow"), "1.8.3");
   assert.equal(experimentMinimumInstallVersion("versy"), "1.2.6");
-  assert.equal(experimentMinimumInstallVersion("poky"), undefined);
+  assert.equal(experimentMinimumInstallVersion("poky"), "1.1.10");
   for (const version of ["1.8.3", "1.8.3.0", "1.8.10", "1.9", "2.0"]) assert.equal(installVersionAtLeast(version, "1.8.3"), true, version);
   for (const version of ["1.8.2", "1.7.99", "", "unknown", "2.beta", "1.8.3-debug"]) assert.equal(installVersionAtLeast(version, "1.8.3"), false, version);
   assert.equal(experimentCohortLabel("versy"), "Installed on v1.2.6+");
 });
 
-for (const appId of ["glow", "versy"] as const) {
+for (const appId of ["glow", "versy", "poky"] as const) {
   test(`${appId} includes qualifying installs older than seven days and never enrolls an upgraded legacy install`, () => {
     const minimum = experimentMinimumInstallVersion(appId)!;
     const install = (appUserId: string, appVersion: string, installedAt: number) => ({ appUserId, appVersion, installedAt });
@@ -51,7 +51,7 @@ for (const appId of ["glow", "versy"] as const) {
 }
 
 test("native and onboarding queries filter first install versions before constructing assignment denominators", async () => {
-  for (const [applicationId, minimum] of [[54736, "1.8.3"], [51393, "1.2.6"]] as const) {
+  for (const [applicationId, minimum] of [[54736, "1.8.3"], [51393, "1.2.6"], [49771, "1.1.10"]] as const) {
     const expectedSql = experimentInstallUsersSql(applicationId, minimum);
     assert.match(expectedSql, /argMin\(JSONExtractString\(meta, 'appVersion'\), ts\)/);
     assert.match(expectedSql, /isSandbox = 0/);
@@ -66,11 +66,11 @@ test("native and onboarding queries filter first install versions before constru
 });
 
 test("journey SQL uses the same all-time minimum install cohort as its outcome metrics", async () => {
-  for (const appId of ["glow", "versy"] as const) {
+  for (const appId of ["glow", "versy", "poky"] as const) {
     let sql = "";
     const minimum = experimentMinimumInstallVersion(appId)!;
     await loadUserJourney(async <T,>(query: string): Promise<T[]> => { sql = query; return []; }, appId,
-      appId === "glow" ? 54736 : 51393, "1970-01-01 00:00:00", "2026-10-22 12:00:00", minimum);
+      appId === "glow" ? 54736 : appId === "poky" ? 49771 : 51393, "1970-01-01 00:00:00", "2026-10-22 12:00:00", minimum);
     assert.match(sql, new RegExp(`tuple\\(${minimum.split(".").join(", ")}, 0\\)`));
     assert.match(sql, /firstInstallDate >= toDateTime64\('1970-01-01 00:00:00'/);
     assert.match(sql, /match\(version,/);

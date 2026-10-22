@@ -513,10 +513,15 @@ async function AppDetail({
   appId: AppId;
 }) {
   let app: MobileAppAnalytics | null = null;
+  let countryReport: MobileAppAnalytics | null = null;
   try {
-    // Load the Data tab first. A/B tests and paywall reports use their own
-    // 30-day request when the corresponding tab is opened.
-    app = await getMobileAppById(period, appId, { sessions: false, includeReports: false });
+    // Compact comparison tables do not need the detailed experiment reports.
+    const current = getMobileAppById(period, appId, { sessions: false, includeReports: false });
+    const monthly = period === "month" ? current : getMobileAppById("month", appId, { sessions: false, includeReports: false });
+    const [currentResult, monthlyResult] = await Promise.allSettled([current, monthly]);
+    if (currentResult.status === "rejected") throw currentResult.reason;
+    app = currentResult.value;
+    countryReport = monthlyResult.status === "fulfilled" ? monthlyResult.value : null;
   } catch (error) {
     const log = process.env.NODE_ENV === "development" ? console.warn : console.error;
     log("tap_and_swipe.mobile_app_detail_failed", {
@@ -570,9 +575,10 @@ async function AppDetail({
           <ArrowLeft className="size-4" />
           All apps
         </Link>
+      </div>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
+      <AppOverviewPanel
+        headerStart={<div className="flex min-w-0 items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={app.iconUrl}
@@ -584,12 +590,8 @@ async function AppDetail({
             <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
               <strong className="font-semibold text-black">{app.name}</strong>
             </h1>
-          </div>
-          <AnalyticsPeriodSelect period={period} app={app.id} />
-        </div>
-      </div>
-
-      <AppOverviewPanel
+          </div>}
+        headerEnd={<AnalyticsPeriodSelect period={period} app={app.id} />}
         appId={app.id}
         installs={app.downloads}
         windowLabel={windowLabel}
@@ -599,7 +601,6 @@ async function AppDetail({
         countries={app.countries}
         dataCountries={app.dataCountries}
         cohortDataAvailable={app.cohortDataAvailable}
-        experimentCountries={app.countries}
         plans={app.plans}
         retention={app.retention}
         trialCancelTiming={app.trialCancelTiming}
@@ -607,7 +608,8 @@ async function AppDetail({
         paywallCohortComparisons={app.paywallCohortComparisons}
         yearlyPriceComparison={app.yearlyPriceComparison}
         paywallFlowComparison={app.paywallFlowComparison}
-        deferExperiments
+        countryComparisons={app.countryComparisons}
+        countryBreakdown={{ countries: countryReport?.dataCountries ?? [], available: Boolean(countryReport?.cohortDataAvailable), windowLabel: "Last 30 days" }}
       />
     </div>
   );
