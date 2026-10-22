@@ -57,11 +57,11 @@ test("latest versions sort numerically and old uninstrumented installs do not be
   assert.match(html, /v1.2.9/);
   assert.doesNotMatch(html, /Reached paywall|Tracked route starts|step drop-off/);
   assert.match(html, /—/);
-  assert.match(html, /Installs<\/th><th[^>]*[^]*?>APPU lift<\/th><th[^>]*>Win %<\/th>/);
+  assert.doesNotMatch(html, /APPU lift|Win %/);
   assert.match(html, /overflow-x-auto[^\"]*scrollbar-none/);
-  assert.doesNotMatch(html, /<svg/); // Version tables retain numeric lift and Win %, without a graph.
+  assert.doesNotMatch(html, /<svg/);
   const flowHtml = renderToStaticMarkup(createElement(JourneyVersionComparison, {
-    cohorts: enriched.versions!.slice(0, 3), allUsersOnly: true, showArpuGraph: true, rowHeading: "Flow",
+    cohorts: enriched.versions!.slice(0, 3), allUsersOnly: true, showAppuComparison: true, showArpuGraph: true, rowHeading: "Flow",
   }));
   assert.match(flowHtml, /<svg/);
   assert.match(flowHtml, /Win %/);

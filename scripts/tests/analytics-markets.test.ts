@@ -1,16 +1,36 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
 import { buildAnalyticsMarkets, DEFAULT_APP_LANGUAGE, marketLanguage, marketCountry } from "../../lib/analytics-markets";
 const start = Date.parse("2026-10-01T00:00:00Z"), day = 86400000;
 const install = (appUserId: string, language: string, country: string, installedAt = start) => ({ appUserId, language, country, installedAt, appVersion: "1.0" });
 const event = (appUserId: string, overrides = {}) => ({ appUserId, name: "initial_purchase", originalTransactionId: appUserId, transactionId: appUserId, periodType: "normal", netProceeds: 10, isRefund: false, eventTs: start + day, attributionTs: start + day, expiresAt: 0, ...overrides });
 test("app language defaults and locale normalization keep country independent", () => {
-  assert.deepEqual(DEFAULT_APP_LANGUAGE, { poky: "es", glow: "en", versy: "pt" });
+  assert.deepEqual(DEFAULT_APP_LANGUAGE, { poky: "es", glow: "en", versy: "all" });
   assert.equal(marketLanguage("es-MX"), "es");
   assert.equal(marketLanguage("pt_BR"), "pt");
   assert.equal(marketLanguage(""), "unknown");
   assert.equal(marketCountry("mx"), "MX");
   assert.equal(marketCountry(""), "unknown");
+});
+
+test("Versy Data includes English trials rather than silently selecting the Portuguese slice", () => {
+  const markets = buildAnalyticsMarkets({ period: "week", startMs: start, endMs: start + 7 * day, asOf: start + 10 * day,
+    downloads: [], attributes: new Map(),
+    installs: [install("english-a", "en", "US"), install("english-b", "en", "GB"), install("portuguese", "pt", "BR")],
+    events: [event("english-a", { periodType: "trial", netProceeds: 0 }), event("english-b", { periodType: "trial", netProceeds: 0 }),
+      event("portuguese", { periodType: "trial", netProceeds: 0 })],
+  });
+  assert.equal(markets.slices["all:all"].conversions.global.trials, 3);
+  assert.equal(markets.slices["pt:all"].conversions.global.trials, 1);
+  const html = renderToStaticMarkup(createElement(AppOverviewPanel, {
+    appId: "versy", installs: 3, windowLabel: "Last 7 days", trend: [], countries: [], plans: [], retention: [], markets,
+  }));
+  assert.match(html, /All languages/);
+  assert.match(html, /3 \/ 3/);
+  assert.doesNotMatch(html, /Portuguese|APPU lift|Win %/);
 });
 test("market intersections freeze first metadata and retain anonymous renewals in the install cohort", () => {
   const report = buildAnalyticsMarkets({ period: "month", startMs: start, endMs: start + 3 * day, asOf: start + 10 * day, downloads: [],

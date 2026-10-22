@@ -268,9 +268,9 @@ Glow and Versy use version-based install cohorts across the Data comparison tabl
 
 ### App version comparison
 
-All Data comparison tables include APPU lift and Win % immediately after Installs.
-App versions show numeric lift only; journey, paywall flow, price and joint tables
-also show a red/green uncertainty distribution. Tables scroll horizontally with
+Journey, paywall flow, price and joint tables include APPU lift and Win % immediately after Installs, with a red/green uncertainty distribution.
+App versions show APPU and conversion metrics without lift or Win %.
+Versy’s Data overview, App versions and country charts use all languages; there is no implicit Portuguese-only restriction. Tables scroll horizontally with
 hidden scrollbars. The first populated row in each audience is the labelled baseline.
 Win % is the estimated probability of highest APPU among populated rows in that
 same audience, using 20,000 deterministic normal draws of cohort means with actual

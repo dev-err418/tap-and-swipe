@@ -55,7 +55,7 @@ export default function GlowPaywallCohortTables({ report, windowLabel }: {
           : <>
             {comparison.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
             <JourneyVersionComparison cohorts={comparison.rows} rowLabels={comparison.labels} rowHeading={heading}
-              allUsersOnly showArpuGraph showInstallPaid showRefundRate
+              allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate
               onRowClick={key === "prices" ? undefined : openPreview} />
           </>}
       </DashboardCard>;

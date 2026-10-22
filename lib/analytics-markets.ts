@@ -3,7 +3,7 @@ import { versionCohortConversions, type VersionConversions } from "./version-coh
 import type { MobileAppCountryRow, MobileAppPlanCountryRow, MobileAppRetentionCountryRow, TrialCancelTiming } from "./mobile-app-analytics";
 import type { JourneyVersionCohort } from "./user-journey";
 
-export const DEFAULT_APP_LANGUAGE = { poky: "es", glow: "en", versy: "pt" } as const;
+export const DEFAULT_APP_LANGUAGE = { poky: "es", glow: "en", versy: "all" } as const;
 export function marketLanguage(value: string) {
   const code = value.trim().toLowerCase().split(/[-_]/)[0];
   return /^[a-z]{2,3}$/.test(code) ? code : "unknown";

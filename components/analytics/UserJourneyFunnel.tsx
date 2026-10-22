@@ -71,6 +71,7 @@ export default function UserJourneyFunnel({
           rowHeading="Onboarding funnel"
           rowLabels={Object.fromEntries(report.variants.map((row) => [row.key, journeyVariantLabel(row)]))}
           allUsersOnly
+          showAppuComparison
           showArpuGraph
           showRefundRate
           showInstallPaid
@@ -129,7 +130,7 @@ function journeyVariantLabel(variant: UserJourneyVariantResult) {
   return variant.family && variant.family !== variant.label ? `${variant.family} · ${variant.label}` : variant.label;
 }
 
-export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRefundRate = false, splitAdSources = false, showInstallPaid = false, rowHeading = "First version", rowLabels, showArpuGraph = false, onRowClick }: {
+export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRefundRate = false, splitAdSources = false, showInstallPaid = false, rowHeading = "First version", rowLabels, showAppuComparison = false, showArpuGraph = false, onRowClick }: {
   cohorts: JourneyVersionCohort[];
   allUsersOnly?: boolean;
   showRefundRate?: boolean;
@@ -137,28 +138,29 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
   showInstallPaid?: boolean;
   rowHeading?: string;
   rowLabels?: Record<string, string>;
+  showAppuComparison?: boolean;
   showArpuGraph?: boolean;
   onRowClick?: (key: string, trigger: HTMLButtonElement) => void;
 }) {
   const audiences = allUsersOnly ? [{ key: "global", label: "All users" }] as const : splitAdSources
     ? [{ key: "global", label: "All users" }, { key: "metaAds", label: "Meta Ads" }, { key: "asa", label: "ASA" }, { key: "nonAds", label: "Organic" }] as const
     : [{ key: "global", label: "All users" }, { key: "ads", label: "Ads" }, { key: "nonAds", label: "Non-ads" }] as const;
-  const comparisons = useMemo(() => Object.fromEntries((["global", "ads", "metaAds", "asa", "nonAds"] as const).map((audience) => {
+  const comparisons = useMemo(() => Object.fromEntries((showAppuComparison ? ["global", "ads", "metaAds", "asa", "nonAds"] as const : []).map((audience) => {
     const results = compareArpu(cohorts.map((cohort) => ({ key: cohort.version, metric: cohort.conversions?.[audience] })));
     const extent = Math.max(0.1, ...results.flatMap((result) => result.interval && result.lift != null
       ? [Math.abs(result.lift) + 3 * (result.interval[1] - result.interval[0]) / 3.92] : []));
     return [audience, { results, extent }];
-  })), [cohorts]);
+  })), [cohorts, showAppuComparison]);
   const labelFor = (key: string) => rowLabels?.[key] ?? (key === "unknown" ? "Unknown" : `v${key}`);
   const fields = showInstallPaid ? ["trials", "paid", "installPaid"] as const : ["trials", "paid"] as const;
   if (!cohorts.length) return <p className="text-sm text-muted-foreground">No known first-seen versions in this install window.</p>;
   return <Tooltip.Provider delayDuration={150}><div className="space-y-3">
     <div className="min-w-0 overflow-x-auto rounded-xl border border-black/[0.06] scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" role="region" aria-label={rowHeading === "First version" ? "Conversions by first-seen version" : `Conversions by ${rowHeading.toLowerCase()}`} tabIndex={0}>
-      <table className="w-full text-left text-xs" style={{ minWidth: 136 + audiences.length * (((showInstallPaid ? 560 : 440) + (showArpuGraph ? 336 : 176)) + (showRefundRate ? 112 : 0)) }}>
+      <table className="w-full text-left text-xs" style={{ minWidth: 136 + audiences.length * ((showInstallPaid ? 560 : 440) + (showAppuComparison ? showArpuGraph ? 336 : 176 : 0) + (showRefundRate ? 112 : 0)) }}>
         <thead className="bg-[#f8f8f8]">
           {!allUsersOnly ? <tr className="border-b border-black/[0.06]">
             <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-32 bg-[#f8f8f8] px-4 py-3 font-medium">{rowHeading}</th>
-            {audiences.map(({ key, label }) => <th key={key} title={key === "asa" ? "Apple Search Ads" : key === "nonAds" ? "No recorded ad attribution" : undefined} scope="colgroup" colSpan={(showInstallPaid ? 7 : 6) + (showRefundRate ? 1 : 0)} className="border-l border-black/[0.06] px-3 py-3 font-medium">
+            {audiences.map(({ key, label }) => <th key={key} title={key === "asa" ? "Apple Search Ads" : key === "nonAds" ? "No recorded ad attribution" : undefined} scope="colgroup" colSpan={(showInstallPaid ? 5 : 4) + (showAppuComparison ? 2 : 0) + (showRefundRate ? 1 : 0)} className="border-l border-black/[0.06] px-3 py-3 font-medium">
               {label}{key === "nonAds" ? <span className="ml-2 font-normal text-muted-foreground">No recorded ad attribution</span> : null}
             </th>)}
           </tr> : null}
@@ -166,8 +168,10 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
             {allUsersOnly ? <th scope="col" className="sticky left-0 z-10 min-w-32 bg-[#f8f8f8] px-4 py-3 text-foreground font-medium">{rowHeading}</th> : null}
             {audiences.map(({ key: audience }) => <Fragment key={audience}>
               <th scope="col" className="min-w-24 border-l border-black/[0.06] px-3 py-3 text-right font-medium">Installs</th>
-              <th scope="col" className={cn("whitespace-nowrap px-3 py-3 text-right font-medium", showArpuGraph ? "min-w-64" : "min-w-24")} title="Observed APPU lift and approximate 95% interval versus the first populated row. Hover for details.">APPU lift</th>
-              <th scope="col" className="min-w-20 whitespace-nowrap px-3 py-3 text-right font-medium" title="Estimated chance of highest APPU among populated rows in this audience">Win %</th>
+              {showAppuComparison ? <>
+                <th scope="col" className={cn("whitespace-nowrap px-3 py-3 text-right font-medium", showArpuGraph ? "min-w-64" : "min-w-24")} title="Observed APPU lift and approximate 95% interval versus the first populated row. Hover for details.">APPU lift</th>
+                <th scope="col" className="min-w-20 whitespace-nowrap px-3 py-3 text-right font-medium" title="Estimated chance of highest APPU among populated rows in this audience">Win %</th>
+              </> : null}
               <th scope="col" className="min-w-28 px-3 py-3 text-right font-medium" title="Average proceeds per user: net proceeds in USD / all installs in this cohort, including non-payers">APPU</th>
               <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium">Trial start</th>
               <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Paid users / trials whose recorded end has passed">Trial → paid</th>
@@ -197,9 +201,9 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
               });
               return <Fragment key={audience}>
                 <td className="border-l border-black/[0.06] px-3 py-4 text-right tabular-nums">{metric ? metric.installs.toLocaleString("en-US") : "—"}</td>
-                <ArpuComparisonCells result={comparisons[audience].results.find((result) => result.key === cohort.version)!}
+                {showAppuComparison ? <ArpuComparisonCells result={comparisons[audience].results.find((result) => result.key === cohort.version)!}
                   showGraph={showArpuGraph} metric={metric} label={labelFor(cohort.version)} extent={comparisons[audience].extent}
-                  baselineLabel={labelFor(comparisons[audience].results[0]?.baseline ?? cohort.version)} />
+                  baselineLabel={labelFor(comparisons[audience].results[0]?.baseline ?? cohort.version)} /> : null}
                 <td title={bestAppu ? "Highest average proceeds per user among these cohorts" : "Average proceeds per user (USD)"}
                   className={cn("whitespace-nowrap px-3 py-4 text-right font-semibold tabular-nums", bestAppu && "bg-orange-100/80 text-orange-900")}>
                   {appu == null ? "—" : appu.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 })}
