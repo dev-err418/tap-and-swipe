@@ -7,6 +7,7 @@ import { DashboardCard } from "./DashboardCard";
 import { JourneyVersionComparison } from "./UserJourneyFunnel";
 import type { GlowPaywallCohortComparisons } from "@/lib/glow-paywall-cohort-comparisons";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
+import { AppuReadinessIndicator } from "./AppuReadinessIndicator";
 
 const FLOW_PREVIEWS = {
   standard: {
@@ -49,6 +50,7 @@ export default function GlowPaywallCohortTables({ report, windowLabel }: {
     ] as const).map(({ key, title, heading }) => {
       const comparison = report?.[key];
       return <DashboardCard key={key} title={title} contentClassName="pt-0"
+        titleAccessory={comparison && comparison.status !== "unavailable" ? <AppuReadinessIndicator cohorts={comparison.rows} /> : null}
         action={<span className="text-xs text-muted-foreground">{experimentCohortLabel("glow") ?? windowLabel}</span>}>
         {!comparison || comparison.status === "unavailable"
           ? <p role="status" className="py-2 text-sm text-muted-foreground">{title} reporting is unavailable. Refresh to retry.</p>

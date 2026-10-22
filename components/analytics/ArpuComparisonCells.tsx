@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import { Tooltip } from "radix-ui";
-import type { ArpuComparison } from "@/lib/arpu-comparison";
+import { APPU_CONFIDENCE_LEVEL, APPU_CONFIDENCE_Z, type ArpuComparison } from "@/lib/arpu-comparison";
 import type { VersionConversionMetric } from "@/lib/version-cohort-conversions";
 
 const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
@@ -32,7 +32,7 @@ export function ArpuComparisonCells({ result, metric, label, baselineLabel, exte
               <dt className="text-zinc-500">Installs</dt><dd className="text-right">{metric?.installs.toLocaleString("en-US") ?? "—"}</dd>
               <dt className="text-zinc-500">Chance to win</dt><dd className="text-right">{result.winProbability == null ? "—" : percent(result.winProbability)}</dd>
               <dt className="text-zinc-500">APPU lift</dt><dd className="text-right">{result.isBaseline ? "Baseline" : result.lift == null ? "—" : delta(result.lift)}</dd>
-              <dt className="text-zinc-500">95% interval</dt><dd className="text-right">{result.interval ? `[${delta(result.interval[0])}, ${delta(result.interval[1])}]` : "—"}</dd>
+              <dt className="text-zinc-500">{Math.round(APPU_CONFIDENCE_LEVEL * 100)}% interval</dt><dd className="text-right">{result.interval ? `[${delta(result.interval[0])}, ${delta(result.interval[1])}]` : "—"}</dd>
             </dl>
             <p className="mt-3 text-zinc-500">Compared with {baselineLabel}. Win % estimates the chance of highest APPU among populated rows in this audience.</p>
             <p className="mt-2 text-zinc-500">Normal approximation using net proceeds per install, including non-payers and refunds. Cohort ages and audiences can differ; this is not proof of a causal lift.</p>
@@ -53,7 +53,7 @@ function LiftDistribution({ result, extent }: { result: ArpuComparison; extent: 
   const width = 360;
   const x = (value: number) => width / 2 + value / extent * (width / 2 - 4);
   const lift = result.lift;
-  const se = result.interval ? (result.interval[1] - result.interval[0]) / (2 * 1.96) : 0;
+  const se = result.interval ? (result.interval[1] - result.interval[0]) / (2 * APPU_CONFIDENCE_Z) : 0;
   const points = result.interval && lift != null && se > 0 ? Array.from({ length: 61 }, (_, index) => {
     const value = lift + (index / 60 * 6 - 3) * se;
     return { x: x(value), h: 10 * Math.exp(-0.5 * ((value - lift) / se) ** 2) };

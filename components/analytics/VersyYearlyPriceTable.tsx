@@ -2,9 +2,11 @@ import { DashboardCard } from "./DashboardCard";
 import { JourneyVersionComparison } from "./UserJourneyFunnel";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 import type { PaywallCohortComparison } from "@/lib/glow-paywall-cohort-comparisons";
+import { AppuReadinessIndicator } from "./AppuReadinessIndicator";
 
 export default function VersyYearlyPriceTable({ report }: { report: PaywallCohortComparison | null }) {
   return <DashboardCard title="Yearly prices" contentClassName="pt-0"
+    titleAccessory={report && report.status !== "unavailable" ? <AppuReadinessIndicator cohorts={report.rows} /> : null}
     action={<span className="text-xs text-muted-foreground">{experimentCohortLabel("versy")}</span>}>
     {!report || report.status === "unavailable"
       ? <p role="status" className="py-2 text-sm text-muted-foreground">Yearly price reporting is unavailable. Refresh to retry.</p>

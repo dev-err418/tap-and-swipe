@@ -149,7 +149,7 @@ function VersionTableSkeleton({ app }: { app: AppId }) {
 
 function ComparisonTableSkeleton({ title, rows, rowHeading, cohortLabel }: { title: string; rows: number; rowHeading: string; cohortLabel: string }) {
   const fields = ["Installs", "APPU lift", "Win %", "APPU", "Trial start", "Trial → paid", "Install → paid", "Refund rate"];
-  return <DashboardCard title={title} action={<span className="text-xs text-muted-foreground">{cohortLabel}</span>} contentClassName="pt-0">
+  return <DashboardCard title={title} titleAccessory={<span aria-hidden="true" className="m-0.5 size-5 rounded-full border-[3px] border-black/[0.06] motion-safe:animate-pulse" />} action={<span className="text-xs text-muted-foreground">{cohortLabel}</span>} contentClassName="pt-0">
     <div className="overflow-x-auto rounded-xl border border-black/[0.06] scrollbar-none" aria-hidden="true">
       <table className="w-full min-w-[1348px] text-left text-xs">
         <thead className="bg-[#f8f8f8] text-muted-foreground"><tr><th className="min-w-32 px-4 py-3 font-medium text-foreground">{rowHeading}</th>{fields.map((field) => <th key={field} className={`${field === "APPU lift" ? "min-w-[460px]" : "min-w-24"} whitespace-nowrap px-3 py-3 text-right font-medium`}>{field}</th>)}</tr></thead>

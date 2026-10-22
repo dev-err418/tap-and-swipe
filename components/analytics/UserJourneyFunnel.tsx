@@ -2,8 +2,9 @@
 
 import { Fragment, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Tooltip } from "radix-ui";
-import { compareArpu } from "@/lib/arpu-comparison";
+import { APPU_CONFIDENCE_LEVEL, APPU_CONFIDENCE_Z, compareArpu } from "@/lib/arpu-comparison";
 import { ArpuComparisonCells } from "./ArpuComparisonCells";
+import { AppuReadinessIndicator } from "./AppuReadinessIndicator";
 import { createPortal } from "react-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
@@ -63,6 +64,7 @@ export default function UserJourneyFunnel({
     <Dialog open={graphOpen} onOpenChange={setGraphOpen}>
       <DashboardCard
         title={report.title}
+        titleAccessory={<AppuReadinessIndicator cohorts={report.variants.map((row) => ({ version: row.key, installs: row.assigned, tracked: row.assigned, variants: [row], conversions: row.conversions }))} />}
         action={<span className="text-xs text-muted-foreground">{cohortLabel}</span>}
         contentClassName="pt-0"
       >
@@ -149,7 +151,7 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
   const comparisons = useMemo(() => Object.fromEntries((showAppuComparison ? ["global", "ads", "metaAds", "asa", "nonAds"] as const : []).map((audience) => {
     const results = compareArpu(cohorts.map((cohort) => ({ key: cohort.version, metric: cohort.conversions?.[audience] })));
     const extent = Math.max(0.1, ...results.flatMap((result) => result.interval && result.lift != null
-      ? [Math.abs(result.lift) + 3 * (result.interval[1] - result.interval[0]) / 3.92] : []));
+      ? [Math.abs(result.lift) + 3 * (result.interval[1] - result.interval[0]) / (2 * APPU_CONFIDENCE_Z)] : []));
     return [audience, { results, extent }];
   })), [cohorts, showAppuComparison]);
   const labelFor = (key: string) => rowLabels?.[key] ?? (key === "unknown" ? "Unknown" : `v${key}`);
@@ -170,7 +172,7 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
             {audiences.map(({ key: audience }) => <Fragment key={audience}>
               <th scope="col" className="min-w-24 border-l border-black/[0.06] px-3 py-3 text-right font-medium">Installs</th>
               {showAppuComparison ? <>
-                <th scope="col" className={cn("whitespace-nowrap px-3 py-3 text-right font-medium", showArpuGraph ? "min-w-[460px]" : "min-w-24")} title="Observed APPU lift and approximate 95% interval versus the first populated row. Hover for details.">APPU lift</th>
+                <th scope="col" className={cn("whitespace-nowrap px-3 py-3 text-right font-medium", showArpuGraph ? "min-w-[460px]" : "min-w-24")} title={`Observed APPU lift and approximate ${Math.round(APPU_CONFIDENCE_LEVEL * 100)}% interval versus the first populated row. Hover for details.`}>APPU lift</th>
                 <th scope="col" className="min-w-20 whitespace-nowrap px-3 py-3 text-right font-medium" title="Estimated chance of highest APPU among populated rows in this audience">Win %</th>
               </> : null}
               <th scope="col" className="min-w-28 px-3 py-3 text-right font-medium" title="Average proceeds per user: net proceeds in USD / all installs in this cohort, including non-payers">APPU</th>

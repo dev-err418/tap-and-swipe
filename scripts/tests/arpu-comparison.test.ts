@@ -61,3 +61,11 @@ test("zero or uncertain baseline has no misleading relative interval; empty rows
   assert.equal(results[1].baseline, "a");
   assert.ok(Math.abs(results[1].winProbability! - 0.5) < 0.02);
 });
+
+test("APPU lift intervals use an 85% two-sided confidence level", () => {
+  const result = compareArpu([row("a"), row("b", 4)])[1];
+  const standardError = Math.sqrt((9 / 100) / 2 ** 2 + 4 ** 2 * (9 / 100) / 2 ** 4);
+  const margin = 1.4395314709384563 * standardError;
+  assert.ok(Math.abs(result.interval![0] - (1 - margin)) < 1e-12);
+  assert.ok(Math.abs(result.interval![1] - (1 + margin)) < 1e-12);
+});

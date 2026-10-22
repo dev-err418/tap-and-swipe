@@ -7,6 +7,7 @@ const CONVERSION_MDE = 0.3;
 const VALUE_MDE = 0.3;
 const SIMULATION_RUNS = 20_000;
 const Z_95_TWO_SIDED = 1.959963984540054;
+export const EXPERIMENT_CONFIDENCE_Z = { 0.85: 1.4395314709384563, 0.95: Z_95_TWO_SIDED } as const;
 const Z_80_POWER = 0.8416212335729143;
 
 export type ExperimentArm = {
@@ -68,6 +69,7 @@ export type ExperimentReadiness = {
 };
 
 export type ExperimentReadinessOptions = {
+  confidenceLevel?: keyof typeof EXPERIMENT_CONFIDENCE_Z;
   minimumDetectableEffect?: number;
   minimumSamplesPerVariant?: number;
   minimumConversionsPerVariant?: number;
@@ -194,6 +196,7 @@ export function calculateExperimentReadiness(
   metric: ExperimentMetricKind,
   options: ExperimentReadinessOptions = {},
 ): ExperimentReadiness {
+  const confidenceLevel = options.confidenceLevel ?? CONFIDENCE_LEVEL;
   const minimumDetectableEffect = options.minimumDetectableEffect
     ?? (metric === "conversion_rate" ? CONVERSION_MDE : VALUE_MDE);
   const minimumSamplesPerVariant = options.minimumSamplesPerVariant ?? MIN_SAMPLES;
@@ -201,7 +204,7 @@ export function calculateExperimentReadiness(
   const base = {
     observed: arms.reduce((sum, arm) => sum + Math.max(0, arm.exposures), 0),
     minimumDetectableEffect,
-    confidenceLevel: CONFIDENCE_LEVEL,
+    confidenceLevel,
     power: DEFAULT_POWER,
   };
   if (arms.length < 2) return unavailableReadiness(base, "Waiting for at least two variants.");
@@ -218,6 +221,7 @@ export function calculateExperimentReadiness(
     minimumDetectableEffect,
     minimumSamplesPerVariant,
     minimumConversionsPerVariant,
+    EXPERIMENT_CONFIDENCE_Z[confidenceLevel],
   );
   if (requiredPerVariant == null || !Number.isFinite(requiredPerVariant)) {
     return unavailableReadiness(base, "A stable sample target cannot be estimated yet.");
@@ -232,7 +236,7 @@ export function calculateExperimentReadiness(
   const estimatedCompletionAt = estimatedDaysRemaining != null && options.asOfMs != null
     ? new Date(options.asOfMs + estimatedDaysRemaining * 86_400_000).toISOString()
     : null;
-  const decisive = (options.decisiveProbability ?? 0) >= CONFIDENCE_LEVEL;
+  const decisive = (options.decisiveProbability ?? 0) >= confidenceLevel;
   const status: ExperimentReadinessStatus = remaining > 0
     ? "collecting"
     : decisive
@@ -265,16 +269,17 @@ function requiredSamplesPerVariant(
   mde: number,
   minimumSamples: number,
   minimumConversions: number,
+  confidenceZ: number,
 ) {
   const control = stats[0];
-  const z = Z_95_TWO_SIDED + Z_80_POWER;
+  const z = confidenceZ + Z_80_POWER;
   if (metric === "conversion_rate") {
     const p1 = control.mean;
     const p2 = Math.min(0.999999, p1 * (1 + mde));
     const difference = p2 - p1;
     if (difference <= 0) return null;
     const midpoint = (p1 + p2) / 2;
-    const numerator = Z_95_TWO_SIDED * Math.sqrt(2 * midpoint * (1 - midpoint))
+    const numerator = confidenceZ * Math.sqrt(2 * midpoint * (1 - midpoint))
       + Z_80_POWER * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2));
     return Math.max(minimumSamples, Math.ceil((numerator / difference) ** 2), Math.ceil(minimumConversions / p1), Math.ceil(minimumConversions / (1 - p1)));
   }

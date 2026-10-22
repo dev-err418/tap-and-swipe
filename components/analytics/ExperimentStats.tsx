@@ -77,6 +77,7 @@ export function ReadinessIndicator({ readiness }: { readiness: ExperimentReadine
   const statusColor = readiness.status === "decisive" ? WIN_COLOR
     : readiness.status === "inconclusive" ? LOSE_COLOR
       : "#525252";
+  const ringColor = readiness.status === "decisive" ? WIN_COLOR : LOSE_COLOR;
   const completion = readiness.estimatedCompletionAt
     ? `around ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "Europe/Paris" }).format(new Date(readiness.estimatedCompletionAt))}`
     : readiness.estimatedDaysRemaining != null && readiness.estimatedDaysRemaining > 0
@@ -107,13 +108,13 @@ export function ReadinessIndicator({ readiness }: { readiness: ExperimentReadine
       onBlur={() => setTooltip(null)}
     >
       <svg viewBox="0 0 22 22" className="size-[22px] -rotate-90" aria-hidden="true">
-        <circle cx="11" cy="11" r={radius} fill="none" stroke={LOSE_COLOR} strokeOpacity="0.14" strokeWidth="3" />
+        <circle cx="11" cy="11" r={radius} fill="none" stroke={ringColor} strokeOpacity="0.14" strokeWidth="3" />
         <circle
           cx="11"
           cy="11"
           r={radius}
           fill="none"
-          stroke={LOSE_COLOR}
+          stroke={ringColor}
           strokeWidth="3"
           strokeLinecap="round"
           strokeDasharray={circumference}

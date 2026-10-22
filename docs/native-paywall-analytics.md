@@ -270,6 +270,13 @@ Glow and Versy use version-based install cohorts across the Data comparison tabl
 
 Journey, paywall flow, price and joint tables include APPU lift and Win % immediately after Installs, with a red/green uncertainty distribution.
 App versions show APPU and conversion metrics without lift or Win %.
+Onboarding, paywall flow, yearly price and joint comparison titles include the
+small readiness ring. It uses observed per-user proceeds variance and the table's
+APPU Win % with a 30% relative-effect, 85% confidence and 80% power
+planning target. Every planned variant must reach its target before the result
+can be decisive; a full sample without an 85% leader stays inconclusive. Missing
+proceeds or variance leave planning unavailable. Country changes recompute the
+indicator from that country's cohorts. App versions have no readiness indicator.
 All apps’ overview, App versions and country charts use all languages; there is no implicit Spanish, English or Portuguese restriction. Tables scroll horizontally with
 hidden scrollbars. The first populated row in each audience is the labelled baseline.
 Win % is the estimated probability of highest APPU among populated rows in that
@@ -278,8 +285,8 @@ sample variance of **per-install total net proceeds** (including zero-paying use
 renewals and refunds). No conversion-rate proxy or synthetic variance is used.
 Estimates need complete revenue, at least two populated rows, 20 installs per
 populated row and positive observed variance in each. Empty rows are excluded.
-The 95% lift interval uses the delta method; it is withheld when the baseline's
-95% interval includes zero. Hover/focus details explain unavailable estimates and
+The 85% lift interval uses the delta method; it is withheld when the baseline's
+85% interval includes zero. Hover/focus details explain unavailable estimates and
 the model. These are descriptive comparisons, not causal claims; cohort ages and
 audiences may differ. No user-level proceeds are sent to the browser.
 

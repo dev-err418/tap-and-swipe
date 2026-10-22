@@ -62,3 +62,19 @@ test("a result is only decisive after both the planned sample and probability th
   );
   assert.equal(complete.status, "decisive");
 });
+
+test("85% confidence lowers the planned sample and requires an 85% leader after the target", () => {
+  const arms = [arm("control", 100, 10, 200, 9), arm("test", 100, 10, 220, 9)];
+  for (const metric of ["conversion_rate", "revenue_per_visitor"] as const) {
+    const standard = calculateExperimentReadiness(arms, metric);
+    const lower = calculateExperimentReadiness(arms, metric, { confidenceLevel: 0.85, decisiveProbability: 0.85 });
+    assert.equal(lower.confidenceLevel, 0.85);
+    assert.equal(lower.power, standard.power);
+    assert.ok(lower.required! < standard.required!);
+    assert.equal(lower.status, "collecting");
+    const complete = arms.map((arm) => ({ ...arm, exposures: 100_000, conversions: 10_000, revenue: 200_000 }));
+    assert.equal(calculateExperimentReadiness(complete, metric, { confidenceLevel: 0.85, decisiveProbability: 0.85 }).status, "decisive");
+    assert.equal(calculateExperimentReadiness(complete, metric, { confidenceLevel: 0.85, decisiveProbability: 0.849 }).status, "inconclusive");
+    assert.equal(calculateExperimentReadiness(complete, metric, { decisiveProbability: 0.85 }).status, "inconclusive");
+  }
+});
