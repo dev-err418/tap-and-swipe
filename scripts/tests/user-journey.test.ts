@@ -86,7 +86,7 @@ test("Poky reports all assigned users and actual paywall views in each variant",
     { variant: "animated_plan_a", key: "onboarding_paywall_screen_seen", users: "20" },
   ] as T[], "poky", 49771, "2026-10-01 00:00:00.000", "2026-10-04 00:00:00.000");
   assert.equal(report.status, "ready");
-  assert.deepEqual(report.variants.map((variant) => variant.completionShare), [0.4, 0.25]);
+  assert.deepEqual(report.variants.map((variant) => variant.completionShare), [0, 0.4, 0.25, 0]);
   const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
   assert.match(html, /No intro · Plan B/);
   assert.match(html, /Animated intro · Plan A/);

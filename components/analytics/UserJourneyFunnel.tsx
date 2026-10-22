@@ -130,7 +130,7 @@ function journeyVariantLabel(variant: UserJourneyVariantResult) {
   return variant.family && variant.family !== variant.label ? `${variant.family} · ${variant.label}` : variant.label;
 }
 
-export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRefundRate = false, splitAdSources = false, showInstallPaid = false, rowHeading = "First version", rowLabels, showAppuComparison = false, showArpuGraph = false, onRowClick }: {
+export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRefundRate = false, splitAdSources = false, showInstallPaid = false, rowHeading = "First version", rowLabels, showAppuComparison = false, showArpuGraph = false, onRowClick, clickableRows }: {
   cohorts: JourneyVersionCohort[];
   allUsersOnly?: boolean;
   showRefundRate?: boolean;
@@ -141,6 +141,7 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
   showAppuComparison?: boolean;
   showArpuGraph?: boolean;
   onRowClick?: (key: string, trigger: HTMLButtonElement) => void;
+  clickableRows?: readonly string[];
 }) {
   const audiences = allUsersOnly ? [{ key: "global", label: "All users" }] as const : splitAdSources
     ? [{ key: "global", label: "All users" }, { key: "metaAds", label: "Meta Ads" }, { key: "asa", label: "ASA" }, { key: "nonAds", label: "Organic" }] as const
@@ -185,7 +186,7 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
         <tbody className="[&>tr>td]:py-2 [&>tr>th]:py-2">
           {cohorts.map((cohort) => <tr key={cohort.version} className="border-t border-black/[0.06]">
             <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-white px-4 py-4 font-medium">
-              {onRowClick ? <button type="button" aria-haspopup="dialog" aria-label={`View screens for ${labelFor(cohort.version)}`}
+              {onRowClick && (!clickableRows || clickableRows.includes(cohort.version)) ? <button type="button" aria-haspopup="dialog" aria-label={`View screens for ${labelFor(cohort.version)}`}
                 className="cursor-pointer rounded-sm text-left underline decoration-black/20 underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 onClick={(event) => onRowClick(cohort.version, event.currentTarget)}>{labelFor(cohort.version)}</button>
                 : labelFor(cohort.version)}

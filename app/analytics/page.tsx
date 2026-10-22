@@ -605,6 +605,8 @@ async function AppDetail({
         trialCancelTiming={app.trialCancelTiming}
         userJourney={app.userJourney}
         paywallCohortComparisons={app.paywallCohortComparisons}
+        yearlyPriceComparison={app.yearlyPriceComparison}
+        paywallFlowComparison={app.paywallFlowComparison}
         deferExperiments
       />
     </div>

@@ -4,7 +4,7 @@ import { productionAnalyticsFilter } from "./analytics-production";
 import { experimentInstallCohort, experimentMinimumInstallVersion, installVersionPredicateSql } from "./app-experiment-cohort";
 import { ACQUISITION_ATTRIBUTE_KEYS, versionCohortConversions } from "./version-cohort-conversions";
 import { analyticsSnapshot, type SnapshotMetadata } from "./analytics-snapshot";
-import { sevenDayTrialSurvival } from "./trial-survival";
+import { installCohortTrialSurvival } from "./install-cohort-trial-survival";
 import { onboardingSessionActivity } from "./onboarding-session-activity";
 import { versyOnboardingAudience, versyOnboardingPaywallReached } from "./versy-onboarding-analytics";
 import { loadGlowOnboardingExperience } from "./glow-onboarding-experience-queries";
@@ -15,6 +15,8 @@ import { GLOW_SUPERWALL_HISTORY_START_MS, glowPaywallMigrationExperiment } from 
 import { loadUserJourney } from "./user-journey-queries";
 import { journeyCohortAttributeKeys, withJourneyConversions } from "./journey-cohort-conversions";
 import { buildGlowPaywallCohortComparisons, GLOW_PAYWALL_COHORT_KEYS, type GlowPaywallCohortComparisons } from "./glow-paywall-cohort-comparisons";
+import { buildVersyYearlyPriceComparison, VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS, VERSY_YEARLY_PRICE_EXPERIMENT, VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
+import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { withJourneyInstallVersions, type UserJourneyReport } from "./user-journey";
 import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
@@ -24,10 +26,11 @@ import { pokyExperimentStart } from "./poky-experiment-window";
 import type { NativePaywallReport } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_TRIAL_OFFER_ATTRIBUTE_KEYS, pokyTrialOfferExperiment } from "./poky-trial-offer";
+import { buildPokyPaywallFlowComparison } from "./poky-paywall-flow-cohorts";
 import { paidSubscriptionActivity } from "./paid-subscription-activity";
 import { installCohortCountries } from "./install-cohort-countries";
 import { subscriptionActiveAt } from "./subscription-retention";
-import { activeTrialsByAge, type ActiveTrials } from "./active-trials";
+import type { ActiveTrials } from "./active-trials";
 import { matchedCohortInstall } from "./experiment-install-cohort";
 import { buildAppOverviewCohorts, type AppOverviewCohorts } from "./app-overview-cohorts";
 
@@ -177,6 +180,8 @@ export type MobileAppAnalytics = SnapshotMetadata & {
   onboardingExperience?: GlowOnboardingReport | null;
   userJourney?: UserJourneyReport | null;
   paywallCohortComparisons?: GlowPaywallCohortComparisons | null;
+  yearlyPriceComparison?: PaywallCohortComparison | null;
+  paywallFlowComparison?: PaywallCohortComparison | null;
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -201,7 +206,7 @@ const VERSY_ATTRIBUTE_KEYS = ["country", "scroll_bible_trial_screen_seen", "bibl
   "scroll_benefits_assigned_at", "scroll_benefits_screen_seen", "scroll_benefits_completed",
   "bible_widget_widget_screen_seen",
   "onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant", "onboarding_paywall_access_variant",
-  "yearly_price_experiment_id", "yearly_price_product_id", "yearly_price_allocation",
+  ...VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS,
   "paywall_configuration_experiment_id", "paywall_configuration_variant", "versy_tracking_environment"] as const;
 const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "onboarding_plan_allocation", "onboarding_plan_design_variant", "onboarding_plan_design_allocation", "poky_tracking_environment", ...POKY_TRIAL_OFFER_ATTRIBUTE_KEYS] as const;
 
@@ -527,7 +532,8 @@ async function loadSuperwallAppAnalytics(
         ? pokyExperiments(comparisonFacts)
         : versyExperiments(comparisonFacts)
     : [];
-  const trialCancelTiming = facts && (app.id === "glow" || app.id === "versy") ? trialCancelFromFacts(facts) : null;
+  const trialCancelTiming = comparisonFacts && minimumInstallVersion
+    ? installCohortTrialSurvival(comparisonFacts.installs, comparisonFacts.events, minimumInstallVersion, comparisonEndMs) : null;
 
   let journey = journeyResult.status === "fulfilled"
     ? withJourneyInstallVersions(journeyResult.value, comparisonFacts?.installs ?? []) : null;
@@ -555,7 +561,7 @@ async function loadSuperwallAppAnalytics(
       slice.dataCountries = app.id === "glow" ? glowMatureCountries(subset) : installCohortCountries(subset);
       slice.plans = app.id === "glow" ? [] : plansFromFacts(subset);
       slice.retention = app.id === "glow" ? [] : retentionFromFacts(subset);
-      slice.trialCancelTiming = app.id === "poky" ? null : trialCancelFromFacts(subset);
+      slice.trialCancelTiming = null;
     }
   }
 
@@ -592,6 +598,10 @@ async function loadSuperwallAppAnalytics(
     paywallCohortComparisons: app.id === "glow" && comparisonFacts
       ? buildGlowPaywallCohortComparisons(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes,
           comparisonStartMs, comparisonEndMs, comparisonEndMs) : null,
+    yearlyPriceComparison: app.id === "versy" && comparisonFacts
+      ? buildVersyYearlyPriceComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonEndMs) : null,
+    paywallFlowComparison: app.id === "poky" && facts
+      ? buildPokyPaywallFlowComparison(facts.installs, facts.events, facts.attributes, startMs, endMs) : null,
   };
 }
 
@@ -622,7 +632,9 @@ async function loadAppFacts(
 ): Promise<AppFacts> {
   const environmentKey = app.id === "versy" ? "versy_tracking_environment" : app.id === "poky" ? "poky_tracking_environment" : null;
   const keys = [...new Set([...(includeReports ? attributeKeysFor(app.id) : ACQUISITION_ATTRIBUTE_KEYS), ...journeyCohortAttributeKeys(app.id),
-    ...(app.id === "glow" ? GLOW_PAYWALL_COHORT_KEYS : []), ...(environmentKey ? [environmentKey] : [])])];
+    ...(app.id === "glow" ? GLOW_PAYWALL_COHORT_KEYS : []), ...(app.id === "versy" ? VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS : []),
+    ...(app.id === "poky" ? POKY_TRIAL_OFFER_ATTRIBUTE_KEYS : []),
+    ...(environmentKey ? [environmentKey] : [])])];
   const hasMigrationHistory = includeReports && (app.id === "poky" || app.id === "glow");
   const historyStartMs = app.id === "poky" ? pokyExperimentStart(0) - 30 * DAY_MS
     : app.id === "glow" ? GLOW_SUPERWALL_HISTORY_START_MS : startMs;
@@ -1077,10 +1089,7 @@ function glowOnboardingExperiment(facts: AppFacts): MobileAppExperiment {
 }
 
 function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
-  const yearlyPrices = [
-    { key: "yearly_3999_80", label: "$39.99", productID: "com.arthurbuildsstuff.bible.yearly_3999_80" },
-    { key: "yearly_4999", label: "$49.99", productID: "com.arthurbuildsstuff.bible.yearly_4999" },
-  ];
+  const yearlyPrices = VERSY_YEARLY_PRICES;
   const audienceFacts = (audience: ReturnType<typeof versyOnboardingAudience>): AppFacts => ({
     ...facts,
     installs: facts.installs.filter((row) => versyOnboardingAudience(row.country, facts.attributes.get(row.appUserId)) === audience),
@@ -1174,7 +1183,7 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
       attributeKeys: ["yearly_price_experiment_id", "yearly_price_product_id", "yearly_price_allocation"],
       variants: yearlyPrices.map(({ key, label, productID }) => ({
         key, label,
-        attributes: { yearly_price_experiment_id: "versy_yearly_price_v3", yearly_price_product_id: productID, yearly_price_allocation: "50_50" },
+        attributes: { yearly_price_experiment_id: VERSY_YEARLY_PRICE_EXPERIMENT, yearly_price_product_id: productID, yearly_price_allocation: "50_50" },
       })),
       scoreMetrics: ["appu", "download_paid"],
       showTrials: true,
@@ -1449,14 +1458,6 @@ function tenureProceeds(
 ) {
   if (!Number.isFinite(cohortStart) || cohortStart + days * DAY_MS > now) return 0;
   return eventTs <= cohortStart + days * DAY_MS ? proceeds : 0;
-}
-
-function trialCancelFromFacts(facts: AppFacts): TrialCancelTiming {
-  const asOf = Date.now();
-  return {
-    ...sevenDayTrialSurvival(facts.events, facts.startMs, facts.endMs, asOf),
-    activeTrials: activeTrialsByAge(facts.events, facts.startMs, facts.endMs, asOf),
-  };
 }
 
 function eventRepWindows(fromMs: number, toMs: number) {

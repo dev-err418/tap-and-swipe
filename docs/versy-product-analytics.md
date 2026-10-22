@@ -117,3 +117,21 @@ Superwall receives `scroll_benefits_experiment_id`, `scroll_benefits_variant` (`
 The added screen uses the existing cream and gold design, three localized benefits groups, the shared Continue button, and “No payment due now”; legal links remain on the final pricing screen. It has no artwork above the title. All four app languages are supported. A non-trial offering retains the existing reminder skip after the optional benefits screen.
 
 The dashboard comparison `versy-scroll-benefits-v1` requires Bible Scroll, production tracking, the exact experiment ID, and allocation `50_50`. It compares assigned users, trials, paid conversion, APPU and final paywall reach using the existing install-cohort reports. The journey marks benefits as an optional branch so users who skip it do not create a false main-path drop. The experiment map labels this as prepared for the next build. The app must be released and dashboard changes deployed before production results appear.
+
+## Data-tab yearly price comparison
+
+A compact **Yearly prices** table below User journey compares the two v3 US reference
+prices, $39.99 and $49.99 per year. It uses first installs on v1.2.6 or later across
+all dates and languages, matching the experiment install cohort. Membership requires
+production tracking, `yearly_price_experiment_id=versy_yearly_price_v3`, allocation
+`50_50`, one of the two saved product IDs, and a valid `yearly_price_assigned_at`
+(Unix milliseconds). Migrated and historical price assignments stay excluded.
+
+Installs, APPU lift/Win %, APPU, trials, trial-to-paid, install-to-paid and refund rate
+use the shared compact comparison table. Non-payers remain in the denominator.
+Money follows each saved price assignment after the later of install and assignment,
+including weekly purchases, renewals and refunds; pre-assignment subscription chains
+are excluded. Free trials are not paid purchases. Empty cohorts remain empty and
+missing proceeds stay unavailable. The existing Data request loads the four scalar
+price attributes; snapshot schema v20 adds this aggregate comparison. No raw user
+records are sent to the browser.

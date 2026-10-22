@@ -25,6 +25,9 @@ import WinbackPaywallPanel from "@/components/analytics/WinbackPaywallPanel";
 import VersyPaywallPlacementsPanel from "@/components/analytics/VersyPaywallPlacementsPanel";
 import GlowYearlyPricePanel from "./GlowYearlyPricePanel";
 import GlowPaywallCohortTables from "./GlowPaywallCohortTables";
+import VersyYearlyPriceTable from "./VersyYearlyPriceTable";
+import PokyPaywallFlowTable from "./PokyPaywallFlowTable";
+import type { PaywallCohortComparison } from "@/lib/glow-paywall-cohort-comparisons";
 import type { GlowPaywallCohortComparisons } from "@/lib/glow-paywall-cohort-comparisons";
 import GlowPaywallFlowPanel from "./GlowPaywallFlowPanel";
 import GlowOnboardingExperiencePanel from "./GlowOnboardingExperiencePanel";
@@ -76,6 +79,8 @@ export default function AppOverviewPanel({
   onboardingExperience = null,
   userJourney = null,
   paywallCohortComparisons = null,
+  yearlyPriceComparison = null,
+  paywallFlowComparison = null,
   deferExperiments = false,
 }: {
   appId: "glow" | "poky" | "versy";
@@ -96,6 +101,8 @@ export default function AppOverviewPanel({
   onboardingExperience?: GlowOnboardingReport | null;
   userJourney?: UserJourneyReport | null;
   paywallCohortComparisons?: GlowPaywallCohortComparisons | null;
+  yearlyPriceComparison?: PaywallCohortComparison | null;
+  paywallFlowComparison?: PaywallCohortComparison | null;
   deferExperiments?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
@@ -107,7 +114,8 @@ export default function AppOverviewPanel({
   const selectedCountries = markets ? market?.dataCountries ?? [] : dataCountries;
   const selectedPlans = markets ? market?.plans ?? [] : plans;
   const selectedRetention = markets ? market?.retention ?? [] : retention;
-  const selectedTrialTiming = markets ? market?.trialCancelTiming : trialCancelTiming;
+  const comparisonLabel = experimentCohortLabel(appId);
+  const selectedTrialTiming = comparisonLabel ? trialCancelTiming : markets ? market?.trialCancelTiming : trialCancelTiming;
   const installLabel = "Tracked installs";
   const [monthBundle, setMonthBundle] = useState<{ appId: string; bundle: MonthExperimentBundle } | null>(null);
   const [monthFailedAppId, setMonthFailedAppId] = useState<string | null>(null);
@@ -134,7 +142,6 @@ export default function AppOverviewPanel({
   const resolvedOnboarding = deferExperiments ? loadedBundle?.onboardingExperience ?? onboardingExperience : onboardingExperience;
   const resolvedExperimentCountries = deferExperiments ? loadedBundle?.countries ?? experimentCountries : experimentCountries;
   const experimentsLoading = deferExperiments && !loadedBundle && !monthFailed;
-  const comparisonLabel = experimentCohortLabel(appId);
   const cohortAvailable = Boolean(selectedOverview?.available);
   const total = selectedOverview?.total;
   const appu = total && cohortAvailable ? totalCohortAppu(total) : null;
@@ -192,21 +199,16 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-data"
           className="space-y-4"
         >
-          {appId === "versy" ? (
-            <button type="button" onClick={() => setActiveTab("experiments")}
-              className="flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl bg-white px-5 py-4 text-left text-sm">
-              <span><strong>Annual pricing test</strong><span className="ml-2 text-muted-foreground">$29.99 · $39.99 · $49.99</span></span>
-              <span className="font-medium">View A/B tests →</span>
-            </button>
-          ) : null}
           {markets ? <DashboardCard title="App versions" contentClassName="pt-0">
             <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
           </DashboardCard> : userJourney?.versions?.length ? <DashboardCard title="App versions" contentClassName="pt-0">
             <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
-          </DashboardCard> : appId === "poky" ? <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} /> : null}
-          {appId === "glow" || appId === "versy" ? <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} funnelOnly /> : null}
+          </DashboardCard> : null}
+          <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} funnelOnly />
           {appId === "glow" ? <GlowPaywallCohortTables report={paywallCohortComparisons} windowLabel={windowLabel} /> : null}
-          {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={windowLabel} /> : null}
+          {appId === "versy" ? <VersyYearlyPriceTable report={yearlyPriceComparison} /> : null}
+          {appId === "poky" ? <PokyPaywallFlowTable report={paywallFlowComparison} windowLabel={windowLabel} /> : null}
+          {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={comparisonLabel ?? windowLabel} /> : null}
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">
             <AppCountryBreakdown countries={selectedCountries} />
             <AppConversionBreakdown countries={selectedCountries} conversion="paid" />

@@ -142,7 +142,7 @@ export default function TrialCancelChart({
         </div>
       ) : (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          No confirmed 7-day trials started in the selected period.
+          No confirmed 7-day trials in this cohort.
         </p>
       )}
       <p className="mt-3 text-xs text-muted-foreground">Only trials with a recorded 7-day duration. Three-day trials and unknown durations are excluded. Shows cancellations observed through now; recent trials have not yet completed all seven days.</p>

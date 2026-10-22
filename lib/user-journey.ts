@@ -307,6 +307,7 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
     return {
       title: "User journey",
       variantAttribute: "onboarding_variant",
+      showEmptyVariants: true,
       cohortAttributes: {
         poky_onboarding_journey_schema: "1",
         poky_tracking_environment: "production",

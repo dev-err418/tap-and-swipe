@@ -8,7 +8,7 @@ export const POKY_TRIAL_OFFER_ATTRIBUTE_KEYS = [
   "onboarding_offer_language",
 ] as const;
 
-const EXPERIMENT = "poky_onboarding_trial_v1";
+export const POKY_ONBOARDING_OFFER_EXPERIMENT = "poky_onboarding_trial_v1";
 const TRIAL_PRODUCT = "arthurbuildsstuff.peptides.yearly.trial";
 type Arm = "current" | "trial";
 type Language = "en" | "es" | "de" | "fr";
@@ -48,7 +48,7 @@ export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now()): Mobil
   for (const [appUserId, attrs] of facts.attributes) {
     const variant = attrs.onboarding_offer_variant;
     const assignedAt = Number(attrs.onboarding_offer_assigned_at);
-    if (attrs.onboarding_offer_experiment !== EXPERIMENT ||
+    if (attrs.onboarding_offer_experiment !== POKY_ONBOARDING_OFFER_EXPERIMENT ||
         attrs.onboarding_offer_allocation !== "50_50" ||
         (variant !== "current" && variant !== "trial") ||
         attrs.poky_tracking_environment !== "production" ||

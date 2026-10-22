@@ -264,7 +264,7 @@ closing the dialog returns keyboard focus to the map card.
 
 Most A/B result cards display APPU D7 and D14; the full-flow Recovery card uses total APPU. D30 APPU remains available in the underlying data. Glow and Poky's historical Superwall-vs-native comparisons load Superwall installs from 30 days before their September 20 experiment cutoffs (August 21), while native installs retain the selected, cutoff-clamped cohort window. This expanded history is isolated from other experiment and dashboard totals. Their planning panels are indicative, with no completion-date projection or decisive verdict for these non-randomized cohorts. Glow classifies the earliest observed install version as Superwall before 1.7.0 and native from 1.7.0; upgrades do not move that user. All linked outcomes are followed through now, including historical trial starts/conversions, renewals and refunds; revenue is deduplicated and trial/paid counts are unique users.
 
-Glow and Versy use version-based install cohorts across the Data comparison tables, AB tests and Paywalls: **first install v1.8.3+ for Glow, v1.2.6+ for Versy**, across all time. The version is frozen from the earliest production `device_attributes` event; later upgrades and unknown/malformed first versions do not enroll users. The dashboard date selector continues to control the overview, App versions, countries and trial-survival sections. Poky retains its rolling 30-day assignment cohort. Outcomes follow report `asOf` (now). Win-back and Versy app-event reports join the same Superwall install identities to their PostHog distinct IDs before counting views/purchases. Placement rows include only cohort members reaching that placement and can overlap in users; each transaction is attributed to one placement.
+Glow and Versy use version-based install cohorts across the Data comparison tables, Trial survival, AB tests and Paywalls: **first install v1.8.3+ for Glow, v1.2.6+ for Versy**, across all time. The version is frozen from the earliest production `device_attributes` event; later upgrades and unknown/malformed first versions do not enroll users. The dashboard date selector continues to control the overview, App versions and countries sections. Trial survival uses that same all-language, all-country install cohort and follows its subscription chains through report time, including cancellations with no user ID. Subscriptions started before installation are excluded; only recorded seven-day trials enter the survival chart. Poky retains its rolling 30-day assignment cohort. Outcomes follow report `asOf` (now). Win-back and Versy app-event reports join the same Superwall install identities to their PostHog distinct IDs before counting views/purchases. Placement rows include only cohort members reaching that placement and can overlap in users; each transaction is attributed to one placement.
 
 ### App version comparison
 
@@ -308,7 +308,7 @@ The tables reuse the journey's metrics and transaction-count refund rate, with
 no acquisition split. Missing facts show unavailable; missing amounts suppress
 the affected metrics. Data requests load the two assignment attributes alongside
 existing facts; no extra database or ingestion service is introduced. Snapshot
-schema v19 includes these tables, the joint flow × price comparison, and version-based cohort membership. A/B and Paywalls attribution rules remain unchanged within that install cohort.
+schema v22 includes these tables, the joint flow × price comparison, and version-based cohort membership. A/B and Paywalls attribution rules remain unchanged within that install cohort.
 
 The Data, AB tests, and Paywalls tabs can compare a selected app version. A user's **first recorded version on a production `device_attributes` event** fixes their cohort: versions below the selected version are Before, and the selected version or newer are After. Versions are compared by numeric components, so 1.10 is newer than 1.9. Missing or malformed first versions are excluded from both sides; they are not inferred from later upgrades. The Data comparison follows the selected dashboard period, while Glow/Versy A/B tests, native paywalls and win-back offers use the version-based install cohorts above; Poky retains its rolling 30-day cohort. The difference column is After minus Before; rate differences are percentage points. These version cohorts are observational and do not imply that a release caused a change or establish an A/B winner. Native paywall, Journal VS Practice, and win-back comparisons resolve first versions for assigned or viewing users even if they installed before the report window. Win-back remains a separate PostHog view-to-purchase report with no revenue or refund attribution.
 
@@ -428,3 +428,16 @@ Membership requires both validated assignments for the same install; it is never
 inferred by multiplying aggregate totals. Outcomes start after the later assignment
 and installation. Users missing either assignment remain in their separate table
 only. The joint table uses the same compact metrics and version-based install cohort.
+
+### Poky compact Data comparisons
+
+Poky Data shows all four tracked onboarding combinations (No intro × Plan A/B,
+Animated intro × Plan A/B), including empty rows. Clicking a row opens its screen
+funnel. The following Paywall flows table compares saved fresh 50/50
+`poky_onboarding_trial_v1` assignments: `current` is HP (hard paywall), `trial` is
+the 3-day trial. There is no price-point comparison. Both tables use the selected
+install date window across all languages/countries. Explicit production markers
+are required; legacy offer assignments are excluded. All assigned nonpayers count,
+and outcomes follow through report time after both install and assignment,
+including linked renewals/refunds. APPU, lift, Win %, trial conversion, paid
+conversion and transaction-count refund rate reuse the other compact tables.

@@ -17,7 +17,7 @@ const event = (appUserId: string, overrides: Partial<Event> = {}): Event => ({
   isRefund: false, netProceeds: 8, eventTs: start + day, attributionTs: start + day, expiresAt: 0, ...overrides,
 });
 
-for (const app of ["glow", "versy"] as const) {
+for (const app of ["glow", "versy", "poky"] as const) {
   test(`${app} journey metrics follow enrolled route members, including nonpayers and later transactions`, () => {
     const definition = userJourneyDefinition(app)!;
     const [first, second] = definition.variants;
