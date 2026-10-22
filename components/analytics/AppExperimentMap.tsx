@@ -190,7 +190,7 @@ export default function AppExperimentMap({
             const label = users == null ? node.label : `${node.label} (${users.toLocaleString("en-US")})`;
             const isBest = isExperimentBest || (bestPathNodeIds.has(node.id) && (paywallMetric?.isBest === true || cohortMetric?.isBest === true));
             const cardDetail = isOnboardingExperience
-                ? flowReport?.status === "ready" ? `ARPU ${formatAppu(onboardingMetric?.arpu)}`
+                ? flowReport?.status === "ready" ? `APPU ${formatAppu(onboardingMetric?.arpu)}`
                   : flowReport?.status === "unavailable" ? "Stats unavailable" : node.detail
                 : node.cohortMetric
                 ? `APPU ${formatAppu(cohortMetric?.appu)}`

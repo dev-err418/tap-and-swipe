@@ -173,7 +173,7 @@ test("the comparison shows all three metrics with empty and unavailable values k
   assert.match(markup, /No production assignments in this date range/);
   assert.match(markup, /results appear after the updated app is released/);
   assert.match(markup, /50% IAM · 50% manifest-audio/);
-  assert.match(markup, /ARPU/);
+  assert.match(markup, /APPU/);
   assert.match(markup, /Sessions \/ user \/ day/);
   assert.match(markup, /Avg time to cancel/);
   assert.doesNotMatch(markup, /\$0\.00/);

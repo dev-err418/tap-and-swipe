@@ -2,6 +2,7 @@ import { analyticsSnapshot } from "./analytics-snapshot";
 import "server-only";
 import { appAnalyticsPeriodRange } from "./app-analytics-time";
 import { summarizeVersyPlacements, type VersyPlacementEvent, type VersyPlacementReport } from "./versy-paywall-placements";
+import { loadExperimentInstallUserIds } from "./app-experiment-cohort-queries";
 
 const MAX_GROUPS = 20_000;
 
@@ -13,7 +14,7 @@ export function getVersyPaywallPlacements(): Promise<VersyPlacementReport> {
 }
 
 async function loadVersyPaywallPlacements(): Promise<VersyPlacementReport> {
-  const { since, before } = appAnalyticsPeriodRange("month");
+  const { since, before } = appAnalyticsPeriodRange("all");
   const base = summarizeVersyPlacements([], since.toISOString(), before.toISOString());
   const key = process.env.POSTHOG_VERSY_READ_KEY?.trim();
   const projectId = process.env.POSTHOG_VERSY_PROJECT_ID?.trim();
@@ -22,26 +23,30 @@ async function loadVersyPaywallPlacements(): Promise<VersyPlacementReport> {
     return { ...base, status: "setup_required", note: "Versy paywall reporting access is not configured." };
   }
   const host = process.env.POSTHOG_VERSY_REGION === "us" ? "https://us.posthog.com" : "https://eu.posthog.com";
-  const sql = `SELECT distinct_id, placement,
-      countIf(event = 'paywall_reached') AS reaches,
-      countIf(event = 'paywall_viewed') AS views,
-      countIf(event = 'paywall_purchase_attempted') AS attempts,
-      countIf(event = 'paywall_purchase_result' AND result = 'purchased') AS purchases,
-      minIf(toUnixTimestamp(timestamp), event = 'paywall_viewed') AS first_view,
-      maxIf(toUnixTimestamp(timestamp), event = 'paywall_purchase_result' AND result = 'purchased') AS last_purchase
-    FROM (
-      SELECT distinct_id, event, timestamp, toString(properties.placement) AS placement,
-        toString(properties.result) AS result
-      FROM events
-      WHERE timestamp >= toDateTime('${sqlTime(since)}', 'UTC')
-        AND timestamp < toDateTime('${sqlTime(before)}', 'UTC')
-        AND event IN ('paywall_reached', 'paywall_viewed', 'paywall_purchase_attempted', 'paywall_purchase_result')
-        AND properties.app_environment = 'production'
-    )
-    WHERE notEmpty(placement)
-    GROUP BY distinct_id, placement
-    LIMIT ${MAX_GROUPS + 1}`;
   try {
+    const eligibleUsers = await loadExperimentInstallUserIds("versy");
+    if (!eligibleUsers.size) return base;
+    const quote = (value: string) => `'${value.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
+    const sql = `SELECT distinct_id, placement,
+        countIf(event = 'paywall_reached') AS reaches,
+        countIf(event = 'paywall_viewed') AS views,
+        countIf(event = 'paywall_purchase_attempted') AS attempts,
+        countIf(event = 'paywall_purchase_result' AND result = 'purchased') AS purchases,
+        minIf(toUnixTimestamp(timestamp), event = 'paywall_viewed') AS first_view,
+        maxIf(toUnixTimestamp(timestamp), event = 'paywall_purchase_result' AND result = 'purchased') AS last_purchase
+      FROM (
+        SELECT distinct_id, event, timestamp, toString(properties.placement) AS placement,
+          toString(properties.result) AS result
+        FROM events
+        WHERE timestamp >= toDateTime('${sqlTime(since)}', 'UTC')
+          AND timestamp < toDateTime('${sqlTime(before)}', 'UTC')
+          AND event IN ('paywall_reached', 'paywall_viewed', 'paywall_purchase_attempted', 'paywall_purchase_result')
+          AND properties.app_environment = 'production'
+          AND distinct_id IN (${[...eligibleUsers].map(quote).join(",")})
+      )
+      WHERE notEmpty(placement)
+      GROUP BY distinct_id, placement
+      LIMIT ${MAX_GROUPS + 1}`;
     const response = await fetch(`${host}/api/projects/${projectId}/query/`, {
       method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ query: { kind: "HogQLQuery", query: sql } }),

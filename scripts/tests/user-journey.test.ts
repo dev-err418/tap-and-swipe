@@ -3,7 +3,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
-import UserJourneyFunnel from "../../components/analytics/UserJourneyFunnel";
+import UserJourneyFunnel, { JourneyVariant } from "../../components/analytics/UserJourneyFunnel";
 import { ASSIGNED_KEY, buildUserJourney, journeyDrops, largestDropAttributes, userJourneyDefinition, type UserJourneyDefinition } from "../../lib/user-journey";
 import { loadUserJourney, userJourneySql } from "../../lib/user-journey-queries";
 
@@ -90,8 +90,9 @@ test("Poky reports all assigned users and actual paywall views in each variant",
   const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
   assert.match(html, /No intro · Plan B/);
   assert.match(html, /Animated intro · Plan A/);
-  assert.match(html, /Earlier journeys cannot be reconstructed/);
-  assert.match(html, /\(40%\)/);
+  assert.doesNotMatch(html, /Earlier journeys cannot be reconstructed/);
+  assert.match(html, /View screens for/);
+  assert.doesNotMatch(html, /See graph|Funnel graph/);
 });
 
 test("Poky empty and failed queries remain explicit", async () => {
@@ -126,9 +127,11 @@ test("screen reach is a share of assigned installs in that variant", () => {
   const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
   assert.match(html, /User journey/);
   assert.match(html, /manifest-audio/);
-  assert.match(html, /\(0%\)/);
-  assert.match(html, /100/);
-  assert.match(html, /Widget/);
+  assert.match(html, /View screens for/);
+  assert.doesNotMatch(html, /See graph|Funnel graph/);
+  const graph = renderToStaticMarkup(createElement(JourneyVariant, { variant: copy }));
+  assert.match(graph, /100/);
+  assert.match(graph, /Widget/);
   assert.match(html, /IAM/);
 });
 
@@ -163,8 +166,9 @@ test("completion is paywall reach, and the three steepest main-path drops are ma
   assert.deepEqual(largestDropAttributes(drops), ["b", "a", "paywall_seen"]);
   const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
   assert.match(html, /IAM/);
-  assert.match(html, /\(40%\)/);
-  assert.match(html, /#40/);
+  const graph = renderToStaticMarkup(createElement(JourneyVariant, { variant }));
+  assert.match(graph, /40%/);
+  assert.match(graph, /#40/);
 });
 
 test("a variant with no screen attributes stays out of the chart", () => {
@@ -172,7 +176,10 @@ test("a variant with no screen attributes stays out of the chart", () => {
     { variant: "bible_widget_shorter", key: ASSIGNED_KEY, users: 12 },
   ]);
   const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
-  assert.match(html, /none of them have a screen-reached attribute yet/);
+  assert.match(html, /View screens for/);
+  assert.doesNotMatch(html, /See graph|Funnel graph/);
+  const graph = renderToStaticMarkup(createElement(JourneyVariant, { variant: report.variants[1] }));
+  assert.match(graph, /none of them have a screen-reached attribute yet/);
   assert.doesNotMatch(html, /bible_widget_entry_screen_seen/);
 });
 
@@ -205,9 +212,12 @@ test("Versy shows both families before data arrives and keeps the shorter route 
   const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: empty, windowLabel: "Last 7 days" }));
   assert.match(html, /Bible Widget/);
   assert.match(html, /Bible Scroll/);
-  assert.match(html, /Widget route/);
+  assert.match(html, /Bible Widget · Full/);
   assert.match(html, /Shorter/);
-  assert.match(html, /No tracked Bible Widget installs/);
+  assert.match(html, /View screens for/);
+  assert.doesNotMatch(html, /See graph|Funnel graph/);
+  const graph = renderToStaticMarkup(createElement(JourneyVariant, { variant: empty.variants[0] }));
+  assert.match(graph, /No tracked Bible Widget installs/);
   assert.equal(empty.status, "empty");
   assert.ok(empty.variants.every((row) => row.completionShare === 0 && !row.recorded));
   const widget = definition.variants[0];
@@ -220,13 +230,14 @@ test("Versy shows both families before data arrives and keeps the shorter route 
 });
 
 for (const appId of ["glow", "versy"] as const) {
-  test(`${appId} retains the screen funnel when version metrics exist`, () => {
+  test(`${appId} offers journey graphs from the table when version metrics exist`, () => {
     const report = buildUserJourney(userJourneyDefinition(appId)!, []);
     report.versions = [{ version: "1.2.3", installs: 0, tracked: 0, variants: [] }];
     const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { appId, report, windowLabel: "Last 7 days" }));
-    assert.match(html, /Onboarding variant/);
+    assert.match(html, /Onboarding funnel/);
     assert.match(html, appId === "glow" ? /manifest-audio/ : /Bible Scroll/);
-    assert.match(html, /No tracked/);
+    assert.match(html, /View screens for/);
+    assert.doesNotMatch(html, /See graph|Funnel graph/);
     assert.doesNotMatch(html, /Conversions by first-seen version/);
   });
 }
@@ -239,7 +250,7 @@ for (const appId of ["glow", "versy"] as const) {
       markets: { slices: {} } as NonNullable<Parameters<typeof AppOverviewPanel>[0]["markets"]>,
     }));
     assert.match(html, /No known first-seen versions/);
-    assert.match(html, /Onboarding variant/);
+    assert.match(html, /Onboarding funnel/);
     assert.match(html, appId === "glow" ? /manifest-audio/ : /Bible Scroll/);
   });
 }

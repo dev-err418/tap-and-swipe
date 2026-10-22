@@ -9,6 +9,7 @@ import {
   type UserJourneyStep,
 } from "./user-journey";
 import { versionParts } from "./app-version";
+import { installVersionAtLeast, installVersionPredicateSql } from "./app-experiment-cohort";
 
 type Query = <T>(sql: string) => Promise<T[]>;
 
@@ -90,7 +91,7 @@ export function userJourneySql(
     throw new Error("Invalid minimum install version");
   }
   const installVersionFilter = minimumVersion
-    ? `HAVING tuple(${[1, 2, 3].map((part) => `toUInt32OrZero(splitByChar('.', version)[${part}])`).join(", ")}) >= tuple(${[0, 1, 2].map((index) => minimumVersion[index] ?? 0).join(", ")})`
+    ? `HAVING ${installVersionPredicateSql("version", definition.minimumInstallVersion!)}`
     : "";
   return `
 SELECT variant, ${byVersion ? "version, " : ""}step AS key, uniq(appUserId) AS users
@@ -150,9 +151,12 @@ export async function loadUserJourney(
   applicationId: number,
   start: string,
   end: string,
+  minimumInstallVersion?: string,
 ): Promise<UserJourneyReport> {
-  const definition = userJourneyDefinition(appId);
-  if (!definition) return unsupportedUserJourney(appId);
+  const original = userJourneyDefinition(appId);
+  if (!original) return unsupportedUserJourney(appId);
+  const definition = minimumInstallVersion ? { ...original, minimumInstallVersion: original.minimumInstallVersion
+    && installVersionAtLeast(original.minimumInstallVersion, minimumInstallVersion) ? original.minimumInstallVersion : minimumInstallVersion } : original;
   try {
     const rows = await query<{ variant: string; version?: string; key: string; users: string | number }>(
       userJourneySql(applicationId, definition, start, end, true),

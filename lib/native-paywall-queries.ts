@@ -1,10 +1,11 @@
 import { buildNativePaywallReport, firstRecoveryAssignments, parsePaywallAttributes, type NativePaywallReport, type PaywallAttribute, type PaywallRevenue } from "./native-paywall-analytics";
+import { experimentInstallUsersSql } from "./app-experiment-cohort";
 
 type Query = <T>(sql: string) => Promise<T[]>;
 const quote = (s: string) => `'${s.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
 
 /** Read only; no ingestion endpoint, schema, campaign or Superwall placement is created. */
-export async function loadNativePaywalls(query: Query, applicationID: number, start: number, end: number): Promise<NativePaywallReport> {
+export async function loadNativePaywalls(query: Query, applicationID: number, start: number, end: number, minimumInstallVersion?: string): Promise<NativePaywallReport> {
   const asOf = Date.now();
   try {
     const attributes: PaywallAttribute[] = [];
@@ -15,6 +16,7 @@ export async function loadNativePaywalls(query: Query, applicationID: number, st
 SELECT appUserId, key, value FROM sw.user_attributes_rep FINAL
 WHERE applicationId = ${applicationID} AND isSandbox = 0 AND isDeleted = 0 AND ts < now()
   AND startsWith(key, 'gp1_')
+  ${minimumInstallVersion ? `AND appUserId IN (${experimentInstallUsersSql(applicationID, minimumInstallVersion)})` : ""}
   ${cursor ? `AND (appUserId, key) > (${quote(cursor.appUserId)}, ${quote(cursor.key)})` : ""}
 ORDER BY appUserId, key LIMIT 10000 FORMAT JSON`);
       attributes.push(...rows);

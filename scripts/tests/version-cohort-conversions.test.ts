@@ -13,11 +13,43 @@ function event(appUserId: string, overrides: Partial<Parameters<typeof versionCo
 }
 
 test("classifies Meta and Apple Search Ads; no recorded attribution is non-ads", () => {
-  assert.equal(acquisitionGroup({ acquisition_source: "meta" }), "ads");
-  assert.equal(acquisitionGroup({ apple_search_ads_attribution: "true" }), "ads");
-  assert.equal(acquisitionGroup({ acquisition_source: "meta", apple_search_ads_attribution: "false" }), "ads");
+  assert.equal(acquisitionGroup({ acquisition_source: "meta" }), "metaAds");
+  assert.equal(acquisitionGroup({ apple_search_ads_attribution: "true" }), "asa");
+  assert.equal(acquisitionGroup({ acquisition_source: "meta", apple_search_ads_attribution: "false" }), "metaAds");
   assert.equal(acquisitionGroup({ apple_search_ads_attribution: "false" }), "nonAds");
   assert.equal(acquisitionGroup(undefined), "nonAds");
+  assert.equal(acquisitionGroup({ acquisition_source: " Meta ", apple_search_ads_attribution: "true" }), "metaAds");
+});
+
+test("separates Meta, ASA and organic outcomes while preserving combined ad totals", () => {
+  const report = versionCohortConversions([
+    install("meta"), install("asa"), install("organic"), install("asa-free"),
+  ], [
+    event("meta", { netProceeds: 10 }),
+    event("asa", { periodType: "trial", netProceeds: 0, expiresAt: start + 2 * day }),
+    event("", { originalTransactionId: "asa", transactionId: "renewal", name: "renewal", eventTs: start + 3 * day, netProceeds: 8 }),
+    event("asa", { name: "cancellation", transactionId: "refund", isRefund: true, eventTs: start + 4 * day, netProceeds: -3 }),
+    event("organic", { netProceeds: 2 }),
+  ], new Map<string, Record<string, string>>([
+    ["meta", { acquisition_source: "meta", apple_search_ads_attribution: "true" }],
+    ["asa", { apple_search_ads_attribution: "true" }],
+    ["asa-free", { apple_search_ads_attribution: "true" }],
+  ]), start, end, asOf).get("1.2.1")!;
+  assert.equal(report.metaAds.installs, 1);
+  assert.equal(report.metaAds.proceeds, 10);
+  assert.equal(report.metaAds.trials, 0);
+  assert.equal(report.asa.installs, 2);
+  assert.equal(report.asa.proceeds, 5);
+  assert.equal(report.asa.trials, 1);
+  assert.equal(report.asa.finishedTrials, 1);
+  assert.equal(report.asa.paid, 1);
+  assert.equal(report.asa.installPaid, 1);
+  assert.equal(report.nonAds.installs, 1);
+  assert.equal(report.nonAds.proceeds, 2);
+  assert.equal(report.ads.installs, 3);
+  assert.equal(report.ads.proceeds, 15);
+  assert.equal(report.global.installs, 4);
+  assert.equal(report.global.proceeds, 17);
 });
 
 test("denominators include nonpayers, conversions stay with first version and follow outcomes after cohort end", () => {
@@ -32,9 +64,9 @@ test("denominators include nonpayers, conversions stay with first version and fo
   ], new Map([["a", { acquisition_source: "meta" }], ["b", { acquisition_source: "meta" }]]), start, end, asOf);
   const version = report.get("1.2.1")!;
   assert.equal(report.has("1.2.2"), false);
-  assert.deepEqual(version.global, { installs: 4, trials: 1, finishedTrials: 1, paid: 1, installPaid: 2, proceeds: 10, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
-  assert.deepEqual(version.ads, { installs: 2, trials: 1, finishedTrials: 1, paid: 1, installPaid: 1, proceeds: 5, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
-  assert.deepEqual(version.nonAds, { installs: 2, trials: 0, finishedTrials: 0, paid: 0, installPaid: 1, proceeds: 5, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
+  assert.deepEqual(version.global, { installs: 4, trials: 1, finishedTrials: 1, paid: 1, installPaid: 2, purchases: 2, refunds: 0, proceeds: 10, proceedsVariance: 25 / 3, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
+  assert.deepEqual(version.ads, { installs: 2, trials: 1, finishedTrials: 1, paid: 1, installPaid: 1, purchases: 1, refunds: 0, proceeds: 5, proceedsVariance: 12.5, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
+  assert.deepEqual(version.nonAds, { installs: 2, trials: 0, finishedTrials: 0, paid: 0, installPaid: 1, purchases: 1, refunds: 0, proceeds: 5, proceedsVariance: 12.5, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
 });
 
 test("deduplicates transaction revisions and refunds do not undo paid conversion", () => {
@@ -49,6 +81,23 @@ test("deduplicates transaction revisions and refunds do not undo paid conversion
   assert.equal(report.global.paid, 1);
   assert.equal(report.global.missingMoney, true);
   assert.equal(report.ads.missingMoney, false);
+  assert.equal(report.global.purchases, 2, "a paid purchase and renewal count separately, not once per payer");
+  assert.equal(report.global.refunds, 1);
+});
+
+test("refund rate counts transactions, excluding free trials and ordinary cancellations", () => {
+  const report = versionCohortConversions([install("a")], [
+    event("a", { transactionId: "trial", periodType: "trial", netProceeds: 0 }),
+    event("a", { transactionId: "first-charge", netProceeds: 10 }),
+    event("a", { transactionId: "first-charge", netProceeds: 12, attributionTs: start + 2 * day }),
+    event("a", { name: "renewal", transactionId: "renewal" }),
+    event("a", { name: "cancellation", transactionId: "cancel", netProceeds: 0 }),
+    event("a", { name: "cancellation", transactionId: "first-charge", isRefund: true, netProceeds: -10 }),
+    event("a", { name: "cancellation", transactionId: "first-charge", isRefund: true, netProceeds: -12, attributionTs: start + 2 * day }),
+  ], new Map(), start, end, asOf).get("1.2.1")!.global;
+  assert.equal(report.purchases, 2);
+  assert.equal(report.refunds, 1);
+  assert.equal(report.refunds / report.purchases, 0.5);
 });
 
 test("pre-install and future outcomes do not enter the cohort", () => {
@@ -113,6 +162,9 @@ test("APPU includes nonpayers, corrected charges, refunds and post-update renewa
   ], new Map([["payer", { acquisition_source: "meta" }]]), start, end, asOf);
   const report = reports.get("1.2.1")!;
   assert.equal(report.global.proceeds / report.global.installs, 4);
+  assert.equal(report.global.proceedsVariance, 32, "variance uses user totals [8, 0], not independent charges/refunds");
+  assert.equal(report.ads.proceedsVariance, null, "a single user has no sample variance");
+  assert.equal(reports.get("3.0")!.global.proceedsVariance, null, "missing money cannot produce an uncertainty estimate");
   assert.equal(report.ads.proceeds / report.ads.installs, 8);
   assert.equal(report.nonAds.proceeds / report.nonAds.installs, 0);
   assert.equal(report.global.missingProceeds, false);

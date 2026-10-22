@@ -41,9 +41,15 @@ a newly collected current-version user attribute.
 
 The version table shows the latest five numerically ordered first-seen versions
 observed among installs in the selected window, with one row per version. The
-horizontal table groups metrics under Global, Ads, and Non-ads. The screen-by-screen journey is restored below this table, with Bible Widget and
-Bible Scroll tabs and Full/Shorter Widget routes. It includes all languages and
-countries regardless of the market selected for the conversion table. Highest positive conversion rates in each column
+horizontal version table groups metrics under All users, Meta Ads, ASA and Organic.
+Below it, the journey table has one row per onboarding flow, without acquisition
+columns. It includes all languages and countries. Each row shows installs, APPU
+(net proceeds per enrolled install), trial starts, trial-to-paid, install-to-paid,
+refund rate. Refund rate is distinct refunded transactions /
+distinct paid purchase transactions, including renewals; free trials are excluded.
+Repeated deliveries count once; missing charge amounts suppress the rate. The
+row's clickable onboarding funnel name opens the original screen funnel in a modal, retaining
+Bible Widget/Scroll tabs and Full/Shorter routes. Highest positive conversion rates in each column
 are tinted orange, including ties; these are observed rates, not significance claims.
 Snapshot schema v7 includes the finished-trial denominator.
 
@@ -63,12 +69,12 @@ duplicates count once and refunds do not undo a past paid conversion. Missing
 eligible charge amounts suppress the affected paid rate rather than imply zero.
 All routes, languages, and countries are included.
 
-Ads currently means `acquisition_source=meta` or
-`apple_search_ads_attribution=true` in Superwall user metadata. These keys are read
-for the Data tab as well as the full monthly report. At the owner's explicit
-request, everyone without either marker is Non-ads, including missing/unknown
-attribution; the UI labels this as no recorded ad attribution, not verified organic.
-Global counts equal Ads plus Non-ads. Acquisition uses the recorded attribution
+Meta Ads means `acquisition_source=meta`; ASA means
+`apple_search_ads_attribution=true`. When both are present, the explicit Meta
+source takes priority so cohorts stay disjoint. Organic means neither marker is
+recorded, including unknown attribution. All users equals Meta Ads + ASA + Organic.
+These keys and the journey enrollment/schema/environment keys are loaded for
+both Data and full reports. Acquisition uses the recorded attribution
 metadata available at refresh; first-seen version remains based on the earliest
 device event. There is no IP/country/device-language inference of ad origin.
 
@@ -95,3 +101,12 @@ these install-to-paid counts and their money-availability flag.
 ### Optional benefits branch (next build)
 
 The next build can insert `benefits` between `goDeeper` and `remindPromise` for half of newly enrolled Bible Scroll journeys. `versy_journey_scroll_bible_benefits_screen_seen` is an optional branch: its visits never change the previous main-path baseline for reminder drop-off and it is excluded from largest-drop highlights. Assignment and completion are also published to Superwall under `scroll_benefits_*`; see `versy-product-analytics.md` for the cohort contract. Existing journeys are not randomized retroactively.
+
+### Journey outcomes table
+
+Glow and Versy join enrolled journey members to the same verified transaction
+outcomes as the version table. The selected period filters installs; non-payers
+remain in denominators and later purchases, renewals and refunds follow their
+original route through report time. Missing facts leave metrics unavailable.
+Snapshot schema v13 includes the channel split, journey metrics, purchase counts
+and refund counts. The Data tab no longer displays the active-trials card.

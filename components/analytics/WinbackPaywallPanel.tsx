@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { WinbackPaywallReport, WinbackPaywallRow } from "@/lib/winback-paywall-analytics";
 import { DASHBOARD_SURFACE_CLASS } from "./dashboard-surface";
 import { cn } from "@/lib/utils";
+import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 
 const count = (value: number) => value.toLocaleString("en-US");
 const rate = (value: number | null) => value === null ? "—" : `${(value * 100).toFixed(1)}%`;
@@ -30,7 +31,7 @@ export default function WinbackPaywallPanel({ appId }: { appId: "glow" | "versy"
   return <section aria-label="50% win-back offer" className="space-y-2">
     <div className="px-1">
       <h2 className="text-sm font-semibold">50% win-back offer</h2>
-      <p className="text-xs text-muted-foreground">Production · last 30 days · verified purchases after an offer view</p>
+      <p className="text-xs text-muted-foreground">Production · {experimentCohortLabel(appId)} · verified purchases after an offer view</p>
     </div>
     <div className={cn(DASHBOARD_SURFACE_CLASS, "p-5")}>
       {failed || report?.status === "unavailable" || report?.status === "limited" || report?.status === "setup_required"

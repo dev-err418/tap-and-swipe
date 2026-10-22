@@ -2,6 +2,7 @@ import { analyticsSnapshot } from "./analytics-snapshot";
 import "server-only";
 import { appAnalyticsPeriodRange } from "./app-analytics-time";
 import { summarizeWinbackPaywall, type WinbackPaywallReport } from "./winback-paywall-analytics";
+import { loadExperimentInstallUserIds } from "./app-experiment-cohort-queries";
 
 type AppId = "glow" | "versy";
 const HOST = "https://eu.posthog.com";
@@ -12,7 +13,7 @@ function text(value: unknown): string { return String(value ?? ""); }
 function number(value: unknown): number { const n = Number(value); return Number.isFinite(n) && n >= 0 ? n : 0; }
 
 async function load(appId: AppId): Promise<WinbackPaywallReport> {
-  const { since, before } = appAnalyticsPeriodRange("month");
+  const { since, before } = appAnalyticsPeriodRange("all");
   const base = summarizeWinbackPaywall([], since.toISOString(), before.toISOString());
   const prefix = appId === "glow" ? "GLOW" : "VERSY";
   const key = process.env[`POSTHOG_${prefix}_READ_KEY`]?.trim();
@@ -22,24 +23,28 @@ async function load(appId: AppId): Promise<WinbackPaywallReport> {
   }
   // Glow's discounted SKU is recorded as original_product_id on purchase. Versy uses
   // a promotional offer on the original SKU. Both join to the product shown at view.
-  const sql = `SELECT distinct_id, source, product_id,
-      countIf(event = 'winback_paywall_viewed') AS views,
-      countIf(event = 'winback_purchase_completed') AS purchases,
-      minIf(toUnixTimestamp(timestamp), event = 'winback_paywall_viewed') AS first_view,
-      maxIf(toUnixTimestamp(timestamp), event = 'winback_purchase_completed') AS last_purchase
-    FROM (
-      SELECT distinct_id, event, timestamp, toString(properties.source) AS source,
-        if(event = 'winback_purchase_completed' AND notEmpty(toString(properties.original_product_id)),
-          toString(properties.original_product_id), toString(properties.product_id)) AS product_id
-      FROM events
-      WHERE timestamp >= toDateTime('${sqlTime(since)}', 'UTC')
-        AND timestamp < toDateTime('${sqlTime(before)}', 'UTC')
-        AND event IN ('winback_paywall_viewed', 'winback_purchase_completed')
-        AND properties.app_environment = 'production'
-    )
-    GROUP BY distinct_id, source, product_id
-    LIMIT ${MAX_GROUPS + 1}`;
   try {
+    const eligibleUsers = await loadExperimentInstallUserIds(appId);
+    if (!eligibleUsers.size) return base;
+    const quote = (value: string) => `'${value.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
+    const sql = `SELECT distinct_id, source, product_id,
+        countIf(event = 'winback_paywall_viewed') AS views,
+        countIf(event = 'winback_purchase_completed') AS purchases,
+        minIf(toUnixTimestamp(timestamp), event = 'winback_paywall_viewed') AS first_view,
+        maxIf(toUnixTimestamp(timestamp), event = 'winback_purchase_completed') AS last_purchase
+      FROM (
+        SELECT distinct_id, event, timestamp, toString(properties.source) AS source,
+          if(event = 'winback_purchase_completed' AND notEmpty(toString(properties.original_product_id)),
+            toString(properties.original_product_id), toString(properties.product_id)) AS product_id
+        FROM events
+        WHERE timestamp >= toDateTime('${sqlTime(since)}', 'UTC')
+          AND timestamp < toDateTime('${sqlTime(before)}', 'UTC')
+          AND event IN ('winback_paywall_viewed', 'winback_purchase_completed')
+          AND properties.app_environment = 'production'
+          AND distinct_id IN (${[...eligibleUsers].map(quote).join(",")})
+      )
+      GROUP BY distinct_id, source, product_id
+      LIMIT ${MAX_GROUPS + 1}`;
     const response = await fetch(`${HOST}/api/projects/${projectId}/query/`, {
       method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ query: { kind: "HogQLQuery", query: sql } }),

@@ -1,7 +1,11 @@
 "use client";
 
-import { Fragment, useState, type PointerEvent } from "react";
+import { Fragment, useMemo, useRef, useState, type PointerEvent } from "react";
+import { Tooltip } from "radix-ui";
+import { compareArpu } from "@/lib/arpu-comparison";
+import { ArpuComparisonCells } from "./ArpuComparisonCells";
 import { createPortal } from "react-dom";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 import {
   DASHBOARD_TAB_ACTIVE_CLASS,
@@ -16,6 +20,7 @@ import {
   type UserJourneyVariantResult,
 } from "@/lib/user-journey";
 import { cn } from "@/lib/utils";
+import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 
 const DROP_COLOR = "#f97316";
 
@@ -30,12 +35,15 @@ export default function UserJourneyFunnel({
   report: UserJourneyReport | null;
   windowLabel: string;
 }) {
+  const [graphOpen, setGraphOpen] = useState(false);
+  const graphTrigger = useRef<HTMLButtonElement | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const cohortLabel = experimentCohortLabel(appId ?? "") ?? `Installs ${windowLabel.toLowerCase()}`;
   if (!report) return null;
   if (!funnelOnly && appId !== "glow" && appId !== "versy" && report.versions?.length) {
-    return <div className="min-w-0 overflow-hidden rounded-[28px] bg-white p-4">
+    return <DashboardCard title="App versions" contentClassName="pt-0">
       <JourneyVersionComparison showInstallPaid={appId === "poky"} cohorts={report.versions.filter((entry) => entry.version !== "unknown").slice(0, 5)} />
-    </div>;
+    </DashboardCard>;
   }
   if ((report.status !== "ready" && report.status !== "empty") || report.variants.length === 0) {
     return (
@@ -52,72 +60,133 @@ export default function UserJourneyFunnel({
   const routes = report.variants.filter((row) => (row.family ?? row.label) === family);
 
   return (
-    <DashboardCard
-      title={report.title}
-      action={<span className="text-xs text-muted-foreground">Installs {windowLabel.toLowerCase()} · paywall seen</span>}
-      contentClassName="pb-4"
-    >
-      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Onboarding variant">
-        {families.map((name) => (
-          <button
-            type="button"
-            key={name}
-            aria-pressed={name === family}
-            onClick={() => setSelected((report.variants.find((row) => (row.family ?? row.label) === name && row.assigned > 0)
-              ?? report.variants.find((row) => (row.family ?? row.label) === name))!.key)}
-            className={cn(
-              DASHBOARD_TAB_CLASS,
-              "h-8 px-3",
-              name === family ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS,
-            )}
-          >
-            {name}
-            {!variant.family ? <span className="ml-1.5 tabular-nums">({report.variants.find((row) => row.label === name)!.assigned > 0 ? formatPercent(report.variants.find((row) => row.label === name)!.completionShare) : "—"})</span> : null}
-          </button>
-        ))}
-      </div>
-      {routes.length > 1 ? (
-        <div className="mb-4 flex gap-2" role="group" aria-label="Widget route">
-          {routes.map((row) => <button key={row.key} type="button" aria-pressed={row.key === variant.key}
-            onClick={() => setSelected(row.key)} className={cn(DASHBOARD_TAB_CLASS, "h-7 px-3 text-xs",
-              row.key === variant.key ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS)}>
-            {row.label} ({row.assigned > 0 ? formatPercent(row.completionShare) : "—"})
-          </button>)}
+    <Dialog open={graphOpen} onOpenChange={setGraphOpen}>
+      <DashboardCard
+        title={report.title}
+        action={<span className="text-xs text-muted-foreground">{cohortLabel}</span>}
+        contentClassName="pt-0"
+      >
+        <JourneyVersionComparison
+          cohorts={report.variants.map((row) => ({ version: row.key, installs: row.assigned, tracked: row.assigned, variants: [row], conversions: row.conversions }))}
+          rowHeading="Onboarding funnel"
+          rowLabels={Object.fromEntries(report.variants.map((row) => [row.key, journeyVariantLabel(row)]))}
+          allUsersOnly
+          showArpuGraph
+          showRefundRate
+          showInstallPaid
+          onRowClick={(key, trigger) => {
+            graphTrigger.current = trigger;
+            setSelected(key);
+            setGraphOpen(true);
+          }}
+        />
+      </DashboardCard>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[min(96vw,1400px)]" onCloseAutoFocus={(event) => {
+        event.preventDefault();
+        graphTrigger.current?.focus();
+      }}>
+        <DialogHeader>
+          <DialogTitle>{journeyVariantLabel(variant)} · User journey</DialogTitle>
+          <DialogDescription>{cohortLabel}. Screen reach and drop-off from Welcome to completion.</DialogDescription>
+        </DialogHeader>
+        <div className="min-w-0">
+          <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Onboarding variant">
+            {families.map((name) => (
+              <button
+                type="button"
+                key={name}
+                aria-pressed={name === family}
+                onClick={() => setSelected((report.variants.find((row) => (row.family ?? row.label) === name && row.assigned > 0)
+                  ?? report.variants.find((row) => (row.family ?? row.label) === name))!.key)}
+                className={cn(
+                  DASHBOARD_TAB_CLASS,
+                  "h-8 px-3",
+                  name === family ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS,
+                )}
+              >
+                {name}
+                {!variant.family ? <span className="ml-1.5 tabular-nums">({report.variants.find((row) => row.label === name)!.assigned > 0 ? formatPercent(report.variants.find((row) => row.label === name)!.completionShare) : "—"})</span> : null}
+              </button>
+            ))}
+          </div>
+          {routes.length > 1 ? (
+            <div className="mb-4 flex gap-2" role="group" aria-label="Widget route">
+              {routes.map((row) => <button key={row.key} type="button" aria-pressed={row.key === variant.key}
+                onClick={() => setSelected(row.key)} className={cn(DASHBOARD_TAB_CLASS, "h-7 px-3 text-xs",
+                  row.key === variant.key ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS)}>
+                {row.label} ({row.assigned > 0 ? formatPercent(row.completionShare) : "—"})
+              </button>)}
+            </div>
+          ) : null}
+          <JourneyVariant variant={variant} />
         </div>
-      ) : null}
-      <JourneyVariant variant={variant} />
-      {report.note ? <p className="mt-3 text-xs text-muted-foreground">{report.note}</p> : null}
-    </DashboardCard>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-export function JourneyVersionComparison({ cohorts, showInstallPaid = false, rowHeading = "First version", rowLabels }: { cohorts: JourneyVersionCohort[]; showInstallPaid?: boolean; rowHeading?: string; rowLabels?: Record<string, string> }) {
+function journeyVariantLabel(variant: UserJourneyVariantResult) {
+  return variant.family && variant.family !== variant.label ? `${variant.family} · ${variant.label}` : variant.label;
+}
+
+export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRefundRate = false, splitAdSources = false, showInstallPaid = false, rowHeading = "First version", rowLabels, showArpuGraph = false, onRowClick }: {
+  cohorts: JourneyVersionCohort[];
+  allUsersOnly?: boolean;
+  showRefundRate?: boolean;
+  splitAdSources?: boolean;
+  showInstallPaid?: boolean;
+  rowHeading?: string;
+  rowLabels?: Record<string, string>;
+  showArpuGraph?: boolean;
+  onRowClick?: (key: string, trigger: HTMLButtonElement) => void;
+}) {
+  const audiences = allUsersOnly ? [{ key: "global", label: "All users" }] as const : splitAdSources
+    ? [{ key: "global", label: "All users" }, { key: "metaAds", label: "Meta Ads" }, { key: "asa", label: "ASA" }, { key: "nonAds", label: "Organic" }] as const
+    : [{ key: "global", label: "All users" }, { key: "ads", label: "Ads" }, { key: "nonAds", label: "Non-ads" }] as const;
+  const comparisons = useMemo(() => Object.fromEntries((["global", "ads", "metaAds", "asa", "nonAds"] as const).map((audience) => {
+    const results = compareArpu(cohorts.map((cohort) => ({ key: cohort.version, metric: cohort.conversions?.[audience] })));
+    const extent = Math.max(0.1, ...results.flatMap((result) => result.interval && result.lift != null
+      ? [Math.abs(result.lift) + 3 * (result.interval[1] - result.interval[0]) / 3.92] : []));
+    return [audience, { results, extent }];
+  })), [cohorts]);
+  const labelFor = (key: string) => rowLabels?.[key] ?? (key === "unknown" ? "Unknown" : `v${key}`);
   const fields = showInstallPaid ? ["trials", "paid", "installPaid"] as const : ["trials", "paid"] as const;
   if (!cohorts.length) return <p className="text-sm text-muted-foreground">No known first-seen versions in this install window.</p>;
-  return <div className="space-y-3">
+  return <Tooltip.Provider delayDuration={150}><div className="space-y-3">
     <div className="min-w-0 overflow-x-auto rounded-xl border border-black/[0.06] scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" role="region" aria-label={rowHeading === "First version" ? "Conversions by first-seen version" : `Conversions by ${rowHeading.toLowerCase()}`} tabIndex={0}>
-      <table className={cn("w-full text-left text-xs", showInstallPaid ? "min-w-[1816px]" : "min-w-[1456px]")}>
+      <table className="w-full text-left text-xs" style={{ minWidth: 136 + audiences.length * (((showInstallPaid ? 560 : 440) + (showArpuGraph ? 336 : 176)) + (showRefundRate ? 112 : 0)) }}>
         <thead className="bg-[#f8f8f8]">
-          <tr className="border-b border-black/[0.06]">
+          {!allUsersOnly ? <tr className="border-b border-black/[0.06]">
             <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-32 bg-[#f8f8f8] px-4 py-3 font-medium">{rowHeading}</th>
-            {(["All users", "Ads", "Non-ads"] as const).map((label) => <th key={label} scope="colgroup" colSpan={showInstallPaid ? 5 : 4} className="border-l border-black/[0.06] px-3 py-3 font-medium">
-              {label}{label === "Non-ads" ? <span className="ml-2 font-normal text-muted-foreground">No recorded ad attribution</span> : null}
+            {audiences.map(({ key, label }) => <th key={key} title={key === "asa" ? "Apple Search Ads" : key === "nonAds" ? "No recorded ad attribution" : undefined} scope="colgroup" colSpan={(showInstallPaid ? 7 : 6) + (showRefundRate ? 1 : 0)} className="border-l border-black/[0.06] px-3 py-3 font-medium">
+              {label}{key === "nonAds" ? <span className="ml-2 font-normal text-muted-foreground">No recorded ad attribution</span> : null}
             </th>)}
-          </tr>
+          </tr> : null}
           <tr className="text-muted-foreground">
-            {(["global", "ads", "nonAds"] as const).map((audience) => <Fragment key={audience}>
+            {allUsersOnly ? <th scope="col" className="sticky left-0 z-10 min-w-32 bg-[#f8f8f8] px-4 py-3 text-foreground font-medium">{rowHeading}</th> : null}
+            {audiences.map(({ key: audience }) => <Fragment key={audience}>
               <th scope="col" className="min-w-24 border-l border-black/[0.06] px-3 py-3 text-right font-medium">Installs</th>
-              <th scope="col" className="min-w-28 px-3 py-3 text-right font-medium" title="Net proceeds in USD / all installs in this cohort, including non-payers">APPU</th>
+              <th scope="col" className={cn("whitespace-nowrap px-3 py-3 text-right font-medium", showArpuGraph ? "min-w-64" : "min-w-24")} title="Observed APPU lift and approximate 95% interval versus the first populated row. Hover for details.">APPU lift</th>
+              <th scope="col" className="min-w-20 whitespace-nowrap px-3 py-3 text-right font-medium" title="Estimated chance of highest APPU among populated rows in this audience">Win %</th>
+              <th scope="col" className="min-w-28 px-3 py-3 text-right font-medium" title="Average proceeds per user: net proceeds in USD / all installs in this cohort, including non-payers">APPU</th>
               <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium">Trial start</th>
               <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Paid users / trials whose recorded end has passed">Trial → paid</th>
               {showInstallPaid ? <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Paid users from this cohort / installs in this cohort">Install → paid</th> : null}
+              {showRefundRate ? <>
+                <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Refunded transactions / paid purchases, including renewals. Free trials excluded.">Refund rate</th>
+              </> : null}
             </Fragment>)}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="[&>tr>td]:py-2 [&>tr>th]:py-2">
           {cohorts.map((cohort) => <tr key={cohort.version} className="border-t border-black/[0.06]">
-            <th scope="row" className="sticky left-0 z-10 bg-white px-4 py-4 font-medium">{rowLabels?.[cohort.version] ?? (cohort.version === "unknown" ? "Unknown" : `v${cohort.version}`)}</th>
-            {(["global", "ads", "nonAds"] as const).map((audience) => {
+            <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-white px-4 py-4 font-medium">
+              {onRowClick ? <button type="button" aria-haspopup="dialog" aria-label={`View screens for ${labelFor(cohort.version)}`}
+                className="cursor-pointer rounded-sm text-left underline decoration-black/20 underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                onClick={(event) => onRowClick(cohort.version, event.currentTarget)}>{labelFor(cohort.version)}</button>
+                : labelFor(cohort.version)}
+            </th>
+            {audiences.map(({ key: audience }) => {
               const metric = cohort.conversions?.[audience];
               const appu = metric && metric.installs > 0 && !metric.missingProceeds && Number.isFinite(metric.proceeds)
                 ? metric.proceeds / metric.installs : null;
@@ -128,7 +197,10 @@ export function JourneyVersionComparison({ cohorts, showInstallPaid = false, row
               });
               return <Fragment key={audience}>
                 <td className="border-l border-black/[0.06] px-3 py-4 text-right tabular-nums">{metric ? metric.installs.toLocaleString("en-US") : "—"}</td>
-                <td title={bestAppu ? "Highest average proceeds per user among these versions" : "Average proceeds per user (USD)"}
+                <ArpuComparisonCells result={comparisons[audience].results.find((result) => result.key === cohort.version)!}
+                  showGraph={showArpuGraph} metric={metric} label={labelFor(cohort.version)} extent={comparisons[audience].extent}
+                  baselineLabel={labelFor(comparisons[audience].results[0]?.baseline ?? cohort.version)} />
+                <td title={bestAppu ? "Highest average proceeds per user among these cohorts" : "Average proceeds per user (USD)"}
                   className={cn("whitespace-nowrap px-3 py-4 text-right font-semibold tabular-nums", bestAppu && "bg-orange-100/80 text-orange-900")}>
                   {appu == null ? "—" : appu.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
@@ -143,7 +215,7 @@ export function JourneyVersionComparison({ cohorts, showInstallPaid = false, row
                       && candidate[field] / candidateDenominator > rate;
                   });
                   return <td key={field}
-                    title={field === "paid" ? `${metric?.paid ?? 0} paid / ${denominator} finished trials${best ? " · Highest observed rate" : ""}` : best ? "Highest observed conversion rate among these versions" : undefined}
+                    title={field === "paid" ? `${metric?.paid ?? 0} paid / ${denominator} finished trials${best ? " · Highest observed rate" : ""}` : best ? "Highest observed conversion rate among these cohorts" : undefined}
                     className={cn("whitespace-nowrap px-3 py-4 text-right tabular-nums", best && "bg-orange-100/80 text-orange-900")}>
                     {!available ? "—" : <>
                       {best ? <span className="sr-only">Highest observed conversion: </span> : null}
@@ -152,16 +224,24 @@ export function JourneyVersionComparison({ cohorts, showInstallPaid = false, row
                     </>}
                   </td>;
                 })}
+                {showRefundRate ? <>
+                  <td className="whitespace-nowrap px-3 py-4 text-right tabular-nums" title="Refunded transactions / paid purchases, including renewals">
+                    {metric && metric.purchases > 0 && !metric.missingInstallMoney ? <>
+                      <span className="font-semibold">{formatPercent(metric.refunds / metric.purchases)}</span>
+                      <span className="ml-1 text-muted-foreground">({metric.refunds.toLocaleString("en-US")} / {metric.purchases.toLocaleString("en-US")})</span>
+                    </> : "—"}
+                  </td>
+                </> : null}
               </Fragment>;
             })}
           </tr>)}
         </tbody>
       </table>
     </div>
-  </div>;
+  </div></Tooltip.Provider>;
 }
 
-function JourneyVariant({ variant }: { variant: UserJourneyVariantResult }) {
+export function JourneyVariant({ variant }: { variant: UserJourneyVariantResult }) {
   const [tooltip, setTooltip] = useState<JourneyTooltip | null>(null);
   if (variant.assigned === 0) {
     return <p role="status" className="text-sm text-muted-foreground">No tracked {variant.family ?? variant.label} installs in this window yet.</p>;

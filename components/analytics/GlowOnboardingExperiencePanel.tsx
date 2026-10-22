@@ -12,15 +12,15 @@ export default function GlowOnboardingExperiencePanel({ report }: { report: Glow
   const original = report?.experiment === GLOW_ONBOARDING_LEGACY_ID;
   const analysis = report?.status === "ready" && report.warnings.length === 0
     ? analyzeExperiment(report.rows.map((r) => ({ key: r.variant, label: r.label, exposures: r.users,
-      conversions: r.paid, revenue: r.proceeds ?? 0, variance: r.proceedsVariance ?? 0 })), "revenue_per_visitor", "ARPU") : null;
+      conversions: r.paid, revenue: r.proceeds ?? 0, variance: r.proceedsVariance ?? 0 })), "revenue_per_visitor", "APPU") : null;
   return <><AppExperimentLayout title={historical ? "Historical onboarding experience" : "IAM vs manifest-audio"} label="Onboarding experience" subtitle={historical ? (original ? "Original IAM wording · historical" : "Copy mascot comparison · historical") : "50% IAM · 50% manifest-audio"}>
     {!report || report.status === "unavailable" ? <p role="status" className="px-4 py-4 text-sm text-muted-foreground">Onboarding reporting is unavailable. Refresh to retry.</p> : <>
       {report.status === "empty" && <p role="status" className="px-4 py-4 text-sm text-muted-foreground">{historical ? "No historical assignments in this date range." : "No production assignments in this date range; results appear after the updated app is released and eligible new users enroll."}</p>}
       {report.warnings.map((warning) => <p role="status" key={warning} className="px-4 py-3 text-sm text-muted-foreground">{warning}</p>)}
-      {analysis && <ExperimentStats title="ARPU" titleClassName="font-bold" analysis={analysis} />}
+      {analysis && <ExperimentStats title="APPU" titleClassName="font-bold" analysis={analysis} />}
       <ExperimentTable caption="All assigned users, including non-payers and unfinished onboarding" headings={<>
         <ExperimentTh>Variant</ExperimentTh>
-        {["Assigned users", "Onboarding completion", "Net proceeds", "ARPU", "Sessions / user / day", "Avg time to cancel"].map((label) => <ExperimentTh key={label} right>{label}</ExperimentTh>)}
+        {["Assigned users", "Onboarding completion", "Net proceeds", "APPU", "Sessions / user / day", "Avg time to cancel"].map((label) => <ExperimentTh key={label} right>{label}</ExperimentTh>)}
       </>}>
         {report.rows.map((row, index) => <tr key={row.variant} className="border-b border-black/[0.07]">
           <ExperimentTd><ExperimentVariantLabel index={index}>{row.label}</ExperimentVariantLabel></ExperimentTd>

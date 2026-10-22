@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const APP_IDS = new Set<MobileAppAnalytics["id"]>(["glow", "poky", "versy"]);
 
-/** Month-window A/B tests and paywall analytics. */
+/** A/B tests and paywalls: version-based install cohorts for Glow/Versy; rolling month for Poky. */
 export async function GET(request: NextRequest) {
   const access = await getAnalyticsViewer();
   if (!access) {

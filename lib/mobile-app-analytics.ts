@@ -1,6 +1,7 @@
 import { buildDailyAppReport } from "./daily-app-report";
 import { buildAnalyticsMarkets, marketLanguage, marketCountry, type AnalyticsMarkets } from "./analytics-markets";
 import { productionAnalyticsFilter } from "./analytics-production";
+import { experimentInstallCohort, experimentMinimumInstallVersion, installVersionPredicateSql } from "./app-experiment-cohort";
 import { ACQUISITION_ATTRIBUTE_KEYS, versionCohortConversions } from "./version-cohort-conversions";
 import { analyticsSnapshot, type SnapshotMetadata } from "./analytics-snapshot";
 import { sevenDayTrialSurvival } from "./trial-survival";
@@ -12,6 +13,8 @@ import "server-only";
 import { glowMatureCountries } from "./glow-mature-countries";
 import { GLOW_SUPERWALL_HISTORY_START_MS, glowPaywallMigrationExperiment } from "./glow-paywall-migration";
 import { loadUserJourney } from "./user-journey-queries";
+import { journeyCohortAttributeKeys, withJourneyConversions } from "./journey-cohort-conversions";
+import { buildGlowPaywallCohortComparisons, GLOW_PAYWALL_COHORT_KEYS, type GlowPaywallCohortComparisons } from "./glow-paywall-cohort-comparisons";
 import { withJourneyInstallVersions, type UserJourneyReport } from "./user-journey";
 import { orderAppExperiments } from "./app-experiment-order";
 import { appAnalyticsPeriodRange as periodRange, appAnalyticsTrendBucket as trendBucket, appAnalyticsBucketSql as superwallBucketExpression } from "./app-analytics-time";
@@ -173,6 +176,7 @@ export type MobileAppAnalytics = SnapshotMetadata & {
   nativePaywalls?: NativePaywallReport | null;
   onboardingExperience?: GlowOnboardingReport | null;
   userJourney?: UserJourneyReport | null;
+  paywallCohortComparisons?: GlowPaywallCohortComparisons | null;
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -243,6 +247,7 @@ type SessionRow = {
 };
 
 type AppFacts = {
+  comparisonCohort?: { installs: InstallRow[]; events: AttributedRow[] };
   migrationHistory?: { installs: InstallRow[]; events: AttributedRow[]; startMs: number };
   sessionDataAvailable: boolean;
   startMs: number;
@@ -397,6 +402,9 @@ async function loadSuperwallAppAnalytics(
   const end = clickhouseDate(before);
   const startMs = since.getTime();
   const endMs = before.getTime();
+  const minimumInstallVersion = experimentMinimumInstallVersion(app.id);
+  const comparisonStartMs = minimumInstallVersion ? 0 : startMs;
+  const comparisonEndMs = minimumInstallVersion ? Date.now() : endMs;
 
   const downloadsQuery = `
     SELECT bucket, sum(hourly_downloads) AS downloads
@@ -457,10 +465,11 @@ async function loadSuperwallAppAnalytics(
       ? loadNativePaywalls(
           <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
           app.applicationId,
-          app.id === "glow"
+          minimumInstallVersion ? comparisonStartMs : app.id === "glow"
             ? glowExperimentStart(startMs)
             : app.id === "poky" ? pokyExperimentStart(startMs) : startMs,
-          endMs,
+          comparisonEndMs,
+          minimumInstallVersion,
         )
       : Promise.resolve(null),
     includeCountries
@@ -468,12 +477,14 @@ async function loadSuperwallAppAnalytics(
           <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
           app.id,
           app.applicationId,
-          start,
-          end,
+          minimumInstallVersion ? clickhouseDate(new Date(0)) : start,
+          minimumInstallVersion ? clickhouseDate(new Date(comparisonEndMs)) : end,
+          minimumInstallVersion,
         )
       : Promise.resolve(null),
     includeCountries && includeReports && app.id === "glow"
-      ? loadGlowOnboardingExperience(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId, startMs, endMs)
+      ? loadGlowOnboardingExperience(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId,
+          comparisonStartMs, comparisonEndMs, minimumInstallVersion)
       : Promise.resolve(null),
   ]);
 
@@ -487,6 +498,11 @@ async function loadSuperwallAppAnalytics(
   }
 
   const facts = factsResult.status === "fulfilled" ? factsResult.value : null;
+  const comparisonFacts: AppFacts | null = facts?.comparisonCohort ? {
+    ...facts, ...facts.comparisonCohort, migrationHistory: undefined,
+    startMs: facts.comparisonCohort.installs.reduce((earliest, install) => Math.min(earliest, install.installedAt), comparisonEndMs),
+    endMs: comparisonEndMs,
+  } : facts;
   const trend = mergeTrend(
     downloadResult.value.map((row) => ({
       bucket: parseClickhouseDate(row.bucket),
@@ -504,18 +520,20 @@ async function loadSuperwallAppAnalytics(
   const includePlanCards = Boolean(facts) && app.id !== "glow";
   const plans = includePlanCards && facts ? plansFromFacts(facts) : [];
   const retention = includePlanCards && facts ? retentionFromFacts(facts) : [];
-  const experiments = facts && includeReports
+  const experiments = comparisonFacts && includeReports
     ? app.id === "glow"
-      ? glowExperiments(facts)
+      ? glowExperiments(comparisonFacts)
       : app.id === "poky"
-        ? pokyExperiments(facts)
-        : versyExperiments(facts)
+        ? pokyExperiments(comparisonFacts)
+        : versyExperiments(comparisonFacts)
     : [];
   const trialCancelTiming = facts && (app.id === "glow" || app.id === "versy") ? trialCancelFromFacts(facts) : null;
 
-  const journey = journeyResult.status === "fulfilled"
-    ? withJourneyInstallVersions(journeyResult.value, facts?.installs ?? []) : null;
-  const conversions = facts ? versionCohortConversions(facts.installs, facts.events, facts.attributes, startMs, endMs) : null;
+  let journey = journeyResult.status === "fulfilled"
+    ? withJourneyInstallVersions(journeyResult.value, comparisonFacts?.installs ?? []) : null;
+  if (journey && comparisonFacts) journey = withJourneyConversions(journey, app.id, comparisonFacts.installs, comparisonFacts.events,
+    comparisonFacts.attributes, comparisonStartMs, comparisonEndMs, comparisonEndMs);
+  const conversions = comparisonFacts ? versionCohortConversions(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonStartMs, comparisonEndMs, comparisonEndMs) : null;
   if (journey?.versions && conversions) journey.versions = journey.versions.map((cohort) => ({
     ...cohort, conversions: conversions.get(cohort.version),
   }));
@@ -571,6 +589,9 @@ async function loadSuperwallAppAnalytics(
       status: "unavailable", asOf: Date.now(), groups: [], warnings: ["Paywall reporting is temporarily unavailable."],
     },
     userJourney: journey,
+    paywallCohortComparisons: app.id === "glow" && comparisonFacts
+      ? buildGlowPaywallCohortComparisons(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes,
+          comparisonStartMs, comparisonEndMs, comparisonEndMs) : null,
   };
 }
 
@@ -600,17 +621,22 @@ async function loadAppFacts(
   includeReports: boolean,
 ): Promise<AppFacts> {
   const environmentKey = app.id === "versy" ? "versy_tracking_environment" : app.id === "poky" ? "poky_tracking_environment" : null;
-  const keys = [...new Set([...(includeReports ? attributeKeysFor(app.id) : ACQUISITION_ATTRIBUTE_KEYS), ...(environmentKey ? [environmentKey] : [])])];
+  const keys = [...new Set([...(includeReports ? attributeKeysFor(app.id) : ACQUISITION_ATTRIBUTE_KEYS), ...journeyCohortAttributeKeys(app.id),
+    ...(app.id === "glow" ? GLOW_PAYWALL_COHORT_KEYS : []), ...(environmentKey ? [environmentKey] : [])])];
   const hasMigrationHistory = includeReports && (app.id === "poky" || app.id === "glow");
   const historyStartMs = app.id === "poky" ? pokyExperimentStart(0) - 30 * DAY_MS
     : app.id === "glow" ? GLOW_SUPERWALL_HISTORY_START_MS : startMs;
   const fetchStart = hasMigrationHistory ? clickhouseDate(new Date(Math.min(startMs, historyStartMs))) : start;
+  const minimumInstallVersion = experimentMinimumInstallVersion(app.id);
   const sessionRange = sessionWindow(startMs, endMs);
   const fetchSessions = includeSessions && (app.id === "poky" || app.id === "versy");
+  const installPromise = fetchInstallCohort(app, fetchStart, end, minimumInstallVersion);
   const [installResult, attributeResult, eventResult, sessionResult] = await Promise.allSettled([
-    fetchInstallCohort(app, fetchStart, end),
+    installPromise,
     keys.length ? fetchUserAttributes(app, keys) : Promise.resolve([]),
-    fetchAttributedEvents(app, fetchStart),
+    installPromise.then((installs) => fetchAttributedEvents(app, minimumInstallVersion
+      ? clickhouseDate(new Date(installs.reduce((earliest, install) => Math.min(earliest, install.installedAt), Date.parse(`${fetchStart.replace(" ", "T")}Z`))))
+      : fetchStart)),
     fetchSessions ? fetchSessionStarts(app, sessionRange.from, sessionRange.to) : Promise.resolve([]),
   ]);
 
@@ -639,6 +665,7 @@ async function loadAppFacts(
   const events = eventResult.value.filter(production.event);
 
   return {
+    comparisonCohort: minimumInstallVersion ? { installs: experimentInstallCohort(installs, minimumInstallVersion), events } : undefined,
     migrationHistory: hasMigrationHistory
       ? { installs, events, startMs: historyStartMs } : undefined,
     startMs,
@@ -647,7 +674,7 @@ async function loadAppFacts(
     sessionFromMs: sessionRange.from,
     sessionToMs: sessionRange.to,
     sessionDataAvailable: fetchSessions && sessionResult.status === "fulfilled",
-    installs: installs.filter((row) => row.installedAt >= startMs),
+    installs: installs.filter((row) => row.installedAt >= startMs && row.installedAt < endMs),
     attributes,
     events: events.filter((row) => row.eventTs >= startMs),
     sessions: sessionResult.status === "fulfilled" ? sessionResult.value.filter((row) => production.user(row.appUserId)) : [],
@@ -661,7 +688,7 @@ function attributeKeysFor(id: SuperwallAppConfig["id"]) {
   return [...VERSY_ATTRIBUTE_KEYS, ...acquisition];
 }
 
-async function fetchInstallCohort(app: SuperwallAppConfig, start: string, end: string): Promise<InstallRow[]> {
+async function fetchInstallCohort(app: SuperwallAppConfig, start: string, end: string, minimumInstallVersion?: string): Promise<InstallRow[]> {
   const rows = await querySuperwall<{
     appUserId: string;
     ver: string | null;
@@ -682,8 +709,9 @@ WHERE applicationId = ${app.applicationId}
   AND name = 'device_attributes'
   AND ts < now()
 GROUP BY appUserId
-HAVING installedAt >= toDateTime64('${start}', 6, 'UTC')
-  AND installedAt < toDateTime64('${end}', 6, 'UTC')
+HAVING (installedAt >= toDateTime64('${start}', 6, 'UTC')
+  AND installedAt < toDateTime64('${end}', 6, 'UTC'))
+  ${minimumInstallVersion ? `OR (${installVersionPredicateSql("ver", minimumInstallVersion)} AND installedAt < now())` : ""}
 LIMIT 30000
 FORMAT JSON
 `.trim(),

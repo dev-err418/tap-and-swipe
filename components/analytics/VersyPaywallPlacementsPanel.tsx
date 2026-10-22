@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { VersyPlacementReport, VersyPlacementRow } from "@/lib/versy-paywall-placements";
 import { DASHBOARD_SURFACE_CLASS } from "./dashboard-surface";
 import { cn } from "@/lib/utils";
+import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 
 const count = (value: number) => value.toLocaleString("en-US");
 const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
@@ -50,7 +51,7 @@ export default function VersyPaywallPlacementsPanel() {
   return <section aria-label="Versy paywall placements" className="space-y-2">
     <div className="px-1">
       <h2 className="text-sm font-semibold">App purchase events</h2>
-      <p className="text-xs text-muted-foreground">Production · last 30 days · unique people per placement</p>
+      <p className="text-xs text-muted-foreground">Production · {experimentCohortLabel("versy")} · unique people per placement</p>
     </div>
     <div>
       {failed || report?.status === "unavailable" || report?.status === "limited" || report?.status === "setup_required"
@@ -60,7 +61,7 @@ export default function VersyPaywallPlacementsPanel() {
           <ResultsTable title="Paywalls" rows={report.onboarding} />
           <ResultsTable title="Placements" rows={report.rows} />
           {report.status === "empty" ? <p className="text-sm text-muted-foreground">No production placement events in this period yet.</p> : null}
-          <p className="px-1 text-xs text-muted-foreground">Historical app events, including builds before verified attribution. These conversions are client purchase results after a view, including trials. Revenue, paid users and refunds are shown in the verified tables above. Older missing views and purchase contexts are not reconstructed.</p>
+          <p className="px-1 text-xs text-muted-foreground">App events for this install cohort. These conversions are client purchase results after a view, including trials. Revenue, paid users and refunds are shown in the verified tables above. Missing views and purchase contexts are not reconstructed.</p>
         </div>}
     </div>
   </section>;

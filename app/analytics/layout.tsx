@@ -21,7 +21,11 @@ export default function AnalyticsLayout({
     <div
       className={`${saans.variable} ${saans.className} analytics-canvas min-h-dvh text-black antialiased`}
     >
-      <style>{`html { scrollbar-gutter: stable; }`}</style>
+      <style>{`
+        html { scrollbar-gutter: stable; }
+        /* Modal scroll locking supplies its own scrollbar gap. */
+        html:has(body[data-scroll-locked]) { scrollbar-gutter: auto; }
+      `}</style>
       {children}
     </div>
   );

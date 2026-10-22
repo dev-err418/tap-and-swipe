@@ -10,7 +10,7 @@ The next app build independently assigns both IAM and manifest-audio paywall seq
 
 `GlowPaywallFlowAssignment` persists under `glow.onboarding.paywallFlow.v1.<environment>`. It publishes scalar JSON in `gpf1_onboarding_paywall_flow_v1`: schema `1`, experiment `onboarding_paywall_flow_v1`, allocation `50_50`, variant `standard` or `versy_reminder`, environment, frozen language, randomized, assignedAt, updatedAt, optional viewedAt/completedAt, reminderLeadDays, initial priceVariant and onboardingJourney. Timestamps are Unix milliseconds. Enrollment starts when the first paywall introduction appears; a saved but unexposed assignment has no assignedAt and is not published. Debug previews are excluded. Resuming/relaunching does not rerandomize or reset enrollment.
 
-The A/B tab and clickable map cards show a separate all-language comparison: assigned users, unique final-paywall reach, paid users and paid conversion, net proceeds, and total APPU. The denominator includes intro dropouts and non-payers. Production/randomized records only; trials with zero proceeds do not count as paid conversions. The selected rolling 30-day assignment cohort follows all net proceeds through now, including recovery, renewals, and refunds, with the existing deduplication and verified `gp1_t_` cross-checks. The price report retains its separate denominator across all app placements. A flow-only user does not need a v3 onboarding assignment to enter this report; historical records are not relabeled.
+The A/B tab and clickable map cards show a separate all-language comparison: assigned users, unique final-paywall reach, paid users and paid conversion, net proceeds, and total APPU. The denominator includes intro dropouts and non-payers. Production/randomized records only; trials with zero proceeds do not count as paid conversions. The first-install v1.8.3+ cohort, across all time, follows all net proceeds through now, including recovery, renewals, and refunds, with the existing deduplication and verified `gp1_t_` cross-checks. The price report retains its separate denominator across all app placements. A flow-only user does not need a v3 onboarding assignment to enter this report; historical records are not relabeled.
 
 The existing paginated Superwall attribute query reads the new key alongside onboarding and transaction keys. No raw user-level data reaches the browser. Empty results remain empty until an updated App Store build enrolls users. App release is separate from dashboard deployment.
 
@@ -264,11 +264,53 @@ closing the dialog returns keyboard focus to the map card.
 
 Most A/B result cards display APPU D7 and D14; the full-flow Recovery card uses total APPU. D30 APPU remains available in the underlying data. Glow and Poky's historical Superwall-vs-native comparisons load Superwall installs from 30 days before their September 20 experiment cutoffs (August 21), while native installs retain the selected, cutoff-clamped cohort window. This expanded history is isolated from other experiment and dashboard totals. Their planning panels are indicative, with no completion-date projection or decisive verdict for these non-randomized cohorts. Glow classifies the earliest observed install version as Superwall before 1.7.0 and native from 1.7.0; upgrades do not move that user. All linked outcomes are followed through now, including historical trial starts/conversions, renewals and refunds; revenue is deduplicated and trial/paid counts are unique users.
 
-The AB tests and Paywalls tabs always use a rolling **30-day assignment cohort**, independently of the dashboard period selector used by the Data tab and overview charts. Outcomes are followed through report `asOf` (now), even when the cohort period ended earlier. Both paywall tables use that same 30-day cohort. Placement rows include only cohort members reaching that placement and can overlap in users; each transaction is attributed to one placement.
+Glow and Versy use version-based install cohorts across the Data comparison tables, AB tests and Paywalls: **first install v1.8.3+ for Glow, v1.2.6+ for Versy**, across all time. The version is frozen from the earliest production `device_attributes` event; later upgrades and unknown/malformed first versions do not enroll users. The dashboard date selector continues to control the overview, App versions, countries and trial-survival sections. Poky retains its rolling 30-day assignment cohort. Outcomes follow report `asOf` (now). Win-back and Versy app-event reports join the same Superwall install identities to their PostHog distinct IDs before counting views/purchases. Placement rows include only cohort members reaching that placement and can overlap in users; each transaction is attributed to one placement.
 
 ### App version comparison
 
-The Data, AB tests, and Paywalls tabs can compare a selected app version. A user's **first recorded version on a production `device_attributes` event** fixes their cohort: versions below the selected version are Before, and the selected version or newer are After. Versions are compared by numeric components, so 1.10 is newer than 1.9. Missing or malformed first versions are excluded from both sides; they are not inferred from later upgrades. The Data comparison follows the selected dashboard period, while AB tests, native paywalls, and win-back offers retain their rolling 30-day cohorts. The difference column is After minus Before; rate differences are percentage points. These version cohorts are observational and do not imply that a release caused a change or establish an A/B winner. Native paywall, Journal VS Practice, and win-back comparisons resolve first versions for assigned or viewing users even if they installed before the report window. Win-back remains a separate PostHog view-to-purchase report with no revenue or refund attribution.
+All Data comparison tables include APPU lift and Win % immediately after Installs.
+App versions show numeric lift only; journey, paywall flow, price and joint tables
+also show a red/green uncertainty distribution. Tables scroll horizontally with
+hidden scrollbars. The first populated row in each audience is the labelled baseline.
+Win % is the estimated probability of highest APPU among populated rows in that
+same audience, using 20,000 deterministic normal draws of cohort means with actual
+sample variance of **per-install total net proceeds** (including zero-paying users,
+renewals and refunds). No conversion-rate proxy or synthetic variance is used.
+Estimates need complete revenue, at least two populated rows, 20 installs per
+populated row and positive observed variance in each. Empty rows are excluded.
+The 95% lift interval uses the delta method; it is withheld when the baseline's
+95% interval includes zero. Hover/focus details explain unavailable estimates and
+the model. These are descriptive comparisons, not causal claims; cohort ages and
+audiences may differ. No user-level proceeds are sent to the browser.
+
+Glow and Versy's Data-tab user journey is a flow-only table with installs, APPU
+(net proceeds per enrolled install), trial starts, trial-to-paid, install-to-paid,
+refund rate. It uses the screen funnel's enrollment/schema and
+production markers, all languages/countries and the version-based install cohort above.
+Refund rate here is refunded transaction count / paid purchase transaction count,
+including renewals and excluding free trials; it is distinct from the paywall
+table's revenue-based refund rate below. Deduplication and transaction-chain
+ownership match the version table. Missing charge amounts suppress refund rate.
+Clicking each onboarding funnel name opens its existing screen funnel in a modal. The
+active-trials card is removed from Data; the trial-survival chart remains.
+
+Glow also has compact **Paywall flows** and **Yearly prices** tables below User
+journey. Both use the first-install v1.8.3+ cohort across all time, in all languages and countries. Flow membership uses validated randomized production
+`gpf1_onboarding_paywall_flow_v1`; prices use only the three-arm
+`gp1_a_native_yearly_prices_v4` assignment. Historical price experiments remain
+separate. Startup price assignment can precede the SDK's install timestamp;
+this does not exclude the install. Outcomes begin at the later of installation
+and assignment and run through report time. Earlier subscription chains are
+excluded. Non-payers remain in the denominator, and renewals, weekly purchases,
+recovery purchases and refunds stay with their saved assignment. These are
+full-cohort outcomes, distinct from placement-specific purchase attribution.
+The tables reuse the journey's metrics and transaction-count refund rate, with
+no acquisition split. Missing facts show unavailable; missing amounts suppress
+the affected metrics. Data requests load the two assignment attributes alongside
+existing facts; no extra database or ingestion service is introduced. Snapshot
+schema v19 includes these tables, the joint flow × price comparison, and version-based cohort membership. A/B and Paywalls attribution rules remain unchanged within that install cohort.
+
+The Data, AB tests, and Paywalls tabs can compare a selected app version. A user's **first recorded version on a production `device_attributes` event** fixes their cohort: versions below the selected version are Before, and the selected version or newer are After. Versions are compared by numeric components, so 1.10 is newer than 1.9. Missing or malformed first versions are excluded from both sides; they are not inferred from later upgrades. The Data comparison follows the selected dashboard period, while Glow/Versy A/B tests, native paywalls and win-back offers use the version-based install cohorts above; Poky retains its rolling 30-day cohort. The difference column is After minus Before; rate differences are percentage points. These version cohorts are observational and do not imply that a release caused a change or establish an A/B winner. Native paywall, Journal VS Practice, and win-back comparisons resolve first versions for assigned or viewing users even if they installed before the report window. Win-back remains a separate PostHog view-to-purchase report with no revenue or refund attribution.
 
 - **Users:** all assigned users for a paywall; assigned users who reached a particular placement for placement rows.
 - **Views:** unique users actually shown that paywall/placement. Repeated openings count once.
@@ -305,7 +347,7 @@ installs, using the same 72-hour-mature cohort as APPU.
 - Development/sandbox records and malformed schemas are excluded. Malformed or missing monetary data produces visible warnings.
 - Do not change the generic AB-tests statistics as part of this feature; this panel uses its own user-level variance calculation. The older native-vs-web version comparison remains separate and is not a randomized experiment.
 
-The Paywalls tab also shows a separate **50% win-back offer** section for Glow and Versy. It reads production PostHog `winback_paywall_viewed` and verified `winback_purchase_completed` events for the last 30 days. A conversion is a distinct viewer who later bought the same yearly product from the same source within that window. Glow purchase events join by `original_product_id` because the discounted SKU differs; Versy joins by `product_id` because the promotion uses the original SKU. The panel breaks out source and yearly product. This is a view-to-purchase rate, separate from the regular native paywall experiment and its APPU, proceeds, and refunds. The dashboard does not attribute revenue or refunds to this offer. No production views show an empty state; read failures and the 20,000-group safety limit show unavailable instead of a partial rate.
+The Paywalls tab also shows a separate **50% win-back offer** section for Glow and Versy. It reads production PostHog `winback_paywall_viewed` and verified `winback_purchase_completed` events across all time for the version-based install cohort above. A conversion is a distinct viewer who later bought the same yearly product from the same source within that window. Glow purchase events join by `original_product_id` because the discounted SKU differs; Versy joins by `product_id` because the promotion uses the original SKU. The panel breaks out source and yearly product. This is a view-to-purchase rate, separate from the regular native paywall experiment and its APPU, proceeds, and refunds. The dashboard does not attribute revenue or refunds to this offer. No production views show an empty state; read failures and the 20,000-group safety limit show unavailable instead of a partial rate.
 
 ## Verification
 
@@ -380,3 +422,9 @@ The Versy reminder treatment now offers “View all plans”: the same assigned 
 On reaching that treatment, the native ledger permits Weekly in the assignment and current placement's `allowedProducts`; existing pending/completed purchase snapshots remain unchanged. For `native_yearly_prices_v4` only, the report accepts offer-list evolution from the assigned annual SKU to that same SKU plus `com.arthurbuildsstuff.glow.Weekly` when matching attribution. Experiment, variant, paywall, language, assignment timestamp and expected annual product must still match. Other product changes remain mismatches; no historical experiment rule is relaxed.
 
 Splash loading awaits all three annual prices, Weekly and recovery-offer preloads. The app keeps the full catalog separate from the annual-only primary presentation.
+
+The **Paywall flow × yearly price** table has six rows (two flows × three prices).
+Membership requires both validated assignments for the same install; it is never
+inferred by multiplying aggregate totals. Outcomes start after the later assignment
+and installation. Users missing either assignment remain in their separate table
+only. The joint table uses the same compact metrics and version-based install cohort.

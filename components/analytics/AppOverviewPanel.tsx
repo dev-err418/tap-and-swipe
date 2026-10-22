@@ -2,7 +2,7 @@
 
 import { DEFAULT_APP_LANGUAGE, marketKey, marketCountryLabel, type AnalyticsMarkets } from "@/lib/analytics-markets";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import type { FunnelTrendPoint } from "@/components/analytics/AppSprintFunnelCharts";
 import { totalCohortAppu, overviewForLanguage, overviewLanguageLabel, type AppOverviewCohorts } from "@/lib/app-overview-cohorts";
 import AppCountryBreakdown from "@/components/analytics/AppCountryBreakdown";
@@ -17,7 +17,6 @@ import type {
 import AppExperimentCard from "@/components/analytics/AppExperimentCard";
 import AppExperimentMap from "@/components/analytics/AppExperimentMap";
 import TrialCancelChart from "@/components/analytics/TrialCancelChart";
-import ActiveTrialsChart from "@/components/analytics/ActiveTrialsChart";
 import AppPlanBreakdown from "@/components/analytics/AppPlanBreakdown";
 import AppRetentionBreakdown from "@/components/analytics/AppRetentionBreakdown";
 import AppNotesChart from "@/components/analytics/AppNotesChart";
@@ -25,9 +24,12 @@ import NativePaywallsPanel from "@/components/analytics/NativePaywallsPanel";
 import WinbackPaywallPanel from "@/components/analytics/WinbackPaywallPanel";
 import VersyPaywallPlacementsPanel from "@/components/analytics/VersyPaywallPlacementsPanel";
 import GlowYearlyPricePanel from "./GlowYearlyPricePanel";
+import GlowPaywallCohortTables from "./GlowPaywallCohortTables";
+import type { GlowPaywallCohortComparisons } from "@/lib/glow-paywall-cohort-comparisons";
 import GlowPaywallFlowPanel from "./GlowPaywallFlowPanel";
 import GlowOnboardingExperiencePanel from "./GlowOnboardingExperiencePanel";
 import type { GlowOnboardingReport } from "@/lib/glow-onboarding-experience";
+import { DashboardCard } from "@/components/analytics/DashboardCard";
 import UserJourneyFunnel, { JourneyVersionComparison } from "@/components/analytics/UserJourneyFunnel";
 import type { UserJourneyReport } from "@/lib/user-journey";
 import type { NativePaywallReport } from "@/lib/native-paywall-analytics";
@@ -39,6 +41,7 @@ import {
   DASHBOARD_TAB_LIST_CLASS,
 } from "@/components/analytics/dashboard-surface";
 import { cn } from "@/lib/utils";
+import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 
 type AnalyticsTab = "data" | "experiments" | "paywalls";
 
@@ -72,8 +75,8 @@ export default function AppOverviewPanel({
   nativePaywalls = null,
   onboardingExperience = null,
   userJourney = null,
+  paywallCohortComparisons = null,
   deferExperiments = false,
-  productSlot = null,
 }: {
   appId: "glow" | "poky" | "versy";
   installs: number;
@@ -92,8 +95,8 @@ export default function AppOverviewPanel({
   nativePaywalls?: NativePaywallReport | null;
   onboardingExperience?: GlowOnboardingReport | null;
   userJourney?: UserJourneyReport | null;
+  paywallCohortComparisons?: GlowPaywallCohortComparisons | null;
   deferExperiments?: boolean;
-  productSlot?: ReactNode;
 }) {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("data");
   const language = DEFAULT_APP_LANGUAGE[appId];
@@ -131,6 +134,7 @@ export default function AppOverviewPanel({
   const resolvedOnboarding = deferExperiments ? loadedBundle?.onboardingExperience ?? onboardingExperience : onboardingExperience;
   const resolvedExperimentCountries = deferExperiments ? loadedBundle?.countries ?? experimentCountries : experimentCountries;
   const experimentsLoading = deferExperiments && !loadedBundle && !monthFailed;
+  const comparisonLabel = experimentCohortLabel(appId);
   const cohortAvailable = Boolean(selectedOverview?.available);
   const total = selectedOverview?.total;
   const appu = total && cohortAvailable ? totalCohortAppu(total) : null;
@@ -195,15 +199,14 @@ export default function AppOverviewPanel({
               <span className="font-medium">View A/B tests →</span>
             </button>
           ) : null}
-          {markets ? <div className="min-w-0 overflow-hidden rounded-[28px] bg-white p-4">
-            <JourneyVersionComparison showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
-          </div> : userJourney?.versions?.length ? <div className="min-w-0 overflow-hidden rounded-[28px] bg-white p-4">
-            <JourneyVersionComparison showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
-          </div> : appId === "poky" ? <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} /> : null}
+          {markets ? <DashboardCard title="App versions" contentClassName="pt-0">
+            <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
+          </DashboardCard> : userJourney?.versions?.length ? <DashboardCard title="App versions" contentClassName="pt-0">
+            <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
+          </DashboardCard> : appId === "poky" ? <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} /> : null}
           {appId === "glow" || appId === "versy" ? <UserJourneyFunnel appId={appId} report={userJourney} windowLabel={windowLabel} funnelOnly /> : null}
-          {selectedTrialTiming ? <ActiveTrialsChart report={selectedTrialTiming.activeTrials} windowLabel={windowLabel} /> : null}
+          {appId === "glow" ? <GlowPaywallCohortTables report={paywallCohortComparisons} windowLabel={windowLabel} /> : null}
           {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={windowLabel} /> : null}
-          {productSlot ? <details><summary className="cursor-pointer px-4 text-sm text-muted-foreground">Product activity · all languages and countries</summary>{productSlot}</details> : null}
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">
             <AppCountryBreakdown countries={selectedCountries} />
             <AppConversionBreakdown countries={selectedCountries} conversion="paid" />
@@ -228,8 +231,8 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-experiments"
           className="space-y-4"
         >
-          <p className="px-4 text-xs text-muted-foreground">A/B tests use their own language and country breakdowns below.</p>
-          {experimentsLoading ? <TabEmptyState>Loading the last 30 days of A/B tests…</TabEmptyState> : monthFailed ? <TabEmptyState>A/B tests could not be loaded.</TabEmptyState> : <>
+          <p className="px-4 text-xs text-muted-foreground">{comparisonLabel ? `${comparisonLabel} · ` : ""}A/B tests use their own language and country breakdowns below.</p>
+          {experimentsLoading ? <TabEmptyState>{comparisonLabel ? "Loading A/B tests for this install cohort…" : "Loading the last 30 days of A/B tests…"}</TabEmptyState> : monthFailed ? <TabEmptyState>A/B tests could not be loaded.</TabEmptyState> : <>
             <AppExperimentMap appId={appId} experiments={resolvedExperiments} nativePaywalls={resolvedPaywalls ?? null} onboardingExperience={resolvedOnboarding ?? null} />
             {appId === "glow" && <><GlowOnboardingExperiencePanel report={resolvedOnboarding ?? null} /><GlowPaywallFlowPanel report={resolvedOnboarding?.paywallFlow ?? null} /><GlowYearlyPricePanel report={resolvedPaywalls ?? null} /></>}
             {resolvedExperiments.length > 0 ? resolvedExperiments.map((experiment) => (
@@ -250,12 +253,12 @@ export default function AppOverviewPanel({
           aria-labelledby="app-analytics-tab-paywalls"
           className="min-w-0 space-y-4"
         >
-          <p className="px-4 text-xs text-muted-foreground">Paywalls use their own language filters · all countries.</p>
+          <p className="px-4 text-xs text-muted-foreground">{comparisonLabel ? `${comparisonLabel} · ` : ""}Paywalls use their own language filters · all countries.</p>
           {appId === "glow" && <WinbackPaywallPanel appId={appId} />}
           {appId === "versy" && <p className="px-1 text-sm text-muted-foreground">Compare onboarding routes by paid conversions and net proceeds in A/B tests. Below, verified purchases link revenue, renewals and refunds to the original route and purchase placement. Revenue per user makes different traffic shares comparable.</p>}
           {experimentsLoading ? <TabEmptyState>Loading paywalls…</TabEmptyState> : monthFailed ? <TabEmptyState>Paywalls could not be loaded.</TabEmptyState>
             : <NativePaywallsPanel appId={appId} report={resolvedPaywalls ?? null} />}
-          {appId === "versy" && <details className="space-y-4"><summary className="cursor-pointer text-sm font-medium">App event history · includes older builds</summary><VersyPaywallPlacementsPanel /></details>}
+          {appId === "versy" && <details className="space-y-4"><summary className="cursor-pointer text-sm font-medium">App purchase events</summary><VersyPaywallPlacementsPanel /></details>}
         </div>
       ) : null}
     </section>

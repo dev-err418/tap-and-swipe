@@ -63,7 +63,7 @@ test("concurrent cold reads share one load and incomplete reports are not persis
   await Promise.all([cache("same", load), cache("same", load)]);
   assert.equal(calls, 1);
   await cache("broken", async () => ({ cohortDataAvailable: false }));
-  assert.equal((await readdir(path.join(directory, "v11"))).length, 1);
+  assert.equal((await readdir(path.join(directory, "v19"))).length, 1);
 });
 
 test("empty valid reports are cached, and app/period keys stay isolated", async (t) => {
@@ -81,8 +81,8 @@ test("empty valid reports are cached, and app/period keys stay isolated", async 
 test("corrupt snapshots recover, and storage failures do not discard live data", async (t) => {
   const { directory, cache } = await fixture(t);
   await cache("old", async () => ({ users: 1 }));
-  const [file] = await readdir(path.join(directory, "v11"));
-  await writeFile(path.join(directory, "v11", file), "not json");
+  const [file] = await readdir(path.join(directory, "v19"));
+  await writeFile(path.join(directory, "v19", file), "not json");
   assert.equal((await createAnalyticsSnapshotCache()("old", async () => ({ users: 2 }))).users, 2);
   process.env.ANALYTICS_SNAPSHOT_DIR = path.join(directory, "not-a-directory");
   await writeFile(process.env.ANALYTICS_SNAPSHOT_DIR, "file");

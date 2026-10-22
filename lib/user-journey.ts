@@ -40,6 +40,7 @@ export type UserJourneyStepResult = UserJourneyStep & {
 };
 
 export type UserJourneyVariantResult = {
+  conversions?: VersionConversions;
   key: string;
   label: string;
   family?: string;

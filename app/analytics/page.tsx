@@ -20,11 +20,6 @@ import {
   type MobileAppAnalytics,
 } from "@/lib/mobile-app-analytics";
 import AppOverviewPanel from "@/components/analytics/AppOverviewPanel";
-import GlowProductPanel from "@/components/analytics/GlowProductPanel";
-import { getGlowProductReport } from "@/lib/glow-product-queries";
-import { getVersyProductReport } from "@/lib/versy-product-queries";
-import type { GlowProductReport } from "@/lib/glow-product-analytics";
-import type { VersyProductReport } from "@/lib/versy-product-analytics";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
 import { AnalyticsDirectorySkeleton, AppCardSkeleton, AppTotalsSkeleton, WebsiteCardSkeleton, WebsiteTotalsSkeleton } from "@/components/analytics/AnalyticsDirectorySkeleton";
 import { AnalyticsDetailSkeleton } from "@/components/analytics/AnalyticsDetailSkeleton";
@@ -517,11 +512,6 @@ async function AppDetail({
   period: Period;
   appId: AppId;
 }) {
-  const productPromise = appId === "glow"
-    ? getGlowProductReport(period)
-    : appId === "versy"
-      ? getVersyProductReport(period)
-      : null;
   let app: MobileAppAnalytics | null = null;
   try {
     // Load the Data tab first. A/B tests and paywall reports use their own
@@ -614,25 +604,11 @@ async function AppDetail({
         retention={app.retention}
         trialCancelTiming={app.trialCancelTiming}
         userJourney={app.userJourney}
+        paywallCohortComparisons={app.paywallCohortComparisons}
         deferExperiments
-        productSlot={productPromise ? (
-          <Suspense key={`product:${appId}:${period}`} fallback={<p role="status" className="px-4 py-6 text-sm text-muted-foreground">Loading {app.name} product analytics…</p>}>
-            <ProductReportReady promise={productPromise} appName={app.name === "Versy" ? "Versy" : "Glow"} />
-          </Suspense>
-        ) : null}
       />
     </div>
   );
-}
-
-async function ProductReportReady({
-  promise,
-  appName,
-}: {
-  promise: Promise<GlowProductReport | VersyProductReport>;
-  appName: "Glow" | "Versy";
-}) {
-  return <GlowProductPanel report={await promise} appName={appName} />;
 }
 
 function formatNumber(value: number | bigint) {
