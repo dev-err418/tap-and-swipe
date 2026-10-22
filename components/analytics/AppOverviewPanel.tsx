@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_APP_LANGUAGE, marketKey, marketCountryLabel, type AnalyticsMarkets } from "@/lib/analytics-markets";
 import type { AppCountryComparisons } from "@/lib/app-country-comparisons";
-import { DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS, DASHBOARD_TAB_LIST_CLASS } from "./dashboard-surface";
+import { APP_ANALYTICS_HEADER_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS, DASHBOARD_TAB_LIST_CLASS } from "./dashboard-surface";
 import { cn } from "@/lib/utils";
 import { countryFlag } from "@/lib/stats-helpers";
 
@@ -68,6 +68,27 @@ export default function AppOverviewPanel({
   headerStart?: ReactNode;
   headerEnd?: ReactNode;
 }) {
+  const headerRef = useRef<HTMLDivElement>(null);
+  const stickyAnchorRef = useRef<HTMLSpanElement>(null);
+  const [isHeaderSticky, setIsHeaderSticky] = useState(false);
+  useEffect(() => {
+    const header = headerRef.current;
+    const anchor = stickyAnchorRef.current;
+    if (!header || !anchor) return;
+    let observer: IntersectionObserver;
+    const observe = () => {
+      observer?.disconnect();
+      const stickyTop = Number.parseFloat(getComputedStyle(header).top) || 0;
+      // The anchor stays at the header's normal flow position while the header sticks.
+      observer = new IntersectionObserver(([entry]) => {
+        setIsHeaderSticky(entry.boundingClientRect.top < stickyTop);
+      }, { rootMargin: `-${stickyTop}px 0px 0px 0px`, threshold: 1 });
+      observer.observe(anchor);
+    };
+    observe();
+    window.addEventListener("resize", observe);
+    return () => { observer.disconnect(); window.removeEventListener("resize", observe); };
+  }, [headerStart, headerEnd]);
   const language = DEFAULT_APP_LANGUAGE[appId];
   const [pickedCountry, setPickedCountry] = useState("all");
   const country = countryComparisons?.options.some((option) => option.code === pickedCountry) ? pickedCountry : "all";
@@ -102,8 +123,10 @@ export default function AppOverviewPanel({
         </div>
       </div> : null;
   return (
-    <section className="w-full min-w-0 space-y-4">
-      {headerStart || headerEnd ? <div className="sticky top-4 z-30 flex min-h-[60px] w-full flex-col gap-3 rounded-[30px] border-0 bg-white px-4 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.05),0_12px_32px_rgba(0,0,0,0.08)] sm:top-6 sm:grid sm:h-[60px] sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:px-6 [&_[data-slot=select-trigger]]:bg-transparent" data-analytics-header>
+    <section className="relative w-full min-w-0 space-y-4">
+      {headerStart || headerEnd ? <span ref={stickyAnchorRef} aria-hidden="true" className="pointer-events-none absolute top-0 h-px w-px" /> : null}
+      {headerStart || headerEnd ? <div ref={headerRef} className={APP_ANALYTICS_HEADER_CLASS} data-analytics-header data-stuck={isHeaderSticky}>
+        <span aria-hidden="true" data-header-shadow className={cn("pointer-events-none absolute inset-0 rounded-[inherit] shadow-[0_4px_12px_rgba(0,0,0,0.05),0_12px_32px_rgba(0,0,0,0.08)] transition-opacity duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none", isHeaderSticky ? "opacity-100" : "opacity-0")} />
         <div className="min-w-0">{headerStart}</div>
         {countryPicker ?? <div />}
         <div className="sm:justify-self-end">{headerEnd}</div>

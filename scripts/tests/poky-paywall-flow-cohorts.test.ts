@@ -9,7 +9,7 @@ import { buildUserJourney, userJourneyDefinition } from "../../lib/user-journey"
 import { withJourneyConversions } from "../../lib/journey-cohort-conversions";
 
 const day = 86_400_000, start = Date.parse("2026-10-01T00:00:00Z"), end = start + 7 * day, asOf = start + 20 * day;
-const install = (appUserId: string, installedAt = start) => ({ appUserId, installedAt, appVersion: "1.1.10" });
+const install = (appUserId: string, installedAt = start) => ({ appUserId, installedAt, appVersion: "1.1.5" });
 const assignment = (variant = "current", extra = {}) => ({ poky_tracking_environment: "production",
   onboarding_offer_experiment: POKY_ONBOARDING_OFFER_EXPERIMENT, onboarding_offer_allocation: "50_50",
   onboarding_offer_variant: variant, onboarding_offer_assigned_at: String(start + 1000), ...extra });
@@ -56,13 +56,14 @@ test("subscription chains started before assignment stay excluded", () => {
   assert.equal(report.rows[0].conversions!.global.proceeds, 5);
 });
 
-test("the all-time paywall cohort starts at first-install v1.1.10 and does not reenroll upgrades", () => {
-  const installs = [install("floor"), { ...install("newer"), appVersion: "1.1.11" },
-    { ...install("upgraded", start - day), appVersion: "1.1.9" }, install("upgraded"),
+test("the all-time paywall cohort includes v1.1.5 through current releases and does not reenroll older upgrades", () => {
+  const installs = [install("floor"), { ...install("newer"), appVersion: "1.1.6" },
+    { ...install("previously-excluded"), appVersion: "1.1.9" }, { ...install("current"), appVersion: "1.1.10" },
+    { ...install("upgraded", start - day), appVersion: "1.1.4" }, install("upgraded"),
     { ...install("unknown"), appVersion: "" }, install("future", asOf + day)];
   const attributes = new Map(installs.map((row) => [row.appUserId, assignment()]));
   const report = buildPokyPaywallFlowComparison(installs, [], attributes, 0, asOf + 1, asOf);
-  assert.deepEqual(report.rows.map((row) => row.installs), [2, 0]);
+  assert.deepEqual(report.rows.map((row) => row.installs), [4, 0]);
 });
 
 test("Poky Data shows all four clickable onboarding rows, then paywall flows, without a price table", () => {
@@ -80,7 +81,7 @@ test("Poky Data shows all four clickable onboarding rows, then paywall flows, wi
   assert.equal((html.match(/aria-label="View screens for/g) ?? []).length, 6);
   assert.match(html, /aria-label="View screens for HP \(hard paywall\)"/);
   assert.match(html, /aria-label="View screens for 3-day trial"/);
-  assert.equal((html.match(/Installed on v1\.1\.10\+/g) ?? []).length, 2);
+  assert.equal((html.match(/Installed on v1\.1\.5\+/g) ?? []).length, 2);
   assert.ok(html.indexOf("Paywall flows") > html.indexOf("User journey"));
   assert.doesNotMatch(html, /Yearly prices|Price points/);
 });

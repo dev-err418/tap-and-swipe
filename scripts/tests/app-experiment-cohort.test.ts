@@ -16,7 +16,8 @@ const day = 86_400_000;
 test("comparison cohorts use the configured minimum first-install version, including future releases", () => {
   assert.equal(experimentMinimumInstallVersion("glow"), "1.8.3");
   assert.equal(experimentMinimumInstallVersion("versy"), "1.2.6");
-  assert.equal(experimentMinimumInstallVersion("poky"), "1.1.10");
+  assert.equal(experimentMinimumInstallVersion("poky"), "1.1.5");
+  assert.equal(experimentCohortLabel("poky"), "Installed on v1.1.5+");
   for (const version of ["1.8.3", "1.8.3.0", "1.8.10", "1.9", "2.0"]) assert.equal(installVersionAtLeast(version, "1.8.3"), true, version);
   for (const version of ["1.8.2", "1.7.99", "", "unknown", "2.beta", "1.8.3-debug"]) assert.equal(installVersionAtLeast(version, "1.8.3"), false, version);
   assert.equal(experimentCohortLabel("versy"), "Installed on v1.2.6+");
@@ -51,7 +52,7 @@ for (const appId of ["glow", "versy", "poky"] as const) {
 }
 
 test("native and onboarding queries filter first install versions before constructing assignment denominators", async () => {
-  for (const [applicationId, minimum] of [[54736, "1.8.3"], [51393, "1.2.6"], [49771, "1.1.10"]] as const) {
+  for (const [applicationId, minimum] of [[54736, "1.8.3"], [51393, "1.2.6"], [49771, "1.1.5"]] as const) {
     const expectedSql = experimentInstallUsersSql(applicationId, minimum);
     assert.match(expectedSql, /argMin\(JSONExtractString\(meta, 'appVersion'\), ts\)/);
     assert.match(expectedSql, /isSandbox = 0/);

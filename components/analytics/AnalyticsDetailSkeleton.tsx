@@ -2,8 +2,11 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
 import { analyticsPeriodSummary } from "@/components/analytics/AnalyticsDirectorySkeleton";
-import { DASHBOARD_SURFACE_CLASS } from "@/components/analytics/dashboard-surface";
+import { APP_ANALYTICS_HEADER_CLASS, DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_LIST_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_ACTIVE_CLASS } from "@/components/analytics/dashboard-surface";
 import { WebsiteFavicon } from "@/components/analytics/website-summary-card";
+import { DashboardCard } from "./DashboardCard";
+import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
+import { cn } from "@/lib/utils";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 type AppId = "glow" | "poky" | "versy";
@@ -51,30 +54,42 @@ export function AnalyticsDetailSkeleton({
           <ArrowLeft className="size-4" />
           {backLabel}
         </Link>
-        <div className="flex w-full min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {!app ? <div className="flex w-full min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            {app ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={APPS[app].iconUrl} alt="" width={40} height={40} className="size-10 shrink-0 rounded-[10px]" />
-            ) : site ? (
+            {site ? (
               <WebsiteFavicon domain={SITES[site]} size="large" />
             ) : null}
             <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
-              {app ? <strong className="font-semibold text-black">{name}</strong> : <><strong className="font-semibold text-black">{name}</strong> got <MetricBone /> visitors and <MetricBone wide /> revenue {periodLabel}.</>}
+              <strong className="font-semibold text-black">{name}</strong> got <MetricBone /> visitors and <MetricBone wide /> revenue {periodLabel}.
             </h1>
           </div>
           <AnalyticsPeriodSelect period={period} app={app} site={site} />
-        </div>
+        </div> : null}
       </div>
-      {app ? <AppOverviewSkeleton /> : <div className={`h-[28rem] w-full min-w-0 ${DASHBOARD_SURFACE_CLASS}`} />}
+      {app ? <AppOverviewSkeleton app={app} period={period} /> : <div className={`h-[28rem] w-full min-w-0 ${DASHBOARD_SURFACE_CLASS}`} />}
     </div>
   );
 }
 
-function AppOverviewSkeleton() {
-  const metrics = ["Installs", "APPU", "Conversion to paid"];
+function AppOverviewSkeleton({ app, period }: { app: AppId; period: Period }) {
+  const metrics = ["Tracked installs", "APPU", "Conversion to paid"];
+  const cohortLabel = experimentCohortLabel(app)!;
   return (
     <section className="w-full min-w-0 space-y-4">
+      <div className={APP_ANALYTICS_HEADER_CLASS}>
+        <div className="flex min-w-0 items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={APPS[app].iconUrl} alt="" width={40} height={40} className="size-10 shrink-0 rounded-[10px]" />
+          <h1 className="min-w-0 text-lg font-semibold text-black sm:text-xl">{APPS[app].name}</h1>
+        </div>
+        <div className="flex min-w-0 overflow-x-auto scrollbar-none" aria-hidden="true">
+          <div className={`${DASHBOARD_TAB_LIST_CLASS} mx-auto shrink-0`}>
+            <span className={`${DASHBOARD_TAB_CLASS} ${DASHBOARD_TAB_ACTIVE_CLASS} inline-flex items-center whitespace-nowrap px-3`}>🌍 All countries</span>
+            {Array.from({ length: 3 }, (_, index) => <span key={index} className="flex h-[26px] w-20 items-center gap-1.5 px-2"><Bone className="size-3.5 shrink-0 rounded-full" /><Bone className="w-10" /></span>)}
+          </div>
+        </div>
+        <div className="sm:justify-self-end"><AnalyticsPeriodSelect period={period} app={app} /></div>
+      </div>
       <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-[28px] border-0 bg-white shadow-none">
         <div className="min-w-0 border-b border-black/[0.08]">
           <div className="grid grid-cols-3 divide-x divide-black/[0.08]">
@@ -88,12 +103,64 @@ function AppOverviewSkeleton() {
           </div>
         </div>
         <div className="min-w-0 p-4 sm:p-6">
-          <div className="mb-3 h-8" aria-hidden />
+          <div className="mb-3 flex h-8 items-center justify-between" aria-hidden><Bone className="w-16" /><Bone className="h-8 w-20 rounded-full" /></div>
           <div aria-hidden className="h-80 w-full rounded-xl bg-black/[0.04] motion-safe:animate-pulse sm:h-96" />
+        </div>
+      </div>
+      <div className="space-y-4">
+        <VersionTableSkeleton app={app} />
+        <ComparisonTableSkeleton title="User journey" rows={app === "glow" ? 2 : app === "poky" ? 4 : 3} rowHeading="Onboarding funnel" cohortLabel={cohortLabel} />
+        {app !== "versy" ? <ComparisonTableSkeleton title="Paywall flows" rows={2} rowHeading="Paywall flow" cohortLabel={cohortLabel} /> : null}
+        {app !== "poky" ? <ComparisonTableSkeleton title="Yearly prices" rows={app === "glow" ? 3 : 2} rowHeading="Price" cohortLabel={cohortLabel} /> : null}
+        {app === "glow" ? <ComparisonTableSkeleton title="Paywall flow × yearly price" rows={6} rowHeading="Flow × price" cohortLabel={cohortLabel} /> : null}
+        {app !== "poky" ? <DashboardCard title="Trial survival · 7-day trials" action={<span className="text-xs text-muted-foreground">{cohortLabel}</span>}>
+          <div aria-hidden="true" className="mb-4 grid grid-cols-3 gap-3">
+            {Array.from({ length: 3 }, (_, index) => <div key={index} className="space-y-2"><Bone className="w-24" /><Bone className="h-6 w-12" /><Bone className="w-20" /></div>)}
+          </div>
+          <Bone className="h-64 w-full rounded-xl" />
+          <Bone className="mt-3 w-3/4" />
+        </DashboardCard> : null}
+        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+          {["APPU", "Downloads → Paid"].map((title) => <DashboardCard key={title} title={title}
+            action={<span className="text-xs text-muted-foreground">Last 30 days</span>} contentClassName="h-[24.5rem] space-y-1 p-0">
+            {Array.from({ length: 10 }, (_, index) => <div key={index} aria-hidden="true" className="flex h-8 items-center gap-2 px-3"><Bone className="size-5 shrink-0 rounded-full" /><Bone className="h-5 flex-1" /><Bone className="w-12" /></div>)}
+          </DashboardCard>)}
         </div>
       </div>
     </section>
   );
+}
+
+function VersionTableSkeleton({ app }: { app: AppId }) {
+  const audiences = app === "poky" ? ["All users", "Ads", "Non-ads"] : ["All users", "Meta Ads", "ASA", "Organic"];
+  const fields = ["Installs", "APPU", "Trial start", "Trial → paid", ...(app === "poky" ? ["Install → paid"] : [])];
+  return <DashboardCard title="App versions" contentClassName="pt-0">
+    <div className="overflow-x-auto rounded-xl border border-black/[0.06] scrollbar-none" aria-hidden="true">
+      <table className="w-full min-w-max text-left text-xs">
+        <thead className="bg-[#f8f8f8] text-muted-foreground">
+          <tr><th rowSpan={2} className="min-w-32 px-4 py-3 font-medium text-foreground">First version</th>{audiences.map((audience) => <th key={audience} colSpan={fields.length} className="border-l border-black/[0.06] px-3 py-3 font-medium">{audience}</th>)}</tr>
+          <tr>{audiences.flatMap((audience) => fields.map((field) => <th key={`${audience}:${field}`} className="min-w-28 px-3 py-3 text-right font-medium">{field}</th>))}</tr>
+        </thead>
+        <tbody>{Array.from({ length: 4 }, (_, index) => <tr key={index} className="border-t border-black/[0.06]"><td className="px-4 py-2"><Bone className="w-16" /></td>{audiences.flatMap((audience) => fields.map((field) => <td key={`${audience}:${field}`} className="px-3 py-2"><Bone className="ml-auto h-4 w-12" /></td>))}</tr>)}</tbody>
+      </table>
+    </div>
+  </DashboardCard>;
+}
+
+function ComparisonTableSkeleton({ title, rows, rowHeading, cohortLabel }: { title: string; rows: number; rowHeading: string; cohortLabel: string }) {
+  const fields = ["Installs", "APPU lift", "Win %", "APPU", "Trial start", "Trial → paid", "Install → paid", "Refund rate"];
+  return <DashboardCard title={title} action={<span className="text-xs text-muted-foreground">{cohortLabel}</span>} contentClassName="pt-0">
+    <div className="overflow-x-auto rounded-xl border border-black/[0.06] scrollbar-none" aria-hidden="true">
+      <table className="w-full min-w-[1348px] text-left text-xs">
+        <thead className="bg-[#f8f8f8] text-muted-foreground"><tr><th className="min-w-32 px-4 py-3 font-medium text-foreground">{rowHeading}</th>{fields.map((field) => <th key={field} className={`${field === "APPU lift" ? "min-w-[460px]" : "min-w-24"} whitespace-nowrap px-3 py-3 text-right font-medium`}>{field}</th>)}</tr></thead>
+        <tbody>{Array.from({ length: rows }, (_, index) => <tr key={index} className="border-t border-black/[0.06]"><td className="px-4 py-2"><Bone className="w-24" /></td>{fields.map((field) => <td key={field} className="px-3 py-2"><Bone className={`ml-auto h-6 ${field === "APPU lift" ? "w-full" : "w-12"}`} /></td>)}</tr>)}</tbody>
+      </table>
+    </div>
+  </DashboardCard>;
+}
+
+function Bone({ className }: { className: string }) {
+  return <span aria-hidden="true" className={cn("block h-3 rounded bg-black/[0.06] motion-safe:animate-pulse", className)} />;
 }
 
 function MetricBone({ wide = false }: { wide?: boolean }) {

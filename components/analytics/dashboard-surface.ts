@@ -1,6 +1,9 @@
 export const DASHBOARD_SURFACE_CLASS =
   "rounded-[28px] border-0 bg-white shadow-none";
 
+export const APP_ANALYTICS_HEADER_CLASS =
+  "sticky top-4 z-30 flex min-h-[60px] w-full flex-col gap-3 rounded-[30px] border-0 bg-white px-4 py-2 sm:top-6 sm:grid sm:h-[60px] sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:px-6 [&_[data-slot=select-trigger]]:bg-foreground/[0.045] [&_[data-slot=select-trigger]]:hover:bg-foreground/[0.045]";
+
 export const DASHBOARD_PICKER_TRIGGER_CLASS =
   "h-10 cursor-pointer gap-1.5 rounded-full border-0 bg-white px-3 text-sm font-medium text-foreground shadow-none transition-[background-color,box-shadow] hover:bg-white focus-visible:ring-2 focus-visible:ring-ring/40 data-[size=default]:h-10 data-open:bg-white data-popup-open:bg-white disabled:cursor-not-allowed";
 

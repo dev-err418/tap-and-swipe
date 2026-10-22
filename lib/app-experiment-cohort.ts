@@ -1,6 +1,6 @@
 import { versionParts } from "./app-version";
 
-export const EXPERIMENT_MINIMUM_INSTALL_VERSION = { glow: "1.8.3", versy: "1.2.6", poky: "1.1.10" } as const;
+export const EXPERIMENT_MINIMUM_INSTALL_VERSION = { glow: "1.8.3", versy: "1.2.6", poky: "1.1.5" } as const;
 
 export function experimentMinimumInstallVersion(appId: string): string | undefined {
   return appId === "glow" || appId === "versy" || appId === "poky" ? EXPERIMENT_MINIMUM_INSTALL_VERSION[appId] : undefined;
