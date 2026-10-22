@@ -144,7 +144,7 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
     ? offers.filter((offer) => offer.languageCode === selectedLanguage)
     : offers;
   offer.branches.forEach((branch, index) => {
-    nodes.push({ id: `offer-${branch.id}`, x: 814, y: index === 0 ? 368 : 76 + (index - 1) * 130, width: 174,
+    nodes.push({ id: `offer-${branch.id}`, x: 814, y: index === 0 ? 480 : 76 + (index - 1) * 130, width: 174,
       label: branch.label, tone: "orange", experimentId: offer.id, variantId: branch.id });
     edges.push({ from: "language", to: `offer-${branch.id}`, label: `${branch.percent}%` });
   });

@@ -1,9 +1,9 @@
-import { isPokyOfferAssignment, pokyOfferVariants } from "./poky-onboarding-offer";
+import { isPokyOfferAssignment, pokyOfferVariants, type PokyOfferHistory } from "./poky-onboarding-offer";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
 
-export type PokyPaywallFlowComparison = PaywallCohortComparison & { legacy?: PaywallCohortComparison };
+export type PokyPaywallFlowComparison = PaywallCohortComparison & { legacy?: PaywallCohortComparison; previous?: PaywallCohortComparison };
 
 /** Keep saved offer assignments independent of onboarding route and purchased product. */
 export function buildPokyPaywallFlowComparison(
@@ -13,7 +13,7 @@ export function buildPokyPaywallFlowComparison(
   startMs: number,
   endMs: number,
   asOf = Date.now(),
-  legacy = false,
+  legacy: PokyOfferHistory = false,
 ): PokyPaywallFlowComparison {
   const eligible = experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.poky, asOf);
   let invalidTimes = 0;
@@ -33,8 +33,10 @@ export function buildPokyPaywallFlowComparison(
       ?? emptyVersionConversions();
     return { version: variant, installs: conversions.global.installs, tracked: conversions.global.installs, variants: [], conversions };
   });
-  const previous = legacy ? undefined : buildPokyPaywallFlowComparison(installs, events, attributes, startMs, endMs, asOf, true);
+  const old = legacy ? undefined : buildPokyPaywallFlowComparison(installs, events, attributes, startMs, endMs, asOf, true);
+  const previous = legacy ? undefined : buildPokyPaywallFlowComparison(installs, events, attributes, startMs, endMs, asOf, "v2");
   return { status: rows.some((row) => row.installs > 0) ? "ready" : "empty", rows, labels,
     warnings: invalidTimes ? [`${invalidTimes} paywall assignments have an invalid or missing assignment time and were excluded.`] : [],
-    ...(previous?.status === "ready" ? { legacy: previous } : {}) };
+    ...(old?.status === "ready" ? { legacy: old } : {}),
+    ...(previous?.status === "ready" ? { previous } : {}) };
 }

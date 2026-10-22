@@ -4,8 +4,8 @@ import { POKY_TRIAL_OFFER_ATTRIBUTE_KEYS, pokyTrialOfferExperiment } from "../..
 
 const DAY = 86_400_000;
 const START = Date.parse("2026-09-27T00:00:00Z");
-const attributes = (variant: string, assignedAt = START + 1_000, allocation = "25_25_50", environment = "production") => ({
-  onboarding_offer_experiment: "poky_onboarding_trial_v2", onboarding_offer_variant: variant,
+const attributes = (variant: string, assignedAt = START + 1_000, allocation = "25_25_25_25", environment = "production") => ({
+  onboarding_offer_experiment: "poky_onboarding_trial_v3", onboarding_offer_variant: variant,
   onboarding_offer_assigned_at: String(assignedAt), onboarding_offer_allocation: allocation,
   onboarding_offer_language: "en",
   poky_tracking_environment: environment,
@@ -19,19 +19,19 @@ const event = (appUserId: string, originalTransactionId: string, transactionId: 
   });
 
 test("trial and current use only fresh production assignments, including nonviewers", () => {
-  assert.equal(POKY_TRIAL_OFFER_ATTRIBUTE_KEYS.length, 5);
+  assert.ok(POKY_TRIAL_OFFER_ATTRIBUTE_KEYS.includes("poky_us_hp_override_seen"));
   const report = pokyTrialOfferExperiment({
     startMs: START, endMs: START + DAY,
     installs: ["current", "trial", "legacy", "sandbox"].map((appUserId) => ({ appUserId, country: "US", language: "en", installedAt: START - DAY })),
     attributes: new Map([
       ["current", attributes("current")], ["trial", attributes("trial")],
       ["legacy", attributes("current", START + 1_000, "legacy")],
-      ["sandbox", attributes("trial", START + 1_000, "25_25_50", "sandbox")],
+      ["sandbox", attributes("trial", START + 1_000, "25_25_25_25", "sandbox")],
     ]),
     events: [],
   }, START + DAY);
-  assert.deepEqual(report.variants.map((row) => row.users), [1, 1, 0]);
-  assert.deepEqual(report.languageVariants?.en?.map((row) => row.users), [1, 1, 0]);
+  assert.deepEqual(report.variants.map((row) => row.users), [1, 1, 0, 0]);
+  assert.deepEqual(report.languageVariants?.en?.map((row) => row.users), [1, 1, 0, 0]);
   assert.equal(report.randomized, true);
 });
 
@@ -52,11 +52,11 @@ test("free trial start and later paid renewal count once; historical money is ex
       event("current", "paid", "paid", "initial_purchase", 30),
     ],
   }, START + 6 * DAY);
-  assert.deepEqual(report.variants.map((row) => row.users), [1, 2, 0]);
-  assert.deepEqual(report.variants.map((row) => row.trials), [0, 1, 0]);
-  assert.deepEqual(report.variants.map((row) => row.converted), [0, 1, 0]);
-  assert.deepEqual(report.variants.map((row) => row.paid), [1, 1, 0]);
-  assert.deepEqual(report.variants.map((row) => row.proceeds), [30, 35, 0]);
+  assert.deepEqual(report.variants.map((row) => row.users), [1, 2, 0, 0]);
+  assert.deepEqual(report.variants.map((row) => row.trials), [0, 1, 0, 0]);
+  assert.deepEqual(report.variants.map((row) => row.converted), [0, 1, 0, 0]);
+  assert.deepEqual(report.variants.map((row) => row.paid), [1, 1, 0, 0]);
+  assert.deepEqual(report.variants.map((row) => row.proceeds), [30, 35, 0, 0]);
   assert.equal(report.variants[1].proceedsVariance, 612.5);
 });
 
@@ -89,10 +89,42 @@ test("seven-day assignments use the new product and remain separate from histori
       event("seven", "seven", "refund", "cancellation", -5, START + 9 * DAY, { refund: true })],
   };
   const report = pokyTrialOfferExperiment(facts, START + 10 * DAY);
-  assert.deepEqual(report.variants.map((row) => row.users), [0, 0, 2]);
+  assert.deepEqual(report.variants.map((row) => row.users), [0, 0, 2, 0]);
   assert.equal(report.variants[2].trials, 1);
   assert.equal(report.variants[2].converted, 1);
   assert.equal(report.variants[2].proceeds / report.variants[2].users, 12.5);
   const old = pokyTrialOfferExperiment(facts, START + 10 * DAY, true);
   assert.deepEqual(old.variants.map((row) => row.users), [0, 1]);
+});
+
+
+test("forced US hard-paywall users never enter randomized offer results", () => {
+  const report = pokyTrialOfferExperiment({
+    startMs: START, endMs: START + DAY, installs: [], events: [],
+    attributes: new Map<string, Record<string, string>>([
+      ["forced", { ...attributes("trial_7d"), poky_us_hp_override_seen: "true" }],
+      ["normal", attributes("trial_7d")],
+    ]),
+  }, START + DAY);
+  assert.deepEqual(report.variants.map((row) => row.users), [0, 0, 1, 0]);
+});
+
+
+test("same-product seven-day designs use saved assignments, including nonviewers, and isolate v2 history", () => {
+  const facts = { startMs: START, endMs: START + DAY, installs: [],
+    attributes: new Map([
+      ["text", attributes("trial_7d")], ["mascot", attributes("trial_7d_mascot")], ["free", attributes("trial_7d_mascot")],
+      ["old", { ...attributes("trial_7d", START + 1000, "25_25_50"), onboarding_offer_experiment: "poky_onboarding_trial_v2" }],
+    ]),
+    events: [event("text", "text", "paid-text", "initial_purchase", 10, START + 2000, { productId: "arthurbuildsstuff.peptides.yearly.trial7" }),
+      event("mascot", "mascot", "paid-mascot", "initial_purchase", 30, START + 2000, { productId: "arthurbuildsstuff.peptides.yearly.trial7" }),
+      event("mascot", "mascot", "paid-mascot", "cancellation", -5, START + 3000, { refund: true })],
+  };
+  const report = pokyTrialOfferExperiment(facts, START + DAY);
+  assert.deepEqual(report.variants.map((row) => row.users), [0, 0, 1, 2]);
+  assert.equal(report.variants[2].proceeds, 10);
+  assert.equal(report.variants[3].proceeds / report.variants[3].users, 12.5);
+  const old = pokyTrialOfferExperiment(facts, START + DAY, "v2");
+  assert.deepEqual(old.variants.map((row) => row.users), [0, 0, 1]);
+  assert.notEqual(old.id, report.id);
 });

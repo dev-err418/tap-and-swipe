@@ -110,7 +110,7 @@ function AppOverviewSkeleton({ app, period }: { app: AppId; period: Period }) {
       <div className="space-y-4">
         <VersionTableSkeleton app={app} />
         <ComparisonTableSkeleton title="User journey" rows={app === "glow" ? 2 : app === "poky" ? 4 : 3} rowHeading="Onboarding funnel" cohortLabel={cohortLabel} />
-        {app !== "versy" ? <ComparisonTableSkeleton title="Paywall flows" rows={app === "poky" ? 3 : 2} rowHeading="Paywall flow" cohortLabel={cohortLabel} /> : null}
+        {app !== "versy" ? <ComparisonTableSkeleton title="Paywall flows" rows={app === "poky" ? 4 : 2} rowHeading="Paywall flow" cohortLabel={cohortLabel} /> : null}
         {app !== "poky" ? <ComparisonTableSkeleton title="Yearly prices" rows={app === "glow" ? 3 : 2} rowHeading="Price" cohortLabel={cohortLabel} /> : null}
         {app === "glow" ? <ComparisonTableSkeleton title="Paywall flow × yearly price" rows={6} rowHeading="Flow × price" cohortLabel={cohortLabel} /> : null}
         {app !== "poky" ? <DashboardCard title="Trial survival · 7-day trials" action={<span className="text-xs text-muted-foreground">{cohortLabel}</span>}>

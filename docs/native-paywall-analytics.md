@@ -50,13 +50,14 @@ Dashboard files:
 - `lib/mobile-app-analytics.ts`: loads this report for Glow and Poky's detail views.
 
 Poky uses the same contract from `peptides/Subscription/PokyNativePaywallAnalytics.swift`.
-Its updated onboarding offer test assigns fresh installs to HP (25%), a three-day
-trial (25%) or a seven-day trial (50%). Purchases and restores use the existing
+Its updated onboarding offer test assigns fresh installs equally to HP, a three-day
+trial, the current seven-day flow and a mascot seven-day flow (25% each). Purchases and restores use the existing
 Superwall SDK with observer mode disabled, alongside verified StoreKit access.
-No trial campaign or placement is registered. Both trial arms skip High/Name and
+No trial campaign or placement is registered. All trial arms skip High/Name and
 recovery. The primary `poky-trial-vs-current` card reads fresh
-`poky_onboarding_trial_v2` / `25_25_50` scalar assignments (`current`, `trial`,
-`trial_7d`). A separate historical card reads v1 / `50_50`; populations are never
+`poky_onboarding_trial_v3` / `25_25_25_25` scalar assignments (`current`, `trial`,
+`trial_7d`, `trial_7d_mascot`). Separate historical cards read v1 / `50_50` and
+v2 / `25_25_50`; populations are never
 pooled. Each report counts assigned nonviewers, trial starts, renewals and refunds,
 and excludes returning `legacy` assignments. The current flow now uses only native
 paywalls, including for former Superwall cohorts. Its recovery rollout is reported separately; the retired Superwall/native engine
@@ -440,11 +441,12 @@ only. The joint table uses the same compact metrics and version-based install co
 
 Poky Data shows all four tracked onboarding combinations (No intro × Plan A/B,
 Animated intro × Plan A/B), including empty rows. Clicking a row opens its screen
-funnel. Paywall flows prepares three rows for fresh `poky_onboarding_trial_v2`
-assignments with allocation `25_25_50`: `current` is HP (25%), `trial` is the 3-day
-trial (25%) and `trial_7d` is the 7-day trial (50%). Until the app release enrolls
-users, the new rows stay empty with a waiting message. Previous v1 / `50_50`
-results stay in a separate historical table, also when selecting a country.
+funnel. Paywall flows prepares four rows for fresh `poky_onboarding_trial_v3`
+assignments with allocation `25_25_25_25`: `current` is HP, `trial` is the 3-day
+trial, `trial_7d` is the current 7-day presentation and `trial_7d_mascot` is its
+mascot presentation (25% each). Until the app release enrolls users, the new rows
+stay empty with a waiting message. Previous v1 / `50_50` and v2 / `25_25_50`
+results stay in separate historical tables, also when selecting a country.
 There is no price-point comparison. Both tables use first installs
 on v1.1.5 or newer, across all time and all languages/countries. Later upgrades
 do not reenroll older installs, and unknown first versions are excluded. The
@@ -498,3 +500,18 @@ this applies before sorting and to the full detail lists as well as previews.
 
 The APPU card uses double bars: installs in blue and APPU in orange, each scaled
 to that metric’s maximum among displayed countries. Its value label remains APPU.
+
+Poky temporarily forces the native hard paywall for the US App Store storefront through October 25, 2026 inclusive (device-local cutoff: October 26 at midnight). It prominently shows the annual total and preserves regional SKU pricing. Saved random assignments remain immutable, but users exposed to the override have sticky `poky_us_hp_override_seen=true` and are excluded from both current and historical randomized offer comparisons. Forced views and purchases use separate nonrandomized `poky_us_hp_until_2026_10_25_<language>` native records. The normal routing resumes after the cutoff.
+
+
+### Seven-day mascot presentation
+
+The v3 `trial_7d` and `trial_7d_mascot` assignments share the exact same
+`arthurbuildsstuff.peptides.yearly.trial7` product, localized price, two-day reminder
+lead and final annual timeline/paywall. The mascot arm uses the existing onboarding
+speech bubbles, bundled `PokyPlanLoop` introduction and `PokyTrialReminderLoop` bell
+video; the current arm retains the centered text screens. Clicking each table row
+opens its own three-screen preview. Never infer the presentation from the shared
+SKU: its immutable offer assignment identifies the cohort, including nonviewers and
+nonpayers. Saved v1/v2 assignments and native purchase attribution remain unchanged.
+The temporary US override still takes priority and exposed users remain excluded.

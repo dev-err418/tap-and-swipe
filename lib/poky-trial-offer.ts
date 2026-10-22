@@ -1,5 +1,5 @@
 import type { MobileAppExperiment, MobileAppExperimentSlice, MobileAppExperimentVariant } from "./mobile-app-analytics";
-import { isPokyOfferAssignment, pokyOfferVariants, POKY_OFFER_VARIANTS } from "./poky-onboarding-offer";
+import { isPokyOfferAssignment, pokyOfferVariants, POKY_OFFER_VARIANTS, type PokyOfferHistory } from "./poky-onboarding-offer";
 export { POKY_ONBOARDING_OFFER_EXPERIMENT } from "./poky-onboarding-offer";
 
 export const POKY_TRIAL_OFFER_ATTRIBUTE_KEYS = [
@@ -8,6 +8,7 @@ export const POKY_TRIAL_OFFER_ATTRIBUTE_KEYS = [
   "onboarding_offer_assigned_at",
   "onboarding_offer_allocation",
   "onboarding_offer_language",
+  "poky_us_hp_override_seen",
 ] as const;
 
 type Language = "en" | "es" | "de" | "fr";
@@ -23,10 +24,10 @@ type Facts = {
 };
 
 const empty = (): MobileAppExperimentSlice => ({ users: 0, sessions: 0, installs: 0, completed: 0, trials: 0, converted: 0, paid: 0, proceeds: 0, installsD7: 0, proceedsD7: 0, eligibleD7: 0, retainedD7: 0, installsD14: 0, proceedsD14: 0, eligibleD14: 0, retainedD14: 0, installsD30: 0, proceedsD30: 0, eligibleD30: 0, retainedD30: 0 });
-const variants = (legacy: boolean): MobileAppExperimentVariant[] => pokyOfferVariants(legacy).map(({ key, label }) => ({ ...empty(), key, label, countries: {} }));
+const variants = (legacy: PokyOfferHistory): MobileAppExperimentVariant[] => pokyOfferVariants(legacy).map(({ key, label }) => ({ ...empty(), key, label, countries: {} }));
 
 /** Assignment time selects the cohort; Apple money follows each new subscription through today. */
-export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now(), legacy = false): MobileAppExperiment {
+export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now(), legacy: PokyOfferHistory = false): MobileAppExperiment {
   const overall = variants(legacy);
   const languageComparisons = ([
     ["en", "🇬🇧 English APPU"], ["es", "🇪🇸 Spanish APPU"],
@@ -109,8 +110,9 @@ export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now(), legacy
       ? Math.max(0, (sumOfSquares - slice.proceeds * slice.proceeds / slice.users) / (slice.users - 1)) : 0;
   }
   return {
-    id: legacy ? "poky-trial-vs-current-legacy" : "poky-trial-vs-current", title: legacy ? "Previous paywall test · 50/50" : "Paywalls · HP vs 3-day vs 7-day trial",
-    subtitle: legacy ? "Historical fresh 50/50 assignments" : "Fresh assignments · HP 25% · 3-day 25% · 7-day 50% · all languages",
+    id: legacy === true ? "poky-trial-vs-current-legacy" : legacy === "v2" ? "poky-trial-vs-current-v2" : "poky-trial-vs-current",
+    title: legacy === true ? "Previous paywall test · 50/50" : legacy === "v2" ? "Previous paywall test · 25/25/50" : "Paywalls · HP vs 3-day vs 7-day current vs mascot",
+    subtitle: legacy === true ? "Historical fresh 50/50 assignments" : legacy === "v2" ? "Historical fresh 25/25/50 assignments" : "Fresh assignments · HP 25% · 3-day 25% · 7-day current 25% · 7-day mascot 25% · all languages",
     planningNote: "Trial starts are free. APPU includes later paid renewals and refunds from subscriptions that began after assignment. All assigned users count, including people who never opened a paywall. Legacy assignments and sandbox events are excluded.",
     variants: overall, languageComparisons,
     languageVariants: Object.fromEntries(languageComparisons.map((row) => [row.language, row.variants])),

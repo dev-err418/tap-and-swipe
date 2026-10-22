@@ -36,7 +36,7 @@ for (const appId of ["glow", "poky", "versy"] as const) {
       gp1_a_native_yearly_prices_v4: JSON.stringify({ schema: 1, experiment: "native_yearly_prices_v4", experimentName: "Yearly prices",
         variant: "yr_34", variantName: "yr_34", paywall: "yr_34", language: "en", expectedProduct: "yearly", assignedAt: start,
         randomized: true, variantCount: 3, environment: "production" }),
-      onboarding_offer_experiment: "poky_onboarding_trial_v2", onboarding_offer_variant: "current", onboarding_offer_allocation: "25_25_50",
+      onboarding_offer_experiment: "poky_onboarding_trial_v3", onboarding_offer_variant: "current", onboarding_offer_allocation: "25_25_25_25",
       onboarding_offer_assigned_at: String(start), yearly_price_experiment_id: VERSY_YEARLY_PRICE_EXPERIMENT,
       yearly_price_allocation: "50_50", yearly_price_product_id: VERSY_YEARLY_PRICES[0].productID, yearly_price_assigned_at: String(start),
     };
