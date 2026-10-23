@@ -114,7 +114,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       }))),
       notes: [
         "Results start September 20, 2026 at 16:00 GMT+2. Everyone now uses the Warm experience.",
-        "The v3 onboarding offer assigns HP, three-day trial, seven-day current and seven-day mascot 25% each. Both seven-day presentations share the same product and price. Trial arms skip High/Name and recovery. Saved v1 50/50 and v2 25/25/50 assignments remain in separate historical reports.",
+        "The v3 onboarding offer assigns HP, three-day trial, seven-day current and seven-day mascot 25% each. Both seven-day presentations share the same product and price. Trial arms skip High/Name and recovery. Matching flows include saved v1 50/50 and v2 25/25/50 results in the same table; the mascot remains separate.",
         "The plan design draw is a new independent 50/50 assignment. Combined with the existing intro draw, it creates four 25% cohorts. Plan B currently displays a placeholder screen.",
         "The updated app uses native paywalls for everyone, including former Superwall cohorts. The Superwall/native comparison is retired; historical assignments remain stored.",
         "Every non-trial user is eligible for native recovery after cancelling a main purchase, once per install. Former holdouts are included; trial paywalls skip automatic recovery. The home-screen shortcut is separate.",

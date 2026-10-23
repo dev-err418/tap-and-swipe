@@ -49,18 +49,15 @@ export default function PokyPaywallFlowTable({ report, windowLabel }: { report: 
   const previewTrigger = useRef<HTMLButtonElement | null>(null);
   const preview = selectedFlow ? FLOW_PREVIEWS[selectedFlow] : null;
   return <Dialog open={selectedFlow !== null} onOpenChange={(open) => { if (!open) setSelectedFlow(null); }}>
-    {[{ comparison: report, title: "Paywall flows" },
-      ...(report?.previous ? [{ comparison: report.previous, title: "Previous paywall flows · 25/25/50" }] : []),
-      ...(report?.legacy ? [{ comparison: report.legacy, title: "Previous paywall flows · 50/50" }] : []),
-    ].map(({ comparison, title }, index) => <DashboardCard key={title} title={title} contentClassName="pt-0"
-    titleAccessory={comparison && comparison.status !== "unavailable" ? <AppuReadinessIndicator cohorts={comparison.rows} /> : null}
+    <DashboardCard title="Paywall flows" contentClassName="pt-0"
+    titleAccessory={report && report.status !== "unavailable" ? <AppuReadinessIndicator cohorts={report.rows} /> : null}
     action={<span className="text-xs text-muted-foreground">{experimentCohortLabel("poky") ?? windowLabel}</span>}>
-    {!comparison || comparison.status === "unavailable"
+    {!report || report.status === "unavailable"
       ? <p role="status" className="py-2 text-sm text-muted-foreground">Paywall flow reporting is unavailable. Refresh to retry.</p>
       : <>
-        {!index ? <p className="pb-2 text-xs text-muted-foreground">HP 25% · 3-day trial 25% · 7-day current 25% · 7-day mascot 25%{comparison.status === "empty" ? " · Waiting for new assignments" : ""}</p> : null}
-        {comparison.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
-        <JourneyVersionComparison cohorts={comparison.rows} rowLabels={comparison.labels} rowHeading="Paywall flow"
+        <p className="pb-2 text-xs text-muted-foreground">New assignments: HP 25% · 3-day trial 25% · 7-day current 25% · 7-day mascot 25%{report.status === "empty" ? " · Waiting for new assignments" : ""}</p>
+        {report.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
+        <JourneyVersionComparison cohorts={report.rows} rowLabels={report.labels} rowHeading="Paywall flow"
           allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate
           onRowClick={(key, trigger) => {
             if (key !== "current" && key !== "trial" && key !== "trial_7d" && key !== "trial_7d_mascot") return;
@@ -68,7 +65,7 @@ export default function PokyPaywallFlowTable({ report, windowLabel }: { report: 
             setSelectedFlow(key);
           }} />
       </>}
-    </DashboardCard>)}
+    </DashboardCard>
     <DialogContent className={`max-h-[90vh] overflow-y-auto rounded-2xl ${selectedFlow !== "current" ? "sm:max-w-[min(96vw,1000px)]" : "sm:max-w-md"}`}
       onCloseAutoFocus={(event) => { event.preventDefault(); previewTrigger.current?.focus(); }}>
       <DialogHeader>

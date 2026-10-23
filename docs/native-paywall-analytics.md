@@ -444,9 +444,15 @@ Animated intro × Plan A/B), including empty rows. Clicking a row opens its scre
 funnel. Paywall flows prepares four rows for fresh `poky_onboarding_trial_v3`
 assignments with allocation `25_25_25_25`: `current` is HP, `trial` is the 3-day
 trial, `trial_7d` is the current 7-day presentation and `trial_7d_mascot` is its
-mascot presentation (25% each). Until the app release enrolls users, the new rows
-stay empty with a waiting message. Previous v1 / `50_50` and v2 / `25_25_50`
-results stay in separate historical tables, also when selecting a country.
+mascot presentation (25% each for new assignments). Matching flow identities are
+pooled in this single table across v1 / `50_50`, v2 / `25_25_50` and v3 /
+`25_25_25_25`: HP and three-day trial retain their collected results, while v2's
+`trial_7d` joins the current seven-day presentation. The mascot remains separate.
+Each release must still match its original experiment ID, allocation and allowed
+variants; no saved assignments or timestamps are rewritten. The same pooling
+applies to country slices and the paywall experiment report. Until a new flow
+enrolls users, only its row remains empty. These are pooled results across release
+periods, rather than a comparison restricted to concurrent four-way assignments.
 There is no price-point comparison. Both tables use first installs
 on v1.1.5 or newer, across all time and all languages/countries. Later upgrades
 do not reenroll older installs, and unknown first versions are excluded. The
@@ -464,7 +470,7 @@ The app validates the assigned SKU and trial period, uses StoreKit's localized
 prices, and keeps existing v1 assignments/timestamps intact. The seven-day preview
 shows its own introduction, dated reminder and annual timeline/paywall screenshots,
 using Poky’s rounded font and selected-compound headline. Poky snapshot keys include
-`offer-v2` so old cached reports cannot
+`offer-merged-flows` so old cached reports cannot
 hide the waiting rows. Dashboard deployment and iOS release are separate steps.
 
 The app detail page now shows the overview and compact tables directly, without

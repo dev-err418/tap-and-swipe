@@ -391,7 +391,7 @@ async function getSuperwallAppAnalytics(
   sessions = true,
   includeReports = true,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-v3-mascot-us-hp-20261025" : ""}`;
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : ""}`;
   return analyticsSnapshot(`mobile:${cacheKey}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports));
 }
@@ -1236,14 +1236,6 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
       installs: facts.migrationHistory?.installs ?? scopedFacts.installs,
       events: facts.migrationHistory?.events ?? scopedFacts.events,
     }),
-    pokyTrialOfferExperiment({ ...scopedFacts,
-      installs: facts.migrationHistory?.installs ?? scopedFacts.installs,
-      events: facts.migrationHistory?.events ?? scopedFacts.events,
-    }, Date.now(), true),
-    pokyTrialOfferExperiment({ ...scopedFacts,
-      installs: facts.migrationHistory?.installs ?? scopedFacts.installs,
-      events: facts.migrationHistory?.events ?? scopedFacts.events,
-    }, Date.now(), "v2"),
     attributeExperiment(scopedFacts, {
       id: "poky-animated-plan",
       title: "Animated plan A/B test",

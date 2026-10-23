@@ -6,6 +6,7 @@ import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
 import PokyPaywallFlowTable from "../../components/analytics/PokyPaywallFlowTable";
 import { buildPokyPaywallFlowComparison } from "../../lib/poky-paywall-flow-cohorts";
 import { POKY_ONBOARDING_OFFER_EXPERIMENT } from "../../lib/poky-trial-offer";
+import { isPokyOfferAssignment } from "../../lib/poky-onboarding-offer";
 import { buildUserJourney, userJourneyDefinition } from "../../lib/user-journey";
 import { withJourneyConversions } from "../../lib/journey-cohort-conversions";
 
@@ -104,25 +105,41 @@ test("seven-day trials include nonpayers, direct purchases, linked renewals and 
   assert.equal(metric.refunds, 1);
 });
 
-test("old 50/50 assignments stay visible separately and never enter the four-way test", () => {
+test("unchanged 50/50 flows join the main table while mismatched allocations stay excluded", () => {
   const report = buildPokyPaywallFlowComparison([install("old"), install("new"), install("bad")], [], new Map([
     ["old", assignment("trial", { onboarding_offer_experiment: "poky_onboarding_trial_v1", onboarding_offer_allocation: "50_50" })],
     ["new", assignment("trial_7d")], ["bad", assignment("trial_7d", { onboarding_offer_allocation: "50_50" })],
   ]), start, end, asOf);
-  assert.deepEqual(report.rows.map((row) => row.installs), [0, 0, 1, 0]);
-  assert.deepEqual(report.legacy!.rows.map((row) => row.installs), [0, 1]);
+  assert.deepEqual(report.rows.map((row) => row.installs), [0, 1, 1, 0]);
+  assert.equal("legacy" in report, false);
+  assert.equal("previous" in report, false);
 });
 
-test("dashboard waits for the four-way rollout while keeping previous results visible", () => {
+test("pooling only accepts the variant and allocation actually shipped in each release", () => {
+  for (const [experiment, allocation, valid] of [
+    ["poky_onboarding_trial_v1", "50_50", ["current", "trial"]],
+    ["poky_onboarding_trial_v2", "25_25_50", ["current", "trial", "trial_7d"]],
+    ["poky_onboarding_trial_v3", "25_25_25_25", ["current", "trial", "trial_7d", "trial_7d_mascot"]],
+  ] as const) {
+    for (const variant of ["current", "trial", "trial_7d", "trial_7d_mascot", "unknown"]) {
+      const attrs = assignment(variant, { onboarding_offer_experiment: experiment, onboarding_offer_allocation: allocation });
+      assert.equal(isPokyOfferAssignment(attrs), (valid as readonly string[]).includes(variant));
+      assert.equal(isPokyOfferAssignment({ ...attrs, onboarding_offer_allocation: "legacy" }), false);
+      assert.equal(isPokyOfferAssignment({ ...attrs, poky_us_hp_override_seen: "true" }), false);
+      assert.equal(isPokyOfferAssignment({ ...attrs, onboarding_offer_experiment: "unknown" }), false);
+    }
+  }
+});
+
+test("dashboard fills the main table from collected results before the four-way rollout", () => {
   const report = buildPokyPaywallFlowComparison([install("old")], [], new Map([
     ["old", assignment("trial", { onboarding_offer_experiment: "poky_onboarding_trial_v1", onboarding_offer_allocation: "50_50" })],
   ]), start, end, asOf);
   const html = renderToStaticMarkup(createElement(PokyPaywallFlowTable, { report, windowLabel: "All time" }));
-  assert.equal(report.status, "empty");
-  assert.equal(report.legacy!.status, "ready");
+  assert.equal(report.status, "ready");
+  assert.deepEqual(report.rows.map((row) => row.installs), [0, 1, 0, 0]);
   assert.match(html, /HP 25% · 3-day trial 25% · 7-day current 25% · 7-day mascot 25%/);
-  assert.match(html, /Waiting for new assignments/);
-  assert.match(html, /Previous paywall flows · 50\/50/);
+  assert.doesNotMatch(html, /Waiting for new assignments|Previous paywall flows/);
   assert.match(html, /View screens for 7-day trial/);
 });
 
@@ -145,11 +162,35 @@ test("the two seven-day designs retain independent nonpayer, purchase and refund
     ["text", assignment("trial_7d")], ["mascot", assignment("trial_7d_mascot")], ["free", assignment("trial_7d_mascot")],
     ["v2", assignment("trial_7d", { onboarding_offer_experiment: "poky_onboarding_trial_v2", onboarding_offer_allocation: "25_25_50" })],
   ]), start, end, asOf);
-  assert.deepEqual(report.rows.map((row) => row.installs), [0, 0, 1, 2]);
+  assert.deepEqual(report.rows.map((row) => row.installs), [0, 0, 2, 2]);
   assert.equal(report.rows[2].conversions!.global.proceeds, 10);
   assert.equal(report.rows[3].conversions!.global.proceeds / report.rows[3].installs, 12.5);
-  assert.deepEqual(report.previous!.rows.map((row) => row.installs), [0, 0, 1]);
   const html = renderToStaticMarkup(createElement(PokyPaywallFlowTable, { report, windowLabel: "All time" }));
-  assert.match(html, /Previous paywall flows · 25\/25\/50/);
+  assert.doesNotMatch(html, /Previous paywall flows/);
   assert.match(html, /View screens for 7-day trial · mascot/);
+});
+
+test("pooled flows retain old nonpayers, purchases and anonymous renewals/refunds without double counting", () => {
+  const attributes = new Map([
+    ["hp-v1", assignment("current", { onboarding_offer_experiment: "poky_onboarding_trial_v1", onboarding_offer_allocation: "50_50" })],
+    ["trial-v1", assignment("trial", { onboarding_offer_experiment: "poky_onboarding_trial_v1", onboarding_offer_allocation: "50_50" })],
+    ["hp-v2", assignment("current", { onboarding_offer_experiment: "poky_onboarding_trial_v2", onboarding_offer_allocation: "25_25_50" })],
+    ["trial-v3", assignment("trial")],
+  ]);
+  const renewal = event("", { originalTransactionId: "trial-v1", transactionId: "renewed", name: "renewal", eventTs: start + 5 * day, netProceeds: 20 });
+  const report = buildPokyPaywallFlowComparison([...attributes.keys()].flatMap((id) => [install(id), install(id)]), [
+    event("hp-v1"),
+    event("trial-v1", { periodType: "trial", netProceeds: 0, expiresAt: start + 4 * day }),
+    renewal, renewal,
+    event("", { originalTransactionId: "trial-v1", transactionId: "renewed", name: "cancellation", isRefund: true, netProceeds: -5, eventTs: start + 10 * day }),
+    event("trial-v3", { netProceeds: 10 }),
+  ], attributes, start, end, asOf);
+  assert.deepEqual(report.rows.map((row) => row.installs), [2, 2, 0, 0]);
+  assert.equal(report.rows[0].conversions!.global.proceeds, 12);
+  const trial = report.rows[1].conversions!.global;
+  assert.equal(trial.proceeds, 25);
+  assert.equal(trial.proceeds / trial.installs, 12.5);
+  assert.equal(trial.trials, 1);
+  assert.equal(trial.installPaid, 2);
+  assert.equal(trial.refunds, 1);
 });

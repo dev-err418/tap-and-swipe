@@ -1,5 +1,5 @@
 import type { MobileAppExperiment, MobileAppExperimentSlice, MobileAppExperimentVariant } from "./mobile-app-analytics";
-import { isPokyOfferAssignment, pokyOfferVariants, POKY_OFFER_VARIANTS, type PokyOfferHistory } from "./poky-onboarding-offer";
+import { isPokyOfferAssignment, pokyOfferVariants, POKY_OFFER_VARIANTS } from "./poky-onboarding-offer";
 export { POKY_ONBOARDING_OFFER_EXPERIMENT } from "./poky-onboarding-offer";
 
 export const POKY_TRIAL_OFFER_ATTRIBUTE_KEYS = [
@@ -24,15 +24,15 @@ type Facts = {
 };
 
 const empty = (): MobileAppExperimentSlice => ({ users: 0, sessions: 0, installs: 0, completed: 0, trials: 0, converted: 0, paid: 0, proceeds: 0, installsD7: 0, proceedsD7: 0, eligibleD7: 0, retainedD7: 0, installsD14: 0, proceedsD14: 0, eligibleD14: 0, retainedD14: 0, installsD30: 0, proceedsD30: 0, eligibleD30: 0, retainedD30: 0 });
-const variants = (legacy: PokyOfferHistory): MobileAppExperimentVariant[] => pokyOfferVariants(legacy).map(({ key, label }) => ({ ...empty(), key, label, countries: {} }));
+const variants = (): MobileAppExperimentVariant[] => pokyOfferVariants().map(({ key, label }) => ({ ...empty(), key, label, countries: {} }));
 
 /** Assignment time selects the cohort; Apple money follows each new subscription through today. */
-export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now(), legacy: PokyOfferHistory = false): MobileAppExperiment {
-  const overall = variants(legacy);
+export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now()): MobileAppExperiment {
+  const overall = variants();
   const languageComparisons = ([
     ["en", "🇬🇧 English APPU"], ["es", "🇪🇸 Spanish APPU"],
     ["de", "🇩🇪 German APPU"], ["fr", "🇫🇷 French APPU"],
-  ] as const).map(([language, label]) => ({ language, label, variants: variants(legacy) }));
+  ] as const).map(([language, label]) => ({ language, label, variants: variants() }));
   const firstInstalls = new Map<string, Install>();
   for (const install of facts.installs) {
     if (!install.appUserId || !Number.isFinite(install.installedAt)) continue;
@@ -45,7 +45,7 @@ export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now(), legacy
   for (const [appUserId, attrs] of facts.attributes) {
     const variant = attrs.onboarding_offer_variant;
     const assignedAt = Number(attrs.onboarding_offer_assigned_at);
-    if (!isPokyOfferAssignment(attrs, legacy) ||
+    if (!isPokyOfferAssignment(attrs) ||
         !Number.isFinite(assignedAt) || assignedAt <= 0 ||
         assignedAt < facts.startMs || assignedAt >= facts.endMs || assignedAt > asOf) continue;
     const index = overall.findIndex((row) => row.key === variant);
@@ -110,10 +110,10 @@ export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now(), legacy
       ? Math.max(0, (sumOfSquares - slice.proceeds * slice.proceeds / slice.users) / (slice.users - 1)) : 0;
   }
   return {
-    id: legacy === true ? "poky-trial-vs-current-legacy" : legacy === "v2" ? "poky-trial-vs-current-v2" : "poky-trial-vs-current",
-    title: legacy === true ? "Previous paywall test · 50/50" : legacy === "v2" ? "Previous paywall test · 25/25/50" : "Paywalls · HP vs 3-day vs 7-day current vs mascot",
-    subtitle: legacy === true ? "Historical fresh 50/50 assignments" : legacy === "v2" ? "Historical fresh 25/25/50 assignments" : "Fresh assignments · HP 25% · 3-day 25% · 7-day current 25% · 7-day mascot 25% · all languages",
-    planningNote: "Trial starts are free. APPU includes later paid renewals and refunds from subscriptions that began after assignment. All assigned users count, including people who never opened a paywall. Legacy assignments and sandbox events are excluded.",
+    id: "poky-trial-vs-current",
+    title: "Paywalls · HP vs 3-day vs 7-day current vs mascot",
+    subtitle: "Matching flows across releases · all languages",
+    planningNote: "Unchanged flows include randomized assignments from the 50/50, 25/25/50 and 25/25/25/25 releases. Trial starts are free. APPU includes later paid renewals and refunds from subscriptions that began after assignment. All assigned users count, including people who never opened a paywall. Legacy assignments and sandbox events are excluded.",
     variants: overall, languageComparisons,
     languageVariants: Object.fromEntries(languageComparisons.map((row) => [row.language, row.variants])),
     scoreMetrics: ["appu", "download_paid"], randomized: true,

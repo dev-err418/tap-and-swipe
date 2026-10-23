@@ -81,6 +81,25 @@ for (const appId of ["glow", "poky", "versy"] as const) {
   });
 }
 
+test("Poky pools matching flows from different releases within each country", () => {
+  const assignment = (experiment: string, allocation: string) => ({ poky_tracking_environment: "production",
+    onboarding_offer_experiment: experiment, onboarding_offer_allocation: allocation,
+    onboarding_offer_variant: "trial", onboarding_offer_assigned_at: String(start) });
+  const report = buildAppCountryComparisons({ appId: "poky", asOf, journey: null,
+    installs: [install("v1", "US", "1.1.5"), install("v2", "US", "1.1.10"), install("v3", "FR", "1.1.12")],
+    attributes: new Map([
+      ["v1", assignment("poky_onboarding_trial_v1", "50_50")],
+      ["v2", assignment("poky_onboarding_trial_v2", "25_25_50")],
+      ["v3", assignment("poky_onboarding_trial_v3", "25_25_25_25")],
+    ]), events: [event("v1"), event("v3", { netProceeds: 100 })],
+  });
+  const us = report.slices.US.paywallFlowComparison!.rows[1].conversions!.global;
+  assert.equal(us.installs, 2);
+  assert.equal(us.proceeds, 30);
+  assert.equal(report.slices.FR.paywallFlowComparison!.rows[1].installs, 1);
+  assert.equal(report.slices.FR.paywallFlowComparison!.rows[1].conversions!.global.proceeds, 100);
+});
+
 test("journey country totals and first-version groups sum back to All countries", async () => {
   let sql = "";
   const rows = [
