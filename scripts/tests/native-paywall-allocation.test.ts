@@ -27,31 +27,32 @@ test("v3 composite rows use exact equal yearly weights and readable percentage l
   assert.equal(nativePaywallAllocation("native_paywalls_v3", "yr_wk_34", "yr_wk_59"), null);
 });
 
-test("the live paywall panel shows the new equal three-price allocation", () => {
+test("the live paywall panel shows the new equal six-arm price/trial allocation", () => {
   const markup = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "glow", report: null }));
   for (const price of ["$34.99/year", "$49.99/year", "$59.99/year"]) assert.ok(markup.includes(price));
-  assert.equal((markup.match(/33\.33%/g) ?? []).length, 3);
+  assert.equal((markup.match(/~17%/g) ?? []).length, 6);
   assert.doesNotMatch(markup, /166666/);
   assert.match(markup, /Glow yearly price comparison/);
-  assert.match(markup, /next Glow app build assigns these three yearly prices equally/);
-  assert.match(markup, /never mixed into this three-price test/);
+  assert.match(markup, /next Glow app build assigns three yearly prices with either a 3-day or 7-day trial/);
+  assert.match(markup, /never mixed into this price\/trial comparison/);
   const poky = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "poky", report: null }));
   assert.doesNotMatch(poky, /yr_wk_34/);
 });
 
-test("v4 allocates one third to each yearly price and leaves v3 history untouched", () => {
+test("v5 allocates one sixth to each price/trial combination and leaves history untouched", () => {
   const allocations = GLOW_YEARLY_PRICE_EXPERIMENT.variants.map(({ id }) =>
     nativePaywallAllocation(GLOW_YEARLY_PRICE_EXPERIMENT.id, `${id}|${id}`, id));
-  assert.deepEqual(allocations, [100 / 3, 100 / 3, 100 / 3]);
-  assert.equal(allocations.reduce<number>((sum, value) => sum + (value ?? 0), 0), 100);
+  assert.deepEqual(allocations, Array(6).fill(100 / 6));
+  assert.ok(Math.abs(allocations.reduce<number>((sum, value) => sum + (value ?? 0), 0) - 100) < 1e-9);
+  assert.equal(nativePaywallAllocation("native_yearly_prices_v4", "yr_34", "yr_34"), 100 / 3);
   assert.equal(nativePaywallAllocation(GLOW_YEARLY_PRICE_EXPERIMENT.id, "yr_wk_34|yr_wk_34", "yr_wk_34"), null);
   assert.equal(nativePaywallAllocation(GLOW_PAYWALL_EXPERIMENT.id, "yr_wk_34|yr_wk_34", "yr_wk_34"), 25);
 });
 
 test("annual-only prices are exact and weekly layouts cannot enter the price comparison", () => {
-  assert.equal(glowYearlyPrice("yr_34|yr_34", "yr_34"), "$34.99/year");
-  assert.equal(glowYearlyPrice("yr_49", "yr_49"), "$49.99/year");
-  assert.equal(glowYearlyPrice("yr_59|yr_59", "yr_59"), "$59.99/year");
+  assert.equal(glowYearlyPrice("yr_34|yr_34", "yr_34"), "$34.99/year (7d)");
+  assert.equal(glowYearlyPrice("yr_49", "yr_49"), "$49.99/year (7d)");
+  assert.equal(glowYearlyPrice("yr_59|yr_59", "yr_59"), "$59.99/year (7d)");
   assert.equal(glowYearlyPrice("yr_wk_59|yr_wk_59", "yr_wk_59"), null);
   assert.equal(glowYearlyPrice("yr_34|yr_34", "yr_wk_34"), null);
 });

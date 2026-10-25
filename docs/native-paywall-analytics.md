@@ -20,7 +20,7 @@ The next app build uses `onboarding_manifest_audio_v3` / `goe1_onboarding_manife
 
 Assignments are sticky for eligible new users. Existing v2 users retain `onboarding_copy_mascot_v2` / `goe1_onboarding_copy_mascot_v2`, their `current` / `mascot_free` variants and `30_70` or `15_85` allocations. They continue reporting under v2, without reenrollment. Existing v1 users keep their presentation without further v1 activity/completion writes. Legacy assignments, saved drafts and completed profiles are excluded from fresh enrollment. Debug previews cannot record completion; completion requires the assigned journey.
 
-The Glow A/B test card and experiment map compare IAM with manifest-audio, with assigned users, completion, net proceeds/ARPU, sessions per observed user-day and average time to cancellation. V2 and v1 reports remain separate historical sections. All three assignment keys exclude users from the legacy wording comparison. Purchase attribution and transaction joins are unchanged. The paywall price test has a separate v4 assignment and remains independent of onboarding. Both onboarding arms use the same native paywall placement.
+The Glow A/B test card and experiment map compare IAM with manifest-audio, with assigned users, completion, net proceeds/ARPU, sessions per observed user-day and average time to cancellation. V2 and v1 reports remain separate historical sections. All three assignment keys exclude users from the legacy wording comparison. Purchase attribution and transaction joins are unchanged. The paywall price/trial test has a separate v5 assignment and remains independent of onboarding; saved v4 assignments retain their identity. Both onboarding arms use the same native paywall placement.
 
 These source changes are not deployed automatically: release the updated app and deploy the dashboard. Older App Store clients can still run their previous experiment. Empty states do not imply enrollment is already live.
 
@@ -31,7 +31,7 @@ The dashboard's existing server-side Superwall Query API connection reads these 
 Related app files (in the sibling `glow-app/glow-app` repo):
 
 - `native/Glow/NativePaywallAnalytics.swift`: persisted local state, scalar-JSON attributes, transaction observer.
-- `native/Glow/GlowProductID.swift`: `GlowPaywallVariant` and persisted `GlowPaywallAssignment`, active v4 three-price split; historical assignment helpers are retained but no longer drive presentation.
+- `native/Glow/GlowProductID.swift`: `GlowPaywallVariant` and persisted `GlowYearlyPriceAssignment`, active v5 six-way price/trial split; saved v4 three-price assignments remain sticky.
 - `native/Glow/SuperwallService.swift`: custom entry-point reach/dismiss hooks; no SDK placement registration.
 - `native/Glow/Views/GlowPaywallView.swift`: actual appearance hook.
 - `native/Glow/GlowSubscriptionStore.swift`: capture purchase attempt/result.
@@ -39,13 +39,13 @@ Related app files (in the sibling `glow-app/glow-app` repo):
 
 From October 7 through October 11, 2026, US/USA users receive yearly-only native paywalls in every language. The existing geo lookup resolves before startup product loading and analytics; non-US and unknown-country users retain their normal assignment. Package variants map to their yearly-only counterpart while preserving the assigned annual product and price. The saved v3 assignment is unchanged, and regular presentation resumes at local midnight October 12. Manual Debug design previews remain isolated. These presentations use the separate nonrandomized `native_paywall_us_yearly_oct2026` analytics experiment with `yr_49`, `yr_59`, or `yr_34` and only the matching yearly SKU in `allowedProducts`; do not mix them into the v3 randomized comparison. No fixed allocation badges are assigned to this temporary geographic cohort. Glow recovery offers also remain restricted to known non-US users through October 11; all countries, including unknown-country users, become eligible at local midnight October 12, 2026.
 
-The next Glow app build starts `native_yearly_prices_v4`: `yr_34`, `yr_49` and `yr_59` each receive exactly 1/3 of new assignments. A new local key preserves v3 assignments and pending purchases under their original experiment. Every v4 assignment selects one annual price in every language and country, including after the temporary US presentation window ends. The independent reminder-flow treatment also permits the fixed Weekly alternative; its purchases remain in the original annual-price assignment. The Glow A/B tab shows a dedicated all-language yearly-price report beside onboarding and paywall-flow comparisons. It reads only v4 records; absent v4 results never fall back to historical cohorts. The Paywalls tab also leads with these three US reference prices ($34.99, $49.99, $59.99 per year). It computes the price comparison only from v4's randomized three-arm cohort. Historical `native_paywalls_v3` remains separate: its three annual-only arms each received 1/6 of assignments, while two annual + weekly layout arms received 25% each. The v3 yearly-only subset omits the five-arm probability-of-best and readiness estimates; the two package layouts stay in a disclosure. The temporary US yearly-only presentation has its own table and no randomization/allocation claim. Prices are labels for US StoreKit products; local storefront prices may differ. Placement outcomes remain separate from the price comparison.
+The next Glow build starts `native_yearly_prices_v5`: three annual prices × two trial lengths, six equally likely assignments (1/6 each). Existing `native_yearly_prices_v4` assignments retain their 7-day SKU, timestamp and immutable attribution. The Data yearly-price and flow × price tables pool matching v4/v5 7-day arms and add distinct 3-day rows; earlier five-way and forced presentation cohorts remain separate. Native purchase-attribution reports retain each experiment's identity. All storefront prices come from StoreKit; US anchors are $34.99, $49.99 and $59.99. The independent reminder flow can still offer the fixed Weekly alternative, attributed to the saved annual-price arm.
 
 Dashboard files:
 
 - `lib/native-paywall-queries.ts`: paginated attribute fetch, authoritative money queries.
 - `lib/native-paywall-analytics.ts`: validation, attribution, cohort aggregation and statistics (pure/testable).
-- `lib/native-paywall-allocation.ts`: mirrors the upcoming Glow `native_yearly_prices_v4` 1/3 split and the released Glow 1.7.2 `native_paywalls_v3` five-way split: `yr_wk_59` and `yr_wk_34` received 25% each; `yr_49`, `yr_59` and `yr_34` shared the remaining 50% equally (exactly 1/6 each, displayed as ~17%). Variant and paywall identity are the same stable string. The temporary English presentation uses the separate, nonrandomized `native_paywall_legacy_en_sep2026` experiment with `yr_59` at 100%. Historical `native_yearly_v1` stays Annual/Pro yearly 50/50, and `native_paywalls_v2` retains its 25/25/50 allocation. Supports both demo variant IDs and live composite `variant|paywall` row IDs. Unknown allocations are omitted, never inferred from user counts. Badges describe code configuration, not observed traffic.
+- `lib/native-paywall-allocation.ts`: mirrors the upcoming Glow `native_yearly_prices_v5` six-way price/trial split, preserves v4’s 1/3 split and the released Glow 1.7.2 `native_paywalls_v3` five-way split: `yr_wk_59` and `yr_wk_34` received 25% each; `yr_49`, `yr_59` and `yr_34` shared the remaining 50% equally (exactly 1/6 each, displayed as ~17%). Variant and paywall identity are the same stable string. The temporary English presentation uses the separate, nonrandomized `native_paywall_legacy_en_sep2026` experiment with `yr_59` at 100%. Historical `native_yearly_v1` stays Annual/Pro yearly 50/50, and `native_paywalls_v2` retains its 25/25/50 allocation. Supports both demo variant IDs and live composite `variant|paywall` row IDs. Unknown allocations are omitted, never inferred from user counts. Badges describe code configuration, not observed traffic.
 - `components/analytics/NativePaywallsPanel.tsx`: language audience filter, all experiment groups, paywall/placement tables.
 - `lib/mobile-app-analytics.ts`: loads this report for Glow and Poky's detail views.
 
@@ -304,9 +304,9 @@ active-trials card is removed from Data; the trial-survival chart remains.
 
 Glow also has compact **Paywall flows** and **Yearly prices** tables below User
 journey. Both use the first-install v1.8.3+ cohort across all time, in all languages and countries. Flow membership uses validated randomized production
-`gpf1_onboarding_paywall_flow_v1`; prices use only the three-arm
-`gp1_a_native_yearly_prices_v4` assignment. Historical price experiments remain
-separate. Startup price assignment can precede the SDK's install timestamp;
+`gpf1_onboarding_paywall_flow_v1`; prices read `gp1_a_native_yearly_prices_v4` (three 7-day arms) and
+`gp1_a_native_yearly_prices_v5` (six price/trial arms). Matching 7-day arms are pooled,
+while 3-day arms remain distinct; a user with both records counts once under the original v4 assignment. Startup price assignment can precede the SDK's install timestamp;
 this does not exclude the install. Outcomes begin at the later of installation
 and assignment and run through report time. Earlier subscription chains are
 excluded. Non-payers remain in the denominator, and renewals, weekly purchases,
@@ -427,11 +427,11 @@ the verified tables. The read-only smoke check accepts `--app=versy`.
 
 The Versy reminder treatment now offers “View all plans”: the same assigned annual SKU plus the fixed Weekly SKU, with annual selected by default. Weekly has no introductory trial. This is part of the paywall-flow treatment, not a randomized weekly-price arm. The annual-price experiment remains three equally likely annual anchors.
 
-On reaching that treatment, the native ledger permits Weekly in the assignment and current placement's `allowedProducts`; existing pending/completed purchase snapshots remain unchanged. For `native_yearly_prices_v4` only, the report accepts offer-list evolution from the assigned annual SKU to that same SKU plus `com.arthurbuildsstuff.glow.Weekly` when matching attribution. Experiment, variant, paywall, language, assignment timestamp and expected annual product must still match. Other product changes remain mismatches; no historical experiment rule is relaxed.
+On reaching that treatment, the native ledger permits Weekly in the assignment and current placement's `allowedProducts`; existing pending/completed purchase snapshots remain unchanged. For `native_yearly_prices_v4` and `native_yearly_prices_v5` only, the report accepts offer-list evolution from the assigned annual SKU to that same SKU plus `com.arthurbuildsstuff.glow.Weekly` when matching attribution. Experiment, variant, paywall, language, assignment timestamp and expected annual product must still match. Other product changes remain mismatches; no historical experiment rule is relaxed.
 
-Splash loading awaits all three annual prices, Weekly and recovery-offer preloads. The app keeps the full catalog separate from the annual-only primary presentation.
+Splash loading awaits all six annual price/trial products, Weekly and recovery-offer preloads. The app keeps the full catalog separate from the annual-only primary presentation.
 
-The **Paywall flow × yearly price** table has six rows (two flows × three prices).
+The **Paywall flow × yearly price** table has twelve rows (two flows × three prices × two trial lengths).
 Membership requires both validated assignments for the same install; it is never
 inferred by multiplying aggregate totals. Outcomes start after the later assignment
 and installation. Users missing either assignment remain in their separate table
@@ -521,3 +521,33 @@ opens its own three-screen preview. Never infer the presentation from the shared
 SKU: its immutable offer assignment identifies the cohort, including nonviewers and
 nonpayers. Saved v1/v2 assignments and native purchase attribution remain unchanged.
 The temporary US override still takes priority and exposed users remain excluded.
+
+
+## October 23, 2026: annual 3-day / 7-day trials
+
+Glow uses `glow.paywall.assignment.v5` / `native_yearly_prices_v5` for fresh assignments:
+`yr_34`, `yr_49`, `yr_59` are the existing 7-day offers; `yr_34_3d`, `yr_49_3d`,
+`yr_59_3d` use the respective product IDs with `.trial3` appended. Each receives 1/6,
+so each duration receives 50% at each price. Existing v4 assignments are loaded unchanged.
+
+Versy uses `versy.paywall.yearlyPrice.assignment.v4` / `versy_yearly_price_v4`, allocation
+`25_25_25_25`: the existing `yearly_3999_80` and `yearly_4999` products (7d), plus their
+`.trial3` counterparts (3d). Existing v3 / `50_50` assignments remain 7-day offers.
+Price and widget-combination reports accept those exact experiment/allocation pairs;
+migrated, development, unknown-product and mismatched allocation records remain excluded.
+Matching original 7-day results stay in the same rows. Country slices use the same rules.
+All APPU denominators retain assigned nonpayers and later attributed refunds/renewals.
+
+Both splash screens warm every annual SKU before onboarding. Selection never substitutes
+a different price or duration if Apple has not returned the assigned product. StoreKit's
+actual intro offer drives the rendered duration; the assignment supplies a matching
+3/7-day fallback while loading. Standard flows remind 2 days before expiry (day 1 or 5).
+Choice flows offer 1/2 days before a 3-day expiry and 2/3 before a 7-day expiry. Scheduled
+notifications use verified Apple trial expiry; paid/ineligible purchases do not schedule a trial reminder.
+
+App Store Connect creation clones each source's current non-preserved annual price in all
+175 territories, availability and product localizations. Each new product has a THREE_DAYS
+FREE_TRIAL offer in those same 175 territories. Original prices and intro offers are unchanged.
+These new subscriptions must pass Apple's review and become available before shipping the new app builds.
+
+Creation IDs and final Apple verification are recorded in [`glow-versy-trial3-products.json`](glow-versy-trial3-products.json). All five were `READY_TO_SUBMIT` with completed review images on October 23, 2026.

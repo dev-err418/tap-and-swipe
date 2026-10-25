@@ -15,7 +15,7 @@ import { GLOW_SUPERWALL_HISTORY_START_MS, glowPaywallMigrationExperiment } from 
 import { loadUserJourney } from "./user-journey-queries";
 import { journeyCohortAttributeKeys, withJourneyConversions } from "./journey-cohort-conversions";
 import { buildGlowPaywallCohortComparisons, GLOW_PAYWALL_COHORT_KEYS, type GlowPaywallCohortComparisons } from "./glow-paywall-cohort-comparisons";
-import { buildVersyYearlyPriceComparison, VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS, VERSY_YEARLY_PRICE_EXPERIMENT, VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
+import { buildVersyYearlyPriceComparison, VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS, isVersyYearlyPriceAssignment, VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { withJourneyInstallVersions, type UserJourneyReport } from "./user-journey";
 import { orderAppExperiments } from "./app-experiment-order";
@@ -270,6 +270,7 @@ type AppFacts = {
 
 type AttributeExperimentDefinition = {
   paidUsersOnly?: boolean;
+  assignmentCheck?: (attributes: Record<string, string>) => boolean;
   id: string;
   title: string;
   subtitle: string;
@@ -391,7 +392,7 @@ async function getSuperwallAppAnalytics(
   sessions = true,
   includeReports = true,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : ""}`;
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : ":yearly-trial3-20261023"}`;
   return analyticsSnapshot(`mobile:${cacheKey}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports));
 }
@@ -1187,26 +1188,28 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
       showCompletion: true, completionLabel: "Paywall reached", completionCheck: versyOnboardingPaywallReached,
     }),
     attributeExperiment(facts, {
-      id: "versy-yearly-price-v3",
+      id: "versy-yearly-price-v4",
       title: "Yearly price A/B test",
-      subtitle: "$39.99 vs $49.99 · fresh assignments · 50/50",
+      subtitle: "$39.99 / $49.99 × 3-day / 7-day trials · 25% each for new users",
+      assignmentCheck: isVersyYearlyPriceAssignment,
       attributeKeys: ["yearly_price_experiment_id", "yearly_price_product_id", "yearly_price_allocation"],
       variants: yearlyPrices.map(({ key, label, productID }) => ({
         key, label,
-        attributes: { yearly_price_experiment_id: VERSY_YEARLY_PRICE_EXPERIMENT, yearly_price_product_id: productID, yearly_price_allocation: "50_50" },
+        attributes: { yearly_price_product_id: productID },
       })),
       scoreMetrics: ["appu", "download_paid"],
       showTrials: true,
     }),
     attributeExperiment(widgetFacts, {
-      id: "versy-yearly-paywall-configuration-v3",
+      id: "versy-yearly-paywall-configuration-v4",
       title: "Widget paywall combinations",
-      subtitle: "Yearly only · access × yearly price · 4 fresh cohorts",
-      attributeKeys: ["paywall_configuration_experiment_id", "paywall_configuration_variant", "yearly_price_allocation"],
+      subtitle: "Yearly only · access × yearly price × trial length · 8 cohorts",
+      assignmentCheck: isVersyYearlyPriceAssignment,
+      attributeKeys: ["paywall_configuration_experiment_id", "paywall_configuration_variant", ...VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS],
       variants: ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ key, label, productID }) => ({
         key: `yearly_only|${access}|${key}`,
         label: `Yearly · ${access === "hard" ? "Hard" : "Soft"} · ${label}`,
-        attributes: { paywall_configuration_experiment_id: "versy_yearly_paywall_configuration_v3", yearly_price_allocation: "50_50",
+        attributes: { paywall_configuration_experiment_id: ["versy_yearly_paywall_configuration_v3", "versy_yearly_paywall_configuration_v4"],
           paywall_configuration_variant: `yearly_only|${access}|${productID}` },
       }))),
       scoreMetrics: ["appu", "download_paid"],
@@ -1258,7 +1261,7 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     definition.variants.map((variant) => emptyExperimentVariant(variant.key, variant.label)),
   ]));
   const variantIndexFor = (attrs: Record<string, string> | undefined) => {
-    if (!attrs) return null;
+    if (!attrs || (definition.assignmentCheck && !definition.assignmentCheck(attrs))) return null;
     if (definition.id === "glow-onboarding-copy" && (attrs[GLOW_ONBOARDING_KEY] !== undefined || attrs[GLOW_ONBOARDING_COPY_KEY] !== undefined || attrs[GLOW_ONBOARDING_LEGACY_KEY] !== undefined)) return null;
     if (definition.id.startsWith("poky-") && attrs.poky_tracking_environment !== "production") return null;
     if (definition.id.startsWith("versy-") && attrs.versy_tracking_environment === "development") return null;

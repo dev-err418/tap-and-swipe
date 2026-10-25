@@ -26,7 +26,7 @@ test("v4 annual price assignments keep a readable group name and three separate 
       allowedProducts: [["yearly34"], ["annual"], ["proYearly"]][index],
     })));
   const group = report(attrs, []).groups.find((item) => item.language === "en")!;
-  assert.equal(group.name, "Yearly prices · 3 variants");
+  assert.equal(group.name, "Yearly prices · 7-day trials");
   assert.deepEqual(group.paywalls.map((row) => row.id), ["yr_34|yr_34", "yr_49|yr_49", "yr_59|yr_59"]);
 });
 

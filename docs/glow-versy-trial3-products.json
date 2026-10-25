@@ -1,0 +1,65 @@
+{
+  "verifiedAt": "2026-10-23T09:23:31.260204+00:00",
+  "products": [
+    {
+      "app": "glow",
+      "id": "6826159123",
+      "productID": "com.arthurbuildsstuff.glow.Annual.trial3",
+      "sourceID": "6753347587",
+      "usAnnualPrice": "49.99",
+      "matchingTerritories": 175,
+      "trialDays": 3,
+      "localizations": 1,
+      "reviewImage": "COMPLETE",
+      "state": "READY_TO_SUBMIT"
+    },
+    {
+      "app": "versy",
+      "id": "6826167830",
+      "productID": "com.arthurbuildsstuff.bible.yearly_4999.trial3",
+      "sourceID": "6761192673",
+      "usAnnualPrice": "49.99",
+      "matchingTerritories": 175,
+      "trialDays": 3,
+      "localizations": 7,
+      "reviewImage": "COMPLETE",
+      "state": "READY_TO_SUBMIT"
+    },
+    {
+      "app": "versy",
+      "id": "6826166480",
+      "productID": "com.arthurbuildsstuff.bible.yearly_3999_80.trial3",
+      "sourceID": "6761192866",
+      "usAnnualPrice": "39.99",
+      "matchingTerritories": 175,
+      "trialDays": 3,
+      "localizations": 7,
+      "reviewImage": "COMPLETE",
+      "state": "READY_TO_SUBMIT"
+    },
+    {
+      "app": "glow",
+      "id": "6826157765",
+      "productID": "com.arthurbuildsstuff.glow.yearly.3499.trial3",
+      "sourceID": "6807729758",
+      "usAnnualPrice": "34.99",
+      "matchingTerritories": 175,
+      "trialDays": 3,
+      "localizations": 4,
+      "reviewImage": "COMPLETE",
+      "state": "READY_TO_SUBMIT"
+    },
+    {
+      "app": "glow",
+      "id": "6826161814",
+      "productID": "com.arthurbuildsstuff.glow.pro.yearly.trial3",
+      "sourceID": "6810129420",
+      "usAnnualPrice": "59.99",
+      "matchingTerritories": 175,
+      "trialDays": 3,
+      "localizations": 4,
+      "reviewImage": "COMPLETE",
+      "state": "READY_TO_SUBMIT"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
 import { appExperimentMap, type AppExperimentMapDefinition } from "./app-experiment-map";
 import { formatPaywallAllocation } from "./native-paywall-allocation";
 
@@ -61,7 +62,7 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   price.branches.forEach((branch, index) => {
     const id = `price-${index}`;
     nodes.push({ id, x: 956, y: 80 + index * 136, width: 190,
-      label: branch.label, tone: "orange", experimentId: price.id, variantId: branch.id.split(".").at(-1) });
+      label: branch.label, tone: "orange", experimentId: price.id, variantId: VERSY_YEARLY_PRICES.find((price) => price.productID === branch.id)?.key });
     access.branches.forEach((parent) => edges.push({ from: `access-${parent.id}`, to: id, label: `${branch.percent}%` }));
     edges.push({ from: "scroll-trial", to: id });
   });
@@ -96,7 +97,7 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
     paywallFlow.branches.forEach((parent) => edges.push({ from: parent.id, to: branch.id, label: formatPaywallAllocation(branch.percent) }));
     edges.push({ from: branch.id, to: "home" });
   });
-  return { width: 1186, height: 320, nodes, edges,
+  return { width: 1186, height: 64 + (prices.branches.length - 1) * 104 + 64, nodes, edges,
     stages: [{ x: 140, label: "Onboarding" }, { x: 414, label: "Paywall flow" }, { x: 730, label: "Yearly price" }, { x: 1010, label: "Practice" }],
     notes: ["The onboarding journey, paywall flow and yearly price are independent saved assignments. The reminder flow is tested in both IAM and manifest-audio.", "The paywall flow comparison enrolls everyone reaching the introduction; the price test also covers other app placements. Their user counts and APPU denominators differ.", ...map.notes] };
 }

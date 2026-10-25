@@ -1,11 +1,12 @@
 import { GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY, onboardingCohort } from "./glow-onboarding-experience";
-import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
+import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
 import { parsePaywallAttributes, type PaywallAttribute } from "./native-paywall-analytics";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import type { JourneyVersionCohort } from "./user-journey";
 
-const PRICE_KEY = `gp1_a_${GLOW_YEARLY_PRICE_EXPERIMENT.id}`;
-export const GLOW_PAYWALL_COHORT_KEYS = [GLOW_PAYWALL_FLOW_KEY, PRICE_KEY];
+const PRICE_EXPERIMENTS = [GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICE_EXPERIMENT.id];
+const PRICE_KEYS = PRICE_EXPERIMENTS.map((id) => `gp1_a_${id}`);
+export const GLOW_PAYWALL_COHORT_KEYS = [GLOW_PAYWALL_FLOW_KEY, ...PRICE_KEYS];
 export type PaywallCohortComparison = {
   status: "ready" | "empty" | "unavailable";
   rows: JourneyVersionCohort[];
@@ -37,13 +38,15 @@ export function buildGlowPaywallCohortComparisons(
   }));
   // Filter by install dates above, then validate assignments independently of the date picker.
   const flows = onboardingCohort(records, 0, asOf + 1, asOf, GLOW_PAYWALL_FLOW_ID);
-  const parsedPrices = parsePaywallAttributes(records.filter((row) => row.key === PRICE_KEY));
+  const parsedPrices = parsePaywallAttributes(records.filter((row) => PRICE_KEYS.includes(row.key)));
   const prices = new Map<string, Assignment>();
   for (const { appUserId } of selected) {
-    const record = parsedPrices.assignments.get(`${appUserId}|${GLOW_YEARLY_PRICE_EXPERIMENT.id}`);
-    if (!record || !record.randomized || record.variantCount !== 3 || record.hadFallback
+    // Prefer the original eligible assignment so an upgrade cannot count twice.
+    const record = PRICE_EXPERIMENTS.map((id) => parsedPrices.assignments.get(`${appUserId}|${id}`)).find(Boolean);
+    const previous = record?.experiment === GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT;
+    if (!record || !record.randomized || record.variantCount !== (previous ? 3 : 6) || record.hadFallback
       || record.assignedAt > asOf || (record.viewedAt != null && record.viewedAt > asOf)
-      || record.variant !== record.paywall || !GLOW_YEARLY_PRICES.some(({ id }) => id === record.variant)) continue;
+      || record.variant !== record.paywall || !(previous ? GLOW_YEARLY_PRICES.slice(0, 3) : GLOW_YEARLY_PRICES).some(({ id }) => id === record.variant)) continue;
     prices.set(appUserId, record);
   }
   const compare = (assignments: Map<string, Assignment>, labels: Record<string, string>, warnings: string[]): PaywallCohortComparison => {

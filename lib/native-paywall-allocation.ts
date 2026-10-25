@@ -16,17 +16,22 @@ export const GLOW_PAYWALL_EXPERIMENT = {
   ],
 } as const;
 
-/** US reference prices for the three annual-only StoreKit products. */
+/** US reference prices for the annual price/trial combinations. */
 export const GLOW_YEARLY_PRICES = [
-  { id: "yr_34", price: "$34.99/year" },
-  { id: "yr_49", price: "$49.99/year" },
-  { id: "yr_59", price: "$59.99/year" },
+  { id: "yr_34", price: "$34.99/year (7d)" },
+  { id: "yr_49", price: "$49.99/year (7d)" },
+  { id: "yr_59", price: "$59.99/year (7d)" },
+  { id: "yr_34_3d", price: "$34.99/year (3d)" },
+  { id: "yr_49_3d", price: "$49.99/year (3d)" },
+  { id: "yr_59_3d", price: "$59.99/year (3d)" },
 ] as const;
 
+export const GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT = "native_yearly_prices_v4";
+
 export const GLOW_YEARLY_PRICE_EXPERIMENT = {
-  id: "native_yearly_prices_v4",
-  name: "Yearly prices · 3 variants",
-  variants: GLOW_YEARLY_PRICES.map(({ id }) => ({ id, percent: 100 / 3 })),
+  id: "native_yearly_prices_v5",
+  name: "Yearly prices · 3-day vs 7-day trials",
+  variants: GLOW_YEARLY_PRICES.map(({ id }) => ({ id, percent: 100 / 6 })),
 } as const;
 
 export function glowYearlyPrice(variant: string, paywall: string): string | null {
@@ -51,6 +56,9 @@ const allocations = [
   })),
   ...GLOW_YEARLY_PRICE_EXPERIMENT.variants.map(({ id, percent }) => ({
     experiment: GLOW_YEARLY_PRICE_EXPERIMENT.id, variant: id, paywall: id, percent,
+  })),
+  ...GLOW_YEARLY_PRICES.slice(0, 3).map(({ id }) => ({
+    experiment: GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT, variant: id, paywall: id, percent: 100 / 3,
   })),
   { experiment: "native_paywall_legacy_en_sep2026", variant: "yr_59", paywall: "yr_59", language: "en", percent: 100 },
   { experiment: "native_yearly_v1", variant: "annual", paywall: "native_timeline_annual_v1", percent: 50 },

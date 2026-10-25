@@ -1,3 +1,4 @@
+import { VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
 import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID } from "./glow-onboarding-experience";
 import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
 
@@ -42,7 +43,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
         {
-          id: GLOW_YEARLY_PRICE_EXPERIMENT.id, label: "Yearly price", scope: "Next app build · three yearly prices · all languages", tone: "orange", planned: true,
+          id: GLOW_YEARLY_PRICE_EXPERIMENT.id, label: "Yearly price", scope: "Next app build · three prices × 3-day / 7-day trials · all languages", tone: "orange", planned: true,
           branches: GLOW_YEARLY_PRICE_EXPERIMENT.variants.map(({ id, percent }) => ({
             id,
             label: GLOW_YEARLY_PRICES.find((price) => price.id === id)!.price,
@@ -54,7 +55,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         "Results start September 20, 2026 at 08:00 GMT+2; earlier cohorts and proceeds are excluded.",
         "Practice is the only Home experience in the next Glow release. The Journal comparison has ended.",
         "IAM wording is retired in the next app build. Both onboarding arms use Copy wording under a new experiment ID; historical comparisons stay separate.",
-        "The new price test saves a v4 assignment. Earlier five-variant v3 and temporary US yearly-only presentations remain separate in Paywalls, along with their purchase attribution.",
+        "New users receive a saved v5 price/trial assignment, with equal chances of 3 and 7 days. Existing v4 assignments keep their 7-day offer and results in the matching rows. Older five-variant and temporary US presentations remain separate.",
         "The Versy reminder flow also offers a fixed Weekly plan in View all plans, with the assigned annual plan selected by default. Weekly is not randomized; its purchases remain attributed to the saved flow and yearly-price assignments.",
         "The split shows app configuration, not observed traffic. StoreKit determines which subscriptions are available and their displayed prices.",
       ],
@@ -123,10 +124,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
   }
 
   if (appId === "versy") {
-    const yearlyPrices = [
-      { id: "com.arthurbuildsstuff.bible.yearly_3999_80", label: "$39.99 Yearly" },
-      { id: "com.arthurbuildsstuff.bible.yearly_4999", label: "$49.99 Yearly" },
-    ];
+    const yearlyPrices = VERSY_YEARLY_PRICES.map(({ productID, label }) => ({ id: productID, label }));
     return {
       tests: [
         {
@@ -145,8 +143,8 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
         {
-          id: "versy-yearly-price-v3", label: "Yearly price", scope: "Fresh assignments · $39.99 / $49.99 · 50/50", tone: "orange",
-          branches: yearlyPrices.map(({ id, label }) => ({ id, label, percent: 50 })),
+          id: "versy-yearly-price-v4", label: "Yearly price", scope: "New assignments · two prices × 3-day / 7-day trials · 25% each", tone: "orange",
+          branches: yearlyPrices.map(({ id, label }) => ({ id, label, percent: 25 })),
         },
         {
           id: "versy-scroll-benefits-v1", label: "Benefits screen", tone: "orange", planned: true,
@@ -160,13 +158,13 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       combinations: ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ id, label }) => ({
         id: `yearly_only|${access}|${id}`,
         label: `Yearly only · ${access === "hard" ? "Hard" : "Soft"} · ${label}`,
-        percent: 25,
+        percent: 12.5,
       }))),
       notes: [
         "New assignments use 10% Bible Widget, 10% Shorter and 80% Bible Scroll. Mexico receives Bible Scroll automatically and is excluded from the comparison, along with uncertain countries.",
         "The next app build assigns new Bible Scroll Welcome users 50/50 to the current flow or an extra benefits screen after Premium preview, before Trial reminder. This assignment is independent of yearly price. Legacy/resumed flows and development data are excluded; the optional screen never becomes a required journey drop-off baseline.",
         "Bible Scroll uses a dismissible trial timeline with yearly and weekly plans, without onboarding recovery. The saved soft/hard assignment does not control this onboarding screen; access comparisons include widget variants only.",
-        "The next app update uses yearly price v3: new users receive US $39.99 or $49.99 yearly offers equally, both with a 7-day trial. Earlier price tests remain historical. The $49.99 product has no recovery promotion and skips onboarding recovery. Migrated users are excluded from the fresh price comparison. Yearly price remains a saved independent assignment. Bible Scroll also offers the fixed weekly product. Other upgrade placements use the assigned yearly product and access mode, except the daily gift.",
+        "The next app update uses yearly price v4: new users receive US $39.99 or $49.99 with a 3-day or 7-day trial, each combination equally likely. Existing v3 assignments retain their 7-day offer and results in the matching rows. The $49.99 product has no recovery promotion and skips onboarding recovery. Migrated users are excluded from the fresh price comparison. Yearly price remains a saved independent assignment. Bible Scroll also offers the fixed weekly product. Other upgrade placements use the assigned yearly product and access mode, except the daily gift.",
         "Daily gift: after 24 hours, eligible non-premium users see a sealed envelope then a discounted yearly offer on their first app open each local day. This 100% rollout uses YearlyDiscount, independently of yearly price assignment, and is reported in Paywalls as versy_daily_gift_v1 / daily_gift_app_open; historical app_open remains separate.",
         "Existing widget assignments remain in bible_widget_shorter_v1 and are reported in a separate historical comparison. Current funnels use scroll_the_bible_v1 only. Country grouping uses reported and install geography, not immutable assignment geography.",
       ],

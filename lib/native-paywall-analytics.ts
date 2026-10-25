@@ -168,7 +168,7 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
     const id = `${r.experiment}|${language}`;
     let group = groups.get(id);
     if (!group) {
-      group = { experiment: r.experiment, name: r.experiment === "native_yearly_prices_v4" ? "Yearly prices · 3 variants" : isRecoveryExperiment(r.experiment)
+      group = { experiment: r.experiment, name: r.experiment === "native_yearly_prices_v5" ? "Yearly prices · 3-day vs 7-day trials" : r.experiment === "native_yearly_prices_v4" ? "Yearly prices · 7-day trials" : isRecoveryExperiment(r.experiment)
         ? r.experiment.includes("_v2_") ? "Regular flow vs recovery · retired 50/50" : "Recovery after cancellation · legacy 50/50"
         : r.experimentName, language, paywalls: new Map(), placements: new Map() };
       groups.set(id, group);
@@ -342,9 +342,9 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
 function sameAssignment(a: PaywallRecord, b: PaywallRecord) {
   const allowedA = a.allowedProducts ?? [a.expectedProduct];
   const allowedB = b.allowedProducts ?? [b.expectedProduct];
-  // V4 still randomizes only the annual price. The independent reminder-flow
+  // V4/v5 fix the annual price/trial arm. The independent reminder-flow
   // treatment adds a fixed Weekly alternative; preserve earlier annual purchases.
-  const reminderPlanEvolution = a.experiment === "native_yearly_prices_v4"
+  const reminderPlanEvolution = ["native_yearly_prices_v4", "native_yearly_prices_v5"].includes(a.experiment)
     && allowedA.includes(a.expectedProduct) && allowedB.includes(b.expectedProduct)
     && [...allowedA, ...allowedB].every((id) => id === a.expectedProduct
       || id === "com.arthurbuildsstuff.glow.Weekly");

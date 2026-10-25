@@ -33,7 +33,7 @@ test("every configured audience has a complete, valid allocation", () => {
     assert.ok(map);
     assert.equal(new Set(map.tests.map((experiment) => experiment.id)).size, map.tests.length);
     for (const experiment of map.tests) {
-      assert.equal(experiment.branches.reduce((sum, branch) => sum + branch.percent, 0), 100);
+      assert.ok(Math.abs(experiment.branches.reduce((sum, branch) => sum + branch.percent, 0) - 100) < 1e-9);
       assert.ok(experiment.branches.every((branch) => Number.isFinite(branch.percent) && branch.percent > 0));
       assert.equal(new Set(experiment.branches.map((branch) => branch.id)).size, experiment.branches.length);
     }
@@ -44,13 +44,13 @@ test("Glow keeps onboarding and paywall assignments after retiring the Journal c
   const map = appExperimentMap("glow")!;
   assert.equal(map.tests[0].planned, true);
   assert.deepEqual(map.tests[0].branches.map((b) => b.percent), [50, 50]);
-  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "onboarding_paywall_flow_v1", "native_yearly_prices_v4"]);
+  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "onboarding_paywall_flow_v1", "native_yearly_prices_v5"]);
   assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.label, "Practice");
-  assert.ok(map.notes.some((note) => note.includes("Earlier five-variant v3")));
+  assert.ok(map.notes.some((note) => note.includes("Older five-variant")));
   assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [50, 50]);
-  assert.deepEqual(map.tests[2].branches.map((branch) => branch.percent), [100 / 3, 100 / 3, 100 / 3]);
+  assert.deepEqual(map.tests[2].branches.map((branch) => branch.percent), Array(6).fill(100 / 6));
   for (const branch of map.tests[2].branches) {
-    assert.equal(branch.percent, nativePaywallAllocation("native_yearly_prices_v4", branch.id, branch.id));
+    assert.equal(branch.percent, nativePaywallAllocation("native_yearly_prices_v5", branch.id, branch.id));
   }
 });
 
@@ -90,22 +90,24 @@ test("Poky retires the engine comparison and routes every current offer to nativ
 test("Versy separates Bible Scroll trial routing from widget soft/hard paywalls", () => {
   const map = appExperimentMap("versy")!;
   assert.deepEqual(map.tests.map((row) => row.id), [
-    "versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v3", "versy-scroll-benefits-v1",
+    "versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v4", "versy-scroll-benefits-v1",
   ]);
   assert.deepEqual(map.tests.map((row) => row.branches.map((branch) => branch.percent)),
-    [[10, 10, 80], [50, 50], [50, 50], [50, 50]]);
+    [[10, 10, 80], [50, 50], [25, 25, 25, 25], [50, 50]]);
   assert.deepEqual(map.tests[0].branches.map((branch) => branch.id), ["bible_widget", "bible_widget_shorter", "scroll_the_bible"]);
   assert.deepEqual(map.tests[1].branches.map((branch) => branch.id), ["dismissible", "hard"]);
   assert.deepEqual(map.tests[2].branches.map((branch) => branch.id), [
     "com.arthurbuildsstuff.bible.yearly_3999_80",
     "com.arthurbuildsstuff.bible.yearly_4999",
+    "com.arthurbuildsstuff.bible.yearly_3999_80.trial3",
+    "com.arthurbuildsstuff.bible.yearly_4999.trial3",
   ]);
   assert.equal(map.tests[3].planned, true);
   assert.deepEqual(map.tests[3].branches.map((branch) => branch.id), ["control", "benefits"]);
-  assert.equal(map.combinations?.length, 4);
-  assert.ok(map.combinations?.every((branch) => branch.id.startsWith("yearly_only|") && branch.percent === 25));
+  assert.equal(map.combinations?.length, 8);
+  assert.ok(map.combinations?.every((branch) => branch.id.startsWith("yearly_only|") && branch.percent === 12.5));
   assert.ok(map.tests.every((row) => row.branches.every((branch) => branch.id !== "yearly_weekly")));
-  assert.equal(appExperimentFlow("versy")?.nodes.filter((node) => node.experimentId).length, 9);
+  assert.equal(appExperimentFlow("versy")?.nodes.filter((node) => node.experimentId).length, 11);
   assert.equal(activeABTestCount("versy"), 3);
 });
 
@@ -123,7 +125,7 @@ test("result cards follow the onboarding-to-paywall progression without mutating
   for (const [app, expected] of Object.entries({
     glow: ["glow-onboarding-copy", "glow-native-paywall", "glow-yearly-price"],
     poky: ["poky-plan-design-combinations", "poky-animated-plan", "poky-trial-vs-current"],
-    versy: ["versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-scroll-benefits-v1", "versy-yearly-price-v3", "versy-yearly-paywall-configuration-v3"],
+    versy: ["versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-scroll-benefits-v1", "versy-yearly-price-v4", "versy-yearly-paywall-configuration-v4"],
   })) {
     const input = [...expected].reverse().map((id) => ({ id }));
     assert.deepEqual(orderAppExperiments(app, input).map((row) => row.id), expected);
@@ -285,9 +287,9 @@ test("the map falls back to overall APPU when fixed-age branches are not mature"
 test("paywall variants use compact APPU/CR cards and highlight the unique APPU leader", () => {
   const flow = appExperimentFlow("glow")!;
   const metrics = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT);
-  assert.equal(metrics.size, 3);
-  assert.ok([...metrics.values()].every((metric) => metric.appu != null && metric.conversionRate != null));
-  assert.ok([...metrics.values()].every((metric) => metric.users != null));
+  assert.equal(metrics.size, 6);
+  assert.equal([...metrics.values()].filter((metric) => metric.appu != null && metric.conversionRate != null).length, 3);
+  assert.equal([...metrics.values()].filter((metric) => metric.users != null).length, 3);
 
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
     appId: "glow",
@@ -298,10 +300,10 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
   assert.match(markup, /Spanish/);
   assert.match(markup, /German/);
   assert.equal(markup.match(/APPU \$/g)?.length, 3);
-  assert.equal(markup.match(/ · CR /g)?.length, 3);
+  assert.equal(markup.match(/ · CR /g)?.length, 6);
   assert.match(markup, /fill="#fff0e4"/);
   const englishUsers = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "en").get("yr_49")!.users!;
-  assert.match(markup, new RegExp(`\\$49\\.99/year \\(${englishUsers.toLocaleString("en-US")}\\)`));
+  assert.match(markup, new RegExp(`\\$49\\.99/year \\(7d\\) \\(${englishUsers.toLocaleString("en-US")}\\)`));
   assert.match(markup, /stroke="#d98245"/);
   assert.match(markup, /stroke-width="3"/);
   assert.doesNotMatch(markup, /height="68"/);
@@ -312,8 +314,8 @@ test("the map language picker scopes paywall metrics to the selected audience", 
   const flow = appExperimentFlow("glow")!;
   const english = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "en");
   const spanish = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "es");
-  assert.equal(english.size, 3);
-  assert.equal(spanish.size, 3);
+  assert.equal(english.size, 6);
+  assert.equal(spanish.size, 6);
   assert.notEqual(english.get("yr_49")?.appu, spanish.get("yr_49")?.appu);
 
   const poky = appExperimentFlow("poky")!;
@@ -423,11 +425,11 @@ test("Glow shares all three yearly prices after either onboarding flow without c
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["50%", "50%"]);
   for (const variant of ["standard", "versy_reminder"]) {
     assert.deepEqual(flow.edges.filter((edge) => edge.to === variant).map((edge) => edge.label), ["50%", "50%"]);
-    assert.deepEqual(flow.edges.filter((edge) => edge.from === variant).map((edge) => edge.label), ["33.33%", "33.33%", "33.33%"]);
+    assert.deepEqual(flow.edges.filter((edge) => edge.from === variant).map((edge) => edge.label), Array(6).fill("~17%"));
   }
   assert.ok(flow.nodes.every((node) => node.y + 40 < flow.height));
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "home"), []);
-  assert.equal(flow.edges.filter((edge) => edge.to === "home").length, 3);
+  assert.equal(flow.edges.filter((edge) => edge.to === "home").length, 6);
   assert.ok(flow.nodes.every((node) => node.x + node.width < flow.width));
   assert.ok(flow.nodes.every((node) => node.experimentId !== "journal_vs_practice_v1"));
 });

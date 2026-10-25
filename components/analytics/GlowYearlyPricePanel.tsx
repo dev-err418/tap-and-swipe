@@ -5,8 +5,8 @@ import { NativePaywallResultsTable } from "./NativePaywallsPanel";
 
 export default function GlowYearlyPricePanel({ report }: { report: NativePaywallReport | null }) {
   const group = report?.groups.find((group) => group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id && group.language === "all");
-  return <AppExperimentLayout title="Yearly price comparison" label="Yearly price" subtitle="Three equal arms · independent of onboarding and paywall flow">
-    <p className="px-4 py-3 text-xs text-muted-foreground">{GLOW_YEARLY_PRICES.map(({ price }) => price).join(" · ")}. Each receives one-third of assignments. US reference prices; local StoreKit prices may differ.</p>
+  return <AppExperimentLayout title="Yearly price comparison" label="Yearly price" subtitle="Six equal price/trial combinations · independent of onboarding and paywall flow">
+    <p className="px-4 py-3 text-xs text-muted-foreground">{GLOW_YEARLY_PRICES.map(({ price }) => price).join(" · ")}. Each price/trial combination receives one-sixth of new assignments. US reference prices; local StoreKit prices may differ.</p>
     {!report || report.status === "unavailable"
       ? <p role="status" className="px-4 py-4 text-sm text-muted-foreground">Yearly price reporting is unavailable. Refresh to retry.</p>
       : <>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { type NativePaywallReport, type NativePaywallRow } from "@/lib/native-paywall-analytics";
 import { DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS } from "./dashboard-surface";
 import { cn } from "@/lib/utils";
-import { GLOW_PAYWALL_EXPERIMENT, GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES, formatPaywallAllocation, glowYearlyPrice, nativePaywallAllocation } from "@/lib/native-paywall-allocation";
+import { GLOW_PAYWALL_EXPERIMENT, GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES, formatPaywallAllocation, glowYearlyPrice, nativePaywallAllocation } from "@/lib/native-paywall-allocation";
 import { ReadinessIndicator } from "@/components/analytics/ExperimentStats";
 
 const languages: Record<string, string> = { all: "All languages", en: "English", es: "Spanish", de: "German", fr: "French", pt: "Portuguese" };
@@ -69,8 +69,8 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
             {price} <span className="ml-1 font-semibold tabular-nums">{formatPaywallAllocation(GLOW_YEARLY_PRICE_EXPERIMENT.variants.find((variant) => variant.id === id)!.percent)}</span>
           </span>)}
         </div>
-        <p className="text-xs text-muted-foreground">The next Glow app build assigns these three yearly prices equally under a new test. The Versy reminder flow also offers a fixed Weekly plan in “View all plans”; Weekly is not a price-test arm. Prices are US references; localized StoreKit prices may differ. Earlier five-variant assignments and purchases remain in their own historical report.</p>
-        <p className="text-xs text-muted-foreground">The October 7–11 US yearly-only presentation on older builds remains a separate, nonrandomized cohort. It is never mixed into this three-price test.</p>
+        <p className="text-xs text-muted-foreground">The next Glow app build assigns three yearly prices with either a 3-day or 7-day trial, equally across six combinations. Existing 7-day assignments are preserved. The Versy reminder flow also offers a fixed Weekly plan in “View all plans”; Weekly is not a price-test arm. Prices are US references; localized StoreKit prices may differ. Earlier five-variant assignments and purchases remain in their own historical report.</p>
+        <p className="text-xs text-muted-foreground">The October 7–11 US yearly-only presentation on older builds remains a separate, nonrandomized cohort. It is never mixed into this price/trial comparison.</p>
       </div>
     </section>}
     <section className="space-y-2 pt-2">
@@ -91,10 +91,12 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
         {appId === "versy" && <p className="px-1 text-xs text-muted-foreground">{group.experiment === "versy_daily_gift_v1"
           ? "Daily gift reaches count people shown the sealed envelope; views count people who revealed the offer. Repeat daily openings count once. This is a 100% rollout for eligible non-premium users, not an A/B test. Purchases, renewals and refunds stay attributed to the gift; USD proceeds come from Apple."
           : "USD net proceeds include linked renewals and refunds through today. New onboarding includes everyone enrolled at Welcome, including non-payers; returning users are separate. These all-country outcomes include forced Mexico assignments, so they do not declare a randomized winner. Trials count as conversions; paid users require a paid charge."}</p>}
-        {appId === "glow" && (group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id || group.experiment === GLOW_PAYWALL_EXPERIMENT.id || group.experiment === "native_paywall_us_yearly_oct2026") ? <>
+        {appId === "glow" && (group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id || group.experiment === GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT || group.experiment === GLOW_PAYWALL_EXPERIMENT.id || group.experiment === "native_paywall_us_yearly_oct2026") ? <>
           <p className="px-1 text-xs text-muted-foreground">{group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id
-            ? "Current randomized test: three yearly prices, one-third of assignments each. Weekly purchases from the reminder flow stay attributed to the assigned yearly-price arm; they do not create another arm."
-            : group.experiment === GLOW_PAYWALL_EXPERIMENT.id
+            ? "Current randomized test: three yearly prices × two trial lengths, one-sixth of new assignments each. Weekly purchases from the reminder flow stay attributed to the assigned yearly-price arm; they do not create another arm."
+            : group.experiment === GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT
+              ? "Original 7-day price assignments. Matching results remain in the current Data table’s 7-day rows."
+              : group.experiment === GLOW_PAYWALL_EXPERIMENT.id
               ? "Historical annual-only arms from the five-variant test. The five-arm probability-of-best statistic is omitted from this subset."
               : "Temporary US annual-only presentations. These inherit earlier five-way assignments, so compare their outcomes descriptively; do not treat this as a randomized three-price test."}</p>
           <NativePaywallResultsTable title="Yearly prices" rows={group.paywalls.filter((row) => glowYearlyPrice(row.id, row.paywall) !== null)} experiment={group.experiment} language={group.language} showProbabilityBest={group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id} showGlowYearlyPrice />

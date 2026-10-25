@@ -38,7 +38,7 @@ for (const appId of ["glow", "poky", "versy"] as const) {
         randomized: true, variantCount: 3, environment: "production" }),
       onboarding_offer_experiment: "poky_onboarding_trial_v3", onboarding_offer_variant: "current", onboarding_offer_allocation: "25_25_25_25",
       onboarding_offer_assigned_at: String(start), yearly_price_experiment_id: VERSY_YEARLY_PRICE_EXPERIMENT,
-      yearly_price_allocation: "50_50", yearly_price_product_id: VERSY_YEARLY_PRICES[0].productID, yearly_price_assigned_at: String(start),
+      yearly_price_allocation: "25_25_25_25", yearly_price_product_id: VERSY_YEARLY_PRICES[0].productID, yearly_price_assigned_at: String(start),
     };
     const journey = (assigned: number) => buildUserJourney(definition, [
       { variant, key: ASSIGNED_KEY, users: assigned }, { variant, key: definition.variants[0].steps[0].attribute, users: assigned },

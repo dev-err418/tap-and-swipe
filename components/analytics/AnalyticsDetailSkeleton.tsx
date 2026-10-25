@@ -111,8 +111,8 @@ function AppOverviewSkeleton({ app, period }: { app: AppId; period: Period }) {
         <VersionTableSkeleton app={app} />
         <ComparisonTableSkeleton title="User journey" rows={app === "glow" ? 2 : app === "poky" ? 4 : 3} rowHeading="Onboarding funnel" cohortLabel={cohortLabel} />
         {app !== "versy" ? <ComparisonTableSkeleton title="Paywall flows" rows={app === "poky" ? 4 : 2} rowHeading="Paywall flow" cohortLabel={cohortLabel} /> : null}
-        {app !== "poky" ? <ComparisonTableSkeleton title="Yearly prices" rows={app === "glow" ? 3 : 2} rowHeading="Price" cohortLabel={cohortLabel} /> : null}
-        {app === "glow" ? <ComparisonTableSkeleton title="Paywall flow × yearly price" rows={6} rowHeading="Flow × price" cohortLabel={cohortLabel} /> : null}
+        {app !== "poky" ? <ComparisonTableSkeleton title="Yearly prices" rows={app === "glow" ? 6 : 4} rowHeading="Price" cohortLabel={cohortLabel} /> : null}
+        {app === "glow" ? <ComparisonTableSkeleton title="Paywall flow × yearly price" rows={12} rowHeading="Flow × price" cohortLabel={cohortLabel} /> : null}
         {app !== "poky" ? <DashboardCard title="Trial survival · 7-day trials" action={<span className="text-xs text-muted-foreground">{cohortLabel}</span>}>
           <div aria-hidden="true" className="mb-4 grid grid-cols-3 gap-3">
             {Array.from({ length: 3 }, (_, index) => <div key={index} className="space-y-2"><Bone className="w-24" /><Bone className="h-6 w-12" /><Bone className="w-20" /></div>)}
