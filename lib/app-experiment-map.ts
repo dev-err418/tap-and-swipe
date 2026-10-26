@@ -1,5 +1,5 @@
 import { VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
-import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID } from "./glow-onboarding-experience";
+import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOWS } from "./glow-onboarding-experience";
 import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
 
 export type ExperimentMapBranch = { id: string; label: string; percent: number };
@@ -37,10 +37,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         },
         {
           id: GLOW_PAYWALL_FLOW_ID, label: "Paywall flow", scope: "Next app build · both onboarding journeys", tone: "orange", planned: true,
-          branches: [
-            { id: "standard", label: "Current flow", percent: 50 },
-            { id: "versy_reminder", label: "Versy reminder flow", percent: 50 },
-          ],
+          branches: GLOW_PAYWALL_FLOWS.map((flow) => ({ ...flow })),
         },
         {
           id: GLOW_YEARLY_PRICE_EXPERIMENT.id, label: "Yearly price", scope: "Next app build · three prices × 3-day / 7-day trials · all languages", tone: "orange", planned: true,
@@ -57,6 +54,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         "IAM wording is retired in the next app build. Both onboarding arms use Copy wording under a new experiment ID; historical comparisons stay separate.",
         "New users receive a saved v5 price/trial assignment, with equal chances of 3 and 7 days. Existing v4 assignments keep their 7-day offer and results in the matching rows. Older five-variant and temporary US presentations remain separate.",
         "The Versy reminder flow also offers a fixed Weekly plan in View all plans, with the assigned annual plan selected by default. Weekly is not randomized; its purchases remain attributed to the saved flow and yearly-price assignments.",
+        "80% see testimonials followed by a team note before the paywall sequence; 20% keep the original sequence. The two base flows remain equally likely. Saved v1 assignments stay in their historical 50/50 report.",
         "The split shows app configuration, not observed traffic. StoreKit determines which subscriptions are available and their displayed prices.",
       ],
     };

@@ -30,3 +30,7 @@ entry into the app (subscribers can bypass the paywall).
 New Glow counts require release of this updated native app. Earlier screen visits
 cannot be reconstructed and upgrades resuming mid-flow do not invent history.
 No questionnaire answers or personal text are included in these new attributes.
+
+## Paywall note experiment (v2)
+
+In both journeys, `paywall_testimonials` and `team_note` appear immediately before `trial_access` only for the two note variants (80% of new assignments combined). Their screen attributes are `glow_journey_paywall_testimonials_screen_seen` and `glow_journey_team_note_screen_seen`. The dashboard treats them as optional branches so the 20% controls and legacy users retain their existing funnel. Enrollment for the paywall-flow test starts at testimonials for treatments and trial introduction for controls. See [the analytics contract](native-paywall-analytics.md#pending-glow-onboarding-paywall-flow-test).

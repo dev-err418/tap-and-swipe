@@ -1,4 +1,4 @@
-import { GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY, onboardingCohort } from "./glow-onboarding-experience";
+import { GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY, GLOW_PAYWALL_FLOW_LEGACY_ID, GLOW_PAYWALL_FLOW_LEGACY_KEY, GLOW_PAYWALL_FLOWS, onboardingCohort } from "./glow-onboarding-experience";
 import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
 import { parsePaywallAttributes, type PaywallAttribute } from "./native-paywall-analytics";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
@@ -6,14 +6,14 @@ import type { JourneyVersionCohort } from "./user-journey";
 
 const PRICE_EXPERIMENTS = [GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICE_EXPERIMENT.id];
 const PRICE_KEYS = PRICE_EXPERIMENTS.map((id) => `gp1_a_${id}`);
-export const GLOW_PAYWALL_COHORT_KEYS = [GLOW_PAYWALL_FLOW_KEY, ...PRICE_KEYS];
+export const GLOW_PAYWALL_COHORT_KEYS = [GLOW_PAYWALL_FLOW_KEY, GLOW_PAYWALL_FLOW_LEGACY_KEY, ...PRICE_KEYS];
 export type PaywallCohortComparison = {
   status: "ready" | "empty" | "unavailable";
   rows: JourneyVersionCohort[];
   labels: Record<string, string>;
   warnings: string[];
 };
-export type GlowPaywallCohortComparisons = { flows: PaywallCohortComparison; prices: PaywallCohortComparison; flowPrices: PaywallCohortComparison };
+export type GlowPaywallCohortComparisons = { flows: PaywallCohortComparison; prices: PaywallCohortComparison; flowPrices: PaywallCohortComparison; historicalFlows?: PaywallCohortComparison; historicalFlowPrices?: PaywallCohortComparison };
 type Assignment = { variant: string; assignedAt: number };
 type Install = Parameters<typeof versionCohortConversions>[0][number];
 
@@ -38,6 +38,7 @@ export function buildGlowPaywallCohortComparisons(
   }));
   // Filter by install dates above, then validate assignments independently of the date picker.
   const flows = onboardingCohort(records, 0, asOf + 1, asOf, GLOW_PAYWALL_FLOW_ID);
+  const historicalFlows = onboardingCohort(records, 0, asOf + 1, asOf, GLOW_PAYWALL_FLOW_LEGACY_ID);
   const parsedPrices = parsePaywallAttributes(records.filter((row) => PRICE_KEYS.includes(row.key)));
   const prices = new Map<string, Assignment>();
   for (const { appUserId } of selected) {
@@ -64,19 +65,25 @@ export function buildGlowPaywallCohortComparisons(
     });
     return { status: rows.some((row) => row.installs > 0) ? "ready" : "empty", rows, labels, warnings };
   };
-  const flowLabels = { standard: "Current flow", versy_reminder: "Versy reminder flow" };
+  const flowLabels = Object.fromEntries(GLOW_PAYWALL_FLOWS.map(({ id, label }) => [id, label]));
+  const historicalLabels = { standard: "Current flow · historical", versy_reminder: "Versy reminder flow · historical" };
   const priceWarnings = parsedPrices.invalid ? [`${parsedPrices.invalid} invalid price assignments were excluded.`] : [];
-  const flowPrices = new Map<string, Assignment>();
-  for (const [user, flow] of flows.records) {
-    const price = prices.get(user);
-    if (!price) continue;
-    flowPrices.set(user, { variant: `${flow.variant}|${price.variant}`, assignedAt: Math.max(flow.assignedAt, price.assignedAt) });
-  }
+  const compareFlowPrices = (cohort: typeof flows, labels: Record<string, string>) => {
+    const joint = new Map<string, Assignment>();
+    for (const [user, flow] of cohort.records) {
+      const price = prices.get(user);
+      if (!price) continue;
+      joint.set(user, { variant: `${flow.variant}|${price.variant}`, assignedAt: Math.max(flow.assignedAt, price.assignedAt) });
+    }
+    return compare(joint, Object.fromEntries(Object.entries(labels).flatMap(([flow, label]) =>
+      GLOW_YEARLY_PRICES.map(({ id, price }) => [`${flow}|${id}`, `${label} · ${price}`]))), [...cohort.warnings, ...priceWarnings]);
+  };
   return {
     flows: compare(flows.records, flowLabels, flows.warnings),
     prices: compare(prices, Object.fromEntries(GLOW_YEARLY_PRICES.map(({ id, price }) => [id, price])),
       priceWarnings),
-    flowPrices: compare(flowPrices, Object.fromEntries(Object.entries(flowLabels).flatMap(([flow, label]) =>
-      GLOW_YEARLY_PRICES.map(({ id, price }) => [`${flow}|${id}`, `${label} · ${price}`]))), [...flows.warnings, ...priceWarnings]),
+    flowPrices: compareFlowPrices(flows, flowLabels),
+    historicalFlows: compare(historicalFlows.records, historicalLabels, historicalFlows.warnings),
+    historicalFlowPrices: compareFlowPrices(historicalFlows, historicalLabels),
   };
 }

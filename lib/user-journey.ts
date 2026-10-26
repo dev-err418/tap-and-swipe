@@ -119,6 +119,8 @@ const GLOW_IAM_STEPS = glowScreens([
   ["goals", "Goals"],
   ["glow_goals", "Make room for"],
   ["widget", "Widget"],
+  ["paywall_testimonials", "Testimonials · note variants", true],
+  ["team_note", "Team note · note variants", true],
   ["trial_access", "Trial introduction"],
   ["trial_reminder", "Trial reminder / timing"],
 ]);
@@ -164,6 +166,8 @@ const GLOW_MANIFEST_AUDIO_STEPS = glowScreens([
   ["widget", "Widget"],
   ["notifications", "Notifications"],
   ["notifications_denied", "Notifications denied", true],
+  ["paywall_testimonials", "Testimonials · note variants", true],
+  ["team_note", "Team note · note variants", true],
   ["trial_access", "Trial introduction"],
   ["trial_reminder", "Trial reminder / timing"],
 ]);

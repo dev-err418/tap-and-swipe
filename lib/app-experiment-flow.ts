@@ -88,8 +88,8 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   });
   paywallFlow.branches.forEach((branch, index) => {
     nodes.push({ id: branch.id, x: 414, y: 112 + index * 112, width: 188,
-      label: branch.label, detail: "Paywall introduction", tone: "orange", experimentId: paywallFlow.id, variantId: branch.id });
-    onboarding.branches.forEach((parent) => edges.push({ from: parent.id, to: branch.id, label: "50%" }));
+      label: branch.label, detail: branch.id.endsWith("_note") ? "Testimonials → note → paywall" : "Original paywall sequence", tone: "orange", experimentId: paywallFlow.id, variantId: branch.id });
+    onboarding.branches.forEach((parent) => edges.push({ from: parent.id, to: branch.id, label: `${branch.percent}%` }));
   });
   prices.branches.forEach((branch, index) => {
     nodes.push({ id: branch.id, x: 730, y: 64 + index * 104, width: 180, label: branch.label, tone: "orange",
@@ -99,7 +99,7 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   });
   return { width: 1186, height: 64 + (prices.branches.length - 1) * 104 + 64, nodes, edges,
     stages: [{ x: 140, label: "Onboarding" }, { x: 414, label: "Paywall flow" }, { x: 730, label: "Yearly price" }, { x: 1010, label: "Practice" }],
-    notes: ["The onboarding journey, paywall flow and yearly price are independent saved assignments. The reminder flow is tested in both IAM and manifest-audio.", "The paywall flow comparison enrolls everyone reaching the introduction; the price test also covers other app placements. Their user counts and APPU denominators differ.", ...map.notes] };
+    notes: ["The onboarding journey, paywall flow and yearly price are independent saved assignments. The reminder flow is tested in both IAM and manifest-audio.", "The paywall flow comparison enrolls everyone reaching their first assigned screen, including testimonials; the price test also covers other app placements. Their user counts and APPU denominators differ.", ...map.notes] };
 }
 
 function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): ExperimentFlow {

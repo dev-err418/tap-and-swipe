@@ -4,13 +4,13 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import GlowPaywallCohortTables from "../../components/analytics/GlowPaywallCohortTables";
 import { buildGlowPaywallCohortComparisons, GLOW_PAYWALL_COHORT_KEYS } from "../../lib/glow-paywall-cohort-comparisons";
-import { GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY } from "../../lib/glow-onboarding-experience";
+import { GLOW_PAYWALL_FLOW_LEGACY_ID, GLOW_PAYWALL_FLOW_LEGACY_KEY, GLOW_PAYWALL_FLOW_ALLOCATION, GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY } from "../../lib/glow-onboarding-experience";
 
 const day = 86_400_000, start = Date.parse("2026-10-01T00:00:00Z"), end = start + 7 * day, asOf = start + 20 * day;
 const priceKey = "gp1_a_native_yearly_prices_v4";
 const install = (appUserId: string, installedAt = start) => ({ appUserId, installedAt, appVersion: "1.8.3" });
 const flow = (variant = "standard", assignedAt = start + day, extra = {}) => JSON.stringify({
-  schema: 1, experiment: GLOW_PAYWALL_FLOW_ID, allocation: "50_50", environment: "production", randomized: true,
+  schema: 1, experiment: GLOW_PAYWALL_FLOW_ID, allocation: GLOW_PAYWALL_FLOW_ALLOCATION, environment: "production", randomized: true,
   language: "en", variant, assignedAt, updatedAt: assignedAt, ...extra,
 });
 const price = (variant = "yr_34", assignedAt = start + day, extra = {}) => JSON.stringify({
@@ -44,14 +44,14 @@ test("flow and price comparisons independently retain nonpayers and follow later
   assert.equal(standard.paid, 1);
   assert.equal(standard.purchases, 1);
   assert.equal(standard.refunds, 1);
-  assert.equal(report.flows.rows[1].conversions!.global.installPaid, 1);
+  assert.equal(report.flows.rows[2].conversions!.global.installPaid, 1);
   assert.deepEqual(report.prices.rows.map((row) => row.conversions!.global.installs), [1, 1, 1, 0, 0, 0]);
   assert.equal(report.prices.rows[0].conversions!.global.proceeds, 6);
-  assert.deepEqual(report.flowPrices.rows.map((row) => row.installs), [1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]);
+  assert.deepEqual(report.flowPrices.rows.map((row) => row.installs), [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   assert.equal(report.flowPrices.rows[0].conversions!.global.proceeds, 6);
   assert.equal(report.flowPrices.rows[0].conversions!.global.refunds, 1);
-  assert.equal(report.flowPrices.rows[8].conversions!.global.installPaid, 1);
-  assert.deepEqual(GLOW_PAYWALL_COHORT_KEYS, [GLOW_PAYWALL_FLOW_KEY, priceKey, "gp1_a_native_yearly_prices_v5"]);
+  assert.equal(report.flowPrices.rows[14].conversions!.global.installPaid, 1);
+  assert.deepEqual(GLOW_PAYWALL_COHORT_KEYS, [GLOW_PAYWALL_FLOW_KEY, GLOW_PAYWALL_FLOW_LEGACY_KEY, priceKey, "gp1_a_native_yearly_prices_v5"]);
   const html = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report, windowLabel: "Last 7 days" }));
   for (const label of ["Paywall flows", "Yearly prices", "Paywall flow × yearly price", "Current flow", "Versy reminder flow", "$34.99/year", "$49.99/year", "$59.99/year", "APPU", "Refund rate"]) assert.ok(html.includes(label), label);
   for (const label of ["Meta Ads", "See graph", ">Refunds</th>"]) assert.ok(!html.includes(label), label);
@@ -142,4 +142,24 @@ test("six price/trial rows preserve seven-day history and never double-count an 
   assert.deepEqual(report.prices.rows.map((row) => row.installs), [2, 0, 0, 1, 0, 0]);
   assert.equal(report.prices.rows[0].conversions!.global.proceeds, 10);
   assert.equal(report.prices.rows[3].conversions!.global.proceeds, 6);
+});
+
+test("note flows retain their own price intersections and the old split remains historical", () => {
+  const attrs = new Map<string, Record<string, string>>([
+    ["current-note", { [GLOW_PAYWALL_FLOW_KEY]: flow("standard_note"), [priceKey]: price() }],
+    ["reminder-note", { [GLOW_PAYWALL_FLOW_KEY]: flow("versy_reminder_note"), [priceKey]: price("yr_59") }],
+    ["old", { [GLOW_PAYWALL_FLOW_LEGACY_KEY]: flow("standard", start + day,
+      { experiment: GLOW_PAYWALL_FLOW_LEGACY_ID, allocation: "50_50" }), [priceKey]: price() }],
+  ]);
+  const report = buildGlowPaywallCohortComparisons([...attrs.keys()].map((id) => install(id)),
+    [event("reminder-note"), event("old")], attrs, start, end, asOf);
+  assert.deepEqual(report.flows.rows.map((r) => r.installs), [0, 1, 0, 1]);
+  assert.equal(report.flowPrices.rows.find((r) => r.version === "standard_note|yr_34")?.installs, 1);
+  assert.equal(report.flowPrices.rows.find((r) => r.version === "versy_reminder_note|yr_59")?.conversions?.global.proceeds, 10);
+  assert.equal(report.historicalFlows?.rows[0].installs, 1);
+  assert.equal(report.historicalFlows?.rows[0].conversions?.global.proceeds, 10);
+  const html = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report, windowLabel: "All time" }));
+  assert.match(html, /Current flow \+ note/);
+  assert.match(html, /Versy reminder flow \+ note/);
+  assert.match(html, /Previous 50\/50 paywall-flow experiment/);
 });

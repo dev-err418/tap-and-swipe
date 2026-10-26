@@ -9,7 +9,7 @@ import type { GlowPaywallCohortComparisons } from "@/lib/glow-paywall-cohort-com
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 import { AppuReadinessIndicator } from "./AppuReadinessIndicator";
 
-const FLOW_PREVIEWS = {
+const BASE_FLOW_PREVIEWS = {
   standard: {
     title: "Current flow",
     screens: [
@@ -27,6 +27,19 @@ const FLOW_PREVIEWS = {
     ],
   },
 } as const;
+const preface = [
+  { src: "/analytics/glow/paywall-flows/note/testimonials.jpg", label: "Testimonials" },
+  { src: "/analytics/glow/paywall-flows/note/team-note.jpg", label: "A note from the team" },
+];
+const baseScreens = (flow: keyof typeof BASE_FLOW_PREVIEWS) => BASE_FLOW_PREVIEWS[flow].screens.map((screen) => ({
+  src: `/analytics/glow/paywall-flows/${flow}/${screen.file}.png`, label: screen.label,
+}));
+const FLOW_PREVIEWS = {
+  standard: { title: "Current flow", screens: baseScreens("standard") },
+  standard_note: { title: "Current flow + note", screens: [...preface, ...baseScreens("standard")] },
+  versy_reminder: { title: "Versy reminder flow", screens: baseScreens("versy_reminder") },
+  versy_reminder_note: { title: "Versy reminder flow + note", screens: [...preface, ...baseScreens("versy_reminder")] },
+};
 
 export default function GlowPaywallCohortTables({ report, windowLabel }: {
   report: GlowPaywallCohortComparisons | null;
@@ -37,9 +50,9 @@ export default function GlowPaywallCohortTables({ report, windowLabel }: {
   const preview = selectedFlow ? FLOW_PREVIEWS[selectedFlow] : null;
   const openPreview = (key: string, trigger: HTMLButtonElement) => {
     const flow = key.split("|")[0];
-    if (flow !== "standard" && flow !== "versy_reminder") return;
+    if (!Object.hasOwn(FLOW_PREVIEWS, flow)) return;
     previewTrigger.current = trigger;
-    setSelectedFlow(flow);
+    setSelectedFlow(flow as keyof typeof FLOW_PREVIEWS);
   };
 
   return <Dialog open={selectedFlow !== null} onOpenChange={(open) => { if (!open) setSelectedFlow(null); }}>
@@ -62,6 +75,17 @@ export default function GlowPaywallCohortTables({ report, windowLabel }: {
           </>}
       </DashboardCard>;
     })}
+    {report?.historicalFlows?.status === "ready" && <details className="rounded-2xl border p-4">
+      <summary className="cursor-pointer text-sm font-medium">Previous 50/50 paywall-flow experiment</summary>
+      {(["historicalFlows", "historicalFlowPrices"] as const).map((key) => {
+        const comparison = report[key];
+        return comparison && <DashboardCard key={key} title={key === "historicalFlows" ? "Previous paywall flows" : "Previous flows × yearly price"}>
+          {comparison.warnings.map((warning) => <p key={warning} role="status" className="text-xs text-muted-foreground">{warning}</p>)}
+          <JourneyVersionComparison cohorts={comparison.rows} rowLabels={comparison.labels} rowHeading="Flow"
+            allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate onRowClick={openPreview} />
+        </DashboardCard>;
+      })}
+    </details>}
     <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-[min(96vw,1000px)]"
       onCloseAutoFocus={(event) => { event.preventDefault(); previewTrigger.current?.focus(); }}>
       <DialogHeader>
@@ -69,9 +93,9 @@ export default function GlowPaywallCohortTables({ report, windowLabel }: {
         <DialogDescription>Glow paywall screens, in order. Example shown at $59.99/year.</DialogDescription>
       </DialogHeader>
       {preview && selectedFlow ? <ol className="flex min-w-0 gap-4 overflow-x-auto pb-1 scrollbar-none sm:gap-6" aria-label={`${preview.title} screens`}>
-        {preview.screens.map((screen, index) => <li key={screen.file} className="w-[min(68vw,260px)] shrink-0 sm:w-0 sm:flex-1">
+        {preview.screens.map((screen, index) => <li key={screen.src} className="w-[min(68vw,260px)] shrink-0">
           <p className="mb-3 text-xs font-medium text-muted-foreground">{index + 1}. {screen.label}</p>
-          <Image src={`/analytics/glow/paywall-flows/${selectedFlow}/${screen.file}.png`}
+          <Image src={screen.src}
             alt={`${preview.title}, step ${index + 1}: ${screen.label}`} width={368} height={800}
             sizes="280px" className="mx-auto h-[min(65vh,640px)] max-h-[calc(90vh-10rem)] w-auto max-w-full rounded-2xl object-contain" />
         </li>)}

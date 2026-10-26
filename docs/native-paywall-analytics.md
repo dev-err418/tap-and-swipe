@@ -6,13 +6,24 @@ Glow's separate [Journal VS Practice](journal-practice-experiment.md) activity e
 
 ### Pending Glow onboarding paywall-flow test
 
-The next app build independently assigns both IAM and manifest-audio paywall sequences **50% current / 50% Versy reminder flow**. The control keeps its introductions and four-step timeline. Treatment uses a trial introduction, reminder timing cards (2 or 3 days before a seven-day trial ends), and a three-step timeline reflecting that selection. Shorter trials adapt their choices. Every yearly price remains equally likely in both flows. Weekly is a fixed alternative in the treatment’s plan sheet, not an additional randomized price. This adds no campaigns, placements, or backend.
+New eligible installs use **80% testimonials + team note / 20% original sequence**, independently of the onboarding journey and annual price/trial assignment:
 
-`GlowPaywallFlowAssignment` persists under `glow.onboarding.paywallFlow.v1.<environment>`. It publishes scalar JSON in `gpf1_onboarding_paywall_flow_v1`: schema `1`, experiment `onboarding_paywall_flow_v1`, allocation `50_50`, variant `standard` or `versy_reminder`, environment, frozen language, randomized, assignedAt, updatedAt, optional viewedAt/completedAt, reminderLeadDays, initial priceVariant and onboardingJourney. Timestamps are Unix milliseconds. Enrollment starts when the first paywall introduction appears; a saved but unexposed assignment has no assignedAt and is not published. Debug previews are excluded. Resuming/relaunching does not rerandomize or reset enrollment.
+| Variant | Label | Traffic | Screens before purchase |
+| --- | --- | --- | --- |
+| `standard` | Current flow | 10% | Trial introduction → trial reminder → existing paywall |
+| `standard_note` | Current flow + note | 40% | Testimonials → team note → current flow |
+| `versy_reminder` | Versy reminder flow | 10% | Trial introduction → reminder timing → Versy paywall |
+| `versy_reminder_note` | Versy reminder flow + note | 40% | Testimonials → team note → Versy reminder flow |
 
-The A/B tab and clickable map cards show a separate all-language comparison: assigned users, unique final-paywall reach, paid users and paid conversion, net proceeds, and total APPU. The denominator includes intro dropouts and non-payers. Production/randomized records only; trials with zero proceeds do not count as paid conversions. The first-install v1.8.3+ cohort, across all time, follows all net proceeds through now, including recovery, renewals, and refunds, with the existing deduplication and verified `gp1_t_` cross-checks. The price report retains its separate denominator across all app placements. A flow-only user does not need a v3 onboarding assignment to enter this report; historical records are not relabeled.
+The two base flows remain 50/50. Both IAM and manifest-audio participate. The treatment reuses Glow's testimonial screen, followed by a cream card headed “A note from the team,” localized in English, German and Spanish. Both new screens use Continue. The note includes Cancel anytime. Neither screen requests an App Store review or starts a purchase. Existing trial, reminder-choice, purchase, recovery and Weekly behavior stays with its base flow; the two Versy variants both retain View all plans.
 
-The existing paginated Superwall attribute query reads the new key alongside onboarding and transaction keys. No raw user-level data reaches the browser. Empty results remain empty until an updated App Store build enrolls users. App release is separate from dashboard deployment.
+`GlowPaywallFlowAssignment` saves `onboarding_paywall_flow_v2` under `glow.onboarding.paywallFlow.v2.<environment>` and publishes scalar JSON as `gpf1_onboarding_paywall_flow_v2`. Schema remains `1`; allocation is `10_40_10_40` in the table's order. Records retain environment, variant, frozen language, randomized, assignedAt, updatedAt, optional viewedAt/completedAt, reminderLeadDays, initial priceVariant, and onboardingJourney. Timestamps are Unix milliseconds.
+
+Assignment is saved before exposure. Enrollment starts on the **first screen of the assigned sequence**: testimonials for note arms, trial introduction for controls. This includes users who leave at testimonials or the note in the denominator. Drafts resume on the saved screen, and Back traverses the same assigned sequence. Debug previews never enroll. Existing `v1` assignments keep their original `standard`/`versy_reminder` arm, `50_50` allocation, storage key and `gpf1_onboarding_paywall_flow_v1` reporting attribute; neither exposed nor saved-but-unexposed legacy assignments are rerolled. SDK startup republishes enrolled records under their own experiment key.
+
+Tap & Swipe reads both versions. The active A/B report, map, Data flow table and flow × price table show the four v2 variants. The old 50/50 report stays in a separate historical section. Production/randomized records only; assigned users, paywall reach, paid conversion, net proceeds and total APPU include non-payers and pre-paywall dropouts. Recovery purchases, Weekly purchases, renewals and refunds retain their original attribution. Free trial starts are not paid conversions. The user-journey funnel shows testimonials and note as optional branches so controls are not reported as dropping out. Preview dialogs show both new screens before the relevant existing three-screen flow.
+
+The app and dashboard changes require their normal releases; source changes do not deploy either product. No new analytics backend, database, Superwall campaign or placement is added.
 
 ### Pending Glow IAM / manifest-audio release
 
@@ -304,7 +315,7 @@ active-trials card is removed from Data; the trial-survival chart remains.
 
 Glow also has compact **Paywall flows** and **Yearly prices** tables below User
 journey. Both use the first-install v1.8.3+ cohort across all time, in all languages and countries. Flow membership uses validated randomized production
-`gpf1_onboarding_paywall_flow_v1`; prices read `gp1_a_native_yearly_prices_v4` (three 7-day arms) and
+`gpf1_onboarding_paywall_flow_v2` for the four current arms, with `gpf1_onboarding_paywall_flow_v1` kept in separate historical tables; prices read `gp1_a_native_yearly_prices_v4` (three 7-day arms) and
 `gp1_a_native_yearly_prices_v5` (six price/trial arms). Matching 7-day arms are pooled,
 while 3-day arms remain distinct; a user with both records counts once under the original v4 assignment. Startup price assignment can precede the SDK's install timestamp;
 this does not exclude the install. Outcomes begin at the later of installation
@@ -316,7 +327,7 @@ The tables reuse the journey's metrics and transaction-count refund rate, with
 no acquisition split. Missing facts show unavailable; missing amounts suppress
 the affected metrics. Data requests load the two assignment attributes alongside
 existing facts; no extra database or ingestion service is introduced. Snapshot
-schema v24 includes these tables, the joint flow × price comparison, and version-based cohort membership. A/B and Paywalls attribution rules remain unchanged within that install cohort.
+schema v26 includes these tables, the joint flow × price comparison, and version-based cohort membership. A/B and Paywalls attribution rules remain unchanged within that install cohort.
 
 The Data, AB tests, and Paywalls tabs can compare a selected app version. A user's **first recorded version on a production `device_attributes` event** fixes their cohort: versions below the selected version are Before, and the selected version or newer are After. Versions are compared by numeric components, so 1.10 is newer than 1.9. Missing or malformed first versions are excluded from both sides; they are not inferred from later upgrades. The Data comparison follows the selected dashboard period, while Glow/Versy A/B tests, native paywalls and win-back offers use the version-based install cohorts above; Poky uses its first-install v1.1.5+ cohort. The difference column is After minus Before; rate differences are percentage points. These version cohorts are observational and do not imply that a release caused a change or establish an A/B winner. Native paywall, Journal VS Practice, and win-back comparisons resolve first versions for assigned or viewing users even if they installed before the report window. Win-back remains a separate PostHog view-to-purchase report with no revenue or refund attribution.
 

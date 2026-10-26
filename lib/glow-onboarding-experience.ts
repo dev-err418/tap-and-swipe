@@ -7,12 +7,22 @@ export const GLOW_ONBOARDING_COPY_KEY = "goe1_onboarding_copy_mascot_v2";
 export const GLOW_ONBOARDING_KEY = "goe1_onboarding_manifest_audio_v3";
 export const GLOW_ONBOARDING_LEGACY_ID = "onboarding_mascot_v1";
 export const GLOW_ONBOARDING_LEGACY_KEY = "goe1_onboarding_mascot_v1";
-export const GLOW_PAYWALL_FLOW_ID = "onboarding_paywall_flow_v1";
-export const GLOW_PAYWALL_FLOW_KEY = "gpf1_onboarding_paywall_flow_v1";
+export const GLOW_PAYWALL_FLOW_ID = "onboarding_paywall_flow_v2";
+export const GLOW_PAYWALL_FLOW_KEY = "gpf1_onboarding_paywall_flow_v2";
+export const GLOW_PAYWALL_FLOW_LEGACY_ID = "onboarding_paywall_flow_v1";
+export const GLOW_PAYWALL_FLOW_LEGACY_KEY = "gpf1_onboarding_paywall_flow_v1";
+export const GLOW_PAYWALL_FLOW_ALLOCATION = "10_40_10_40";
+export const GLOW_PAYWALL_FLOWS = [
+  { id: "standard", label: "Current flow", percent: 10 },
+  { id: "standard_note", label: "Current flow + note", percent: 40 },
+  { id: "versy_reminder", label: "Versy reminder flow", percent: 10 },
+  { id: "versy_reminder_note", label: "Versy reminder flow + note", percent: 40 },
+] as const;
+export const isGlowPaywallFlowExperiment = (id: string) => [GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_LEGACY_ID].includes(id);
 export const DAY_MS = 86_400_000;
-type Variant = "standard" | "versy_reminder" | "iam" | "manifest-audio" | "current" | "mascot_free";
+type Variant = "standard" | "standard_note" | "versy_reminder" | "versy_reminder_note" | "iam" | "manifest-audio" | "current" | "mascot_free";
 type RecordValue = {
-  schema: 1; experiment: string; allocation: "50_50" | "15_85" | "30_70"; environment: string;
+  schema: 1; experiment: string; allocation: "50_50" | "15_85" | "30_70" | typeof GLOW_PAYWALL_FLOW_ALLOCATION; environment: string;
   variant: Variant; language: string; randomized: boolean;
   assignedAt: number; updatedAt: number; completedAt?: number; viewedAt?: number;
   days: Record<string, { sessions: number; active: true }>;
@@ -36,12 +46,13 @@ function parse(value: string, asOf: number, experiment: string): RecordValue | n
     let r: unknown = JSON.parse(value);
     if (typeof r === "string") r = JSON.parse(r);
     const active = experiment === GLOW_ONBOARDING_ID;
-    const flow = experiment === GLOW_PAYWALL_FLOW_ID;
+    const flow = isGlowPaywallFlowExperiment(experiment);
+    const noteFlow = experiment === GLOW_PAYWALL_FLOW_ID;
     if (flow && object(r)) r = { ...r, days: {} };
-    if (![GLOW_PAYWALL_FLOW_ID, GLOW_ONBOARDING_ID, GLOW_ONBOARDING_COPY_ID, GLOW_ONBOARDING_LEGACY_ID].includes(experiment)) return null;
+    if (![GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_LEGACY_ID, GLOW_ONBOARDING_ID, GLOW_ONBOARDING_COPY_ID, GLOW_ONBOARDING_LEGACY_ID].includes(experiment)) return null;
     if (!object(r) || r.schema !== 1 || r.experiment !== experiment
-      || !(active || flow ? ["50_50"] : ["15_85", "30_70"]).includes(String(r.allocation))
-      || !(flow ? ["standard", "versy_reminder"] : active ? ["iam", "manifest-audio"] : ["current", "mascot_free"]).includes(String(r.variant)) || typeof r.environment !== "string"
+      || !(noteFlow ? [GLOW_PAYWALL_FLOW_ALLOCATION] : active || flow ? ["50_50"] : ["15_85", "30_70"]).includes(String(r.allocation))
+      || !(noteFlow ? GLOW_PAYWALL_FLOWS.map((v) => v.id) : flow ? ["standard", "versy_reminder"] : active ? ["iam", "manifest-audio"] : ["current", "mascot_free"]).includes(String(r.variant)) || typeof r.environment !== "string"
       || typeof r.language !== "string" || typeof r.randomized !== "boolean"
       || !timestamp(r.assignedAt) || !timestamp(r.updatedAt) || r.assignedAt > asOf
       || r.updatedAt < r.assignedAt || r.updatedAt > asOf || !object(r.days)
@@ -62,7 +73,7 @@ export function onboardingCohort(attributes: PaywallAttribute[], start: number, 
   const records = new Map<string, RecordValue>();
   const rejected = new Set<string>();
   for (const a of attributes) {
-    if (a.key !== (experiment === GLOW_PAYWALL_FLOW_ID ? GLOW_PAYWALL_FLOW_KEY : `goe1_${experiment}`)) continue;
+    if (a.key !== (isGlowPaywallFlowExperiment(experiment) ? `gpf1_${experiment}` : `goe1_${experiment}`)) continue;
     const r = parse(a.value, asOf, experiment);
     if (!r || !a.appUserId) { rejected.add(a.appUserId); continue; }
     const previous = records.get(a.appUserId);
@@ -161,7 +172,7 @@ export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events
     if (!charge || charge.appUserId !== owner) incompleteMoney = true;
   }
   if (incompleteMoney) warnings.push("Some transaction amounts or identities are unavailable. ARPU is withheld until the revenue data is complete.");
-  const variants: Variant[] = experiment === GLOW_PAYWALL_FLOW_ID ? ["standard", "versy_reminder"] : experiment === GLOW_ONBOARDING_ID ? ["iam", "manifest-audio"] : ["current", "mascot_free"];
+  const variants: Variant[] = experiment === GLOW_PAYWALL_FLOW_ID ? GLOW_PAYWALL_FLOWS.map((v) => v.id) : experiment === GLOW_PAYWALL_FLOW_LEGACY_ID ? ["standard", "versy_reminder"] : experiment === GLOW_ONBOARDING_ID ? ["iam", "manifest-audio"] : ["current", "mascot_free"];
   const rows = variants.map((variant): GlowOnboardingRow => {
     const users = [...records].filter(([, r]) => r.variant === variant);
     const sessions = users.reduce((sum, [, r]) => sum + Object.values(r.days).reduce((total, day) => total + day.sessions, 0), 0);
@@ -174,8 +185,11 @@ export function buildGlowOnboardingReport(attributes: PaywallAttribute[], events
       const duration = cancellation.durations.get(id);
       return duration === undefined ? [] : [duration];
     });
+    const definition = GLOW_PAYWALL_FLOWS.find((flow) => flow.id === variant);
     return { variant, label: experiment === GLOW_PAYWALL_FLOW_ID
-      ? (variant === "standard" ? "Current flow · 50%" : "Versy reminder flow · 50%")
+      ? `${definition!.label} · ${definition!.percent}%`
+      : experiment === GLOW_PAYWALL_FLOW_LEGACY_ID
+      ? (variant === "standard" ? "Current flow · historical 50%" : "Versy reminder flow · historical 50%")
       : experiment === GLOW_ONBOARDING_ID
       ? (variant === "iam" ? "IAM · 50%" : "manifest-audio · 50%")
       : experiment === GLOW_ONBOARDING_LEGACY_ID
