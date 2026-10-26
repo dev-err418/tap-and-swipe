@@ -20,6 +20,8 @@ import type {
 import TrialCancelChart from "@/components/analytics/TrialCancelChart";
 import AppNotesChart from "@/components/analytics/AppNotesChart";
 import GlowPaywallCohortTables from "./GlowPaywallCohortTables";
+import VersyPaywallComparisonPanel from "./VersyPaywallComparisonPanel";
+import type { VersyPaywallComparison } from "@/lib/versy-paywall-comparison";
 import VersyYearlyPriceTable from "./VersyYearlyPriceTable";
 import PokyPaywallFlowTable from "./PokyPaywallFlowTable";
 import type { PaywallCohortComparison } from "@/lib/glow-paywall-cohort-comparisons";
@@ -41,6 +43,7 @@ export default function AppOverviewPanel({
   userJourney = null,
   paywallCohortComparisons = null,
   yearlyPriceComparison = null,
+  versyPaywallComparison = null,
   paywallFlowComparison = null,
   countryComparisons,
   countryBreakdown,
@@ -62,6 +65,7 @@ export default function AppOverviewPanel({
   userJourney?: UserJourneyReport | null;
   paywallCohortComparisons?: GlowPaywallCohortComparisons | null;
   yearlyPriceComparison?: PaywallCohortComparison | null;
+  versyPaywallComparison?: VersyPaywallComparison | null;
   paywallFlowComparison?: PaywallCohortComparison | null;
   countryComparisons?: AppCountryComparisons;
   countryBreakdown?: { countries: MobileAppCountryRow[]; available: boolean; windowLabel: string };
@@ -105,6 +109,7 @@ export default function AppOverviewPanel({
   const selectedJourney = country === "all" ? userJourney : countrySlice?.userJourney ?? null;
   const selectedGlowPaywalls = country === "all" ? paywallCohortComparisons : countrySlice?.paywallCohortComparisons ?? null;
   const selectedYearlyPrices = country === "all" ? yearlyPriceComparison : countrySlice?.yearlyPriceComparison ?? null;
+  const selectedVersyPaywalls = country === "all" ? versyPaywallComparison : countrySlice?.versyPaywallComparison ?? null;
   const selectedPokyPaywalls = country === "all" ? paywallFlowComparison : countrySlice?.paywallFlowComparison ?? null;
   const installLabel = "Tracked installs";
   const cohortAvailable = Boolean(selectedOverview?.available);
@@ -156,6 +161,7 @@ export default function AppOverviewPanel({
         <UserJourneyFunnel key={`${appId}:${country}`} appId={appId} report={selectedJourney} windowLabel={windowLabel} funnelOnly />
         {appId === "glow" ? <GlowPaywallCohortTables key={country} report={selectedGlowPaywalls} windowLabel={windowLabel} /> : null}
         {appId === "versy" ? <VersyYearlyPriceTable key={country} report={selectedYearlyPrices} /> : null}
+        {appId === "versy" ? <VersyPaywallComparisonPanel key={`paywalls:${country}`} report={selectedVersyPaywalls} /> : null}
         {appId === "poky" ? <PokyPaywallFlowTable key={country} report={selectedPokyPaywalls} windowLabel={windowLabel} /> : null}
         {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={comparisonLabel ?? windowLabel} /> : null}
         <div className="grid min-w-0 gap-4 xl:grid-cols-2">

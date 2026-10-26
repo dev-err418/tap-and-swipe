@@ -3,6 +3,7 @@ import { marketCountry } from "./analytics-markets";
 import { experimentInstallCohort, experimentMinimumInstallVersion } from "./app-experiment-cohort";
 import { buildGlowPaywallCohortComparisons, type GlowPaywallCohortComparisons, type PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { buildPokyPaywallFlowComparison } from "./poky-paywall-flow-cohorts";
+import { buildVersyPaywallComparison, type VersyPaywallComparison } from "./versy-paywall-comparison";
 import { buildVersyYearlyPriceComparison } from "./versy-yearly-price-cohorts";
 import { installCohortTrialSurvival } from "./install-cohort-trial-survival";
 import { withJourneyConversions } from "./journey-cohort-conversions";
@@ -13,6 +14,7 @@ export type AppCountryComparisonSlice = {
   userJourney: UserJourneyReport | null;
   paywallCohortComparisons: GlowPaywallCohortComparisons | null;
   yearlyPriceComparison: PaywallCohortComparison | null;
+  versyPaywallComparison: VersyPaywallComparison | null;
   paywallFlowComparison: PaywallCohortComparison | null;
   trialCancelTiming: TrialCancelTiming | null;
 };
@@ -42,6 +44,8 @@ export function buildAppCountryComparisons(input: {
         ? buildGlowPaywallCohortComparisons(members, input.events, input.attributes, 0, input.asOf + 1, input.asOf) : null,
       yearlyPriceComparison: input.appId === "versy"
         ? buildVersyYearlyPriceComparison(members, input.events, input.attributes, input.asOf) : null,
+      versyPaywallComparison: input.appId === "versy"
+        ? buildVersyPaywallComparison(members, input.events, input.attributes, input.asOf) : null,
       paywallFlowComparison: input.appId === "poky"
         ? buildPokyPaywallFlowComparison(members, input.events, input.attributes, 0, input.asOf + 1, input.asOf) : null,
       trialCancelTiming: input.appId !== "poky" ? installCohortTrialSurvival(members, input.events, minimum, input.asOf) : null,

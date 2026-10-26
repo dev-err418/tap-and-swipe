@@ -43,9 +43,10 @@ test("Bible Scroll bypasses the widget soft/hard paywall nodes", () => {
     assert.deepEqual(flow.edges.filter((edge) => edge.from === id).map((edge) => edge.to), ["scroll-trial"]);
     assert.equal(flow.edges.find((edge) => edge.from === "scroll_the_bible" && edge.to === id)?.label, "50%");
   }
-  assert.equal(flow.edges.filter((edge) => edge.from === "scroll-trial").length, 4);
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["10%", "10%", "80%"]);
-  assert.deepEqual(flow.nodes.filter((node) => node.experimentId === "versy-yearly-price-v4").map((node) => node.variantId), ["yearly_3999_80", "yearly_4999", "yearly_3999_80_3d", "yearly_4999_3d"]);
+  assert.equal(flow.edges.filter((edge) => edge.from === "scroll-trial").length, 2);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["33.33%", "33.33%", "33.33%"]);
+  assert.deepEqual(flow.nodes.filter((node) => node.experimentId === "versy-yearly-price-v3").map((node) => node.variantId), ["yearly_3999_80", "yearly_4999"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "bible_widget").map((edge) => edge.label), ["30%", "70%"]);
   assert.ok(flow.nodes.every((node) => node.y < flow.height));
 });
 

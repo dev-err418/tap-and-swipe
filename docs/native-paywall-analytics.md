@@ -530,20 +530,21 @@ Glow uses `glow.paywall.assignment.v5` / `native_yearly_prices_v5` for fresh ass
 `yr_59_3d` use the respective product IDs with `.trial3` appended. Each receives 1/6,
 so each duration receives 50% at each price. Existing v4 assignments are loaded unchanged.
 
-Versy uses `versy.paywall.yearlyPrice.assignment.v4` / `versy_yearly_price_v4`, allocation
-`25_25_25_25`: the existing `yearly_3999_80` and `yearly_4999` products (7d), plus their
-`.trial3` counterparts (3d). Existing v3 / `50_50` assignments remain 7-day offers.
-Price and widget-combination reports accept those exact experiment/allocation pairs;
-migrated, development, unknown-product and mismatched allocation records remain excluded.
-Matching original 7-day results stay in the same rows. Country slices use the same rules.
-All APPU denominators retain assigned nonpayers and later attributed refunds/renewals.
+Versy's proposed v4 trial-duration test was removed on October 26 before release.
+The active app assignment remains `versy.paywall.yearlyPrice.assignment.v3` /
+`versy_yearly_price_v3`, allocation `50_50`: $39.99 and $49.99, both with 7-day trials.
+The analytics price and widget-combination rows exclude all `.trial3` assignments.
+Matching seven-day v4 history is accepted defensively if present; migrated, development,
+unknown-product and mismatched allocations remain excluded. Country slices use the same rules.
+Historical transactions and purchase attribution records are not deleted.
 
-Both splash screens warm every annual SKU before onboarding. Selection never substitutes
-a different price or duration if Apple has not returned the assigned product. StoreKit's
-actual intro offer drives the rendered duration; the assignment supplies a matching
-3/7-day fallback while loading. Standard flows remind 2 days before expiry (day 1 or 5).
-Choice flows offer 1/2 days before a 3-day expiry and 2/3 before a 7-day expiry. Scheduled
-notifications use verified Apple trial expiry; paid/ineligible purchases do not schedule a trial reminder.
+Glow warms every annual SKU before onboarding. Selection never substitutes a different
+price or duration if Apple has not returned the assigned product. StoreKit's actual intro
+offer drives the rendered duration; the assignment supplies a matching 3/7-day fallback
+while loading. Standard flows remind 2 days before expiry (day 1 or 5). Choice flows offer
+1/2 days before a 3-day expiry and 2/3 before a 7-day expiry. Scheduled notifications use
+verified Apple trial expiry; paid/ineligible purchases do not schedule a trial reminder.
+Versy retains its original seven-day product preload and reminder setup.
 
 App Store Connect creation clones each source's current non-preserved annual price in all
 175 territories, availability and product localizations. Each new product has a THREE_DAYS
@@ -551,3 +552,25 @@ FREE_TRIAL offer in those same 175 territories. Original prices and intro offers
 These new subscriptions must pass Apple's review and become available before shipping the new app builds.
 
 Creation IDs and final Apple verification are recorded in [`glow-versy-trial3-products.json`](glow-versy-trial3-products.json). All five were `READY_TO_SUBMIT` with completed review images on October 23, 2026.
+
+## October 26, 2026: Versy hard/dismissible comparison
+
+The Versy Data tab includes `Hard Widget`, `Dismissible Widget`, and `Bible Scroll` for
+saved seven-day price assignments. Full and Shorter Widget are pooled by their saved
+access mode; Bible Scroll is always dismissible regardless of its unrelated access draw.
+Membership requires production tracking, first install on 1.2.6+, current onboarding
+experiment, matching known non-Mexico install/reported country, and a valid price assignment.
+Nonpayers remain in the denominator. Results include historical allocation mixes and are
+descriptive; no winner badge is inferred across these grouped flows.
+
+The report also computes 24h/48h checkpoints, which are not displayed in the Data tab.
+The checkpoint calculation starts the clock at the later of first install and price
+assignment. Only fully observed users enter each checkpoint. Trial starts, cancellations,
+expiry and direct payments are evaluated as they stood at that point, using the original
+transaction chain to retain anonymous follow-ups. Uncancelled trial or paid counts users
+once and is an early signal, not a prediction of eventual paid conversion. Trial-to-paid
+in the standard comparison still requires trials whose recorded expiry has passed.
+Country filters rebuild the same aggregates. `lib/versy-paywall-comparison.ts` owns this
+calculation; no new analytics ingestion or database is introduced.
+Attribute loads split saturated queries into disjoint key batches, retaining all users
+instead of serving truncated cohorts. A saturated single key still fails explicitly.

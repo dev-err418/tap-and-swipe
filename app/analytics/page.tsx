@@ -607,6 +607,7 @@ async function AppDetail({
         userJourney={app.userJourney}
         paywallCohortComparisons={app.paywallCohortComparisons}
         yearlyPriceComparison={app.yearlyPriceComparison}
+        versyPaywallComparison={app.versyPaywallComparison}
         paywallFlowComparison={app.paywallFlowComparison}
         countryComparisons={app.countryComparisons}
         countryBreakdown={{ countries: countryReport?.dataCountries ?? [], available: Boolean(countryReport?.cohortDataAvailable), windowLabel: "Last 30 days" }}

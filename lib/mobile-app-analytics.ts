@@ -1,4 +1,5 @@
 import { buildDailyAppReport } from "./daily-app-report";
+import { loadCompleteAttributeRows } from "./analytics-attribute-batches";
 import { buildAnalyticsMarkets, marketLanguage, marketCountry, type AnalyticsMarkets } from "./analytics-markets";
 import { productionAnalyticsFilter } from "./analytics-production";
 import { experimentInstallCohort, experimentMinimumInstallVersion, installVersionPredicateSql } from "./app-experiment-cohort";
@@ -16,6 +17,7 @@ import { loadUserJourney } from "./user-journey-queries";
 import { journeyCohortAttributeKeys, withJourneyConversions } from "./journey-cohort-conversions";
 import { buildGlowPaywallCohortComparisons, GLOW_PAYWALL_COHORT_KEYS, type GlowPaywallCohortComparisons } from "./glow-paywall-cohort-comparisons";
 import { buildVersyYearlyPriceComparison, VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS, isVersyYearlyPriceAssignment, VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
+import { buildVersyPaywallComparison, type VersyPaywallComparison } from "./versy-paywall-comparison";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { withJourneyInstallVersions, type UserJourneyReport } from "./user-journey";
 import { orderAppExperiments } from "./app-experiment-order";
@@ -182,6 +184,7 @@ export type MobileAppAnalytics = SnapshotMetadata & {
   userJourney?: UserJourneyReport | null;
   paywallCohortComparisons?: GlowPaywallCohortComparisons | null;
   yearlyPriceComparison?: PaywallCohortComparison | null;
+  versyPaywallComparison?: VersyPaywallComparison | null;
   paywallFlowComparison?: PaywallCohortComparison | null;
   countryComparisons?: AppCountryComparisons;
 };
@@ -607,6 +610,8 @@ async function loadSuperwallAppAnalytics(
           comparisonStartMs, comparisonEndMs, comparisonEndMs) : null,
     yearlyPriceComparison: app.id === "versy" && comparisonFacts
       ? buildVersyYearlyPriceComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonEndMs) : null,
+    versyPaywallComparison: app.id === "versy" && comparisonFacts
+      ? buildVersyPaywallComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonEndMs) : null,
     paywallFlowComparison: app.id === "poky" && comparisonFacts
       ? buildPokyPaywallFlowComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes,
           comparisonStartMs, comparisonEndMs, comparisonEndMs) : null,
@@ -643,7 +648,7 @@ async function loadAppFacts(
 ): Promise<AppFacts> {
   const environmentKey = app.id === "versy" ? "versy_tracking_environment" : app.id === "poky" ? "poky_tracking_environment" : null;
   const keys = [...new Set([...(includeReports ? attributeKeysFor(app.id) : ACQUISITION_ATTRIBUTE_KEYS), ...journeyCohortAttributeKeys(app.id),
-    ...(app.id === "glow" ? GLOW_PAYWALL_COHORT_KEYS : []), ...(app.id === "versy" ? VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS : []),
+    ...(app.id === "glow" ? GLOW_PAYWALL_COHORT_KEYS : []), ...(app.id === "versy" ? VERSY_ATTRIBUTE_KEYS : []),
     ...(app.id === "poky" ? POKY_TRIAL_OFFER_ATTRIBUTE_KEYS : []),
     ...(environmentKey ? [environmentKey] : [])])];
   const hasMigrationHistory = includeReports && (app.id === "poky" || app.id === "glow");
@@ -764,7 +769,7 @@ async function fetchUserAttributes(
   app: SuperwallAppConfig,
   keys: string[],
 ): Promise<{ appUserId: string; key: string; value: string }[]> {
-  const rows = await querySuperwall<{ appUserId: string; key: string; value: string }>(
+  return loadCompleteAttributeRows(keys, (batch) => querySuperwall<{ appUserId: string; key: string; value: string }>(
     `
 SELECT appUserId, key, value
 FROM sw.user_attributes_rep FINAL
@@ -772,15 +777,13 @@ WHERE applicationId = ${app.applicationId}
   AND isSandbox = 0
   AND isDeleted = 0
   AND ts < now()
-  AND key IN (${keys.map((key) => `'${key}'`).join(", ")})
+  AND key IN (${batch.map((key) => `'${key}'`).join(", ")})
 LIMIT 80000
 FORMAT JSON
 `.trim(),
     app.organizationId,
     app.apiKey,
-  );
-  if (rows.length >= 80000) throw new Error(`${app.id} user attributes exceed the reporting limit.`);
-  return rows;
+  ), 80000);
 }
 
 async function fetchAttributedEvents(app: SuperwallAppConfig, start: string): Promise<AttributedRow[]> {
@@ -1106,7 +1109,8 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
     installs: facts.installs.filter((row) => versyOnboardingAudience(row.country, facts.attributes.get(row.appUserId)) === audience),
   });
   const widgetFacts = { ...facts, installs: facts.installs.filter((row) =>
-    ["bible_widget", "bible_widget_shorter"].includes(facts.attributes.get(row.appUserId)?.onboarding_variant ?? "")) };
+    ["bible_widget", "bible_widget_shorter"].includes(facts.attributes.get(row.appUserId)?.onboarding_variant ?? "")
+    && isVersyYearlyPriceAssignment(facts.attributes.get(row.appUserId))) };
   const onboardingVariants = [
     { key: "bible_widget", label: "Bible Widget" },
     { key: "bible_widget_shorter", label: "Bible Widget Shorter" },
@@ -1115,7 +1119,7 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
     attributes: { onboarding_experiment_id: "scroll_the_bible_v1", onboarding_variant: key } }));
   const currentOnboarding: AttributeExperimentDefinition = {
     id: "versy-scroll-the-bible-v1", title: "Onboarding A/B test · Bible Scroll",
-    subtitle: "Bible Widget 10% · Shorter 10% · Bible Scroll 80% · excludes Mexico and uncertain countries",
+    subtitle: "Bible Widget / Shorter / Bible Scroll · equal new assignments · excludes Mexico and uncertain countries",
     attributeKeys: ["onboarding_experiment_id", "onboarding_variant"],
     variants: onboardingVariants, scoreMetrics: ["appu", "download_paid"],
     showTrials: true, showCompletion: true, completionLabel: "Paywall reached",
@@ -1125,7 +1129,7 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
   };
   return [
     { ...attributeExperiment(audienceFacts("comparison"), currentOnboarding),
-      planningNote: "Current new assignments: 10% Bible Widget / 10% Shorter / 80% Bible Scroll. Earlier saved assignments retain their original variants. Mexico and uncertain countries are reported separately. Country uses matching install and reported geo values; the app does not yet save immutable assignment geography. Paywall reached measures the final onboarding screen. Avg sessions / day is sessions per user per observed day since install, including free users and zero-session users; unavailable data shows a dash." },
+      planningNote: "Current app code assigns new users equally to Bible Widget, Shorter and Bible Scroll. Earlier saved assignments retain their original variants. Mexico and uncertain countries are reported separately. Country uses matching install and reported geo values; the app does not yet save immutable assignment geography. Paywall reached measures the final onboarding screen. Avg sessions / day is sessions per user per observed day since install, including free users and zero-session users; unavailable data shows a dash." },
     ...(["mexico", "unknown"] as const).map((audience) => ({
       ...attributeExperiment(audienceFacts(audience), { ...currentOnboarding,
         id: `versy-scroll-the-bible-v1-${audience}`,
@@ -1156,7 +1160,7 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
     attributeExperiment(widgetFacts, {
       id: "versy-yearly-paywall-access-v1",
       title: "Widget paywall · Soft vs Hard",
-      subtitle: "Yearly only · Soft vs Hard · 50/50",
+      subtitle: "7-day trials · next app build: 70% Hard / 30% Soft · saved cohorts included",
       attributeKeys: ["onboarding_paywall_experiment_id", "onboarding_paywall_access_variant"],
       variants: [
         { key: "dismissible", label: "Yearly · Soft",
@@ -1188,9 +1192,9 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
       showCompletion: true, completionLabel: "Paywall reached", completionCheck: versyOnboardingPaywallReached,
     }),
     attributeExperiment(facts, {
-      id: "versy-yearly-price-v4",
+      id: "versy-yearly-price-v3",
       title: "Yearly price A/B test",
-      subtitle: "$39.99 / $49.99 × 3-day / 7-day trials · 25% each for new users",
+      subtitle: "$39.99 / $49.99 · 7-day trials · 50% each for new users",
       assignmentCheck: isVersyYearlyPriceAssignment,
       attributeKeys: ["yearly_price_experiment_id", "yearly_price_product_id", "yearly_price_allocation"],
       variants: yearlyPrices.map(({ key, label, productID }) => ({
@@ -1201,9 +1205,9 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
       showTrials: true,
     }),
     attributeExperiment(widgetFacts, {
-      id: "versy-yearly-paywall-configuration-v4",
+      id: "versy-yearly-paywall-configuration-v3",
       title: "Widget paywall combinations",
-      subtitle: "Yearly only · access × yearly price × trial length · 8 cohorts",
+      subtitle: "7-day trials · access × yearly price · 4 cohorts",
       assignmentCheck: isVersyYearlyPriceAssignment,
       attributeKeys: ["paywall_configuration_experiment_id", "paywall_configuration_variant", ...VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS],
       variants: ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ key, label, productID }) => ({

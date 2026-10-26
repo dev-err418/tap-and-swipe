@@ -2,21 +2,20 @@ import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./a
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 
-export const VERSY_YEARLY_PRICE_EXPERIMENT = "versy_yearly_price_v4";
-export const VERSY_PREVIOUS_YEARLY_PRICE_EXPERIMENT = "versy_yearly_price_v3";
+export const VERSY_YEARLY_PRICE_EXPERIMENT = "versy_yearly_price_v3";
+export const VERSY_RETIRED_YEARLY_PRICE_EXPERIMENT = "versy_yearly_price_v4";
 export const VERSY_YEARLY_PRICES = [
   { key: "yearly_3999_80", label: "$39.99 (7d)", productID: "com.arthurbuildsstuff.bible.yearly_3999_80" },
   { key: "yearly_4999", label: "$49.99 (7d)", productID: "com.arthurbuildsstuff.bible.yearly_4999" },
-  { key: "yearly_3999_80_3d", label: "$39.99 (3d)", productID: "com.arthurbuildsstuff.bible.yearly_3999_80.trial3" },
-  { key: "yearly_4999_3d", label: "$49.99 (3d)", productID: "com.arthurbuildsstuff.bible.yearly_4999.trial3" },
 ] as const;
 
 export function isVersyYearlyPriceAssignment(values: Record<string, string> | undefined): boolean {
   if (values?.versy_tracking_environment !== "production") return false;
-  const previous = values.yearly_price_experiment_id === VERSY_PREVIOUS_YEARLY_PRICE_EXPERIMENT;
-  return (previous || values.yearly_price_experiment_id === VERSY_YEARLY_PRICE_EXPERIMENT)
-    && values.yearly_price_allocation === (previous ? "50_50" : "25_25_25_25")
-    && (previous ? VERSY_YEARLY_PRICES.slice(0, 2) : VERSY_YEARLY_PRICES).some((price) => price.productID === values.yearly_price_product_id);
+  const retired = values.yearly_price_experiment_id === VERSY_RETIRED_YEARLY_PRICE_EXPERIMENT;
+  // Retain matching seven-day history; retired three-day assignments never enter these rows.
+  return (retired || values.yearly_price_experiment_id === VERSY_YEARLY_PRICE_EXPERIMENT)
+    && values.yearly_price_allocation === (retired ? "25_25_25_25" : "50_50")
+    && VERSY_YEARLY_PRICES.some((price) => price.productID === values.yearly_price_product_id);
 }
 export const VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS = [
   "yearly_price_experiment_id", "yearly_price_product_id", "yearly_price_allocation", "yearly_price_assigned_at",

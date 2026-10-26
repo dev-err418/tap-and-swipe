@@ -41,20 +41,20 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   onboarding.branches.forEach((branch, index) => {
     nodes.push({ id: branch.id, x: 168, y: 76 + index * 136, width: 170,
       label: branch.label, tone: "blue", experimentId: onboarding.id, variantId: branch.id });
-    edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` });
+    edges.push({ from: "start", to: branch.id, label: formatPaywallAllocation(branch.percent) });
   });
   access.branches.forEach((branch, index) => {
     const id = `access-${branch.id}`;
     nodes.push({ id, x: 430, y: 76 + index * 136, width: 170,
       label: branch.label, tone: "orange", experimentId: access.id, variantId: branch.id });
-    onboarding.branches.filter((parent) => parent.id !== "scroll_the_bible").forEach((parent) => edges.push({ from: parent.id, to: id, label: "50%" }));
+    onboarding.branches.filter((parent) => parent.id !== "scroll_the_bible").forEach((parent) => edges.push({ from: parent.id, to: id, label: formatPaywallAllocation(branch.percent) }));
   });
   benefits.branches.forEach((branch, index) => {
     const id = `benefits-${branch.id}`;
     nodes.push({ id, x: 430, y: 348 + index * 136, width: 190,
       label: branch.label, detail: "Next app build · after Premium preview", tone: "orange",
       experimentId: benefits.id, variantId: branch.id });
-    edges.push({ from: "scroll_the_bible", to: id, label: `${branch.percent}%` });
+    edges.push({ from: "scroll_the_bible", to: id, label: formatPaywallAllocation(branch.percent) });
     edges.push({ from: id, to: "scroll-trial" });
   });
   nodes.push({ id: "scroll-trial", x: 692, y: 416, width: 190,
@@ -63,7 +63,7 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
     const id = `price-${index}`;
     nodes.push({ id, x: 956, y: 80 + index * 136, width: 190,
       label: branch.label, tone: "orange", experimentId: price.id, variantId: VERSY_YEARLY_PRICES.find((price) => price.productID === branch.id)?.key });
-    access.branches.forEach((parent) => edges.push({ from: `access-${parent.id}`, to: id, label: `${branch.percent}%` }));
+    access.branches.forEach((parent) => edges.push({ from: `access-${parent.id}`, to: id, label: formatPaywallAllocation(branch.percent) }));
     edges.push({ from: "scroll-trial", to: id });
   });
   return {
