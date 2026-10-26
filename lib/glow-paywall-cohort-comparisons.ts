@@ -66,6 +66,7 @@ export function buildGlowPaywallCohortComparisons(
     return { status: rows.some((row) => row.installs > 0) ? "ready" : "empty", rows, labels, warnings };
   };
   const flowLabels = Object.fromEntries(GLOW_PAYWALL_FLOWS.map(({ id, label }) => [id, label]));
+  const baseFlowLabels = { standard: "Current flow", versy_reminder: "Versy reminder flow" };
   const historicalLabels = { standard: "Current flow · historical", versy_reminder: "Versy reminder flow · historical" };
   const priceWarnings = parsedPrices.invalid ? [`${parsedPrices.invalid} invalid price assignments were excluded.`] : [];
   const compareFlowPrices = (cohort: typeof flows, labels: Record<string, string>) => {
@@ -73,7 +74,11 @@ export function buildGlowPaywallCohortComparisons(
     for (const [user, flow] of cohort.records) {
       const price = prices.get(user);
       if (!price) continue;
-      joint.set(user, { variant: `${flow.variant}|${price.variant}`, assignedAt: Math.max(flow.assignedAt, price.assignedAt) });
+      // Pool individual assignments before calculating metrics, so rates and APPU
+      // use all enrolled installs rather than averaging the note/control results.
+      const baseFlow = flow.variant === "standard_note" ? "standard"
+        : flow.variant === "versy_reminder_note" ? "versy_reminder" : flow.variant;
+      joint.set(user, { variant: `${baseFlow}|${price.variant}`, assignedAt: Math.max(flow.assignedAt, price.assignedAt) });
     }
     return compare(joint, Object.fromEntries(Object.entries(labels).flatMap(([flow, label]) =>
       GLOW_YEARLY_PRICES.map(({ id, price }) => [`${flow}|${id}`, `${label} · ${price}`]))), [...cohort.warnings, ...priceWarnings]);
@@ -82,7 +87,7 @@ export function buildGlowPaywallCohortComparisons(
     flows: compare(flows.records, flowLabels, flows.warnings),
     prices: compare(prices, Object.fromEntries(GLOW_YEARLY_PRICES.map(({ id, price }) => [id, price])),
       priceWarnings),
-    flowPrices: compareFlowPrices(flows, flowLabels),
+    flowPrices: compareFlowPrices(flows, baseFlowLabels),
     historicalFlows: compare(historicalFlows.records, historicalLabels, historicalFlows.warnings),
     historicalFlowPrices: compareFlowPrices(historicalFlows, historicalLabels),
   };

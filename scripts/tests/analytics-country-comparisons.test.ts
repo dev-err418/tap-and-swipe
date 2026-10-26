@@ -6,7 +6,7 @@ import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
 import { topAnalyticsCountries } from "../../lib/analytics-country-options";
 import { buildAppCountryComparisons } from "../../lib/app-country-comparisons";
 import { experimentMinimumInstallVersion } from "../../lib/app-experiment-cohort";
-import { GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY } from "../../lib/glow-onboarding-experience";
+import { GLOW_PAYWALL_FLOW_ALLOCATION, GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY } from "../../lib/glow-onboarding-experience";
 import { VERSY_YEARLY_PRICE_EXPERIMENT, VERSY_YEARLY_PRICES } from "../../lib/versy-yearly-price-cohorts";
 import { ASSIGNED_KEY, buildUserJourney, userJourneyDefinition } from "../../lib/user-journey";
 import { loadUserJourney } from "../../lib/user-journey-queries";
@@ -31,7 +31,7 @@ for (const appId of ["glow", "poky", "versy"] as const) {
     const variant = definition.variants[0].key;
     const attrs = {
       ...definition.cohortAttributes, [definition.variantAttribute]: variant,
-      [GLOW_PAYWALL_FLOW_KEY]: JSON.stringify({ schema: 1, experiment: GLOW_PAYWALL_FLOW_ID, allocation: "50_50",
+      [GLOW_PAYWALL_FLOW_KEY]: JSON.stringify({ schema: 1, experiment: GLOW_PAYWALL_FLOW_ID, allocation: GLOW_PAYWALL_FLOW_ALLOCATION,
         environment: "production", randomized: true, language: "en", variant: "standard", assignedAt: start, updatedAt: start }),
       gp1_a_native_yearly_prices_v4: JSON.stringify({ schema: 1, experiment: "native_yearly_prices_v4", experimentName: "Yearly prices",
         variant: "yr_34", variantName: "yr_34", paywall: "yr_34", language: "en", expectedProduct: "yearly", assignedAt: start,
