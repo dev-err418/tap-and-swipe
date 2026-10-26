@@ -38,6 +38,7 @@ export function experimentMapPaywallGroup(node: ExperimentFlowNode, report: Nati
 
 /** The same joint cohorts and denominator used on the map card. */
 export function experimentMapBranchSummary(node: ExperimentFlowNode, experiment: MobileAppExperiment) {
+  if (experiment.unavailableReason) return null;
   const keys = node.cohortMetric?.variants ?? (node.variantId ? [node.variantId] : []);
   if (!keys.length || (node.cohortMetric && experiment.paidUsersOnly)) return null;
   const rows = keys.map((key) => experiment.variants.find((row) => row.key === key));

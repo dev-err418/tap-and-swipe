@@ -33,45 +33,43 @@ export function appExperimentFlow(appId: string, selectedLanguage?: string): Exp
 }
 
 function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
-  const [onboarding, access, price, benefits] = map.tests;
+  const [onboarding, access, price, note] = map.tests;
   const nodes: ExperimentFlowNode[] = [
     { id: "start", x: 36, y: 212, width: 0, label: "New install", kind: "start", tone: "blue" },
+    { id: "reviews", x: 410, y: 212, width: 170, label: "Reviews", detail: "Everyone · no rating prompt", tone: "neutral" },
   ];
   const edges: ExperimentFlowEdge[] = [];
   onboarding.branches.forEach((branch, index) => {
-    nodes.push({ id: branch.id, x: 168, y: 76 + index * 136, width: 170,
+    nodes.push({ id: branch.id, x: 150, y: 76 + index * 136, width: 180,
       label: branch.label, tone: "blue", experimentId: onboarding.id, variantId: branch.id });
     edges.push({ from: "start", to: branch.id, label: formatPaywallAllocation(branch.percent) });
+    edges.push({ from: branch.id, to: "reviews" });
+  });
+  note.branches.forEach((branch, index) => {
+    const id = `note-${branch.id}`;
+    nodes.push({ id, x: 650, y: 144 + index * 136, width: 200, label: branch.id === "note" ? "Team note" : "Skip note",
+      detail: "Keep assigned onboarding route", tone: "orange", experimentId: note.id, variantId: branch.id });
+    edges.push({ from: "reviews", to: id, label: formatPaywallAllocation(branch.percent) });
+    access.branches.forEach((mode) => edges.push({ from: id, to: `access-${mode.id}`, label: `Widget · ${mode.percent}%` }));
+    edges.push({ from: id, to: "scroll-trial", label: "Scroll" });
   });
   access.branches.forEach((branch, index) => {
-    const id = `access-${branch.id}`;
-    nodes.push({ id, x: 430, y: 76 + index * 136, width: 170,
+    nodes.push({ id: `access-${branch.id}`, x: 950, y: 76 + index * 136, width: 190,
       label: branch.label, tone: "orange", experimentId: access.id, variantId: branch.id });
-    onboarding.branches.filter((parent) => parent.id !== "scroll_the_bible").forEach((parent) => edges.push({ from: parent.id, to: id, label: formatPaywallAllocation(branch.percent) }));
   });
-  benefits.branches.forEach((branch, index) => {
-    const id = `benefits-${branch.id}`;
-    nodes.push({ id, x: 430, y: 348 + index * 136, width: 190,
-      label: branch.label, detail: "Next app build · after Premium preview", tone: "orange",
-      experimentId: benefits.id, variantId: branch.id });
-    edges.push({ from: "scroll_the_bible", to: id, label: formatPaywallAllocation(branch.percent) });
-    edges.push({ from: id, to: "scroll-trial" });
-  });
-  nodes.push({ id: "scroll-trial", x: 692, y: 416, width: 190,
-    label: "Bible Scroll trial", detail: "Dismissible · yearly + weekly", tone: "orange" });
+  nodes.push({ id: "scroll-trial", x: 950, y: 348, width: 190,
+    label: "Bible Scroll trial", detail: "Benefits → reminder → paywall", tone: "orange" });
   price.branches.forEach((branch, index) => {
     const id = `price-${index}`;
-    nodes.push({ id, x: 956, y: 80 + index * 136, width: 190,
+    nodes.push({ id, x: 1230, y: 144 + index * 136, width: 190,
       label: branch.label, tone: "orange", experimentId: price.id, variantId: VERSY_YEARLY_PRICES.find((price) => price.productID === branch.id)?.key });
-    access.branches.forEach((parent) => edges.push({ from: `access-${parent.id}`, to: id, label: formatPaywallAllocation(branch.percent) }));
-    edges.push({ from: "scroll-trial", to: id });
+    [...access.branches.map((mode) => `access-${mode.id}`), "scroll-trial"].forEach((from) =>
+      edges.push({ from, to: id, label: formatPaywallAllocation(branch.percent) }));
   });
-  return {
-    width: 1192, height: 560, nodes, edges,
-    stages: [{ x: 168, label: "Onboarding flow" }, { x: 430, label: "Onboarding paywall" },
-      { x: 692, label: "Reminder & paywall" }, { x: 956, label: "Yearly price" }],
-    notes: map.notes,
-  };
+  return { width: 1470, height: 470, nodes, edges,
+    stages: [{ x: 150, label: "Onboarding flow" }, { x: 410, label: "Testimonials" },
+      { x: 650, label: "Team note · 80/20" }, { x: 950, label: "Existing paywall flow" }, { x: 1230, label: "Yearly price" }],
+    notes: map.notes };
 }
 
 function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {

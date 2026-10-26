@@ -214,6 +214,7 @@ const VERSY_WIDGET_STEPS: UserJourneyStep[] = [
   ["improve", "Improve"],
   ["versePrayerTransition", "Verse"],
   ["reviews", "Reviews"],
+  ["teamNote", "Team note (80%)", true],
   ["premiumIntro", "Premium"],
   ["trialReminder", "Trial reminder"],
   ["paywall", "Paywall"],
@@ -285,7 +286,7 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
       variantAttribute: "versy_onboarding_journey_variant",
       showEmptyVariants: true,
       cohortAttributes: { versy_onboarding_journey_schema: "2", versy_tracking_environment: "production" },
-      note: "All languages and countries. Journeys starting at Welcome in the updated app only; earlier visits are not reconstructed. Widget full and shorter routes stay separate. Reviews are optional for the soft Widget paywall. Includes Mexico’s forced Scroll assignments; this is a descriptive funnel, not an A/B result.",
+      note: "All languages and countries. Journeys starting at Welcome in the updated app only; earlier visits are not reconstructed. Widget full and shorter routes stay separate. Reviews appear in both new note variants; older soft Widget journeys may skip them. The team note is optional (80%). Includes historical forced Scroll assignments; this is a descriptive funnel, not an A/B result.",
       variants: [
         { key: "bible_widget", label: "Full", family: "Bible Widget", steps: VERSY_WIDGET_STEPS },
         { key: "bible_widget_shorter", label: "Shorter", family: "Bible Widget", steps: VERSY_WIDGET_STEPS.filter(
@@ -297,9 +298,9 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
           ["goal", "Learning goal"], ["obstacle", "Reading obstacle"],
           ["reassurance", "The Bible can make sense"], ["verseStory", "Verse explanation"],
           ["readingHabit", "Reading habit"], ["notifications", "Daily reminders"], ["reviews", "Reviews"],
-          ["goDeeper", "Premium preview"], ["benefits", "Benefits (test branch)"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
+          ["teamNote", "Team note (80%)"], ["goDeeper", "Premium preview"], ["benefits", "Benefits"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
         ].map(([name, label]) => ({ attribute: `scroll_bible_${name}_screen_seen`, label,
-          ...(name === "benefits" ? { branch: true } : {}),
+          ...(["benefits", "teamNote"].includes(name) ? { branch: true } : {}),
           ...(name === "trial" ? { paywall: true } : {}) })) },
       ].map((variant) => ({ ...variant, steps: variant.steps.map((step) => ({
         ...step, attribute: `versy_journey_${step.attribute}`,

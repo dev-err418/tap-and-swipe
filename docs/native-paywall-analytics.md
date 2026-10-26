@@ -585,3 +585,14 @@ Country filters rebuild the same aggregates. `lib/versy-paywall-comparison.ts` o
 calculation; no new analytics ingestion or database is introduced.
 Attribute loads split saturated queries into disjoint key batches, retaining all users
 instead of serving truncated cohorts. A saturated single key still fails explicitly.
+
+
+### Versy team note (`versy_paywall_note_v1`, next app build)
+
+The note has its own sticky 80% treatment / 20% control draw. Both variants keep the existing reviews (Widget full, Widget shorter and Bible Scroll). Treatment: reviews → team note → existing paywall flow; control: reviews → existing paywall flow. Scroll benefits are standard. No App Store rating requests run during onboarding.
+
+Welcome prepares an assignment; reaching reviews enrolls it and freezes route, access, language and yearly product. Users resuming an older onboarding are not retrospectively enrolled. The scalar Superwall user attribute `vn1_versy_paywall_note_v1` carries JSON: schema `1`, experiment ID, allocation `20_80`, production environment, randomized `true`, variant `control`/`note`, flow, language (`en`/`es`/`pt`/`de`), access, yearlyProduct and assignedAt (Unix milliseconds). Optional first timestamps: viewedAt, continuedAt, paywallViewedAt. Development, sandbox, corrupt and temporally inconsistent assignments are excluded.
+
+The existing Superwall attribute query fetches this field. `/analytics/versy` includes a note result card, flow map, optional journey step and a separate paywall comparison with each route’s control/treatment pair. Review and note dropouts remain in the denominator. There is no inferred legacy control cohort. A/B date filters use enrollment; the all-time paywall table uses eligible installs. New subscription chains beginning after enrollment, their linked renewals and refunds follow the saved arm. Unknown amounts withhold the A/B winner; the detailed table keeps existing missing-money indicators. Country and language drilldowns use the same assignment. Price and access reports remain independent.
+
+Native English preview images are under `public/analytics/versy/paywall-note/`. The preview shows the shared reviews and optional note; subsequent Widget or Scroll payment screens retain their existing sequence. No new backend, database, Superwall campaign or subscription product is required.

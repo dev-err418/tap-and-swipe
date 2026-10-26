@@ -63,6 +63,10 @@ export default function AppExperimentCard({
   const scoreAppu = scoreMetrics.includes("appu");
   const scoreSessions = scoreMetrics.includes("sessions_per_day");
 
+  if (experiment.unavailableReason) return <AppExperimentLayout title={experiment.title}>
+    <p role="status" className="px-4 py-4 text-sm text-muted-foreground">{experiment.unavailableReason}</p>
+  </AppExperimentLayout>;
+
   return (
     <AppExperimentLayout
       title={experiment.title}
@@ -74,7 +78,7 @@ export default function AppExperimentCard({
       {scored.map((item) => (
         <ExperimentStats key={item.key} analysis={item.analysis} title={item.title} titleClassName="font-bold" showReadiness={experiment.randomized !== false || !!experiment.planningNote} historical={experiment.randomized === false} />
       ))}
-      {experiment.planningNote && (experiment.id.startsWith("versy-") || experiment.id === "poky-native-recovery-holdout" || experiment.id === "poky-trial-vs-current") ? (
+      {experiment.planningNote && ((experiment.id.startsWith("versy-") || experiment.id === "versy_paywall_note_v1") || experiment.id === "poky-native-recovery-holdout" || experiment.id === "poky-trial-vs-current") ? (
         <p className="border-b border-black/[0.08] px-4 py-3 text-xs text-black/55">{experiment.planningNote}</p>
       ) : null}
       <ExperimentTable headings={<>

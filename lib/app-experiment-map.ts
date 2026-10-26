@@ -126,7 +126,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
     return {
       tests: [
         {
-          id: "versy-scroll-the-bible-v1", label: "Onboarding", scope: "New assignments outside Mexico · equal thirds", tone: "blue",
+          id: "versy-scroll-the-bible-v1", label: "Onboarding", scope: "New assignments · equal thirds", tone: "blue",
           branches: [
             { id: "bible_widget", label: "Bible widget", percent: 100 / 3 },
             { id: "bible_widget_shorter", label: "Bible widget shorter", percent: 100 / 3 },
@@ -134,10 +134,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
         {
-          id: "versy-yearly-paywall-access-v1", label: "Yearly-only paywall", scope: "Next app build · Widget onboarding · 70% hard / 30% soft", tone: "orange",
+          id: "versy-yearly-paywall-access-v1", label: "Yearly-only paywall", scope: "Widget onboarding · 50% hard / 50% soft", tone: "orange",
           branches: [
-            { id: "dismissible", label: "Yearly · Soft", percent: 30 },
-            { id: "hard", label: "Yearly · Hard", percent: 70 },
+            { id: "dismissible", label: "Yearly · Soft", percent: 50 },
+            { id: "hard", label: "Yearly · Hard", percent: 50 },
           ],
         },
         {
@@ -145,22 +145,22 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           branches: yearlyPrices.map(({ id, label }) => ({ id, label, percent: 50 })),
         },
         {
-          id: "versy-scroll-benefits-v1", label: "Benefits screen", tone: "orange", planned: true,
-          scope: "Next app build · Bible Scroll only · 50/50 after Premium preview",
+          id: "versy_paywall_note_v1", label: "Team note", tone: "orange", planned: true,
+          scope: "Next app build · all onboarding routes · reviews in both variants",
           branches: [
-            { id: "control", label: "Current flow", percent: 50 },
-            { id: "benefits", label: "Added benefits screen", percent: 50 },
+            { id: "control", label: "Reviews → paywall", percent: 20 },
+            { id: "note", label: "Reviews → note → paywall", percent: 80 },
           ],
         },
       ],
       combinations: ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ id, label }) => ({
         id: `yearly_only|${access}|${id}`,
         label: `Yearly only · ${access === "hard" ? "Hard" : "Soft"} · ${label}`,
-        percent: access === "hard" ? 35 : 15,
+        percent: 25,
       }))),
       notes: [
-        "Current app code assigns new users equally to Bible Widget, Shorter and Bible Scroll. The next build assigns Widget paywalls 70% hard / 30% soft. Saved assignments keep their original variant, so reported traffic can reflect earlier allocations. Mexico receives Bible Scroll automatically and is excluded from the comparison, along with uncertain countries.",
-        "The next app build assigns new Bible Scroll Welcome users 50/50 to the current flow or an extra benefits screen after Premium preview, before Trial reminder. This assignment is independent of yearly price. Legacy/resumed flows and development data are excluded; the optional screen never becomes a required journey drop-off baseline.",
+        "Current app code assigns new users equally to Bible Widget, Shorter and Bible Scroll, including Mexico. October 26 temporarily routes everyone to Scroll. Widget paywalls assign 50% hard / 50% soft; saved access assignments persist. Historical onboarding comparisons keep their original geographic eligibility.",
+        "Both note variants keep the existing reviews. The next app build adds the team note after reviews for 80%, while 20% continue directly to their existing paywall flow. The sticky assignment is independent of onboarding route, access and yearly price. No App Store review prompts during onboarding. Only explicitly enrolled production users enter this comparison, including review and note dropouts. Scroll benefits are now standard; the old benefits comparison remains historical.",
         "Bible Scroll uses a dismissible trial timeline with yearly and weekly plans. The saved soft/hard assignment does not control this onboarding screen; access comparisons include widget variants only.",
         "The yearly price test uses v3: US $39.99 or $49.99, both with 7-day trials for eligible users, at 50/50. The 3-day trial test is retired. Matching seven-day history remains in the price rows; three-day and migrated assignments are excluded. Yearly price is independent of access mode. Bible Scroll also offers the fixed weekly product. Other upgrade placements use the assigned yearly product and access mode, except the daily gift.",
         "Daily Gift recovery also appears after onboarding paywall dismissal; the next build opens recovery after transaction cancellation on hard onboarding paywalls. Day-2 behavior remains: after 24 hours, eligible non-premium users see a sealed envelope then a discounted yearly offer on their first app open each local day. This 100% rollout uses YearlyDiscount, independently of yearly price assignment, and is reported in Paywalls as versy_daily_gift_v1 / daily_gift_app_open; historical app_open remains separate.",

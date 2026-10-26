@@ -1,3 +1,4 @@
+import { buildVersyNoteReport, type VersyNoteReport } from "./versy-paywall-note";
 import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import { isVersyYearlyPriceAssignment } from "./versy-yearly-price-cohorts";
@@ -14,6 +15,7 @@ export type VersyPaywallCheckpoint = {
 };
 export type VersyPaywallComparison = PaywallCohortComparison & {
   asOf: number;
+  noteExperiment?: VersyNoteReport;
   checkpoints: Record<string, VersyPaywallCheckpoint[]>;
 };
 const LABELS = { hard: "Hard Widget", dismissible: "Dismissible Widget", bible_scroll: "Bible Scroll" };
@@ -90,6 +92,7 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
     });
     return { version: variant, installs: conversions.global.installs, tracked: conversions.global.installs, variants: [], conversions };
   });
-  return { status: rows.some((row) => row.installs > 0) ? "ready" : "empty", asOf, rows, labels: LABELS, checkpoints,
+  return { noteExperiment: buildVersyNoteReport(installs, events, attributes, 0, asOf + 1, asOf),
+    status: rows.some((row) => row.installs > 0) ? "ready" : "empty", asOf, rows, labels: LABELS, checkpoints,
     warnings: invalidTimes ? [`${invalidTimes} assignments with missing or invalid dates were excluded.`] : [] };
 }

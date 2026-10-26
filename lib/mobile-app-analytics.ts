@@ -1,3 +1,4 @@
+import { versyNoteExperiment, VERSY_NOTE_ATTRIBUTE } from "./versy-paywall-note";
 import { buildDailyAppReport } from "./daily-app-report";
 import { loadCompleteAttributeRows } from "./analytics-attribute-batches";
 import { buildAnalyticsMarkets, marketLanguage, marketCountry, type AnalyticsMarkets } from "./analytics-markets";
@@ -118,6 +119,7 @@ export type MobileAppExperimentScoreMetric =
   | "sessions_per_day";
 
 export type MobileAppExperiment = {
+  unavailableReason?: string;
   paidUsersOnly?: boolean;
   id: string;
   title: string;
@@ -206,7 +208,7 @@ const GLOW_ICON_URL =
   "/community-icons/glow-wordmark.png";
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_COPY_KEY, GLOW_ONBOARDING_LEGACY_KEY] as const;
-const VERSY_ATTRIBUTE_KEYS = ["country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
+const VERSY_ATTRIBUTE_KEYS = [VERSY_NOTE_ATTRIBUTE, "country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
   "scroll_benefits_experiment_id", "scroll_benefits_variant", "scroll_benefits_allocation",
   "scroll_benefits_assigned_at", "scroll_benefits_screen_seen", "scroll_benefits_completed",
   "bible_widget_widget_screen_seen",
@@ -1128,6 +1130,7 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
     showSessions: true, sessionsLabel: "Avg sessions / day",
   };
   return [
+    versyNoteExperiment(facts),
     { ...attributeExperiment(audienceFacts("comparison"), currentOnboarding),
       planningNote: "Current app code assigns new users equally to Bible Widget, Shorter and Bible Scroll. Earlier saved assignments retain their original variants. Mexico and uncertain countries are reported separately. Country uses matching install and reported geo values; the app does not yet save immutable assignment geography. Paywall reached measures the final onboarding screen. Avg sessions / day is sessions per user per observed day since install, including free users and zero-session users; unavailable data shows a dash." },
     ...(["mexico", "unknown"] as const).map((audience) => ({

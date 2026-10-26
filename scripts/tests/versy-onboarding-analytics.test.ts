@@ -24,7 +24,7 @@ test("each flow measures its own final paywall screen", () => {
 test("current funnel includes the optional benefits branch and explicit production enrollment", () => {
   const definition = userJourneyDefinition("versy")!;
   const scroll = definition.variants.find((row) => row.key === "scroll_the_bible")!;
-  assert.deepEqual(scroll.steps.map((step) => step.attribute), ["welcome", "scrollingHours", "fedYourSoul", "closeness", "familiarity", "goal", "obstacle", "reassurance", "verseStory", "readingHabit", "notifications", "reviews", "goDeeper", "benefits", "remindPromise", "trial"].map((key) => `versy_journey_scroll_bible_${key}_screen_seen`));
+  assert.deepEqual(scroll.steps.map((step) => step.attribute), ["welcome", "scrollingHours", "fedYourSoul", "closeness", "familiarity", "goal", "obstacle", "reassurance", "verseStory", "readingHabit", "notifications", "reviews", "teamNote", "goDeeper", "benefits", "remindPromise", "trial"].map((key) => `versy_journey_scroll_bible_${key}_screen_seen`));
   const sql = userJourneySql(51393, definition, "2026-10-01 00:00:00", "2026-10-08 00:00:00");
   assert.match(sql, /versy_onboarding_journey_schema/);
   assert.match(sql, /value = 'production'/);
@@ -36,17 +36,18 @@ test("current funnel includes the optional benefits branch and explicit producti
   assert.equal(report.variants.find((row) => row.key === "scroll_the_bible")?.completionShare, 0.4);
 });
 
-test("Bible Scroll bypasses the widget soft/hard paywall nodes", () => {
+test("both note variants keep their route-specific paywall", () => {
   const flow = appExperimentFlow("versy")!;
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "scroll_the_bible").map((edge) => edge.to), ["benefits-control", "benefits-benefits"]);
-  for (const id of ["benefits-control", "benefits-benefits"]) {
-    assert.deepEqual(flow.edges.filter((edge) => edge.from === id).map((edge) => edge.to), ["scroll-trial"]);
-    assert.equal(flow.edges.find((edge) => edge.from === "scroll_the_bible" && edge.to === id)?.label, "50%");
+  for (const route of ["scroll_the_bible", "bible_widget", "bible_widget_shorter"]) {
+    assert.deepEqual(flow.edges.filter((edge) => edge.from === route).map((edge) => edge.to), ["reviews"]);
+  }
+  for (const id of ["note-control", "note-note"]) {
+    assert.equal(flow.edges.find((edge) => edge.from === id && edge.to === "scroll-trial")?.label, "Scroll");
+    assert.deepEqual(flow.edges.filter((edge) => edge.from === id && edge.to.startsWith("access-")).map((edge) => edge.label), ["Widget · 50%", "Widget · 50%"]);
   }
   assert.equal(flow.edges.filter((edge) => edge.from === "scroll-trial").length, 2);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["33.33%", "33.33%", "33.33%"]);
   assert.deepEqual(flow.nodes.filter((node) => node.experimentId === "versy-yearly-price-v3").map((node) => node.variantId), ["yearly_3999_80", "yearly_4999"]);
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "bible_widget").map((edge) => edge.label), ["30%", "70%"]);
   assert.ok(flow.nodes.every((node) => node.y < flow.height));
 });
 
@@ -65,4 +66,21 @@ test("optional benefits visits do not create a false reminder drop-off", () => {
   assert.equal(benefits.branch, true);
   assert.equal(drops.find((row) => row.attribute.includes("remindPromise"))?.lost, 10);
   assert.ok(!largestDropAttributes(drops).includes(benefits.attribute));
+});
+
+
+test("the optional note never replaces the main journey drop-off baseline", () => {
+  const definition = userJourneyDefinition("versy")!;
+  for (const route of definition.variants) {
+    const reviews = route.steps.findIndex((step) => step.attribute.includes("reviews"));
+    assert.ok(route.steps[reviews + 1].attribute.includes("teamNote"));
+    assert.equal(route.steps[reviews + 1].branch, true);
+    const result = buildUserJourney(definition, [
+      { variant: route.key, key: ASSIGNED_KEY, users: 100 },
+      ...route.steps.map((step) => ({ variant: route.key, key: step.attribute,
+        users: step.attribute.includes("teamNote") ? 64 : 80 })),
+    ]);
+    const drops = journeyDrops(result.variants.find((row) => row.key === route.key)!.steps, 100);
+    assert.equal(drops[reviews + 2].lost, 0);
+  }
 });
