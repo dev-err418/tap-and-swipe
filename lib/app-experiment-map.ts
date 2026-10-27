@@ -71,10 +71,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       ],
     };
     const planDesign: ExperimentMapTest = {
-      id: "poky-plan-design-combinations", label: "Plan A/B", scope: "New onboarding assignments · four intro × plan cohorts", tone: "blue",
+      id: "poky-plan-design-v2-combinations", label: "Plan A / B v2", scope: "Next app build · new assignments · Plan B v2 skips loading", tone: "blue",
       branches: [
-        { id: "plan_a", label: "Plan A", percent: 50 },
-        { id: "plan_b", label: "Plan B · placeholder", percent: 50 },
+        { id: "plan_a", label: "Plan A", percent: 20 },
+        { id: "plan_b_v2", label: "Plan B v2", percent: 80 },
       ],
     };
     return {
@@ -118,7 +118,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         "Results start September 20, 2026 at 16:00 GMT+2. Everyone now uses the Warm experience.",
         "The next app build assigns 80% a team note before the existing paywall sequence, and 20% the original sequence. This independent, saved assignment applies to HP, 3-day, 7-day current and 7-day mascot flows, including both plan-intro journeys. The new note comparison includes pre-paywall dropouts and keeps historical offer assignments separate.",
         "The v4 onboarding offer assigns HP 50% and trials 50%, divided equally between three-day, seven-day current and seven-day mascot (exactly 1/6 of all new assignments each). Both seven-day presentations share the same product and price. Trial arms skip High/Name and recovery. Saved v1, v2 and v3 assignments keep their original allocation and join matching flow rows; the mascot remains separate. The US-only HP override remains through October 28.",
-        "The plan design draw is a new independent 50/50 assignment. Combined with the existing intro draw, it creates four 25% cohorts. Plan B currently displays a placeholder screen.",
+        "The next app build assigns Plan B v2 80% and Plan A 20%, independently of the 50/50 intro: 40% B v2 and 10% A per intro route. Plan B v2 skips loading and temporarily reuses the current Plan B UI. Saved Plan B users move to v2; saved A stays A. Migrated users are excluded from the fresh v2 comparison. The original four journey rows and v1 results remain available.",
         "The updated app uses native paywalls for everyone, including former Superwall cohorts. The Superwall/native comparison is retired; historical assignments remain stored.",
         "Every non-trial user is eligible for native recovery after cancelling a main purchase, once per install. Former holdouts are included; trial paywalls skip automatic recovery. The home-screen shortcut is separate.",
       ],

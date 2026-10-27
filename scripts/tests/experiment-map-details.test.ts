@@ -43,8 +43,8 @@ test("branch summaries agree with weighted map APPU and reject incomplete cohort
   const flow = appExperimentFlow("poky", "en")!;
   const node = flow.nodes.find((node) => node.id === "intro-animated_plan")!;
   const experiment: MobileAppExperiment = {
-    id: "poky-plan-design-combinations", title: "Combined onboarding", subtitle: "", scoreMetrics: ["appu_d7"],
-    variants: [variant("animated_plan_a", 90, 270), variant("animated_plan_b", 10, 60)],
+    id: "poky-plan-design-v2-combinations", title: "Combined onboarding", subtitle: "", scoreMetrics: ["appu_d7"],
+    variants: [variant("animated_plan_a", 90, 270), variant("animated_plan_b_v2", 10, 60)],
   };
   const summary = experimentMapBranchSummary(node, experiment)!;
   const map = currentCohortMetrics(flow.nodes, flow.edges, [experiment]).get(node.id)!;

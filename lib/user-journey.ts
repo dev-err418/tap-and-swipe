@@ -254,12 +254,15 @@ const POKY_STEPS: UserJourneyStep[] = [
   ...(name === "starting_point" ? { branch: true } : {}),
 }));
 
-function pokyVariant(key: string, label: string, animated: boolean, plan: string): UserJourneyVariant {
+function pokyVariant(key: string, label: string, animated: boolean, plan: string, skipLoading = false): UserJourneyVariant {
   return {
     key,
     label,
     steps: [
-      ...POKY_STEPS,
+      ...POKY_STEPS.filter((step) => !skipLoading || step.attribute !== "customizing_plan_screen_seen")
+        .flatMap((step) => [step, ...(step.attribute === "motivation_screen_seen" && !key.endsWith("_plan_b")
+          ? [{ attribute: "notifications_screen_seen", label: "Notifications", ...(skipLoading ? {} : { branch: true }) }]
+          : [])]),
       ...(animated ? [{ attribute: "animated_plan_intro_screen_seen", label: "Plan intro" }] : []),
       { attribute: "custom_plan_screen_seen", label: plan },
       { attribute: "review_support_screen_seen", label: "Reviews" },
@@ -319,12 +322,14 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
         poky_onboarding_journey_schema: "1",
         poky_tracking_environment: "production",
       },
-      note: "Includes installs that began the tracked onboarding flow in the updated Poky app. Earlier journeys cannot be reconstructed. Paywall seen includes the native, trial and Superwall onboarding paywalls.",
+      note: "Original Plan A and Plan B journeys are preserved. The updated app assigns Plan A 20% / Plan B v2 80%, independently of the 50/50 intro. Plan B v2 skips Creating plan; upgraded Plan B journeys keep their historical records. Earlier visits cannot be reconstructed. Paywall seen includes native, trial and Superwall onboarding paywalls.",
       variants: [
         pokyVariant("control_plan_a", "No intro · Plan A", false, "Plan A"),
         pokyVariant("control_plan_b", "No intro · Plan B", false, "Plan B"),
         pokyVariant("animated_plan_a", "Animated intro · Plan A", true, "Plan A"),
         pokyVariant("animated_plan_b", "Animated intro · Plan B", true, "Plan B"),
+        pokyVariant("control_plan_b_v2", "No intro · Plan B v2", false, "Plan B v2", true),
+        pokyVariant("animated_plan_b_v2", "Animated intro · Plan B v2", true, "Plan B v2", true),
       ],
     };
   }

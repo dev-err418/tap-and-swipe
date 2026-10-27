@@ -113,18 +113,17 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
   plan.branches.forEach((intro, introIndex) => {
     const introId = `intro-${intro.id}`;
     const isAnimated = intro.id === "animated_plan";
-    const variants = isAnimated ? ["animated_plan_a", "animated_plan_b"] : ["no_intro_plan_a", "no_intro_plan_b"];
+    const cohortKey = (design: string) => `${isAnimated ? "animated" : "no_intro"}_${design}`;
+    const variants = planDesign.branches.map((design) => cohortKey(design.id));
     nodes.push({ id: introId, x: 160, y: introIndex === 0 ? 190 : 470, width: 154,
       label: intro.label, tone: "blue", cohortMetric: { experiment: planDesign.id, variants } });
     edges.push({ from: "start", to: introId, label: `${intro.percent}%` });
     planDesign.branches.forEach((design, designIndex) => {
-      const id = isAnimated
-        ? `animated_plan_${design.id === "plan_a" ? "a" : "b"}`
-        : `no_intro_${design.id}`;
+      const id = cohortKey(design.id);
       const childId = `plan-${id}`;
       const y = introIndex === 0 ? 120 + designIndex * 130 : 410 + designIndex * 130;
       nodes.push({ id: childId, x: 398, y, width: 180,
-        label: `${isAnimated ? "Intro" : "No intro"} + ${design.id === "plan_a" ? "Plan A" : "Plan B"}`,
+        label: `${isAnimated ? "Intro" : "No intro"} + ${design.label}`,
         tone: "blue", cohortMetric: { experiment: planDesign.id, variants: [id] } });
       edges.push({ from: introId, to: childId, label: `${design.percent}%` }, { from: childId, to: "language" });
     });

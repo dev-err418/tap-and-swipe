@@ -405,13 +405,36 @@ a live randomized comparison after users switch to native paywalls.
 
 # Poky plan intro × plan design
 
-The plan screen has a new independent, saved 50/50 Plan A/Plan B assignment.
-Together with the existing 50/50 animated intro assignment, the dashboard
-shows four 25% cohorts at the top of Poky's A/B results. Plan B is a placeholder
-screen until its final design is ready. Completed onboarding users remain on
-Plan A and are excluded from the new comparison; only fresh `50_50` markers on
-both attributes enter the four-cohort report. Everyone now uses the Warm
-experience; the old background test is retired. Paywall tests remain separate.
+The next app build uses `onboarding_plan_design_v2`: Plan A 20% and Plan B v2
+80%, independently of the existing 50/50 animated intro assignment. The four
+fresh cohorts are 10% A / 40% B v2 for each intro route. B v2 skips the Creating
+plan loading screen, retains the animated intro when assigned, and temporarily
+reuses Plan B's content until its separate UI redesign.
+
+V2 publishes `onboarding_plan_design_v2_experiment`,
+`onboarding_plan_design_v2_variant` (`plan_a` / `plan_b_v2`), and
+`onboarding_plan_design_v2_allocation` (`20_80` for fresh assignments).
+The `poky-plan-design-v2-combinations` comparison requires the exact experiment,
+fresh `20_80` design allocation and `50_50` intro allocation. Migrated or legacy
+users never enter this fresh comparison.
+
+Saved v1 Plan B renders B v2 in the updated app; saved A remains A. Their v1
+assignment and allocation stay unchanged, while v2 is marked `migrated`.
+The historical `poky-plan-design-combinations` comparison remains on the
+original `onboarding_plan_design_variant` and `50_50` allocation. It must not
+be relabeled using the new v2 fields.
+
+The Data tab retains all four original journey IDs and adds `control_plan_b_v2`
+and `animated_plan_b_v2`. Only these new rows omit Creating plan. Existing
+old-B journey IDs are preserved and stop receiving screen/paywall-seen flags
+after migration, preventing the new route from contaminating old funnels.
+Plan A keeps its existing design and shares its journey rows across releases.
+Paywall tests and their independent assignments remain separate.
+
+All current onboarding routes now show Notifications before the plan sequence.
+`notifications_screen_seen` records only the screen visit, never permission status
+or the medication shown in its local preview. It is optional in the mixed-release
+Plan A rows and required for the new B v2 rows; historical Plan B rows stay intact.
 
 ### Glow onboarding recovery (October 2026)
 

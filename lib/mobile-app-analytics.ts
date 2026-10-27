@@ -30,6 +30,7 @@ import type { NativePaywallReport } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_TRIAL_OFFER_ATTRIBUTE_KEYS, pokyTrialOfferExperiment } from "./poky-trial-offer";
 import { pokyNoteExperiment } from "./poky-paywall-note";
+import { POKY_PLAN_DESIGN_V2_ID, POKY_PLAN_DESIGN_V2_ATTRIBUTE_KEYS, POKY_PLAN_DESIGN_V2_VARIANTS } from "./poky-plan-design";
 import { buildPokyPaywallFlowComparison } from "./poky-paywall-flow-cohorts";
 import { buildAppCountryComparisons, type AppCountryComparisons } from "./app-country-comparisons";
 import { paidSubscriptionActivity } from "./paid-subscription-activity";
@@ -216,7 +217,7 @@ const VERSY_ATTRIBUTE_KEYS = [VERSY_NOTE_ATTRIBUTE, "country", "scroll_bible_tri
   "onboarding_paywall_experiment_id", "onboarding_paywall_layout_variant", "onboarding_paywall_access_variant",
   ...VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS,
   "paywall_configuration_experiment_id", "paywall_configuration_variant", "versy_tracking_environment"] as const;
-const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "onboarding_plan_allocation", "onboarding_plan_design_variant", "onboarding_plan_design_allocation", "poky_tracking_environment", ...POKY_TRIAL_OFFER_ATTRIBUTE_KEYS] as const;
+const POKY_ATTRIBUTE_KEYS = ["onboarding_plan_variant", "onboarding_plan_allocation", "onboarding_plan_design_variant", "onboarding_plan_design_allocation", ...POKY_PLAN_DESIGN_V2_ATTRIBUTE_KEYS, "poky_tracking_environment", ...POKY_TRIAL_OFFER_ATTRIBUTE_KEYS] as const;
 
 type SuperwallAppConfig = {
   id: MobileAppAnalytics["id"];
@@ -1235,8 +1236,8 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
     }),
     attributeExperiment(scopedFacts, {
       id: "poky-plan-design-combinations",
-      title: "Plan intro × plan design",
-      subtitle: "Animated intro or no intro × Plan A or Plan B · four fresh 25% cohorts",
+      title: "Historical plan intro × plan design",
+      subtitle: "Original Plan A / Plan B · four 25% cohorts · preserved across upgrades",
       attributeKeys: ["onboarding_plan_variant", "onboarding_plan_design_variant"],
       variants: [
         { key: "animated_plan_a", label: "Animated plan intro + Plan A", attributes: { onboarding_plan_variant: "animated_plan", onboarding_plan_allocation: "50_50", onboarding_plan_design_variant: "plan_a", onboarding_plan_design_allocation: "50_50" } },
@@ -1244,6 +1245,15 @@ function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
         { key: "no_intro_plan_a", label: "No intro + Plan A", attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", onboarding_plan_design_variant: "plan_a", onboarding_plan_design_allocation: "50_50" } },
         { key: "no_intro_plan_b", label: "No intro + Plan B", attributes: { onboarding_plan_variant: "control", onboarding_plan_allocation: "50_50", onboarding_plan_design_variant: "plan_b", onboarding_plan_design_allocation: "50_50" } },
       ],
+      scoreMetrics: ["appu_d7", "appu_d14"],
+      showRetention: true,
+    }),
+    attributeExperiment(scopedFacts, {
+      id: POKY_PLAN_DESIGN_V2_ID,
+      title: "Plan intro × Plan B v2",
+      subtitle: "Plan A 20% / Plan B v2 80% · each with or without intro · migrated users excluded",
+      attributeKeys: ["onboarding_plan_variant", ...POKY_PLAN_DESIGN_V2_ATTRIBUTE_KEYS],
+      variants: POKY_PLAN_DESIGN_V2_VARIANTS,
       scoreMetrics: ["appu_d7", "appu_d14"],
       showRetention: true,
     }),

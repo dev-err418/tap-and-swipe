@@ -53,18 +53,21 @@ test("glow and versy journeys follow each onboarding variant", () => {
   assert.doesNotMatch(sql, /short-1-prayer/);
 });
 
-test("Poky journeys match the four sticky intro and plan combinations", () => {
+test("Poky journeys match historical intro and plan combinations plus B v2", () => {
   const poky = userJourneyDefinition("poky")!;
   assert.equal(poky.variantAttribute, "onboarding_variant");
-  assert.deepEqual(poky.variants.map((variant) => variant.key), ["control_plan_a", "control_plan_b", "animated_plan_a", "animated_plan_b"]);
+  assert.deepEqual(poky.variants.map((variant) => variant.key), ["control_plan_a", "control_plan_b", "animated_plan_a", "animated_plan_b", "control_plan_b_v2", "animated_plan_b_v2"]);
   for (const variant of poky.variants) {
+    assert.equal(variant.steps.some((step) => step.attribute === "customizing_plan_screen_seen"), !variant.key.endsWith("_v2"));
     assert.equal(variant.steps[0].attribute, "welcome_screen_seen");
     assert.equal(variant.steps.at(-1)?.attribute, "onboarding_paywall_screen_seen");
     assert.equal(variant.steps.at(-1)?.paywall, true);
-    assert.equal(variant.steps.at(-3)?.label, variant.key.endsWith("_a") ? "Plan A" : "Plan B");
+    assert.equal(variant.steps.at(-3)?.label, variant.key.endsWith("_v2") ? "Plan B v2" : variant.key.endsWith("_a") ? "Plan A" : "Plan B");
     assert.equal(variant.steps.some((step) => step.attribute === "animated_plan_intro_screen_seen"), variant.key.startsWith("animated_"));
-    assert.equal(variant.steps.length, variant.key.startsWith("animated_") ? 25 : 24);
+    assert.equal(variant.steps.length, (variant.key.startsWith("animated_") ? 25 : 24) - (variant.key.endsWith("_v2") ? 1 : 0) + (variant.key.endsWith("_plan_b") ? 0 : 1));
     assert.equal(variant.steps.some((step) => step.attribute === "doctor_recommended_screen_seen"), false);
+    assert.equal(variant.steps.some((step) => step.attribute === "notifications_screen_seen"), !variant.key.endsWith("_plan_b"));
+    if (variant.key.endsWith("_a")) assert.equal(variant.steps.find((step) => step.attribute === "notifications_screen_seen")?.branch, true);
     assert.equal(variant.steps.some((step) => step.attribute === "current_weight_screen_seen"), false);
     assert.equal(variant.steps.find((step) => step.attribute === "starting_point_screen_seen")?.branch, true);
     const genderIndex = variant.steps.findIndex((step) => step.attribute === "gender_screen_seen");
@@ -103,7 +106,7 @@ test("Poky reports all assigned users and actual paywall views in each variant",
     { variant: "animated_plan_a", key: "onboarding_paywall_screen_seen", users: "20" },
   ] as T[], "poky", 49771, "2026-10-01 00:00:00.000", "2026-10-04 00:00:00.000");
   assert.equal(report.status, "ready");
-  assert.deepEqual(report.variants.map((variant) => variant.completionShare), [0, 0.4, 0.25, 0]);
+  assert.deepEqual(report.variants.map((variant) => variant.completionShare), [0, 0.4, 0.25, 0, 0, 0]);
   const html = renderToStaticMarkup(createElement(UserJourneyFunnel, { report: { ...report, versions: undefined }, windowLabel: "Last 7 days" }));
   assert.match(html, /No intro · Plan B/);
   assert.match(html, /Animated intro · Plan A/);
@@ -115,7 +118,7 @@ test("Poky reports all assigned users and actual paywall views in each variant",
 test("Poky empty and failed queries remain explicit", async () => {
   const empty = buildUserJourney(userJourneyDefinition("poky")!, []);
   assert.equal(empty.status, "empty");
-  assert.match(empty.note!, /updated Poky app/);
+  assert.match(empty.note!, /Plan B v2/);
   const failed = await loadUserJourney(async () => { throw new Error("Query failed"); }, "poky", 49771, "2026-10-01 00:00:00.000", "2026-10-04 00:00:00.000");
   assert.equal(failed.status, "unavailable");
   assert.equal(failed.variants.length, 0);

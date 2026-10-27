@@ -68,19 +68,19 @@ test("the all-time paywall cohort includes v1.1.5 through current releases and d
   assert.deepEqual(report.rows.map((row) => row.installs), [4, 0, 0, 0]);
 });
 
-test("Poky Data shows all four clickable onboarding rows, then paywall flows, without a price table", () => {
+test("Poky Data shows all six clickable onboarding rows, then paywall flows, without a price table", () => {
   const definition = userJourneyDefinition("poky")!;
   const installs = definition.variants.map((variant) => install(variant.key));
   const attributes = new Map(definition.variants.map((variant) => [variant.key, { ...definition.cohortAttributes,
     [definition.variantAttribute]: variant.key, ...assignment() }]));
   const journey = withJourneyConversions(buildUserJourney(definition, []), "poky", installs, [], attributes, start, end, asOf);
-  assert.deepEqual(journey.variants.map((row) => row.conversions!.global.installs), [1, 1, 1, 1]);
-  const html = renderToStaticMarkup(createElement(AppOverviewPanel, { appId: "poky", installs: 4, windowLabel: "Last 7 days",
+  assert.deepEqual(journey.variants.map((row) => row.conversions!.global.installs), [1, 1, 1, 1, 1, 1]);
+  const html = renderToStaticMarkup(createElement(AppOverviewPanel, { appId: "poky", installs: 6, windowLabel: "Last 7 days",
     trend: [], countries: [], plans: [], retention: [], userJourney: journey,
     paywallFlowComparison: buildPokyPaywallFlowComparison(installs, [], attributes, start, end, asOf) }));
-  for (const label of ["No intro · Plan A", "No intro · Plan B", "Animated intro · Plan A", "Animated intro · Plan B",
+  for (const label of ["No intro · Plan A", "No intro · Plan B", "Animated intro · Plan A", "Animated intro · Plan B", "No intro · Plan B v2", "Animated intro · Plan B v2",
     "HP (hard paywall)", "3-day trial", "APPU lift", "Win %", "Refund rate"]) assert.ok(html.includes(label), label);
-  assert.equal((html.match(/aria-label="View screens for/g) ?? []).length, 16);
+  assert.equal((html.match(/aria-label="View screens for/g) ?? []).length, 18);
   assert.match(html, /aria-label="View screens for HP \(hard paywall\)"/);
   assert.match(html, /aria-label="View screens for 3-day trial"/);
   assert.equal((html.match(/Installed on v1\.1\.5\+/g) ?? []).length, 2);
