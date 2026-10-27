@@ -1,6 +1,7 @@
 import { VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
 import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOWS } from "./glow-onboarding-experience";
 import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
+import { POKY_NOTE_EXPERIMENT } from "./poky-paywall-note";
 
 export type ExperimentMapBranch = { id: string; label: string; percent: number };
 export type ExperimentMapTest = {
@@ -105,6 +106,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
             { id: "recovery", label: "Recovery paywall", percent: 100 },
           ],
         },
+        {
+          id: POKY_NOTE_EXPERIMENT, label: "Team note", scope: "Next app build · independent of the base offer", tone: "orange", planned: true,
+          branches: [{ id: "control", label: "Original flow", percent: 20 }, { id: "note", label: "With team note", percent: 80 }],
+        },
       ],
       combinations: plan.branches.flatMap((intro) => planDesign.branches.map((design) => ({
         id: `${intro.id}-${design.id}`,
@@ -113,6 +118,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       }))),
       notes: [
         "Results start September 20, 2026 at 16:00 GMT+2. Everyone now uses the Warm experience.",
+        "The next app build assigns 80% a team note before the existing paywall sequence, and 20% the original sequence. This independent, saved assignment applies to HP, 3-day, 7-day current and 7-day mascot flows, including both plan-intro journeys. The new note comparison includes pre-paywall dropouts and keeps historical offer assignments separate.",
         "The v3 onboarding offer assigns HP, three-day trial, seven-day current and seven-day mascot 25% each. Both seven-day presentations share the same product and price. Trial arms skip High/Name and recovery. Matching flows include saved v1 50/50 and v2 25/25/50 results in the same table; the mascot remains separate.",
         "The plan design draw is a new independent 50/50 assignment. Combined with the existing intro draw, it creates four 25% cohorts. Plan B currently displays a placeholder screen.",
         "The updated app uses native paywalls for everyone, including former Superwall cohorts. The Superwall/native comparison is retired; historical assignments remain stored.",

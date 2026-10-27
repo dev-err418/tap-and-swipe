@@ -29,6 +29,7 @@ import { pokyExperimentStart } from "./poky-experiment-window";
 import type { NativePaywallReport } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { POKY_TRIAL_OFFER_ATTRIBUTE_KEYS, pokyTrialOfferExperiment } from "./poky-trial-offer";
+import { pokyNoteExperiment } from "./poky-paywall-note";
 import { buildPokyPaywallFlowComparison } from "./poky-paywall-flow-cohorts";
 import { buildAppCountryComparisons, type AppCountryComparisons } from "./app-country-comparisons";
 import { paidSubscriptionActivity } from "./paid-subscription-activity";
@@ -1228,6 +1229,10 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
 function pokyExperiments(facts: AppFacts): MobileAppExperiment[] {
   const scopedFacts = { ...facts, startMs: pokyExperimentStart(facts.startMs) };
   return [
+    pokyNoteExperiment({ ...scopedFacts,
+      installs: facts.migrationHistory?.installs ?? scopedFacts.installs,
+      events: facts.migrationHistory?.events ?? scopedFacts.events,
+    }),
     attributeExperiment(scopedFacts, {
       id: "poky-plan-design-combinations",
       title: "Plan intro × plan design",

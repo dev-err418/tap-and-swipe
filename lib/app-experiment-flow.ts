@@ -165,12 +165,25 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
       experimentId: recovery.id, variantId: branch.id });
     edges.push({ from: "cancel", to: branch.id, label: `${branch.percent}%` });
   });
+  const note = map.tests.find((test) => test.id === "poky_paywall_note_v1");
+  if (note) {
+    for (const node of nodes) if (node.x >= 814) node.x += 250;
+    for (let i = edges.length - 1; i >= 0; i--) if (edges[i].from === "language" && edges[i].to.startsWith("offer-")) edges.splice(i, 1);
+    note.branches.forEach((branch, index) => {
+      const id = `note-${branch.id}`;
+      nodes.push({ id, x: 814, y: 220 + index * 220, width: 174, label: branch.label, detail: "Before the assigned flow",
+        tone: "orange", experimentId: note.id, variantId: branch.id });
+      edges.push({ from: "language", to: id, label: `${branch.percent}%` });
+      for (const offerBranch of offer.branches) edges.push({ from: id, to: `offer-${offerBranch.id}`, label: `${offerBranch.percent}%` });
+    });
+  }
   return {
-    width: 1730, height: 700, nodes, edges,
+    width: note ? 1980 : 1730, height: 700, nodes, edges,
     stages: [
       { x: 160, label: "Plan intro" }, { x: 398, label: "Plan A/B" },
-      { x: 618, label: "Audience" }, { x: 814, label: "Offer" },
-      { x: 1054, label: "Current native paywalls" }, { x: 1320, label: "Current recovery trigger" }, { x: 1540, label: "Recovery" },
+      { x: 618, label: "Audience" }, ...(note ? [{ x: 814, label: "Team note" }] : []),
+      { x: 814 + (note ? 250 : 0), label: "Offer" },
+      { x: 1054 + (note ? 250 : 0), label: "Current native paywalls" }, { x: 1320 + (note ? 250 : 0), label: "Current recovery trigger" }, { x: 1540 + (note ? 250 : 0), label: "Recovery" },
     ],
     notes: map.notes,
   };

@@ -2,8 +2,9 @@ import { isPokyOfferAssignment, pokyOfferVariants } from "./poky-onboarding-offe
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
+import { buildPokyNoteReport, type PokyNoteReport } from "./poky-paywall-note";
 
-export type PokyPaywallFlowComparison = PaywallCohortComparison;
+export type PokyPaywallFlowComparison = PaywallCohortComparison & { noteExperiment?: PokyNoteReport };
 
 /** Keep saved offer assignments independent of onboarding route and purchased product. */
 export function buildPokyPaywallFlowComparison(
@@ -33,5 +34,6 @@ export function buildPokyPaywallFlowComparison(
     return { version: variant, installs: conversions.global.installs, tracked: conversions.global.installs, variants: [], conversions };
   });
   return { status: rows.some((row) => row.installs > 0) ? "ready" : "empty", rows, labels,
+    noteExperiment: buildPokyNoteReport(installs, events, attributes, startMs, endMs, asOf),
     warnings: invalidTimes ? [`${invalidTimes} paywall assignments have an invalid or missing assignment time and were excluded.`] : [] };
 }

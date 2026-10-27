@@ -80,7 +80,7 @@ test("Poky Data shows all four clickable onboarding rows, then paywall flows, wi
     paywallFlowComparison: buildPokyPaywallFlowComparison(installs, [], attributes, start, end, asOf) }));
   for (const label of ["No intro · Plan A", "No intro · Plan B", "Animated intro · Plan A", "Animated intro · Plan B",
     "HP (hard paywall)", "3-day trial", "APPU lift", "Win %", "Refund rate"]) assert.ok(html.includes(label), label);
-  assert.equal((html.match(/aria-label="View screens for/g) ?? []).length, 8);
+  assert.equal((html.match(/aria-label="View screens for/g) ?? []).length, 16);
   assert.match(html, /aria-label="View screens for HP \(hard paywall\)"/);
   assert.match(html, /aria-label="View screens for 3-day trial"/);
   assert.equal((html.match(/Installed on v1\.1\.5\+/g) ?? []).length, 2);

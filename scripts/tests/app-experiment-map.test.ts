@@ -56,7 +56,7 @@ test("Glow keeps onboarding and paywall assignments after retiring the Journal c
 
 test("Poky shows independent intro and plan design splits with four equal plan cohorts", () => {
   const map = appExperimentMap("poky")!;
-  for (const experiment of map.tests.filter((row) => !["poky-localized-paywalls", "poky-native-recovery", "poky-trial-vs-current"].includes(row.id))) {
+  for (const experiment of map.tests.filter((row) => !["poky-localized-paywalls", "poky-native-recovery", "poky-trial-vs-current", "poky_paywall_note_v1"].includes(row.id))) {
     assert.deepEqual(experiment.branches.map((branch) => branch.percent), [50, 50]);
   }
   assert.deepEqual(map.tests.find((row) => row.id === "poky-localized-paywalls")?.branches.map((branch) => branch.percent), [100]);
@@ -133,7 +133,7 @@ test("result cards follow the onboarding-to-paywall progression without mutating
 });
 
 test("recovery map uses native assignment identities, never legacy Superwall variants", () => {
-  const recovery = appExperimentMap("poky")!.tests.at(-1)!;
+  const recovery = appExperimentMap("poky")!.tests.find((test) => test.id === "poky-native-recovery")!;
   assert.equal(recovery.id, "poky-native-recovery");
   assert.deepEqual(recovery.branches.map((branch) => branch.id), ["recovery"]);
   const nodes = appExperimentFlow("poky")!.nodes.filter((node) => node.experimentId === recovery.id);
@@ -146,7 +146,7 @@ test("trial branch goes directly to one native paywall without Superwall or reco
   assert.deepEqual(outgoing, []);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "offer-trial_7d"), []);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "offer-trial_7d_mascot"), []);
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "language" && edge.to.startsWith("offer-"))
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "note-note" && edge.to.startsWith("offer-"))
     .map((edge) => [edge.to, edge.label]), [["offer-current", "25%"], ["offer-trial", "25%"], ["offer-trial_7d", "25%"], ["offer-trial_7d_mascot", "25%"]]);
   assert.ok(flow.edges.filter((edge) => edge.from === "offer-current")
     .every((edge) => flow.nodes.find((node) => node.id === edge.to)?.paywallMetric));
@@ -188,7 +188,7 @@ test("Poky map shows four plan cohorts with independent intro assignments", () =
   assert.match(markup, /Intro \+ Plan A \(50\)/);
   assert.match(markup, /No intro \+ Plan B \(50\)/);
   assert.match(markup, /APPU \$0\.40/);
-  assert.doesNotMatch(markup, /Original|Warm experience/);
+  assert.doesNotMatch(markup, /Warm experience/);
 });
 
 test("map labels count assigned people for ordinary variants and leave routing cards uncounted", () => {
@@ -327,8 +327,8 @@ test("Poky flow only includes main paywalls for the selected language", () => {
   const englishPaywalls = english.nodes.filter((node) => node.paywallMetric);
   assert.deepEqual(englishPaywalls.map((node) => node.id), ["624224", "624761"]);
   assert.ok(englishPaywalls.every((node) => node.paywallMetric?.language === "en"));
-  assert.equal(english.edges.filter((edge) => edge.from === "language").length, 4);
-  assert.deepEqual(english.edges.filter((edge) => edge.from === "language").map((edge) => edge.to), ["offer-current", "offer-trial", "offer-trial_7d", "offer-trial_7d_mascot"]);
+  assert.equal(english.edges.filter((edge) => edge.from === "language").length, 2);
+  assert.deepEqual(english.edges.filter((edge) => edge.from === "language").map((edge) => edge.to), ["note-control", "note-note"]);
   assert.equal(english.edges.filter((edge) => edge.from === "offer-current").length, 2);
   assert.equal(english.edges.filter((edge) => edge.to === "cancel").length, 2);
 
@@ -409,7 +409,7 @@ test("Poky branches through intro, plan, offer and paywalls before conditional r
     assert.ok(flow.edges.some((edge) => edge.to === plan.id && edge.label === "50%"));
     assert.ok(flow.edges.some((edge) => edge.from === plan.id && edge.to === "language"));
   }
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "language").map((edge) => edge.label), ["25%", "25%", "25%", "25%"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "language").map((edge) => edge.label), ["20%", "80%"]);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "offer-current").map((edge) => edge.label), ["50%", "50%", "100%", "100%", "100%"]);
   assert.ok(flow.nodes.every((node) => !node.id.includes("superwall")));
   const triggers = flow.edges.filter((edge) => edge.to === "cancel");

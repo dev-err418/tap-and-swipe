@@ -586,6 +586,26 @@ calculation; no new analytics ingestion or database is introduced.
 Attribute loads split saturated queries into disjoint key batches, retaining all users
 instead of serving truncated cohorts. A saturated single key still fails explicitly.
 
+## Team note experiment (next app release)
+
+`poky_paywall_note_v1` adds an independent, sticky **80% note / 20% original flow** assignment. It applies to HP, three-day trial, current seven-day trial and mascot seven-day trial, across both plan-intro routes. The existing offer assignment, trial eligibility, prices, recovery routing and entitlement checks remain unchanged. The note appears before the first screen of the assigned paywall sequence; Continue advances without initiating a purchase or unlocking access. Once Continue is saved, reopening the flow does not repeat the note. Leaving before Continue shows it again. Recovery and debug previews never enroll or display a production note.
+
+Enrollment happens during the existing splash assignment preparation for non-premium users, with a fallback on direct main/trial entry. The assignment is persisted before exposure under `poky.paywall.note.assignment.v1` and republished through the existing Superwall user-attribute queue as scalar JSON in `pn1_poky_paywall_note_v1`. Its fields are:
+
+- `schema: 1`, `experiment: "poky_paywall_note_v1"`, `allocation: "20_80"`
+- `variant: "control" | "note"`
+- `flow: "current" | "trial" | "trial_7d" | "trial_7d_mascot"`
+- Frozen `language`, `assignedAt` (Unix milliseconds), and `isTemporaryUSOverride`
+- Optional first `viewedAt`, `continuedAt`, `paywallViewedAt` timestamps (Unix milliseconds)
+
+The outer `poky_tracking_environment` attribute follows the existing receipt/environment queue. No name, health data, answers or purchase-price estimates are added. Unreadable or unsupported saved records are left untouched and never rerandomized. Milestones require the current presentation and preserve their first timestamp. A note exposure does not set `onboarding_paywall_screen_seen` or record a native paywall view; those occur only after Continue when the assigned paywall actually mounts.
+
+`flow` describes routing at enrollment. A user enrolled during the temporary US override is labeled HP, with `isTemporaryUSOverride: true`; their original offer remains saved. When the override ends, normal offer routing resumes without rewriting the note cohort. Treat results as assignment-based comparisons, not a claim that every later exposure used the initial flow.
+
+Tap & Swipe's shared analytics route adds the Poky team-note comparison independently of the existing Glow note test. It shows the overall 20/80 comparison and HP / three-day / both seven-day pairs with and without the note. Missing old records never become controls. Both groups retain assigned nonpayers and pre-paywall dropouts. Only production records are included, with the established v1.1.5+ first-install eligibility floor. Data tables use the selected install window; the A/B card uses assignment date. Net proceeds, linked renewals and refunds come from existing server purchase events for subscription chains started after assignment. Free trials are not paid conversions. Existing base-offer reports continue unchanged.
+
+The new screen is localized in English, French, German and Spanish. `--preview-note` enables it in the existing debug paywall previews without assignment or analytics writes. The app and dashboard need their normal releases; these source changes do not deploy either product. No new SDK, database, server, campaign or placement is required.
+
 
 ### Versy team note (`versy_paywall_note_v1`, next app build)
 
@@ -596,3 +616,19 @@ Welcome prepares an assignment; reaching reviews enrolls it and freezes route, a
 The existing Superwall attribute query fetches this field. `/analytics/versy` includes a note result card, flow map, optional journey step and a separate paywall comparison with each route’s control/treatment pair. Review and note dropouts remain in the denominator. There is no inferred legacy control cohort. A/B date filters use enrollment; the all-time paywall table uses eligible installs. New subscription chains beginning after enrollment, their linked renewals and refunds follow the saved arm. Unknown amounts withhold the A/B winner; the detailed table keeps existing missing-money indicators. Country and language drilldowns use the same assignment. Price and access reports remain independent.
 
 Native English preview images are under `public/analytics/versy/paywall-note/`. The preview shows the shared reviews and optional note; subsequent Widget or Scroll payment screens retain their existing sequence. No new backend, database, Superwall campaign or subscription product is required.
+
+## Poky onboarding step removal — October 27, 2026
+
+The current Poky journey goes from gender to name, then height and weight in all four variants.
+`doctor_recommended_screen_seen` is retired and excluded from the current funnel;
+older stored attributes remain untouched. The closing order matches the app:
+creating plan → optional animated intro → plan → reviews → paywall.
+
+Poky's height screen now collects height and current weight together. The old
+`current_weight_screen_seen` is retired; `starting_point_screen_seen` replaces it
+as an optional branch for people already taking GLP-1. New starters go directly
+to goal weight. The funnel records screen visibility only, never weights, height,
+or treatment dates, and excludes this branch from main-path drop-off rankings.
+
+Name now follows gender; goal weight proceeds directly to the goal summary and
+weekly pace. The analytics definition follows this order in every plan variant.

@@ -61,9 +61,21 @@ test("Poky journeys match the four sticky intro and plan combinations", () => {
     assert.equal(variant.steps[0].attribute, "welcome_screen_seen");
     assert.equal(variant.steps.at(-1)?.attribute, "onboarding_paywall_screen_seen");
     assert.equal(variant.steps.at(-1)?.paywall, true);
-    assert.equal(variant.steps.at(-2)?.label, variant.key.endsWith("_a") ? "Plan A" : "Plan B");
+    assert.equal(variant.steps.at(-3)?.label, variant.key.endsWith("_a") ? "Plan A" : "Plan B");
     assert.equal(variant.steps.some((step) => step.attribute === "animated_plan_intro_screen_seen"), variant.key.startsWith("animated_"));
-    assert.equal(variant.steps.length, variant.key.startsWith("animated_") ? 26 : 25);
+    assert.equal(variant.steps.length, variant.key.startsWith("animated_") ? 25 : 24);
+    assert.equal(variant.steps.some((step) => step.attribute === "doctor_recommended_screen_seen"), false);
+    assert.equal(variant.steps.some((step) => step.attribute === "current_weight_screen_seen"), false);
+    assert.equal(variant.steps.find((step) => step.attribute === "starting_point_screen_seen")?.branch, true);
+    const genderIndex = variant.steps.findIndex((step) => step.attribute === "gender_screen_seen");
+    assert.equal(variant.steps[genderIndex + 1].attribute, "first_name_screen_seen");
+    const goalIndex = variant.steps.findIndex((step) => step.attribute === "goal_weight_screen_seen");
+    assert.deepEqual(variant.steps.slice(goalIndex + 1, goalIndex + 3).map((step) => step.attribute), [
+      "weight_left_screen_seen", "pace_screen_seen",
+    ]);
+    assert.deepEqual(variant.steps.slice(-3).map((step) => step.attribute), [
+      "custom_plan_screen_seen", "review_support_screen_seen", "onboarding_paywall_screen_seen",
+    ]);
     assert.equal(new Set(variant.steps.map((step) => step.attribute)).size, variant.steps.length);
     assert.equal(variant.steps.some((step) => step.attributeKey || step.attributeSuffix), false);
   }

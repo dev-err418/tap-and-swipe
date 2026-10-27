@@ -1,8 +1,10 @@
 import type { MobileAppExperiment, MobileAppExperimentSlice, MobileAppExperimentVariant } from "./mobile-app-analytics";
 import { isPokyOfferAssignment, pokyOfferVariants, POKY_OFFER_VARIANTS } from "./poky-onboarding-offer";
+import { POKY_NOTE_ATTRIBUTE } from "./poky-paywall-note";
 export { POKY_ONBOARDING_OFFER_EXPERIMENT } from "./poky-onboarding-offer";
 
 export const POKY_TRIAL_OFFER_ATTRIBUTE_KEYS = [
+  POKY_NOTE_ATTRIBUTE,
   "onboarding_offer_experiment",
   "onboarding_offer_variant",
   "onboarding_offer_assigned_at",

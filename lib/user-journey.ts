@@ -237,11 +237,10 @@ const POKY_STEPS: UserJourneyStep[] = [
   ["shot_frequency", "Frequency"],
   ["right_place", "Right place"],
   ["gender", "Gender"],
-  ["doctor_recommended", "Doctor"],
-  ["height", "Height"],
-  ["current_weight", "Weight"],
-  ["goal_weight", "Goal weight"],
   ["first_name", "Name"],
+  ["height", "Height & weight"],
+  ["starting_point", "Starting point"],
+  ["goal_weight", "Goal weight"],
   ["weight_left", "Weight result"],
   ["pace", "Pace"],
   ["app_impact", "App impact"],
@@ -249,9 +248,11 @@ const POKY_STEPS: UserJourneyStep[] = [
   ["brand_education", "Education"],
   ["side_effect", "Side effects"],
   ["motivation", "Motivation"],
-  ["review_support", "Reviews"],
   ["customizing_plan", "Creating plan"],
-].map(([name, label]) => ({ attribute: `${name}_screen_seen`, label }));
+].map(([name, label]) => ({
+  attribute: `${name}_screen_seen`, label,
+  ...(name === "starting_point" ? { branch: true } : {}),
+}));
 
 function pokyVariant(key: string, label: string, animated: boolean, plan: string): UserJourneyVariant {
   return {
@@ -261,6 +262,7 @@ function pokyVariant(key: string, label: string, animated: boolean, plan: string
       ...POKY_STEPS,
       ...(animated ? [{ attribute: "animated_plan_intro_screen_seen", label: "Plan intro" }] : []),
       { attribute: "custom_plan_screen_seen", label: plan },
+      { attribute: "review_support_screen_seen", label: "Reviews" },
       { attribute: "onboarding_paywall_screen_seen", label: "Paywall", paywall: true },
     ],
   };
