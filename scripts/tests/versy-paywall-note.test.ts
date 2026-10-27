@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import VersyPaywallNotePanel from "../../components/analytics/VersyPaywallNotePanel";
 import { buildVersyNoteReport, parseVersyNoteAssignment, versyNoteExperiment, VERSY_NOTE_ATTRIBUTE, VERSY_NOTE_EXPERIMENT, VERSY_NOTE_FLOWS, type VersyNoteAssignment } from "../../lib/versy-paywall-note";
 import { appExperimentFlow } from "../../lib/app-experiment-flow";
 
@@ -44,6 +47,13 @@ test("all assigned nonpayers, including note dropouts, stay in their frozen flow
   assert.deepEqual(report.flows.rows.map((r) => r.installs), Array(6).fill(1));
   assert.deepEqual(report.reached.note, { note: 3, continued: 0, paywall: 0 });
   assert.equal(report.overall.rows[1].conversions!.global.proceeds, 0);
+  const html = renderToStaticMarkup(createElement(VersyPaywallNotePanel, { report }));
+  assert.doesNotMatch(html, /<details|<summary|Compare within each onboarding flow/);
+  assert.match(html, /Paywall flows · note variants/);
+  for (const { label } of VERSY_NOTE_FLOWS) {
+    assert.ok(html.includes(`View screens for ${label}"`));
+    assert.ok(html.includes(`View screens for ${label} + note"`));
+  }
 });
 
 test("trial starts, paid renewals and refunds follow the assignment without duplicating people or money", () => {

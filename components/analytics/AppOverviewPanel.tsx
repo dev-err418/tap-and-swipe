@@ -119,7 +119,7 @@ export default function AppOverviewPanel({
     ? total.paid / total.installs : null;
   const countryPicker = countryComparisons?.options.length ? <div className="flex min-w-0 overflow-x-auto scrollbar-none">
         <div className={cn(DASHBOARD_TAB_LIST_CLASS, "mx-auto h-auto min-h-[30px] shrink-0")} role="group" aria-label="Country">
-          {[{ code: "all", installs: 0 }, ...countryComparisons.options].map((option) => <button key={option.code}
+          {[{ code: "all" }, ...countryComparisons.options].map((option) => <button key={option.code}
             type="button" aria-pressed={country === option.code} onClick={() => setPickedCountry(option.code)}
             className={cn(DASHBOARD_TAB_CLASS, "whitespace-nowrap px-3", country === option.code ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS)}>
             <span aria-hidden="true" className="mr-1.5">{option.code === "all" ? "🌍" : countryFlag(option.code)}</span>

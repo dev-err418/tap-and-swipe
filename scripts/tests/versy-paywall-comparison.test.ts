@@ -14,9 +14,9 @@ const assignment = (extra = {}) => ({ country: "US", versy_tracking_environment:
   onboarding_paywall_experiment_id: "versy_yearly_paywalls_v1", onboarding_paywall_access_variant: "hard",
   yearly_price_experiment_id: "versy_yearly_price_v3", yearly_price_allocation: "50_50",
   yearly_price_product_id: VERSY_YEARLY_PRICES[0].productID, yearly_price_assigned_at: String(start), ...extra });
-type Event = Parameters<typeof buildVersyPaywallComparison>[1][number];
+type Event = Parameters<typeof buildAppCountryComparisons>[0]["events"][number];
 const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUserId, originalTransactionId: appUserId,
-  transactionId: appUserId, name: "initial_purchase", periodType: "trial", netProceeds: 0, isRefund: false,
+  transactionId: appUserId, name: "initial_purchase", periodType: "trial", netProceeds: 0, isRefund: false, isTrialConversion: false,
   eventTs: start + hour, attributionTs: start + hour, expiresAt: start + 170 * hour, ...extra });
 
 test("only valid seven-day cohorts enter; widget flows pool and Scroll ignores its access draw", () => {
@@ -81,6 +81,7 @@ test("expiry and missing data are explicit, and no immature user is counted as a
 
 test("country slicing rebuilds the comparison, retaining anonymous transaction follow-ups", () => {
   const report = buildAppCountryComparisons({ appId: "versy", asOf, journey: null,
+    countries: [{ country: "US", proceeds: 0 }, { country: "FR", proceeds: 0 }, { country: "MX", proceeds: 0 }],
     installs: [install("us"), install("fr", { country: "FR" }), install("mx", { country: "MX" })],
     attributes: new Map([["us", assignment()], ["fr", assignment({ country: "FR" })], ["mx", assignment({ country: "MX" })]]),
     events: [event("us"), event("fr"), event("", { originalTransactionId: "us", name: "cancellation", eventTs: start + 30 * hour })],
@@ -88,5 +89,9 @@ test("country slicing rebuilds the comparison, retaining anonymous transaction f
   assert.equal(report.slices.US.versyPaywallComparison!.checkpoints.hard[1].uncancelledTrials, 0);
   assert.equal(report.slices.FR.versyPaywallComparison!.checkpoints.hard[1].uncancelledTrials, 1);
   assert.equal(report.slices.MX.versyPaywallComparison!.status, "empty");
+  const html = renderToStaticMarkup(createElement(VersyPaywallComparisonPanel, { report: report.slices.US.versyPaywallComparison! }));
+  assert.ok(html.indexOf("Onboarding paywalls") < html.indexOf("Paywall flows · note variants"));
+  assert.match(html, /Hard Widget/);
+  assert.doesNotMatch(html, /<details|<summary/);
   assert.match(renderToStaticMarkup(createElement(VersyPaywallComparisonPanel, { report: null })), /comparison is unavailable/);
 });

@@ -39,6 +39,12 @@ export function buildGlowPaywallCohortComparisons(
   // Filter by install dates above, then validate assignments independently of the date picker.
   const flows = onboardingCohort(records, 0, asOf + 1, asOf, GLOW_PAYWALL_FLOW_ID);
   const historicalFlows = onboardingCohort(records, 0, asOf + 1, asOf, GLOW_PAYWALL_FLOW_LEGACY_ID);
+  // The app preserves v1 assignments across upgrades. Keep those users in the
+  // original flow rows, and prefer their saved v1 assignment if both keys exist.
+  const allFlows = {
+    records: new Map([...flows.records, ...historicalFlows.records]),
+    warnings: [...historicalFlows.warnings, ...flows.warnings],
+  };
   const parsedPrices = parsePaywallAttributes(records.filter((row) => PRICE_KEYS.includes(row.key)));
   const prices = new Map<string, Assignment>();
   for (const { appUserId } of selected) {
@@ -84,10 +90,10 @@ export function buildGlowPaywallCohortComparisons(
       GLOW_YEARLY_PRICES.map(({ id, price }) => [`${flow}|${id}`, `${label} · ${price}`]))), [...cohort.warnings, ...priceWarnings]);
   };
   return {
-    flows: compare(flows.records, flowLabels, flows.warnings),
+    flows: compare(allFlows.records, flowLabels, allFlows.warnings),
     prices: compare(prices, Object.fromEntries(GLOW_YEARLY_PRICES.map(({ id, price }) => [id, price])),
       priceWarnings),
-    flowPrices: compareFlowPrices(flows, baseFlowLabels),
+    flowPrices: compareFlowPrices(allFlows, baseFlowLabels),
     historicalFlows: compare(historicalFlows.records, historicalLabels, historicalFlows.warnings),
     historicalFlowPrices: compareFlowPrices(historicalFlows, historicalLabels),
   };

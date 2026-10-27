@@ -21,7 +21,7 @@ The two base flows remain 50/50. Both IAM and manifest-audio participate. The tr
 
 Assignment is saved before exposure. Enrollment starts on the **first screen of the assigned sequence**: testimonials for note arms, trial introduction for controls. This includes users who leave at testimonials or the note in the denominator. Drafts resume on the saved screen, and Back traverses the same assigned sequence. Debug previews never enroll. Existing `v1` assignments keep their original `standard`/`versy_reminder` arm, `50_50` allocation, storage key and `gpf1_onboarding_paywall_flow_v1` reporting attribute; neither exposed nor saved-but-unexposed legacy assignments are rerolled. SDK startup republishes enrolled records under their own experiment key.
 
-Tap & Swipe reads both versions. The active A/B report, map and Data flow table show the four v2 variants. The Paywall flow × yearly price table combines note and no-note assignments into Current flow and Versy reminder flow, keeping the six price/trial choices separate. Metrics are recalculated from the combined users; the preview can switch between With note and Without note. The old 50/50 report stays in a separate historical section. Production/randomized records only; assigned users, paywall reach, paid conversion, net proceeds and total APPU include non-payers and pre-paywall dropouts. Recovery purchases, Weekly purchases, renewals and refunds retain their original attribution. Free trial starts are not paid conversions. The user-journey funnel shows testimonials and note as optional branches so controls are not reported as dropping out. Preview dialogs show both new screens before the relevant existing three-screen flow.
+Tap & Swipe reads both versions. The Data flow table preserves v1 results in Current flow and Versy reminder flow, adds v2 no-note users to those same rows, and shows the two new note variants separately. A saved v1 assignment takes precedence if both keys exist, matching the app, so upgrades cannot count twice. The Paywall flow × yearly price table includes both versions and combines note and no-note assignments into the two base flows, keeping the six price/trial choices separate. Metrics are recalculated from the combined users; the preview can switch between With note and Without note. Previous results stay visible in the main tables without an expandable historical section. The dedicated A/B report and map retain the original experiment identities. Production/randomized records only; assigned users, paywall reach, paid conversion, net proceeds and total APPU include non-payers and pre-paywall dropouts. Recovery purchases, Weekly purchases, renewals and refunds retain their original attribution. Free trial starts are not paid conversions. The user-journey funnel shows testimonials and note as optional branches so controls are not reported as dropping out. Preview dialogs show both new screens before the relevant existing three-screen flow.
 
 The app and dashboard changes require their normal releases; source changes do not deploy either product. No new analytics backend, database, Superwall campaign or placement is added.
 
@@ -315,7 +315,7 @@ active-trials card is removed from Data; the trial-survival chart remains.
 
 Glow also has compact **Paywall flows** and **Yearly prices** tables below User
 journey. Both use the first-install v1.8.3+ cohort across all time, in all languages and countries. Flow membership uses validated randomized production
-`gpf1_onboarding_paywall_flow_v2` for the four current arms, with `gpf1_onboarding_paywall_flow_v1` kept in separate historical tables; prices read `gp1_a_native_yearly_prices_v4` (three 7-day arms) and
+`gpf1_onboarding_paywall_flow_v2` for the four current arms, with `gpf1_onboarding_paywall_flow_v1` retained in the main no-note flow rows; prices read `gp1_a_native_yearly_prices_v4` (three 7-day arms) and
 `gp1_a_native_yearly_prices_v5` (six price/trial arms). Matching 7-day arms are pooled,
 while 3-day arms remain distinct; a user with both records counts once under the original v4 assignment. Startup price assignment can precede the SDK's install timestamp;
 this does not exclude the install. Outcomes begin at the later of installation
@@ -442,7 +442,7 @@ On reaching that treatment, the native ledger permits Weekly in the assignment a
 
 Splash loading awaits all six annual price/trial products, Weekly and recovery-offer preloads. The app keeps the full catalog separate from the annual-only primary presentation.
 
-The **Paywall flow × yearly price** table has twelve rows (two base flows × three prices × two trial lengths). Current flow pools `standard` + `standard_note`; Versy reminder flow pools `versy_reminder` + `versy_reminder_note`. The separate Paywall flows table and A/B report retain all four arms. The v1 experiment stays in the historical section.
+The **Paywall flow × yearly price** table has twelve rows (two base flows × three prices × two trial lengths). Current flow pools `standard` + `standard_note`; Versy reminder flow pools `versy_reminder` + `versy_reminder_note`. Both base flows retain v1 users alongside v2 users. The separate Paywall flows table retains all four arms, with v1 history in the no-note rows. Dedicated A/B reports preserve each experiment's identity.
 Membership requires both validated assignments for the same install; it is never
 inferred by multiplying aggregate totals. Outcomes start after the later assignment
 and installation. Users missing either assignment remain in their separate table
@@ -490,10 +490,12 @@ underlying detailed report modules and authenticated API remain available.
 
 ### Country selector
 
-App detail has All countries plus the three known countries with the most unique
-first installs in that app’s minimum-version cohort, ranked by installs with country
-code as the tie-breaker. All countries also includes smaller/unknown countries.
-Country is frozen on the earliest production device-attributes event. The selector
+App detail has All countries plus the three known countries with the highest net
+proceeds earned during the selected date period, with country code as the tie-breaker.
+Ranking uses the period’s transaction-country totals, including renewals and refunds,
+independently of the minimum-version experiment cohort and the fixed 30-day bottom
+charts. All countries also includes smaller/unknown countries. Within the cohort
+reports, country is frozen on the earliest production device-attributes event. The selector
 updates the overview and date-window charts, App versions, onboarding, paywall/price
 tables, screen-funnel modals and Trial survival together. Version cutoffs and
 maturity rules remain unchanged. A country with no installs in the selected date
@@ -613,7 +615,7 @@ The note has its own sticky 80% treatment / 20% control draw. Both variants keep
 
 Welcome prepares an assignment; reaching reviews enrolls it and freezes route, access, language and yearly product. Users resuming an older onboarding are not retrospectively enrolled. The scalar Superwall user attribute `vn1_versy_paywall_note_v1` carries JSON: schema `1`, experiment ID, allocation `20_80`, production environment, randomized `true`, variant `control`/`note`, flow, language (`en`/`es`/`pt`/`de`), access, yearlyProduct and assignedAt (Unix milliseconds). Optional first timestamps: viewedAt, continuedAt, paywallViewedAt. Development, sandbox, corrupt and temporally inconsistent assignments are excluded.
 
-The existing Superwall attribute query fetches this field. `/analytics/versy` includes a note result card, flow map, optional journey step and a separate paywall comparison with each route’s control/treatment pair. Review and note dropouts remain in the denominator. There is no inferred legacy control cohort. A/B date filters use enrollment; the all-time paywall table uses eligible installs. New subscription chains beginning after enrollment, their linked renewals and refunds follow the saved arm. Unknown amounts withhold the A/B winner; the detailed table keeps existing missing-money indicators. Country and language drilldowns use the same assignment. Price and access reports remain independent.
+The existing Superwall attribute query fetches this field. The Versy app detail keeps the previous seven-day paywall comparison first, followed by an always-visible table of each route’s control/treatment pair, using the same flat layout and clickable screen previews as Glow. There is no expand/collapse control. The overall note result card, flow map and optional journey step remain available. Review and note dropouts remain in the denominator. There is no inferred legacy control cohort; older users retain their existing paywall results without entering the new note test. A/B date filters use enrollment; the all-time paywall table uses eligible installs. New subscription chains beginning after enrollment, their linked renewals and refunds follow the saved arm. Unknown amounts withhold the A/B winner; the detailed table keeps existing missing-money indicators. Country and language drilldowns use the same assignment. Price and access reports remain independent.
 
 Native English preview images are under `public/analytics/versy/paywall-note/`. The preview shows the shared reviews and optional note; subsequent Widget or Scroll payment screens retain their existing sequence. No new backend, database, Superwall campaign or subscription product is required.
 

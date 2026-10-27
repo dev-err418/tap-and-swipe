@@ -73,7 +73,8 @@ export default function GlowPaywallCohortTables({ report, windowLabel }: {
         {!comparison || comparison.status === "unavailable"
           ? <p role="status" className="py-2 text-sm text-muted-foreground">{title} reporting is unavailable. Refresh to retry.</p>
           : <>
-            {key === "flowPrices" && <p className="pb-2 text-xs text-muted-foreground">Note and no-note variants are combined within each flow.</p>}
+            {key === "flows" && <p className="pb-2 text-xs text-muted-foreground">Current flow and Versy reminder flow include their previous results. New note variants are shown separately.</p>}
+            {key === "flowPrices" && <p className="pb-2 text-xs text-muted-foreground">Includes previous results. Note and no-note variants are combined within each flow.</p>}
             {comparison.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
             <JourneyVersionComparison cohorts={comparison.rows} rowLabels={comparison.labels} rowHeading={heading}
               allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate
@@ -81,17 +82,6 @@ export default function GlowPaywallCohortTables({ report, windowLabel }: {
           </>}
       </DashboardCard>;
     })}
-    {report?.historicalFlows?.status === "ready" && <details className="rounded-2xl border p-4">
-      <summary className="cursor-pointer text-sm font-medium">Previous 50/50 paywall-flow experiment</summary>
-      {(["historicalFlows", "historicalFlowPrices"] as const).map((key) => {
-        const comparison = report[key];
-        return comparison && <DashboardCard key={key} title={key === "historicalFlows" ? "Previous paywall flows" : "Previous flows × yearly price"}>
-          {comparison.warnings.map((warning) => <p key={warning} role="status" className="text-xs text-muted-foreground">{warning}</p>)}
-          <JourneyVersionComparison cohorts={comparison.rows} rowLabels={comparison.labels} rowHeading="Flow"
-            allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate onRowClick={openPreview} />
-        </DashboardCard>;
-      })}
-    </details>}
     <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-[min(96vw,1000px)]"
       onCloseAutoFocus={(event) => { event.preventDefault(); previewTrigger.current?.focus(); }}>
       <DialogHeader>

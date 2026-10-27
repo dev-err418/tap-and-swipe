@@ -144,24 +144,37 @@ test("six price/trial rows preserve seven-day history and never double-count an 
   assert.equal(report.prices.rows[3].conversions!.global.proceeds, 6);
 });
 
-test("note flows share base-flow price intersections while the old split remains historical", () => {
+test("adding note variants preserves previous flow results and never reenrolls an upgraded user", () => {
+  const legacy = (variant: string) => flow(variant, start + day,
+    { experiment: GLOW_PAYWALL_FLOW_LEGACY_ID, allocation: "50_50" });
   const attrs = new Map<string, Record<string, string>>([
     ["current-note", { [GLOW_PAYWALL_FLOW_KEY]: flow("standard_note"), [priceKey]: price() }],
     ["reminder-note", { [GLOW_PAYWALL_FLOW_KEY]: flow("versy_reminder_note"), [priceKey]: price("yr_59") }],
-    ["old", { [GLOW_PAYWALL_FLOW_LEGACY_KEY]: flow("standard", start + day,
-      { experiment: GLOW_PAYWALL_FLOW_LEGACY_ID, allocation: "50_50" }), [priceKey]: price() }],
+    ["old", { [GLOW_PAYWALL_FLOW_LEGACY_KEY]: legacy("standard"),
+      [GLOW_PAYWALL_FLOW_KEY]: flow("standard_note", start + 3 * day), [priceKey]: price() }],
+    ["old-reminder", { [GLOW_PAYWALL_FLOW_LEGACY_KEY]: legacy("versy_reminder"), [priceKey]: price("yr_59") }],
+    ["old-free", { [GLOW_PAYWALL_FLOW_LEGACY_KEY]: legacy("standard"), [priceKey]: price() }],
+    ["current-control", { [GLOW_PAYWALL_FLOW_KEY]: flow(), [priceKey]: price() }],
   ]);
   const report = buildGlowPaywallCohortComparisons([...attrs.keys()].map((id) => install(id)),
-    [event("reminder-note"), event("old")], attrs, start, end, asOf);
-  assert.deepEqual(report.flows.rows.map((r) => r.installs), [0, 1, 0, 1]);
-  assert.equal(report.flowPrices.rows.find((r) => r.version === "standard|yr_34")?.installs, 1);
-  assert.equal(report.flowPrices.rows.find((r) => r.version === "versy_reminder|yr_59")?.conversions?.global.proceeds, 10);
-  assert.equal(report.historicalFlows?.rows[0].installs, 1);
-  assert.equal(report.historicalFlows?.rows[0].conversions?.global.proceeds, 10);
+    [event("reminder-note"), event("old"), event("old-reminder"), event("current-control"),
+      event("", { originalTransactionId: "old", transactionId: "renewal", name: "renewal", netProceeds: 12, eventTs: end + day }),
+      event("", { originalTransactionId: "old", transactionId: "renewal", name: "cancellation", isRefund: true, netProceeds: -2, eventTs: end + 2 * day }),
+    ], attrs, start, end, asOf);
+  assert.deepEqual(report.flows.rows.map((r) => r.installs), [3, 1, 1, 1]);
+  assert.deepEqual(report.flows.rows.map((r) => r.conversions!.global.proceeds), [30, 0, 10, 10]);
+  assert.equal(report.flows.rows[0].conversions!.global.refunds, 1);
+  const joint = report.flowPrices.rows.find((r) => r.version === "standard|yr_34")!;
+  assert.equal(joint.installs, 4);
+  assert.equal(joint.conversions!.global.proceeds, 30);
+  assert.equal(report.flowPrices.rows.find((r) => r.version === "versy_reminder|yr_59")?.conversions?.global.proceeds, 20);
+  assert.equal(report.historicalFlows?.rows[0].installs, 2);
+  assert.equal(report.historicalFlows?.rows[0].conversions?.global.proceeds, 20);
   const html = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report, windowLabel: "All time" }));
   assert.match(html, /Current flow \+ note/);
   assert.match(html, /Versy reminder flow \+ note/);
-  assert.match(html, /Previous 50\/50 paywall-flow experiment/);
+  assert.match(html, /include their previous results/);
+  assert.doesNotMatch(html, /<details|Previous 50\/50 paywall-flow experiment/);
 });
 
 test("joint base-flow rows pool note and control users without averaging rates or mixing trial lengths", () => {

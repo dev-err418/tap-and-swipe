@@ -8,7 +8,6 @@ import type { VersyPaywallComparison } from "@/lib/versy-paywall-comparison";
 
 export default function VersyPaywallComparisonPanel({ report }: { report: VersyPaywallComparison | null }) {
   return <>
-    {report?.noteExperiment && <VersyPaywallNotePanel report={report.noteExperiment} />}
     <DashboardCard title="Onboarding paywalls · 7-day trials" contentClassName="pt-0"
     action={<span className="text-xs text-muted-foreground">{experimentCohortLabel("versy")}</span>}>
     {!report || report.status === "unavailable"
@@ -18,5 +17,7 @@ export default function VersyPaywallComparisonPanel({ report }: { report: VersyP
         <JourneyVersionComparison cohorts={report.rows} rowLabels={report.labels} rowHeading="Paywall"
           allUsersOnly showInstallPaid showRefundRate />
       </>}
-  </DashboardCard></>;
+  </DashboardCard>
+    {report?.noteExperiment && <VersyPaywallNotePanel report={report.noteExperiment} />}
+  </>;
 }

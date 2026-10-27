@@ -18,11 +18,13 @@ const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUs
   transactionId: appUserId, name: "initial_purchase", periodType: "normal", netProceeds: 30, isRefund: false,
   isTrialConversion: false, eventTs: start + day, attributionTs: start + day, expiresAt: 0, ...extra });
 
-test("top three countries count unique first installs, excluding unknown countries with stable tie ordering", () => {
+test("top three countries rank period proceeds, excluding unknown countries with stable tie ordering", () => {
   assert.deepEqual(topAnalyticsCountries([
-    install("us1", "US"), install("us2", "us"), install("us1", "FR", "1.8.4", start + day),
-    install("mx", "MX"), install("ca", "CA"), install("gb", "GB"), install("unknown", "unknown"),
-  ]), [{ code: "US", installs: 2 }, { code: "CA", installs: 1 }, { code: "GB", installs: 1 }]);
+    { country: "US", proceeds: 100 }, { country: "us", proceeds: -90 },
+    { country: "MX", proceeds: 50 }, { country: "CA", proceeds: 30 }, { country: "GB", proceeds: 30 },
+    { country: "unknown", proceeds: 500 }, { country: "FR", proceeds: Number.NaN },
+  ]), [{ code: "MX", proceeds: 50 }, { code: "CA", proceeds: 30 }, { code: "GB", proceeds: 30 }]);
+  assert.deepEqual(topAnalyticsCountries([]), []);
 });
 
 for (const appId of ["glow", "poky", "versy"] as const) {
@@ -44,6 +46,7 @@ for (const appId of ["glow", "poky", "versy"] as const) {
       { variant, key: ASSIGNED_KEY, users: assigned }, { variant, key: definition.variants[0].steps[0].attribute, users: assigned },
     ]);
     const report = buildAppCountryComparisons({ appId, asOf,
+      countries: [{ country: "US", proceeds: 10 }, { country: "MX", proceeds: 30 }],
       installs: [install("payer", "US", experimentMinimumInstallVersion(appId)), install("free", "US", experimentMinimumInstallVersion(appId)),
         install("mexico", "MX", experimentMinimumInstallVersion(appId)), install("old", "FR", "1.0.0"),
         install("old", "US", experimentMinimumInstallVersion(appId), start + day)],
@@ -54,7 +57,7 @@ for (const appId of ["glow", "poky", "versy"] as const) {
       attributes: new Map(["payer", "free", "mexico", "old"].map((id) => [id, attrs])),
       journey: journey(3), journeyCountries: { US: journey(2), MX: journey(1) },
     });
-    assert.deepEqual(report.options, [{ code: "US", installs: 2 }, { code: "MX", installs: 1 }]);
+    assert.deepEqual(report.options, [{ code: "MX", proceeds: 30 }, { code: "US", proceeds: 10 }]);
     for (const [code, installs, proceeds] of [["US", 2, 10], ["MX", 1, 30]] as const) {
       const slice = report.slices[code];
       assert.equal(slice.userJourney!.variants[0].assigned, installs);
@@ -78,6 +81,7 @@ for (const appId of ["glow", "poky", "versy"] as const) {
     assert.match(html, /aria-pressed="true"[^>]*><span[^>]*>🌍<\/span>All countries/);
     assert.match(html, /United States/);
     assert.match(html, /Mexico/);
+    assert.ok(html.indexOf("Mexico") < html.indexOf("United States"));
   });
 }
 
@@ -86,6 +90,7 @@ test("Poky pools matching flows from different releases within each country", ()
     onboarding_offer_experiment: experiment, onboarding_offer_allocation: allocation,
     onboarding_offer_variant: "trial", onboarding_offer_assigned_at: String(start) });
   const report = buildAppCountryComparisons({ appId: "poky", asOf, journey: null,
+    countries: [{ country: "US", proceeds: 30 }, { country: "FR", proceeds: 100 }],
     installs: [install("v1", "US", "1.1.5"), install("v2", "US", "1.1.10"), install("v3", "FR", "1.1.12")],
     attributes: new Map([
       ["v1", assignment("poky_onboarding_trial_v1", "50_50")],

@@ -618,7 +618,7 @@ async function loadSuperwallAppAnalytics(
     paywallFlowComparison: app.id === "poky" && comparisonFacts
       ? buildPokyPaywallFlowComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes,
           comparisonStartMs, comparisonEndMs, comparisonEndMs) : null,
-    countryComparisons: comparisonFacts ? buildAppCountryComparisons({ appId: app.id, installs: comparisonFacts.installs,
+    countryComparisons: comparisonFacts ? buildAppCountryComparisons({ appId: app.id, countries, installs: comparisonFacts.installs,
       events: comparisonFacts.events, attributes: comparisonFacts.attributes, asOf: comparisonEndMs,
       journey: journeyBase, journeyCountries }) : undefined,
   };
