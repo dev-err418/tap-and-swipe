@@ -18,7 +18,7 @@ test("the new 80/20 split feeds all four existing offers and its attribute is fe
   const flow = appExperimentFlow("poky")!;
   assert.deepEqual(flow.edges.filter((e) => e.from === "language").map((e) => [e.to, e.label]), [["note-control", "20%"], ["note-note", "80%"]]);
   for (const treatment of ["note-control", "note-note"]) {
-    assert.deepEqual(flow.edges.filter((e) => e.from === treatment).map((e) => [e.to, e.label]), POKY_NOTE_FLOWS.map((f) => [`offer-${f.key}`, "25%"]));
+    assert.deepEqual(flow.edges.filter((e) => e.from === treatment).map((e) => [e.to, e.label]), POKY_NOTE_FLOWS.map((f) => [`offer-${f.key}`, f.key === "current" ? "50%" : "16⅔%"]));
   }
   assert.ok(POKY_TRIAL_OFFER_ATTRIBUTE_KEYS.includes(POKY_NOTE_ATTRIBUTE));
 });

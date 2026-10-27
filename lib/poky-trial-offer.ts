@@ -115,7 +115,7 @@ export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now()): Mobil
     id: "poky-trial-vs-current",
     title: "Paywalls · HP vs 3-day vs 7-day current vs mascot",
     subtitle: "Matching flows across releases · all languages",
-    planningNote: "Unchanged flows include randomized assignments from the 50/50, 25/25/50 and 25/25/25/25 releases. Trial starts are free. APPU includes later paid renewals and refunds from subscriptions that began after assignment. All assigned users count, including people who never opened a paywall. Legacy assignments and sandbox events are excluded.",
+    planningNote: "New assignments use 50% HP and 50% trials, split equally between 3-day, 7-day current and 7-day mascot. Unchanged flows also include saved randomized assignments from the older 50/50, 25/25/50 and 25/25/25/25 releases. Trial starts are free. APPU includes later paid renewals and refunds from subscriptions that began after assignment. All assigned users count, including people who never opened a paywall. Legacy assignments, temporary US HP overrides and sandbox events are excluded.",
     variants: overall, languageComparisons,
     languageVariants: Object.fromEntries(languageComparisons.map((row) => [row.language, row.variants])),
     scoreMetrics: ["appu", "download_paid"], randomized: true,

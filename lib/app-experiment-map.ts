@@ -2,6 +2,7 @@ import { VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
 import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOWS } from "./glow-onboarding-experience";
 import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
 import { POKY_NOTE_EXPERIMENT } from "./poky-paywall-note";
+import { POKY_OFFER_VARIANTS } from "./poky-onboarding-offer";
 
 export type ExperimentMapBranch = { id: string; label: string; percent: number };
 export type ExperimentMapTest = {
@@ -81,13 +82,10 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         plan,
         planDesign,
         {
-          id: "poky-trial-vs-current", label: "Onboarding offer", scope: "New installs · saved 25/25/25/25 assignment", tone: "orange",
-          branches: [
-            { id: "current", label: "Current paywall flow", percent: 25 },
-            { id: "trial", label: "3-day trial · native", percent: 25 },
-            { id: "trial_7d", label: "7-day trial · current", percent: 25 },
-            { id: "trial_7d_mascot", label: "7-day trial · mascot", percent: 25 },
-          ],
+          id: "poky-trial-vs-current", label: "Onboarding offer", scope: "New installs · HP 50% / trials 50% · each trial gets ⅓ of trial users", tone: "orange",
+          branches: POKY_OFFER_VARIANTS.map(({ key, label, percent }) => ({
+            id: key, label: key === "current" ? "Current paywall flow" : key === "trial" ? "3-day trial · native" : label, percent,
+          })),
         },
         {
           id: "poky-english-paywalls", label: "Native main paywalls", scope: "Current arm · 🇬🇧 English / fallback", tone: "orange",
@@ -119,7 +117,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       notes: [
         "Results start September 20, 2026 at 16:00 GMT+2. Everyone now uses the Warm experience.",
         "The next app build assigns 80% a team note before the existing paywall sequence, and 20% the original sequence. This independent, saved assignment applies to HP, 3-day, 7-day current and 7-day mascot flows, including both plan-intro journeys. The new note comparison includes pre-paywall dropouts and keeps historical offer assignments separate.",
-        "The v3 onboarding offer assigns HP, three-day trial, seven-day current and seven-day mascot 25% each. Both seven-day presentations share the same product and price. Trial arms skip High/Name and recovery. Matching flows include saved v1 50/50 and v2 25/25/50 results in the same table; the mascot remains separate.",
+        "The v4 onboarding offer assigns HP 50% and trials 50%, divided equally between three-day, seven-day current and seven-day mascot (exactly 1/6 of all new assignments each). Both seven-day presentations share the same product and price. Trial arms skip High/Name and recovery. Saved v1, v2 and v3 assignments keep their original allocation and join matching flow rows; the mascot remains separate. The US-only HP override remains through October 28.",
         "The plan design draw is a new independent 50/50 assignment. Combined with the existing intro draw, it creates four 25% cohorts. Plan B currently displays a placeholder screen.",
         "The updated app uses native paywalls for everyone, including former Superwall cohorts. The Superwall/native comparison is retired; historical assignments remain stored.",
         "Every non-trial user is eligible for native recovery after cancelling a main purchase, once per install. Former holdouts are included; trial paywalls skip automatic recovery. The home-screen shortcut is separate.",

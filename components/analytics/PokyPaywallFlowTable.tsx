@@ -95,7 +95,7 @@ export default function PokyPaywallFlowTable({ report, windowLabel }: { report: 
     {!report || report.status === "unavailable"
       ? <p role="status" className="py-2 text-sm text-muted-foreground">Paywall flow reporting is unavailable. Refresh to retry.</p>
       : <>
-        <p className="pb-2 text-xs text-muted-foreground">New assignments: HP 25% · 3-day trial 25% · 7-day current 25% · 7-day mascot 25%{report.status === "empty" ? " · Waiting for new assignments" : ""}</p>
+        <p className="pb-2 text-xs text-muted-foreground">New assignments: HP 50% · Trials 50% · Trial users split equally between 3-day, 7-day current and 7-day mascot (⅓ each){report.status === "empty" ? " · Waiting for new assignments" : ""}</p>
         {report.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
         <JourneyVersionComparison cohorts={report.rows} rowLabels={report.labels} rowHeading="Paywall flow"
           allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate

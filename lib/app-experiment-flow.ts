@@ -142,10 +142,11 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
   const visibleOffers = selectedLanguage
     ? offers.filter((offer) => offer.languageCode === selectedLanguage)
     : offers;
+  const offerAllocationLabel = (percent: number) => Math.abs(percent - 50 / 3) < 1e-9 ? "16⅔%" : formatPaywallAllocation(percent);
   offer.branches.forEach((branch, index) => {
     nodes.push({ id: `offer-${branch.id}`, x: 814, y: index === 0 ? 480 : 76 + (index - 1) * 130, width: 174,
       label: branch.label, tone: "orange", experimentId: offer.id, variantId: branch.id });
-    edges.push({ from: "language", to: `offer-${branch.id}`, label: `${branch.percent}%` });
+    edges.push({ from: "language", to: `offer-${branch.id}`, label: offerAllocationLabel(branch.percent) });
   });
   const firstOfferY = 448 - (visibleOffers.length - 1) * 50;
   visibleOffers.forEach((offer, index) => {
@@ -174,7 +175,7 @@ function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): E
       nodes.push({ id, x: 814, y: 220 + index * 220, width: 174, label: branch.label, detail: "Before the assigned flow",
         tone: "orange", experimentId: note.id, variantId: branch.id });
       edges.push({ from: "language", to: id, label: `${branch.percent}%` });
-      for (const offerBranch of offer.branches) edges.push({ from: id, to: `offer-${offerBranch.id}`, label: `${offerBranch.percent}%` });
+      for (const offerBranch of offer.branches) edges.push({ from: id, to: `offer-${offerBranch.id}`, label: offerAllocationLabel(offerBranch.percent) });
     });
   }
   return {

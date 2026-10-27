@@ -1,16 +1,18 @@
-export const POKY_ONBOARDING_OFFER_EXPERIMENT = "poky_onboarding_trial_v3";
+export const POKY_ONBOARDING_OFFER_EXPERIMENT = "poky_onboarding_trial_v4";
+export const POKY_EQUAL_OFFER_EXPERIMENT = "poky_onboarding_trial_v3";
 export const POKY_PREVIOUS_OFFER_EXPERIMENT = "poky_onboarding_trial_v2";
 export const POKY_LEGACY_OFFER_EXPERIMENT = "poky_onboarding_trial_v1";
-export const POKY_OFFER_ALLOCATION = "25_25_25_25";
+export const POKY_OFFER_ALLOCATION = "50_50_trials_equal";
 export const POKY_OFFER_VARIANTS = [
-  { key: "current", label: "HP (hard paywall)", percent: 25, product: null },
-  { key: "trial", label: "3-day trial", percent: 25, product: "arthurbuildsstuff.peptides.yearly.trial" },
-  { key: "trial_7d", label: "7-day trial · current", percent: 25, product: "arthurbuildsstuff.peptides.yearly.trial7" },
-  { key: "trial_7d_mascot", label: "7-day trial · mascot", percent: 25, product: "arthurbuildsstuff.peptides.yearly.trial7" },
+  { key: "current", label: "HP (hard paywall)", percent: 50, product: null },
+  { key: "trial", label: "3-day trial", percent: 50 / 3, product: "arthurbuildsstuff.peptides.yearly.trial" },
+  { key: "trial_7d", label: "7-day trial · current", percent: 50 / 3, product: "arthurbuildsstuff.peptides.yearly.trial7" },
+  { key: "trial_7d_mascot", label: "7-day trial · mascot", percent: 50 / 3, product: "arthurbuildsstuff.peptides.yearly.trial7" },
 ] as const;
 const POKY_OFFER_RELEASES = [
   { experiment: POKY_LEGACY_OFFER_EXPERIMENT, allocation: "50_50", variants: POKY_OFFER_VARIANTS.slice(0, 2) },
   { experiment: POKY_PREVIOUS_OFFER_EXPERIMENT, allocation: "25_25_50", variants: POKY_OFFER_VARIANTS.slice(0, 3) },
+  { experiment: POKY_EQUAL_OFFER_EXPERIMENT, allocation: "25_25_25_25", variants: POKY_OFFER_VARIANTS },
   { experiment: POKY_ONBOARDING_OFFER_EXPERIMENT, allocation: POKY_OFFER_ALLOCATION, variants: POKY_OFFER_VARIANTS },
 ];
 

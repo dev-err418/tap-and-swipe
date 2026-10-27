@@ -64,7 +64,7 @@ test("Poky shows independent intro and plan design splits with four equal plan c
   assert.deepEqual(map.combinations?.map((branch) => branch.percent), [25, 25, 25, 25]);
   assert.deepEqual(map.combinations?.map((branch) => branch.id), ["control-plan_a", "control-plan_b", "animated_plan-plan_a", "animated_plan-plan_b"]);
   assert.deepEqual(map.tests.find((row) => row.id === "poky-trial-vs-current")?.branches.map((branch) => branch.id), ["current", "trial", "trial_7d", "trial_7d_mascot"]);
-  assert.deepEqual(map.tests.find((row) => row.id === "poky-trial-vs-current")?.branches.map((branch) => branch.percent), [25, 25, 25, 25]);
+  assert.deepEqual(map.tests.find((row) => row.id === "poky-trial-vs-current")?.branches.map((branch) => branch.percent), [50, 50 / 3, 50 / 3, 50 / 3]);
   assert.match(map.tests.find((row) => row.id === "poky-native-recovery")!.scope, /any origin placement/);
 });
 
@@ -147,7 +147,7 @@ test("trial branch goes directly to one native paywall without Superwall or reco
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "offer-trial_7d"), []);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "offer-trial_7d_mascot"), []);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "note-note" && edge.to.startsWith("offer-"))
-    .map((edge) => [edge.to, edge.label]), [["offer-current", "25%"], ["offer-trial", "25%"], ["offer-trial_7d", "25%"], ["offer-trial_7d_mascot", "25%"]]);
+    .map((edge) => [edge.to, edge.label]), [["offer-current", "50%"], ["offer-trial", "16⅔%"], ["offer-trial_7d", "16⅔%"], ["offer-trial_7d_mascot", "16⅔%"]]);
   assert.ok(flow.edges.filter((edge) => edge.from === "offer-current")
     .every((edge) => flow.nodes.find((node) => node.id === edge.to)?.paywallMetric));
 });

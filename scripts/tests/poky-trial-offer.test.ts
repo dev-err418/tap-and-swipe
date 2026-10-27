@@ -4,8 +4,8 @@ import { POKY_TRIAL_OFFER_ATTRIBUTE_KEYS, pokyTrialOfferExperiment } from "../..
 
 const DAY = 86_400_000;
 const START = Date.parse("2026-09-27T00:00:00Z");
-const attributes = (variant: string, assignedAt = START + 1_000, allocation = "25_25_25_25", environment = "production") => ({
-  onboarding_offer_experiment: "poky_onboarding_trial_v3", onboarding_offer_variant: variant,
+const attributes = (variant: string, assignedAt = START + 1_000, allocation = "50_50_trials_equal", environment = "production") => ({
+  onboarding_offer_experiment: "poky_onboarding_trial_v4", onboarding_offer_variant: variant,
   onboarding_offer_assigned_at: String(assignedAt), onboarding_offer_allocation: allocation,
   onboarding_offer_language: "en",
   poky_tracking_environment: environment,
@@ -26,7 +26,7 @@ test("trial and current use only fresh production assignments, including nonview
     attributes: new Map([
       ["current", attributes("current")], ["trial", attributes("trial")],
       ["legacy", attributes("current", START + 1_000, "legacy")],
-      ["sandbox", attributes("trial", START + 1_000, "25_25_25_25", "sandbox")],
+      ["sandbox", attributes("trial", START + 1_000, "50_50_trials_equal", "sandbox")],
     ]),
     events: [],
   }, START + DAY);

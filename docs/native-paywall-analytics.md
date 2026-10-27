@@ -61,16 +61,18 @@ Dashboard files:
 - `lib/mobile-app-analytics.ts`: loads this report for Glow and Poky's detail views.
 
 Poky uses the same contract from `peptides/Subscription/PokyNativePaywallAnalytics.swift`.
-Its updated onboarding offer test assigns fresh installs equally to HP, a three-day
-trial, the current seven-day flow and a mascot seven-day flow (25% each). Purchases and restores use the existing
-Superwall SDK with observer mode disabled, alongside verified StoreKit access.
-No trial campaign or placement is registered. All trial arms skip High/Name and
-recovery. The primary `poky-trial-vs-current` card reads fresh
-`poky_onboarding_trial_v3` / `25_25_25_25` scalar assignments (`current`, `trial`,
-`trial_7d`, `trial_7d_mascot`). Separate historical cards read v1 / `50_50` and
-v2 / `25_25_50`; populations are never
-pooled. Each report counts assigned nonviewers, trial starts, renewals and refunds,
-and excludes returning `legacy` assignments. The current flow now uses only native
+Its v4 onboarding offer assigns fresh installs 50% to HP and 50% to trials,
+with exactly one third of trial users in each of the three-day, current seven-day
+and mascot seven-day flows (1/6 of all new assignments each). Purchases and restores
+use the existing Superwall SDK with observer mode disabled, alongside verified
+StoreKit access. No trial campaign or placement is registered. All trial arms skip
+High/Name and recovery. The primary `poky-trial-vs-current` card accepts
+`poky_onboarding_trial_v4` / `50_50_trials_equal` scalar assignments (`current`,
+`trial`, `trial_7d`, `trial_7d_mascot`) and pools matching flow rows from v1 / `50_50`,
+v2 / `25_25_50` and v3 / `25_25_25_25`. Each record must match its original
+experiment, allocation and allowed variants. All assigned nonviewers, trial starts,
+renewals and refunds are included; returning `legacy` assignments and temporary
+US HP override exposures are excluded. The current flow now uses only native
 paywalls, including for former Superwall cohorts. Its recovery rollout is reported separately; the retired Superwall/native engine
 comparison is no longer loaded, displayed or counted as an active test.
 Its stable per-language experiments use `poky_native_main_v1_<language>`
@@ -452,12 +454,12 @@ only. The joint table uses the same compact metrics and version-based install co
 
 Poky Data shows all four tracked onboarding combinations (No intro × Plan A/B,
 Animated intro × Plan A/B), including empty rows. Clicking a row opens its screen
-funnel. Paywall flows prepares four rows for fresh `poky_onboarding_trial_v3`
-assignments with allocation `25_25_25_25`: `current` is HP, `trial` is the 3-day
+funnel. Paywall flows prepares four rows for fresh `poky_onboarding_trial_v4`
+assignments with allocation `50_50_trials_equal`: `current` is HP, `trial` is the 3-day
 trial, `trial_7d` is the current 7-day presentation and `trial_7d_mascot` is its
-mascot presentation (25% each for new assignments). Matching flow identities are
-pooled in this single table across v1 / `50_50`, v2 / `25_25_50` and v3 /
-`25_25_25_25`: HP and three-day trial retain their collected results, while v2's
+mascot presentation (HP 50%, each trial exactly 1/6 for new assignments). Matching
+flow identities are pooled across v1 / `50_50`, v2 / `25_25_50`, v3 /
+`25_25_25_25` and v4 / `50_50_trials_equal`: HP and three-day trial retain their collected results, while v2's
 `trial_7d` joins the current seven-day presentation. The mascot remains separate.
 Each release must still match its original experiment ID, allocation and allowed
 variants; no saved assignments or timestamps are rewritten. The same pooling
@@ -634,3 +636,13 @@ or treatment dates, and excludes this branch from main-path drop-off rankings.
 
 Name now follows gender; goal weight proceeds directly to the goal summary and
 weekly pace. The analytics definition follows this order in every plan variant.
+
+### Poky offer allocation v4
+
+The new app split is 50% HP / 50% trials. Each trial design receives exactly one
+third of trial users, or 16⅔% of all new assignments. Map edges show 50% / 16⅔% /
+16⅔% / 16⅔%, and the table explains the nested split. The independent note split
+remains 80% / 20%. Existing assignments and attributed purchases keep their original
+identities. The US-only HP override remains through October 28, with normal saved
+offer routing resuming October 29. This changes code configuration for the next
+app build, not existing installations.

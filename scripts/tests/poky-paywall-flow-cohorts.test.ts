@@ -13,7 +13,7 @@ import { withJourneyConversions } from "../../lib/journey-cohort-conversions";
 const day = 86_400_000, start = Date.parse("2026-10-01T00:00:00Z"), end = start + 7 * day, asOf = start + 20 * day;
 const install = (appUserId: string, installedAt = start) => ({ appUserId, installedAt, appVersion: "1.1.5" });
 const assignment = (variant = "current", extra = {}) => ({ poky_tracking_environment: "production",
-  onboarding_offer_experiment: POKY_ONBOARDING_OFFER_EXPERIMENT, onboarding_offer_allocation: "25_25_25_25",
+  onboarding_offer_experiment: POKY_ONBOARDING_OFFER_EXPERIMENT, onboarding_offer_allocation: "50_50_trials_equal",
   onboarding_offer_variant: variant, onboarding_offer_assigned_at: String(start + 1000), ...extra });
 type Event = Parameters<typeof buildPokyPaywallFlowComparison>[1][number];
 const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUserId, originalTransactionId: appUserId,
@@ -120,6 +120,7 @@ test("pooling only accepts the variant and allocation actually shipped in each r
     ["poky_onboarding_trial_v1", "50_50", ["current", "trial"]],
     ["poky_onboarding_trial_v2", "25_25_50", ["current", "trial", "trial_7d"]],
     ["poky_onboarding_trial_v3", "25_25_25_25", ["current", "trial", "trial_7d", "trial_7d_mascot"]],
+    ["poky_onboarding_trial_v4", "50_50_trials_equal", ["current", "trial", "trial_7d", "trial_7d_mascot"]],
   ] as const) {
     for (const variant of ["current", "trial", "trial_7d", "trial_7d_mascot", "unknown"]) {
       const attrs = assignment(variant, { onboarding_offer_experiment: experiment, onboarding_offer_allocation: allocation });
@@ -138,7 +139,7 @@ test("dashboard fills the main table from collected results before the four-way 
   const html = renderToStaticMarkup(createElement(PokyPaywallFlowTable, { report, windowLabel: "All time" }));
   assert.equal(report.status, "ready");
   assert.deepEqual(report.rows.map((row) => row.installs), [0, 1, 0, 0]);
-  assert.match(html, /HP 25% · 3-day trial 25% · 7-day current 25% · 7-day mascot 25%/);
+  assert.match(html, /HP 50% · Trials 50% · Trial users split equally between 3-day, 7-day current and 7-day mascot/);
   assert.doesNotMatch(html, /Waiting for new assignments|Previous paywall flows/);
   assert.match(html, /View screens for 7-day trial/);
 });
