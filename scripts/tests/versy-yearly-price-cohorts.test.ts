@@ -6,6 +6,8 @@ import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
 import VersyYearlyPriceTable from "../../components/analytics/VersyYearlyPriceTable";
 import { buildVersyYearlyPriceComparison, VERSY_YEARLY_PRICE_EXPERIMENT, VERSY_RETIRED_YEARLY_PRICE_EXPERIMENT, VERSY_YEARLY_PRICES } from "../../lib/versy-yearly-price-cohorts";
 import { buildUserJourney, userJourneyDefinition } from "../../lib/user-journey";
+import { VERSY_FIXED_YEARLY_PRICE, isVersyFixedYearlyPriceAssignment } from "../../lib/versy-paywall-policy";
+import { buildAppCountryComparisons } from "../../lib/app-country-comparisons";
 
 const day = 86_400_000, start = Date.parse("2026-10-01T00:00:00Z"), asOf = start + 20 * day;
 const install = (appUserId: string, appVersion = "1.2.6") => ({ appUserId, appVersion, installedAt: start });
@@ -18,6 +20,52 @@ type Event = Parameters<typeof buildVersyYearlyPriceComparison>[1][number];
 const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUserId, originalTransactionId: appUserId,
   transactionId: appUserId, name: "initial_purchase", periodType: "normal", netProceeds: 12, isRefund: false,
   eventTs: start + day, attributionTs: start + day, expiresAt: 0, ...extra });
+
+const fixedAssignment = (extra = {}) => assignment(1, {
+  yearly_price_experiment_id: VERSY_FIXED_YEARLY_PRICE.experiment,
+  yearly_price_allocation: VERSY_FIXED_YEARLY_PRICE.allocation, ...extra,
+});
+
+test("fixed rollout is isolated from both historical price arms, including after an upgrade", () => {
+  const attributes = new Map([
+    ["old39", assignment()], ["old49", assignment(1)], ["free", fixedAssignment()],
+    ["upgraded", fixedAssignment({ yearly_price_assigned_at: String(start + 2 * day) })],
+    ["bad-sku", fixedAssignment({ yearly_price_product_id: VERSY_YEARLY_PRICES[0].productID })],
+    ["bad-allocation", fixedAssignment({ yearly_price_allocation: "50_50" })],
+    ["debug", fixedAssignment({ versy_tracking_environment: "development" })],
+    ["future", fixedAssignment({ yearly_price_assigned_at: String(asOf + 1) })],
+  ]);
+  const report = buildVersyYearlyPriceComparison([...attributes.keys()].map((id) => install(id)), [
+    event("old39"), event("old49"), event("upgraded"),
+    event("upgraded", { name: "renewal", transactionId: "old-renewal", eventTs: start + 3 * day }),
+    event("upgraded", { originalTransactionId: "new-chain", transactionId: "new", eventTs: start + 4 * day, netProceeds: 30 }),
+    event("", { originalTransactionId: "new-chain", transactionId: "new", name: "cancellation", isRefund: true, eventTs: start + 5 * day, netProceeds: -5 }),
+  ], attributes, asOf);
+  assert.deepEqual(report.rows.map((r) => r.installs), [1, 1]);
+  const rollout = report.rollout.rows[0].conversions!.global;
+  assert.equal(rollout.installs, 2);
+  assert.equal(rollout.proceeds, 25);
+  assert.equal(rollout.installPaid, 1);
+  assert.equal(report.rollout.warnings.length, 1);
+  assert.equal(isVersyFixedYearlyPriceAssignment(assignment(1)), false);
+  const html = renderToStaticMarkup(createElement(VersyYearlyPriceTable, { report }));
+  const current = html.slice(0, html.indexOf("Yearly prices · historical test"));
+  assert.match(current, /100% rollout/);
+  assert.doesNotMatch(current, /Win %|APPU lift|readiness/i);
+  assert.match(html, /Retired \$39.99/);
+});
+
+test("country slices retain the same fixed-versus-historical separation", () => {
+  const attributes = new Map([["us-fixed", fixedAssignment()], ["fr-fixed", fixedAssignment()], ["us-old", assignment(1)]]);
+  const result = buildAppCountryComparisons({ appId: "versy", asOf, journey: null, attributes,
+    installs: [...attributes.keys()].map((id) => ({ ...install(id), country: id.startsWith("fr") ? "FR" : "US" })),
+    countries: [{ country: "US", proceeds: 12 }, { country: "FR", proceeds: 6 }],
+    events: [],
+  });
+  assert.deepEqual(result.slices.US.yearlyPriceComparison!.rows.map((r) => r.installs), [0, 1]);
+  assert.equal(result.slices.US.yearlyPriceComparison!.rollout.rows[0].installs, 1);
+  assert.equal(result.slices.FR.yearlyPriceComparison!.rollout.rows[0].installs, 1);
+});
 
 test("the two saved price assignments retain nonpayers, trials, weekly purchases, renewals and refunds", () => {
   const attributes = new Map([["payer", assignment()], ["free", assignment()], ["weekly", assignment(1)]]);

@@ -1,4 +1,4 @@
-import { VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
+import { VERSY_FIXED_YEARLY_PRICE, VERSY_HARD_PAYWALL_EXPERIMENT } from "./versy-paywall-policy";
 import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOWS } from "./glow-onboarding-experience";
 import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
 import { POKY_NOTE_EXPERIMENT } from "./poky-paywall-note";
@@ -126,7 +126,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
   }
 
   if (appId === "versy") {
-    const yearlyPrices = VERSY_YEARLY_PRICES.map(({ productID, label }) => ({ id: productID, label }));
+    const yearlyPrices = [{ id: VERSY_FIXED_YEARLY_PRICE.productID, label: VERSY_FIXED_YEARLY_PRICE.label }];
     return {
       tests: [
         {
@@ -138,15 +138,14 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
         {
-          id: "versy-yearly-paywall-access-v1", label: "Yearly-only paywall", scope: "Widget onboarding · 50% hard / 50% soft", tone: "orange",
+          id: VERSY_HARD_PAYWALL_EXPERIMENT, label: "Yearly-only paywall", scope: "Next app build · both Widget flows · 100% hard", tone: "orange",
           branches: [
-            { id: "dismissible", label: "Yearly · Soft", percent: 50 },
-            { id: "hard", label: "Yearly · Hard", percent: 50 },
+            { id: "hard", label: "Yearly · Hard", percent: 100 },
           ],
         },
         {
-          id: "versy-yearly-price-v3", label: "Yearly price", scope: "New assignments · two yearly prices · 7-day trials · 50% each", tone: "orange",
-          branches: yearlyPrices.map(({ id, label }) => ({ id, label, percent: 50 })),
+          id: VERSY_FIXED_YEARLY_PRICE.experiment, label: "Yearly price", scope: "Next app build · fixed $49.99 · 100% rollout", tone: "orange",
+          branches: yearlyPrices.map(({ id, label }) => ({ id, label, percent: 100 })),
         },
         {
           id: "versy_paywall_note_v1", label: "Team note", tone: "orange", planned: true,
@@ -157,16 +156,16 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           ],
         },
       ],
-      combinations: ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ id, label }) => ({
-        id: `yearly_only|${access}|${id}`,
-        label: `Yearly only · ${access === "hard" ? "Hard" : "Soft"} · ${label}`,
-        percent: 25,
-      }))),
+      combinations: yearlyPrices.map(({ id, label }) => ({
+        id: `yearly_only|hard|${id}`,
+        label: `Yearly only · Hard · ${label}`,
+        percent: 100,
+      })),
       notes: [
-        "Current app code assigns new users equally to Bible Widget, Shorter and Bible Scroll, including Mexico. October 26 temporarily routes everyone to Scroll. Widget paywalls assign 50% hard / 50% soft; saved access assignments persist. Historical onboarding comparisons keep their original geographic eligibility.",
+        "Current app code assigns new users equally to Bible Widget, Shorter and Bible Scroll, including Mexico. The next build makes both Widget paywalls 100% hard, including former dismissible assignments. Historical onboarding comparisons keep their original geographic eligibility.",
         "Both note variants keep the existing reviews. The next app build adds the team note after reviews for 80%, while 20% continue directly to their existing paywall flow. The sticky assignment is independent of onboarding route, access and yearly price. No App Store review prompts during onboarding. Only explicitly enrolled production users enter this comparison, including review and note dropouts. Scroll benefits are now standard; the old benefits comparison remains historical.",
         "Bible Scroll uses a dismissible trial timeline with yearly and weekly plans. The saved soft/hard assignment does not control this onboarding screen; access comparisons include widget variants only.",
-        "The yearly price test uses v3: US $39.99 or $49.99, both with 7-day trials for eligible users, at 50/50. The 3-day trial test is retired. Matching seven-day history remains in the price rows; three-day and migrated assignments are excluded. Yearly price is independent of access mode. Bible Scroll also offers the fixed weekly product. Other upgrade placements use the assigned yearly product and access mode, except the daily gift.",
+        "The next build uses the fixed US $49.99 yearly SKU for everyone, including upgrades. StoreKit supplies localized prices and trial eligibility. Price and access A/B tests are retired; older client records remain in historical comparisons and fixed assignments never enter them. Bible Scroll keeps its weekly option and dismissible timeline. Daily Gift keeps its separate discounted product.",
         "Daily Gift recovery also appears after onboarding paywall dismissal; the next build opens recovery after transaction cancellation on hard onboarding paywalls. Day-2 behavior remains: after 24 hours, eligible non-premium users see a sealed envelope then a discounted yearly offer on their first app open each local day. This 100% rollout uses YearlyDiscount, independently of yearly price assignment, and is reported in Paywalls as versy_daily_gift_v1 / daily_gift_app_open; historical app_open remains separate.",
         "Existing widget assignments remain in bible_widget_shorter_v1 and are reported in a separate historical comparison. Current funnels use scroll_the_bible_v1 only. Country grouping uses reported and install geography, not immutable assignment geography.",
       ],

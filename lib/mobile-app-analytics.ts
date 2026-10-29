@@ -17,7 +17,7 @@ import { GLOW_SUPERWALL_HISTORY_START_MS, glowPaywallMigrationExperiment } from 
 import { loadUserJourney } from "./user-journey-queries";
 import { journeyCohortAttributeKeys, withJourneyConversions } from "./journey-cohort-conversions";
 import { buildGlowPaywallCohortComparisons, GLOW_PAYWALL_COHORT_KEYS, type GlowPaywallCohortComparisons } from "./glow-paywall-cohort-comparisons";
-import { buildVersyYearlyPriceComparison, VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS, isVersyYearlyPriceAssignment, VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
+import { buildVersyYearlyPriceComparison, VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS, isVersyYearlyPriceAssignment, VERSY_YEARLY_PRICES, type VersyYearlyPriceComparison } from "./versy-yearly-price-cohorts";
 import { buildVersyPaywallComparison, VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE, type VersyPaywallComparison } from "./versy-paywall-comparison";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { withJourneyInstallVersions, type UserJourneyReport } from "./user-journey";
@@ -187,7 +187,7 @@ export type MobileAppAnalytics = SnapshotMetadata & {
   onboardingExperience?: GlowOnboardingReport | null;
   userJourney?: UserJourneyReport | null;
   paywallCohortComparisons?: GlowPaywallCohortComparisons | null;
-  yearlyPriceComparison?: PaywallCohortComparison | null;
+  yearlyPriceComparison?: VersyYearlyPriceComparison | null;
   versyPaywallComparison?: VersyPaywallComparison | null;
   paywallFlowComparison?: PaywallCohortComparison | null;
   countryComparisons?: AppCountryComparisons;
@@ -399,7 +399,7 @@ async function getSuperwallAppAnalytics(
   sessions = true,
   includeReports = true,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":onboarding-note-history-20261029" : ":yearly-trial3-20261023"}`;
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":fixed-4999-hard-paywalls-20261029" : ":yearly-trial3-20261023"}`;
   return analyticsSnapshot(`mobile:${cacheKey}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports));
 }
@@ -1164,8 +1164,8 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
     }),
     attributeExperiment(widgetFacts, {
       id: "versy-yearly-paywall-access-v1",
-      title: "Widget paywall · Soft vs Hard",
-      subtitle: "7-day trials · next app build: 70% Hard / 30% Soft · saved cohorts included",
+      title: "Historical Widget paywall · Soft vs Hard",
+      subtitle: "Retired access test · updated app uses 100% hard · older client records only",
       attributeKeys: ["onboarding_paywall_experiment_id", "onboarding_paywall_access_variant"],
       variants: [
         { key: "dismissible", label: "Yearly · Soft",
@@ -1198,8 +1198,8 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
     }),
     attributeExperiment(facts, {
       id: "versy-yearly-price-v3",
-      title: "Yearly price A/B test",
-      subtitle: "$39.99 / $49.99 · 7-day trials · 50% each for new users",
+      title: "Historical yearly price A/B test",
+      subtitle: "Retired $39.99 / $49.99 split · fixed $49.99 rollout excluded",
       assignmentCheck: isVersyYearlyPriceAssignment,
       attributeKeys: ["yearly_price_experiment_id", "yearly_price_product_id", "yearly_price_allocation"],
       variants: yearlyPrices.map(({ key, label, productID }) => ({
@@ -1211,8 +1211,8 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
     }),
     attributeExperiment(widgetFacts, {
       id: "versy-yearly-paywall-configuration-v3",
-      title: "Widget paywall combinations",
-      subtitle: "7-day trials · access × yearly price · 4 cohorts",
+      title: "Historical Widget paywall combinations",
+      subtitle: "Retired access × price test · fixed hard / $49.99 rollout excluded",
       assignmentCheck: isVersyYearlyPriceAssignment,
       attributeKeys: ["paywall_configuration_experiment_id", "paywall_configuration_variant", ...VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS],
       variants: ["dismissible", "hard"].flatMap((access) => yearlyPrices.map(({ key, label, productID }) => ({

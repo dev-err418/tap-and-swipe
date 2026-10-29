@@ -4,6 +4,7 @@ import { emptyVersionConversions, versionCohortConversions } from "./version-coh
 import { parsePaywallAttributes } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
+import { versyWidgetPaywallAccess } from "./versy-paywall-policy";
 
 type Install = Parameters<typeof versionCohortConversions>[0][number] & { country: string };
 type Event = Parameters<typeof versionCohortConversions>[1][number];
@@ -34,11 +35,8 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
       const values = attributes.get(install.appUserId);
       if (!values || values.versy_tracking_environment !== "production"
         || values.onboarding_experiment_id !== "scroll_the_bible_v1") return [];
-      const widget = ["bible_widget", "bible_widget_shorter"].includes(values.onboarding_variant)
-        && values.onboarding_paywall_experiment_id === "versy_yearly_paywalls_v1";
       const variant = values.onboarding_variant === "scroll_the_bible" ? "bible_scroll"
-        : widget && ["hard", "dismissible"].includes(values.onboarding_paywall_access_variant)
-          ? values.onboarding_paywall_access_variant : null;
+        : versyWidgetPaywallAccess(values);
       if (!variant) return [];
       const enrollment = assignments.get(`${install.appUserId}|${ONBOARDING_EXPERIMENT}`);
       if (values[VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE] !== undefined) {

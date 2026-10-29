@@ -91,7 +91,7 @@ test("reviews are shared before the 80/20 test and both arms keep the existing p
   const flow = appExperimentFlow("versy")!;
   assert.deepEqual(flow.edges.filter((e) => e.from === "reviews").map((e) => [e.to, e.label]), [["note-control", "20%"], ["note-note", "80%"]]);
   for (const treatment of ["note-control", "note-note"]) {
-    assert.deepEqual(flow.edges.filter((e) => e.from === treatment).map((e) => e.to), ["access-dismissible", "access-hard", "scroll-trial"]);
+    assert.deepEqual(flow.edges.filter((e) => e.from === treatment).map((e) => e.to), ["access-hard", "scroll-trial"]);
   }
 });
 

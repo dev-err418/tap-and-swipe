@@ -23,6 +23,7 @@ import GlowPaywallCohortTables from "./GlowPaywallCohortTables";
 import VersyPaywallComparisonPanel from "./VersyPaywallComparisonPanel";
 import type { VersyPaywallComparison } from "@/lib/versy-paywall-comparison";
 import VersyYearlyPriceTable from "./VersyYearlyPriceTable";
+import type { VersyYearlyPriceComparison } from "@/lib/versy-yearly-price-cohorts";
 import PokyPaywallFlowTable from "./PokyPaywallFlowTable";
 import type { PaywallCohortComparison } from "@/lib/glow-paywall-cohort-comparisons";
 import type { GlowPaywallCohortComparisons } from "@/lib/glow-paywall-cohort-comparisons";
@@ -64,7 +65,7 @@ export default function AppOverviewPanel({
   trialCancelTiming?: TrialCancelTiming | null;
   userJourney?: UserJourneyReport | null;
   paywallCohortComparisons?: GlowPaywallCohortComparisons | null;
-  yearlyPriceComparison?: PaywallCohortComparison | null;
+  yearlyPriceComparison?: VersyYearlyPriceComparison | null;
   versyPaywallComparison?: VersyPaywallComparison | null;
   paywallFlowComparison?: PaywallCohortComparison | null;
   countryComparisons?: AppCountryComparisons;

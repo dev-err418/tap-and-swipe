@@ -88,26 +88,25 @@ test("Poky retires the engine comparison and routes every current offer to nativ
   assert.match(markup, /Current native paywalls/);
 });
 
-test("Versy separates Bible Scroll trial routing from widget soft/hard paywalls", () => {
+test("Versy maps fixed hard Widget paywalls and one price without counting them as A/B tests", () => {
   const map = appExperimentMap("versy")!;
   assert.deepEqual(map.tests.map((row) => row.id), [
-    "versy-scroll-the-bible-v1", "versy-yearly-paywall-access-v1", "versy-yearly-price-v3", "versy_paywall_note_v1",
+    "versy-scroll-the-bible-v1", "versy_yearly_hard_paywalls_v1", "versy_yearly_price_fixed_4999_v1", "versy_paywall_note_v1",
   ]);
   assert.deepEqual(map.tests.map((row) => row.branches.map((branch) => branch.percent)),
-    [[100 / 3, 100 / 3, 100 / 3], [50, 50], [50, 50], [20, 80]]);
+    [[100 / 3, 100 / 3, 100 / 3], [100], [100], [20, 80]]);
   assert.deepEqual(map.tests[0].branches.map((branch) => branch.id), ["bible_widget", "bible_widget_shorter", "scroll_the_bible"]);
-  assert.deepEqual(map.tests[1].branches.map((branch) => branch.id), ["dismissible", "hard"]);
+  assert.deepEqual(map.tests[1].branches.map((branch) => branch.id), ["hard"]);
   assert.deepEqual(map.tests[2].branches.map((branch) => branch.id), [
-    "com.arthurbuildsstuff.bible.yearly_3999_80",
     "com.arthurbuildsstuff.bible.yearly_4999",
   ]);
   assert.equal(map.tests[3].planned, true);
   assert.deepEqual(map.tests[3].branches.map((branch) => branch.id), ["control", "note"]);
-  assert.equal(map.combinations?.length, 4);
-  assert.ok(map.combinations?.every((branch) => branch.id.startsWith("yearly_only|") && branch.percent === 25));
+  assert.equal(map.combinations?.length, 1);
+  assert.ok(map.combinations?.every((branch) => branch.id.startsWith("yearly_only|hard|") && branch.percent === 100));
   assert.ok(map.tests.every((row) => row.branches.every((branch) => branch.id !== "yearly_weekly")));
-  assert.equal(appExperimentFlow("versy")?.nodes.filter((node) => node.experimentId).length, 9);
-  assert.equal(activeABTestCount("versy"), 3);
+  assert.equal(appExperimentFlow("versy")?.nodes.filter((node) => node.experimentId).length, 5);
+  assert.equal(activeABTestCount("versy"), 1);
 });
 
 test("unsupported apps do not show invented experiments", () => {
@@ -117,7 +116,7 @@ test("unsupported apps do not show invented experiments", () => {
 test("active A/B counts include the new plan design and trial offer assignments", () => {
   assert.equal(activeABTestCount("glow"), 0); // Both next-build assignments are prepared, not released.
   assert.equal(activeABTestCount("poky"), 4);
-  assert.equal(activeABTestCount("versy"), 3);
+  assert.equal(activeABTestCount("versy"), 1);
 });
 
 test("result cards follow the onboarding-to-paywall progression without mutating inputs", () => {
@@ -163,7 +162,7 @@ test("configured maps render their percentage badges without analytics data", ()
       assert.match(markup, />50%<\/text>/);
       assert.match(markup, />50%<\/text>/);
       assert.match(markup, /Next app build/);
-    } else assert.match(markup, />50%<\/text>/);
+    } else assert.match(markup, app === "versy" ? />100%<\/text>/ : />50%<\/text>/);
     assert.match(markup, /Start/);
     assert.match(markup, /onboarding/);
   }

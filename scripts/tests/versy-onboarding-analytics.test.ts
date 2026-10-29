@@ -43,11 +43,14 @@ test("both note variants keep their route-specific paywall", () => {
   }
   for (const id of ["note-control", "note-note"]) {
     assert.equal(flow.edges.find((edge) => edge.from === id && edge.to === "scroll-trial")?.label, "Scroll");
-    assert.deepEqual(flow.edges.filter((edge) => edge.from === id && edge.to.startsWith("access-")).map((edge) => edge.label), ["Widget · 50%", "Widget · 50%"]);
+    assert.deepEqual(flow.edges.filter((edge) => edge.from === id && edge.to.startsWith("access-")).map((edge) => edge.label), ["Widget · 100%"]);
   }
-  assert.equal(flow.edges.filter((edge) => edge.from === "scroll-trial").length, 2);
+  assert.equal(flow.edges.filter((edge) => edge.from === "scroll-trial").length, 1);
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["33.33%", "33.33%", "33.33%"]);
-  assert.deepEqual(flow.nodes.filter((node) => node.experimentId === "versy-yearly-price-v3").map((node) => node.variantId), ["yearly_3999_80", "yearly_4999"]);
+  assert.deepEqual(flow.nodes.filter((node) => node.id.startsWith("price-")).map((node) => node.label), ["$49.99/year (7d)"]);
+  assert.equal(flow.nodes.find((node) => node.id === "scroll-trial")?.detail, "Dismissible · yearly + weekly");
+  assert.ok(!flow.nodes.some((node) => node.id === "access-dismissible"));
+  assert.ok(flow.nodes.filter((node) => /^(price-|access-)/.test(node.id)).every((node) => !node.experimentId));
   assert.ok(flow.nodes.every((node) => node.y < flow.height));
 });
 

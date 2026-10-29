@@ -569,7 +569,7 @@ Glow uses `glow.paywall.assignment.v5` / `native_yearly_prices_v5` for fresh ass
 so each duration receives 50% at each price. Existing v4 assignments are loaded unchanged.
 
 Versy's proposed v4 trial-duration test was removed on October 26 before release.
-The active app assignment remains `versy.paywall.yearlyPrice.assignment.v3` /
+Before the fixed-price rollout below, the app assignment was `versy.paywall.yearlyPrice.assignment.v3` /
 `versy_yearly_price_v3`, allocation `50_50`: $39.99 and $49.99, both with 7-day trials.
 The analytics price and widget-combination rows exclude all `.trial3` assignments.
 Matching seven-day v4 history is accepted defensively if present; migrated, development,
@@ -592,6 +592,9 @@ These new subscriptions must pass Apple's review and become available before shi
 Creation IDs and final Apple verification are recorded in [`glow-versy-trial3-products.json`](glow-versy-trial3-products.json). All five were `READY_TO_SUBMIT` with completed review images on October 23, 2026.
 
 ## October 26, 2026: Versy hard/dismissible comparison
+
+Superseded for new presentation by the October 29 rollout below; the all-time
+descriptive report still accepts these historical records.
 
 The Versy Data tab includes `Hard Widget`, `Dismissible Widget`, and `Bible Scroll`
 across all countries and trial lengths, including Mexico and unknown/conflicting
@@ -709,3 +712,42 @@ remains 80% / 20%. Existing assignments and attributed purchases keep their orig
 identities. The US-only HP override remains through October 28, with normal saved
 offer routing resuming October 29. This changes code configuration for the next
 app build, not existing installations.
+
+## October 29, 2026: Versy fixed price and hard Widget paywalls
+
+The next app release removes both price and Widget access randomization. Every
+standard yearly paywall uses US $49.99 (`com.arthurbuildsstuff.bible.yearly_4999`);
+StoreKit still provides localized prices and trial eligibility. Both Full and
+Shorter Widget use hard paywalls, including users upgrading from soft assignments.
+Bible Scroll keeps its dismissible timeline and weekly alternative. Daily Gift,
+its discounted SKU, recovery routing, the onboarding route test and team-note test
+are unchanged.
+
+The app publishes `yearly_price_experiment_id=versy_yearly_price_fixed_4999_v1`,
+`yearly_price_allocation=fixed_4999`, the fixed SKU and its assignment timestamp;
+Widget policy is `onboarding_paywall_experiment_id=versy_yearly_hard_paywalls_v1`
+with access `hard`. The combined configuration ID is
+`versy_yearly_paywall_configuration_v5`. These IDs never qualify for the retired
+v3/v4 price/access/configuration A/B cards. The map has one 100% hard branch and
+one 100% price branch; neither contributes to the active A/B count or borrows
+historical experiment metrics.
+
+The Data route returns a separate one-row fixed-price rollout beside the historical
+price comparison. It includes eligible first installs on v1.2.6+, non-payers and
+upgrades, with outcomes from the later of install and fixed assignment. Earlier
+subscription chains are excluded; subsequent purchases, linked renewals and refunds
+use the same server money rules. Country slices use identical membership. There is
+no rollout winner estimate or readiness indicator. Invalid timestamps, environments,
+allocations and SKUs are excluded. The Versy snapshot/cache key is versioned so the
+old report cannot hide this new row.
+
+The overall Onboarding paywalls report accepts the new hard policy for both Widget
+routes, and rejects soft access paired with that policy ID. It retains the original
+immutable Welcome enrollment as its outcome anchor. It groups by latest reported
+access and is descriptive, not a reconstruction of access at every historical view.
+Scroll remains its own row regardless of shared Widget attributes. Retired scalar
+A/B cards show only records still reporting the old experiment IDs; an upgraded
+user's previous scalar assignment is not reconstructed from a price or purchase.
+The immutable native gp1 assignments/transactions, note records and app-local legacy
+assignments remain untouched. Dashboard deployment and iOS release are separate;
+empty fixed-price rows before release do not indicate a live rollout.

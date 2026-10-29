@@ -4,7 +4,7 @@ import { experimentInstallCohort, experimentMinimumInstallVersion } from "./app-
 import { buildGlowPaywallCohortComparisons, type GlowPaywallCohortComparisons, type PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { buildPokyPaywallFlowComparison } from "./poky-paywall-flow-cohorts";
 import { buildVersyPaywallComparison, type VersyPaywallComparison } from "./versy-paywall-comparison";
-import { buildVersyYearlyPriceComparison } from "./versy-yearly-price-cohorts";
+import { buildVersyYearlyPriceComparison, type VersyYearlyPriceComparison } from "./versy-yearly-price-cohorts";
 import { installCohortTrialSurvival } from "./install-cohort-trial-survival";
 import { withJourneyConversions } from "./journey-cohort-conversions";
 import { buildUserJourney, userJourneyDefinition, type UserJourneyReport } from "./user-journey";
@@ -13,7 +13,7 @@ import type { TrialCancelTiming } from "./mobile-app-analytics";
 export type AppCountryComparisonSlice = {
   userJourney: UserJourneyReport | null;
   paywallCohortComparisons: GlowPaywallCohortComparisons | null;
-  yearlyPriceComparison: PaywallCohortComparison | null;
+  yearlyPriceComparison: VersyYearlyPriceComparison | null;
   versyPaywallComparison: VersyPaywallComparison | null;
   paywallFlowComparison: PaywallCohortComparison | null;
   trialCancelTiming: TrialCancelTiming | null;

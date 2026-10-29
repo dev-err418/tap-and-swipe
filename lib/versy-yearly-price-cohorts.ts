@@ -1,6 +1,9 @@
 import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
+import { isVersyFixedYearlyPriceAssignment, VERSY_FIXED_YEARLY_PRICE } from "./versy-paywall-policy";
+
+export type VersyYearlyPriceComparison = PaywallCohortComparison & { rollout: PaywallCohortComparison };
 
 export const VERSY_YEARLY_PRICE_EXPERIMENT = "versy_yearly_price_v3";
 export const VERSY_RETIRED_YEARLY_PRICE_EXPERIMENT = "versy_yearly_price_v4";
@@ -27,17 +30,30 @@ export function buildVersyYearlyPriceComparison(
   events: Parameters<typeof versionCohortConversions>[1],
   attributes: Map<string, Record<string, string>>,
   asOf = Date.now(),
+): VersyYearlyPriceComparison {
+  return {
+    ...priceComparison(installs, events, attributes, asOf, isVersyYearlyPriceAssignment, VERSY_YEARLY_PRICES),
+    rollout: priceComparison(installs, events, attributes, asOf, isVersyFixedYearlyPriceAssignment, [VERSY_FIXED_YEARLY_PRICE]),
+  };
+}
+
+function priceComparison(
+  installs: Parameters<typeof versionCohortConversions>[0],
+  events: Parameters<typeof versionCohortConversions>[1],
+  attributes: Map<string, Record<string, string>>, asOf: number,
+  assignmentCheck: typeof isVersyYearlyPriceAssignment,
+  prices: readonly { key: string; label: string; productID: string }[],
 ): PaywallCohortComparison {
   const eligible = experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.versy, asOf);
   let invalidTimes = 0;
   const enrolled = eligible.flatMap((install) => {
     const values = attributes.get(install.appUserId);
-    if (!values || !isVersyYearlyPriceAssignment(values)) return [];
+    if (!values || !assignmentCheck(values)) return [];
     const assignedAt = Number(values.yearly_price_assigned_at);
     if (!Number.isFinite(assignedAt) || assignedAt <= 0 || assignedAt > asOf) { invalidTimes++; return []; }
     return [{ install, assignedAt, productID: values.yearly_price_product_id }];
   });
-  const rows = VERSY_YEARLY_PRICES.map((price) => {
+  const rows = prices.map((price) => {
     const members = enrolled.filter((row) => row.productID === price.productID);
     const conversions = versionCohortConversions(members.map(({ install }) => ({ ...install, appVersion: "0" })),
       events, attributes, 0, asOf + 1, asOf, new Map(members.map(({ install, assignedAt }) => [install.appUserId, assignedAt]))).get("0")
@@ -46,7 +62,7 @@ export function buildVersyYearlyPriceComparison(
   });
   return {
     status: rows.some((row) => row.installs > 0) ? "ready" : "empty", rows,
-    labels: Object.fromEntries(VERSY_YEARLY_PRICES.map((price) => [price.key, price.label.replace(" (", "/year (")])),
+    labels: Object.fromEntries(prices.map((price) => [price.key, price.label.includes("/year") ? price.label : price.label.replace(" (", "/year (")])),
     warnings: invalidTimes ? [`${invalidTimes} price assignments have an invalid or missing assignment time and were excluded.`] : [],
   };
 }

@@ -6,6 +6,7 @@ import { buildVersyPaywallComparison, VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE } fr
 import { buildAppCountryComparisons } from "../../lib/app-country-comparisons";
 import VersyPaywallComparisonPanel from "../../components/analytics/VersyPaywallComparisonPanel";
 import { VERSY_YEARLY_PRICES } from "../../lib/versy-yearly-price-cohorts";
+import { VERSY_HARD_PAYWALL_EXPERIMENT, VERSY_FIXED_YEARLY_PRICE } from "../../lib/versy-paywall-policy";
 
 const hour = 3_600_000, start = Date.parse("2026-10-20T00:00:00Z"), asOf = start + 72 * hour;
 const install = (appUserId: string, extra = {}) => ({ appUserId, country: "US", appVersion: "1.2.6", installedAt: start, ...extra });
@@ -22,6 +23,30 @@ const enrollment = (extra = {}) => JSON.stringify({ schema: 1, environment: "pro
   experiment: "versy_onboarding_outcomes_v1", experimentName: "Onboarding outcomes",
   variant: "bible_widget", variantName: "Bible Widget", paywall: "bible_widget", language: "en",
   assignedAt: start, randomized: false, variantCount: 3, expectedProduct: VERSY_YEARLY_PRICES[0].productID, ...extra });
+
+test("fixed hard rollout includes both Widgets, preserves original outcomes and leaves Scroll dismissible", () => {
+  const fixed = {
+    onboarding_paywall_experiment_id: VERSY_HARD_PAYWALL_EXPERIMENT,
+    yearly_price_experiment_id: VERSY_FIXED_YEARLY_PRICE.experiment,
+    yearly_price_allocation: VERSY_FIXED_YEARLY_PRICE.allocation,
+    yearly_price_product_id: VERSY_FIXED_YEARLY_PRICE.productID,
+    yearly_price_assigned_at: String(start + 48 * hour),
+  };
+  const attrs = new Map([
+    ...["bible_widget", "bible_widget_shorter", "scroll_the_bible"].map((flow) => [flow, assignment({ ...fixed,
+      onboarding_variant: flow, [VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE]: enrollment({ variant: flow, paywall: flow }),
+    })] as const),
+    ["old-soft", assignment({ onboarding_paywall_access_variant: "dismissible" })],
+    ["invalid-soft", assignment({ ...fixed, onboarding_paywall_access_variant: "dismissible" })],
+  ]);
+  const report = buildVersyPaywallComparison([...attrs.keys()].map((id) => install(id)), [
+    event("bible_widget", { periodType: "normal", netProceeds: 15 }), event("scroll_the_bible"),
+  ], attrs, asOf);
+  assert.deepEqual(report.rows.map((r) => r.installs), [2, 1, 1]);
+  assert.equal(report.rows[0].conversions!.global.proceeds, 15);
+  assert.equal(report.checkpoints.hard[0].paid, 1);
+  assert.equal(report.noteExperiment!.flows.rows.find((r) => r.version === "bible_widget_shorter")!.installs, 1);
+});
 
 test("original enrollment retains both trial lengths, direct purchases and non-payers across price migrations", () => {
   const later = start + 10 * 24 * hour;
@@ -165,7 +190,7 @@ test("country slicing rebuilds the comparison, retaining anonymous transaction f
   const html = renderToStaticMarkup(createElement(VersyPaywallComparisonPanel, { report: report.slices.US.versyPaywallComparison! }));
   assert.ok(html.indexOf("Onboarding paywalls") < html.indexOf("Paywall flows · note variants"));
   assert.match(html, /Hard Widget/);
-  assert.match(html, /All countries and trial lengths/);
+  assert.match(html, /all countries and trial lengths/);
   assert.doesNotMatch(html, /7-day trials|excludes Mexico/);
   assert.doesNotMatch(html, /<details|<summary/);
   assert.match(renderToStaticMarkup(createElement(VersyPaywallComparisonPanel, { report: null })), /comparison is unavailable/);

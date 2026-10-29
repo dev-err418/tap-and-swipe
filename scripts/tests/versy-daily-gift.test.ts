@@ -65,7 +65,7 @@ test("sealed reach, revealed views and gift money stay separate from onboarding 
 
 test("gift configuration remains a rollout and keeps the historical placement", () => {
   assert.equal(nativePaywallAllocation(experiment, "daily_gift|daily_gift", "daily_gift", "pt"), 100);
-  assert.equal(activeABTestCount("versy"), 3);
+  assert.equal(activeABTestCount("versy"), 1);
   assert.ok(appExperimentMap("versy")?.notes.some((note) => note.includes(placement)));
   const report = summarizeVersyPlacements([], "2026-10-10", "2026-10-11");
   assert.ok(report.rows.some((row) => row.placement === placement));

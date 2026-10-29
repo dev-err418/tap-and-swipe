@@ -135,3 +135,19 @@ are excluded. Free trials are not paid purchases. Empty cohorts remain empty and
 missing proceeds stay unavailable. The existing Data request loads the four scalar
 price attributes; snapshot schema v20 adds this aggregate comparison. No raw user
 records are sent to the browser.
+
+## Fixed yearly price and Widget hard paywalls (next release, October 29, 2026)
+
+This supersedes the price/access splits described above. Standard yearly offers
+now use the US $49.99 SKU at 100%, and Full/Shorter Widget both use hard paywalls.
+Existing users migrate too. Bible Scroll remains dismissible with its weekly
+option; Daily Gift retains its discounted SKU.
+
+The analytics map shows one hard branch and one price branch, without counting
+either as an A/B test. Data shows a separate fixed-price rollout without winner
+estimates and labels the previous price comparison historical. The old price,
+access and combined A/B cards reject fixed-policy assignments. Updated Widget users
+remain in overall onboarding and note-flow totals, using their original enrollment
+for lifetime outcomes. Country filters apply the same rules. See the
+[October 29 reporting contract](native-paywall-analytics.md#october-29-2026-versy-fixed-price-and-hard-widget-paywalls)
+for IDs, migration limits and release requirements.

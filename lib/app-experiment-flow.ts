@@ -1,4 +1,3 @@
-import { VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
 import { appExperimentMap, type AppExperimentMapDefinition } from "./app-experiment-map";
 import { formatPaywallAllocation } from "./native-paywall-allocation";
 
@@ -55,14 +54,14 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   });
   access.branches.forEach((branch, index) => {
     nodes.push({ id: `access-${branch.id}`, x: 950, y: 76 + index * 136, width: 190,
-      label: branch.label, tone: "orange", experimentId: access.id, variantId: branch.id });
+      label: branch.label, detail: "100% · next app build", tone: "orange" });
   });
   nodes.push({ id: "scroll-trial", x: 950, y: 348, width: 190,
-    label: "Bible Scroll trial", detail: "Benefits → reminder → paywall", tone: "orange" });
+    label: "Bible Scroll trial", detail: "Dismissible · yearly + weekly", tone: "orange" });
   price.branches.forEach((branch, index) => {
     const id = `price-${index}`;
     nodes.push({ id, x: 1230, y: 144 + index * 136, width: 190,
-      label: branch.label, tone: "orange", experimentId: price.id, variantId: VERSY_YEARLY_PRICES.find((price) => price.productID === branch.id)?.key });
+      label: branch.label, detail: "100% rollout · next app build", tone: "orange" });
     [...access.branches.map((mode) => `access-${mode.id}`), "scroll-trial"].forEach((from) =>
       edges.push({ from, to: id, label: formatPaywallAllocation(branch.percent) }));
   });
