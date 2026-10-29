@@ -1,8 +1,7 @@
 import { buildVersyNoteReport, type VersyNoteReport } from "./versy-paywall-note";
 import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
-import { isVersyYearlyPriceAssignment } from "./versy-yearly-price-cohorts";
-import { versyOnboardingAudience } from "./versy-onboarding-analytics";
+import { parsePaywallAttributes } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 
@@ -19,23 +18,38 @@ export type VersyPaywallComparison = PaywallCohortComparison & {
   checkpoints: Record<string, VersyPaywallCheckpoint[]>;
 };
 const LABELS = { hard: "Hard Widget", dismissible: "Dismissible Widget", bible_scroll: "Bible Scroll" };
+const ONBOARDING_EXPERIMENT = "versy_onboarding_outcomes_v1";
+export const VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE = `gp1_a_${ONBOARDING_EXPERIMENT}`;
 
-/** Seven-day assigned cohorts, including non-payers; Scroll never follows the Widget access draw. */
+/** All-country onboarding outcomes across trial lengths, including non-payers. */
 export function buildVersyPaywallComparison(installs: Install[], events: Event[],
   attributes: Map<string, Record<string, string>>, asOf = Date.now()): VersyPaywallComparison {
   let invalidTimes = 0;
+  let invalidEnrollments = 0;
+  const { assignments } = parsePaywallAttributes([...attributes].flatMap(([appUserId, values]) =>
+    values[VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE] === undefined ? []
+      : [{ appUserId, key: VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE, value: values[VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE] }]));
   const members: Member[] = experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.versy, asOf)
     .flatMap((install) => {
       const values = attributes.get(install.appUserId);
-      if (!values || !isVersyYearlyPriceAssignment(values) || values.onboarding_experiment_id !== "scroll_the_bible_v1"
-        || versyOnboardingAudience(install.country, values) !== "comparison") return [];
+      if (!values || values.versy_tracking_environment !== "production"
+        || values.onboarding_experiment_id !== "scroll_the_bible_v1") return [];
       const widget = ["bible_widget", "bible_widget_shorter"].includes(values.onboarding_variant)
         && values.onboarding_paywall_experiment_id === "versy_yearly_paywalls_v1";
       const variant = values.onboarding_variant === "scroll_the_bible" ? "bible_scroll"
         : widget && ["hard", "dismissible"].includes(values.onboarding_paywall_access_variant)
           ? values.onboarding_paywall_access_variant : null;
       if (!variant) return [];
-      const assignedAt = Number(values.yearly_price_assigned_at);
+      const enrollment = assignments.get(`${install.appUserId}|${ONBOARDING_EXPERIMENT}`);
+      if (values[VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE] !== undefined) {
+        // Price attributes can change on upgrade. Keep the original Welcome
+        // time so earlier trials and direct purchases retain their attribution.
+        if (!enrollment || enrollment.variant !== values.onboarding_variant || enrollment.paywall !== enrollment.variant) {
+          invalidEnrollments++;
+          return [];
+        }
+      }
+      const assignedAt = enrollment?.assignedAt ?? Number(values.yearly_price_assigned_at);
       if (!Number.isFinite(assignedAt) || assignedAt <= 0 || assignedAt > asOf) { invalidTimes++; return []; }
       return [{ install, variant, start: Math.max(install.installedAt, assignedAt) }];
     });
@@ -74,7 +88,7 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
           if (first.periodType === "trial") {
             trial = true;
             if (!Number.isFinite(first.expiresAt) || first.expiresAt <= first.eventTs) result.missingTrialExpiry = true;
-            // Follow recorded expiry, including daylight-saving changes; no inferred seven-day timestamp.
+            // Follow each trial's recorded expiry, including its length and daylight-saving changes.
             if (first.expiresAt > cutoff && !throughCheckpoint.some((event) => event.name === "cancellation" || event.isRefund)) uncancelled = true;
           }
           for (const event of throughCheckpoint) {
@@ -94,5 +108,8 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
   });
   return { noteExperiment: buildVersyNoteReport(installs, events, attributes, 0, asOf + 1, asOf),
     status: rows.some((row) => row.installs > 0) ? "ready" : "empty", asOf, rows, labels: LABELS, checkpoints,
-    warnings: invalidTimes ? [`${invalidTimes} assignments with missing or invalid dates were excluded.`] : [] };
+    warnings: [
+      ...(invalidTimes ? [`${invalidTimes} assignments with missing or invalid dates were excluded.`] : []),
+      ...(invalidEnrollments ? [`${invalidEnrollments} invalid original onboarding records were excluded.`] : []),
+    ] };
 }

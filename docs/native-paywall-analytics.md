@@ -593,17 +593,20 @@ Creation IDs and final Apple verification are recorded in [`glow-versy-trial3-pr
 
 ## October 26, 2026: Versy hard/dismissible comparison
 
-The Versy Data tab includes `Hard Widget`, `Dismissible Widget`, and `Bible Scroll` for
-saved seven-day price assignments. Full and Shorter Widget are pooled by their saved
-access mode; Bible Scroll is always dismissible regardless of its unrelated access draw.
-Membership requires production tracking, first install on 1.2.6+, current onboarding
-experiment, matching known non-Mexico install/reported country, and a valid price assignment.
-Nonpayers remain in the denominator. Results include historical allocation mixes and are
-descriptive; no winner badge is inferred across these grouped flows.
+The Versy Data tab includes `Hard Widget`, `Dismissible Widget`, and `Bible Scroll`
+across all countries and trial lengths, including Mexico and unknown/conflicting
+country data. Full and Shorter Widget are pooled by their saved access mode; Bible
+Scroll is always dismissible regardless of its unrelated access draw. Membership
+requires production tracking, first install on 1.2.6+, the current onboarding
+experiment, and a valid original enrollment time (or the saved-price timestamp for
+legacy records). Price experiment, product and allocation do not restrict this
+overall flow report. Nonpayers remain in the denominator. Results include forced
+Mexico routing and historical allocation mixes and are descriptive; no winner badge
+is inferred across these grouped flows.
 
 The report also computes 24h/48h checkpoints, which are not displayed in the Data tab.
-The checkpoint calculation starts the clock at the later of first install and price
-assignment. Only fully observed users enter each checkpoint. Trial starts, cancellations,
+The checkpoint calculation starts the clock at the later of first install and original
+enrollment (saved-price assignment for legacy records). Only fully observed users enter each checkpoint. Trial starts, cancellations,
 expiry and direct payments are evaluated as they stood at that point, using the original
 transaction chain to retain anonymous follow-ups. Uncancelled trial or paid counts users
 once and is an early signal, not a prediction of eventual paid conversion. Trial-to-paid
@@ -612,6 +615,21 @@ Country filters rebuild the same aggregates. `lib/versy-paywall-comparison.ts` o
 calculation; no new analytics ingestion or database is introduced.
 Attribute loads split saturated queries into disjoint key batches, retaining all users
 instead of serving truncated cohorts. A saturated single key still fails explicitly.
+
+The October 29 audit found that an app upgrade could replace the scalar yearly-price
+assignment after a purchase. This table now reads the immutable
+`gp1_a_versy_onboarding_outcomes_v1` Welcome record as well: its original enrollment
+time anchors outcomes and checkpoints, so trials and direct purchases are not lost
+when the current price timestamp changes. Both three-day and seven-day assignments
+remain included, with conversion maturity based on each trial's recorded expiry.
+Present but invalid, nonproduction, or conflicting
+Welcome records are excluded; legacy users without that record retain the existing
+saved-price fallback. The v1.2.6 first-install floor, production checks and Widget
+access grouping still apply. APPU remains actual net USD
+proceeds divided by all eligible installs, including non-payers, with linked renewals
+and refunds and purchases elsewhere in the app. The table is labelled **Onboarding
+paywalls**, with explicit all-country/all-trial coverage. It is not directly
+comparable to an all-version onboarding variant report.
 
 ## Team note experiment (next app release)
 

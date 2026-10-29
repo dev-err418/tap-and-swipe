@@ -18,7 +18,7 @@ import { loadUserJourney } from "./user-journey-queries";
 import { journeyCohortAttributeKeys, withJourneyConversions } from "./journey-cohort-conversions";
 import { buildGlowPaywallCohortComparisons, GLOW_PAYWALL_COHORT_KEYS, type GlowPaywallCohortComparisons } from "./glow-paywall-cohort-comparisons";
 import { buildVersyYearlyPriceComparison, VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS, isVersyYearlyPriceAssignment, VERSY_YEARLY_PRICES } from "./versy-yearly-price-cohorts";
-import { buildVersyPaywallComparison, type VersyPaywallComparison } from "./versy-paywall-comparison";
+import { buildVersyPaywallComparison, VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE, type VersyPaywallComparison } from "./versy-paywall-comparison";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { withJourneyInstallVersions, type UserJourneyReport } from "./user-journey";
 import { orderAppExperiments } from "./app-experiment-order";
@@ -210,7 +210,7 @@ const GLOW_ICON_URL =
   "/community-icons/glow-wordmark.png";
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_COPY_KEY, GLOW_ONBOARDING_LEGACY_KEY] as const;
-const VERSY_ATTRIBUTE_KEYS = [VERSY_NOTE_ATTRIBUTE, "country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
+const VERSY_ATTRIBUTE_KEYS = [VERSY_NOTE_ATTRIBUTE, VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE, "country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
   "scroll_benefits_experiment_id", "scroll_benefits_variant", "scroll_benefits_allocation",
   "scroll_benefits_assigned_at", "scroll_benefits_screen_seen", "scroll_benefits_completed",
   "bible_widget_widget_screen_seen",
@@ -399,7 +399,7 @@ async function getSuperwallAppAnalytics(
   sessions = true,
   includeReports = true,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : ":yearly-trial3-20261023"}`;
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":all-country-onboarding-offers-20261029" : ":yearly-trial3-20261023"}`;
   return analyticsSnapshot(`mobile:${cacheKey}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports));
 }
