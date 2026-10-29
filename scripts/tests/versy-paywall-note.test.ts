@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import VersyPaywallNotePanel from "../../components/analytics/VersyPaywallNotePanel";
 import { buildVersyNoteReport, parseVersyNoteAssignment, versyNoteExperiment, VERSY_NOTE_ATTRIBUTE, VERSY_NOTE_EXPERIMENT, VERSY_NOTE_FLOWS, type VersyNoteAssignment } from "../../lib/versy-paywall-note";
 import { appExperimentFlow } from "../../lib/app-experiment-flow";
+import { buildVersyPaywallComparison, VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE } from "../../lib/versy-paywall-comparison";
 
 const day = 86_400_000, start = Date.parse("2026-10-26T00:00:00Z"), end = start + 7 * day, asOf = start + 20 * day;
 const install = (appUserId: string, installedAt = start, country = "US") => ({ appUserId, installedAt, appVersion: "1.2.9", country });
@@ -15,6 +16,76 @@ type Event = Parameters<typeof buildVersyNoteReport>[1][number];
 const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUserId, originalTransactionId: appUserId,
   transactionId: appUserId, name: "initial_purchase", periodType: "normal", netProceeds: 12, isRefund: false,
   eventTs: start + day, attributionTs: start + day, expiresAt: 0, ...extra });
+const historicalAttrs = (flow: typeof VERSY_NOTE_FLOWS[number]["key"]) => ({
+  versy_tracking_environment: "production", onboarding_experiment_id: "scroll_the_bible_v1", onboarding_variant: flow,
+  onboarding_paywall_experiment_id: "versy_yearly_paywalls_v1", onboarding_paywall_access_variant: "hard",
+  yearly_price_assigned_at: String(start + 15 * day),
+  [VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE]: JSON.stringify({ schema: 1, environment: "production",
+    experiment: "versy_onboarding_outcomes_v1", experimentName: "Onboarding outcomes", variant: flow,
+    variantName: flow, paywall: flow, language: "en", assignedAt: start, randomized: false, variantCount: 3,
+    expectedProduct: "yearly.trial3" }),
+});
+
+test("flow totals pool historical no-note users with new controls while A/B results stay enrollment-only", () => {
+  const attributes = new Map<string, Record<string, string>>();
+  const installs: ReturnType<typeof install>[] = [];
+  const events: Event[] = [];
+  for (const { key: flow } of VERSY_NOTE_FLOWS) {
+    for (const kind of ["historical-paid", "historical-free", "control", "note"] as const) {
+      const id = `${flow}-${kind}`;
+      const base = historicalAttrs(flow);
+      attributes.set(id, kind.startsWith("historical") ? base
+        : { ...base, ...attrs({ flow, access: "dismissible", variant: kind as "control" | "note" }) });
+      installs.push(install(id, start, kind.startsWith("historical") ? "MX" : "US"));
+      if (kind === "historical-free") continue;
+      events.push(event(id));
+      if (kind === "historical-paid") {
+        const renewal = event("", { originalTransactionId: id, transactionId: `${id}-renewal`, name: "renewal", netProceeds: 6,
+          eventTs: start + 8 * day });
+        events.push(renewal, renewal,
+          event("", { originalTransactionId: id, transactionId: `${id}-renewal`, name: "cancellation", isRefund: true,
+            netProceeds: -2, eventTs: start + 10 * day }));
+      }
+    }
+  }
+  // Duplicate observations must not enroll the same historical install twice.
+  installs.push(install("bible_widget-historical-paid", start + day));
+  attributes.set("saved-note-other-id", { ...historicalAttrs("scroll_the_bible"),
+    ...attrs({ flow: "scroll_the_bible", access: "dismissible" }),
+    onboarding_experiment_id: "scroll_the_bible_all_countries_oct26_2026" });
+  installs.push(install("saved-note-other-id"));
+  attributes.set("older-version", historicalAttrs("bible_widget"));
+  const comparison = buildVersyPaywallComparison([
+    ...installs, { ...install("older-version"), appVersion: "1.2.5" },
+  ], [...events, event("older-version", { netProceeds: 999 })], attributes, asOf);
+  const report = comparison.noteExperiment!;
+  for (const { key: flow } of VERSY_NOTE_FLOWS) {
+    const without = report.flows.rows.find((r) => r.version === flow)!.conversions!.global;
+    const withNote = report.flows.rows.find((r) => r.version === `${flow}_note`)!.conversions!.global;
+    assert.deepEqual([without.installs, without.installPaid, without.proceeds, without.refunds], [3, 2, 28, 1]);
+    assert.equal(without.proceeds / without.installs, 28 / 3);
+    assert.deepEqual([withNote.installs, withNote.proceeds], [flow === "scroll_the_bible" ? 2 : 1, 12]);
+  }
+  assert.deepEqual(report.overall.rows.map((r) => [r.installs, r.conversions!.global.proceeds]), [[3, 36], [4, 36]]);
+  for (const field of ["installs", "installPaid", "purchases", "refunds", "proceeds"] as const) {
+    assert.equal(report.flows.rows.reduce((sum, r) => sum + r.conversions!.global[field], 0),
+      comparison.rows.reduce((sum, r) => sum + r.conversions!.global[field], 0) + (field === "installs" ? 1 : 0));
+  }
+  const html = renderToStaticMarkup(createElement(VersyPaywallNotePanel, { report }));
+  assert.match(html, /Without-note rows combine previous users and current controls/);
+  const flowTable = html.split("Team note A/B test")[0];
+  assert.doesNotMatch(flowTable, /Win %|APPU lift/);
+});
+
+test("invalid saved note assignments cannot be relabelled as historical users", () => {
+  const report = buildVersyPaywallComparison([install("invalid"), install("legacy")], [], new Map<string, Record<string, string>>([
+    ["invalid", { ...historicalAttrs("bible_widget"), [VERSY_NOTE_ATTRIBUTE]: "{" }],
+    ["legacy", historicalAttrs("bible_widget")],
+  ]), asOf).noteExperiment!;
+  assert.equal(report.flows.rows.find((r) => r.version === "bible_widget")!.installs, 1);
+  assert.equal(report.flows.warnings.length, 1);
+  assert.deepEqual(report.overall.rows.map((r) => r.installs), [0, 0]);
+});
 
 test("reviews are shared before the 80/20 test and both arms keep the existing paywall paths", () => {
   const flow = appExperimentFlow("versy")!;

@@ -658,7 +658,29 @@ The note has its own sticky 80% treatment / 20% control draw. Both variants keep
 
 Welcome prepares an assignment; reaching reviews enrolls it and freezes route, access, language and yearly product. Users resuming an older onboarding are not retrospectively enrolled. The scalar Superwall user attribute `vn1_versy_paywall_note_v1` carries JSON: schema `1`, experiment ID, allocation `20_80`, production environment, randomized `true`, variant `control`/`note`, flow, language (`en`/`es`/`pt`/`de`), access, yearlyProduct and assignedAt (Unix milliseconds). Optional first timestamps: viewedAt, continuedAt, paywallViewedAt. Development, sandbox, corrupt and temporally inconsistent assignments are excluded.
 
-The existing Superwall attribute query fetches this field. The Versy app detail keeps the previous seven-day paywall comparison first, followed by an always-visible table of each route’s control/treatment pair, using the same flat layout and clickable screen previews as Glow. There is no expand/collapse control. The overall note result card, flow map and optional journey step remain available. Review and note dropouts remain in the denominator. There is no inferred legacy control cohort; older users retain their existing paywall results without entering the new note test. A/B date filters use enrollment; the all-time paywall table uses eligible installs. New subscription chains beginning after enrollment, their linked renewals and refunds follow the saved arm. Unknown amounts withhold the A/B winner; the detailed table keeps existing missing-money indicators. Country and language drilldowns use the same assignment. Price and access reports remain independent.
+The existing Superwall attribute query fetches this field. The Versy app detail keeps
+the overall onboarding paywall comparison first, followed by the always-visible
+**Paywall flows · note variants** table with clickable screen previews. Each
+without-note flow combines historical eligible users without a note record and
+current saved controls; each + note row contains saved note assignments. History
+uses the same production onboarding cohort, original enrollment timestamp, all
+countries/trial lengths and v1.2.6+ first-install floor as the comparison above.
+Existing saved note participants remain included even if their mutable onboarding
+experiment ID differs; their saved note flow takes precedence.
+Metrics are recalculated from combined users and transactions, including nonpayers,
+direct in-app purchases, linked renewals and refunds; they are not averages of the
+historical and current rates. Each install appears once. Invalid saved note records
+are excluded with a warning, never relabelled as historical users. These pooled
+flow rows are descriptive and have no A/B win-probability columns.
+
+The separate **Team note A/B test**, its dedicated experiment card, flow map and
+optional journey step remain enrollment-based. Historical users never become
+randomized controls. Review and note dropouts remain in this test's denominator.
+A/B date filters use enrollment; the all-time flow table uses eligible installs.
+New subscription chains beginning after note enrollment, their linked renewals
+and refunds follow the saved arm. Unknown amounts withhold the A/B winner; the
+detailed table keeps existing missing-money indicators. Country and language
+drilldowns use the same assignment. Price and access reports remain independent.
 
 Native English preview images are under `public/analytics/versy/paywall-note/`. The preview shows the shared reviews and optional note; subsequent Widget or Scroll payment screens retain their existing sequence. No new backend, database, Superwall campaign or subscription product is required.
 

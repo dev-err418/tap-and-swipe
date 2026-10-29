@@ -161,6 +161,7 @@ test("country slicing rebuilds the comparison, retaining anonymous transaction f
   assert.equal(report.slices.FR.versyPaywallComparison!.checkpoints.hard[1].uncancelledTrials, 1);
   assert.equal(report.slices.MX.versyPaywallComparison!.status, "ready");
   assert.equal(report.slices.MX.versyPaywallComparison!.rows[0].conversions!.global.trials, 1);
+  assert.equal(report.slices.MX.versyPaywallComparison!.noteExperiment!.flows.rows.find((row) => row.version === "bible_widget")!.installs, 1);
   const html = renderToStaticMarkup(createElement(VersyPaywallComparisonPanel, { report: report.slices.US.versyPaywallComparison! }));
   assert.ok(html.indexOf("Onboarding paywalls") < html.indexOf("Paywall flows · note variants"));
   assert.match(html, /Hard Widget/);

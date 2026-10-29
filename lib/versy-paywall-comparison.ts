@@ -1,4 +1,4 @@
-import { buildVersyNoteReport, type VersyNoteReport } from "./versy-paywall-note";
+import { buildVersyNoteReport, buildVersyPaywallFlowHistory, type VersyNoteReport } from "./versy-paywall-note";
 import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import { parsePaywallAttributes } from "./native-paywall-analytics";
@@ -7,7 +7,7 @@ import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons"
 
 type Install = Parameters<typeof versionCohortConversions>[0][number] & { country: string };
 type Event = Parameters<typeof versionCohortConversions>[1][number];
-type Member = { install: Install; start: number; variant: string };
+type Member = { install: Install; start: number; variant: string; flow: string };
 export type VersyPaywallCheckpoint = {
   hours: 24 | 48; installs: number; trials: number; uncancelledTrials: number;
   paid: number; uncancelledOrPaid: number; missingMoney: boolean; missingTrialExpiry: boolean;
@@ -51,7 +51,7 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
       }
       const assignedAt = enrollment?.assignedAt ?? Number(values.yearly_price_assigned_at);
       if (!Number.isFinite(assignedAt) || assignedAt <= 0 || assignedAt > asOf) { invalidTimes++; return []; }
-      return [{ install, variant, start: Math.max(install.installedAt, assignedAt) }];
+      return [{ install, variant, flow: values.onboarding_variant, start: Math.max(install.installedAt, assignedAt) }];
     });
   const observed = events.filter((event) => Number.isFinite(event.eventTs) && event.eventTs <= asOf);
   const chains = new Map<string, Event[]>();
@@ -106,7 +106,9 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
     });
     return { version: variant, installs: conversions.global.installs, tracked: conversions.global.installs, variants: [], conversions };
   });
-  return { noteExperiment: buildVersyNoteReport(installs, events, attributes, 0, asOf + 1, asOf),
+  const noteExperiment = buildVersyNoteReport(installs, events, attributes, 0, asOf + 1, asOf, "install", false);
+  noteExperiment.flows = buildVersyPaywallFlowHistory(members, installs, events, attributes, asOf);
+  return { noteExperiment,
     status: rows.some((row) => row.installs > 0) ? "ready" : "empty", asOf, rows, labels: LABELS, checkpoints,
     warnings: [
       ...(invalidTimes ? [`${invalidTimes} assignments with missing or invalid dates were excluded.`] : []),

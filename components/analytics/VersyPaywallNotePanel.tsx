@@ -19,10 +19,10 @@ export default function VersyPaywallNotePanel({ report }: { report: VersyNoteRep
   return <Dialog open={preview !== null} onOpenChange={(open) => { if (!open) setPreview(null); }}>
     <DashboardCard title="Paywall flows · note variants" contentClassName="pt-0"
       action={<span className="text-xs text-muted-foreground">{experimentCohortLabel("versy")}</span>}>
-      <p className="pb-2 text-xs text-muted-foreground">New note experiment, with and without the note for each flow. Previous paywall results remain in the table above.</p>
+      <p className="pb-2 text-xs text-muted-foreground">Without-note rows combine previous users and current controls. Includes all countries and trial lengths. These are historical and current performance totals.</p>
       {report.flows.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
       <JourneyVersionComparison cohorts={report.flows.rows} rowLabels={report.flows.labels} rowHeading="Flow"
-        allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate onRowClick={openPreview} />
+        allUsersOnly showInstallPaid showRefundRate onRowClick={openPreview} />
     </DashboardCard>
     <DashboardCard title="Team note A/B test" contentClassName="pt-0">
       <p className="pb-2 text-xs text-muted-foreground">80% with note · 20% without · Reviews in both variants{report.overall.status === "empty" ? " · Waiting for the updated app" : ""}</p>

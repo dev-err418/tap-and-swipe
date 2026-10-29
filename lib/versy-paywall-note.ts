@@ -51,6 +51,44 @@ export type VersyNoteReport = {
   reached: Record<string, { note: number; continued: number; paywall: number }>;
 };
 
+/** Descriptive flow totals pool history with current controls, without inventing A/B enrollment. */
+export function buildVersyPaywallFlowHistory(
+  members: { install: Install; start: number; flow: string }[], installs: Install[], events: Events,
+  attributes: Map<string, Record<string, string>>, asOf: number,
+): PaywallCohortComparison {
+  let invalid = 0;
+  const selected = new Map<string, { install: Install; key: string; outcomeStart: number }>();
+  for (const member of members) {
+    const values = attributes.get(member.install.appUserId);
+    if (values?.[VERSY_NOTE_ATTRIBUTE] !== undefined) continue;
+    if (!VERSY_NOTE_FLOWS.some((candidate) => candidate.key === member.flow)) continue;
+    selected.set(member.install.appUserId, { install: member.install, key: member.flow, outcomeStart: member.start });
+  }
+  for (const install of experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.versy, asOf)) {
+    const values = attributes.get(install.appUserId);
+    const assignment = parseVersyNoteAssignment(values, asOf);
+    // An invalid saved record is not evidence that the user skipped the note.
+    if (!assignment) { if (values?.[VERSY_NOTE_ATTRIBUTE] !== undefined) invalid++; continue; }
+    // Keep every existing note participant, even when a mutable onboarding ID
+    // no longer matches the historical flow report. The saved note route wins.
+    selected.set(install.appUserId, { install, key: assignment.flow + (assignment.variant === "note" ? "_note" : ""),
+      outcomeStart: Math.max(install.installedAt, assignment.assignedAt) });
+  }
+  const labels = Object.fromEntries(VERSY_NOTE_FLOWS.flatMap(({ key, label }) => [
+    [key, label], [`${key}_note`, `${label} + note`],
+  ]));
+  const rows = Object.keys(labels).map((key) => {
+    const cohort = [...selected.values()].filter((member) => member.key === key);
+    const conversions = versionCohortConversions(cohort.map(({ install }) => ({ ...install, appVersion: "0" })),
+      events, attributes, 0, asOf + 1, asOf,
+      new Map(cohort.map(({ install, outcomeStart }) => [install.appUserId, outcomeStart])),
+    ).get("0") ?? emptyVersionConversions();
+    return { version: key, installs: conversions.global.installs, tracked: conversions.global.installs, variants: [], conversions };
+  });
+  return { status: rows.some((row) => row.installs > 0) ? "ready" : "empty", rows, labels,
+    warnings: invalid ? [`${invalid} invalid team-note assignments were excluded from flow totals.`] : [] };
+}
+
 export function buildVersyNoteReport(installs: Install[], events: Events, attributes: Map<string, Record<string, string>>,
   startMs: number, endMs: number, asOf = Date.now(), dateBasis: "install" | "assignment" = "install", includeFlows = true): VersyNoteReport {
   let invalid = 0;

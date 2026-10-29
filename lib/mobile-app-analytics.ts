@@ -399,7 +399,7 @@ async function getSuperwallAppAnalytics(
   sessions = true,
   includeReports = true,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":all-country-onboarding-offers-20261029" : ":yearly-trial3-20261023"}`;
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":onboarding-note-history-20261029" : ":yearly-trial3-20261023"}`;
   return analyticsSnapshot(`mobile:${cacheKey}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports));
 }
