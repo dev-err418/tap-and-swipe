@@ -14,7 +14,7 @@ test("lists configured placements and counts distinct viewers with a later purch
   });
   assert.equal(report.rows.find((row) => row.placement === "onboarding_bible_widget_shorter")?.viewed, 0);
   assert.equal(report.rows.find((row) => row.placement === "settings_upgrade")?.viewed, 1);
-  assert.equal(report.onboarding.length, 3);
+  assert.equal(report.onboarding.length, 5);
 });
 
 test("splits the two onboarding paywalls using saved assignment, including embedded views without a reach event", () => {
@@ -48,4 +48,15 @@ test("Bible Scroll has its own paywall and does not infer views from reaches", (
   });
   assert.equal(report.onboarding.find((row) => row.placement === "Bible Widget onboarding")?.reached, 0);
   assert.equal(report.rows.find((row) => row.placement === "verse_study_upgrade")?.viewed, 1);
+});
+
+
+test("Animations and Videos paywalls remain separate from Current Scroll", () => {
+  const report = summarizeVersyPlacements(["animations", "videos"].map((style) => ({
+    userId: style, placement: `onboarding_scroll_bible_${style}`, reaches: 1, views: 1,
+    attempts: 1, purchases: style === "videos" ? 1 : 0, firstView: 10, lastPurchase: 20,
+  })), "start", "end");
+  assert.equal(report.onboarding.find((r) => r.placement === "Bible Scroll onboarding")!.viewed, 0);
+  assert.equal(report.onboarding.find((r) => r.placement === "Bible Scroll Animations onboarding")!.viewed, 1);
+  assert.equal(report.onboarding.find((r) => r.placement === "Bible Scroll Videos onboarding")!.purchased, 1);
 });

@@ -17,7 +17,7 @@ const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUs
   transactionId: appUserId, name: "initial_purchase", periodType: "normal", netProceeds: 12, isRefund: false,
   eventTs: start + day, attributionTs: start + day, expiresAt: 0, ...extra });
 const historicalAttrs = (flow: typeof VERSY_NOTE_FLOWS[number]["key"]) => ({
-  versy_tracking_environment: "production", onboarding_experiment_id: "scroll_the_bible_v1", onboarding_variant: flow,
+  versy_tracking_environment: "production", onboarding_experiment_id: flow === "scroll_the_bible_animations" || flow === "scroll_the_bible_videos" ? "scroll_the_bible_v2" : "scroll_the_bible_v1", onboarding_variant: flow,
   onboarding_paywall_experiment_id: "versy_yearly_paywalls_v1", onboarding_paywall_access_variant: "hard",
   yearly_price_assigned_at: String(start + 15 * day),
   [VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE]: JSON.stringify({ schema: 1, environment: "production",
@@ -66,7 +66,7 @@ test("flow totals pool historical no-note users with new controls while A/B resu
     assert.equal(without.proceeds / without.installs, 28 / 3);
     assert.deepEqual([withNote.installs, withNote.proceeds], [flow === "scroll_the_bible" ? 2 : 1, 12]);
   }
-  assert.deepEqual(report.overall.rows.map((r) => [r.installs, r.conversions!.global.proceeds]), [[3, 36], [4, 36]]);
+  assert.deepEqual(report.overall.rows.map((r) => [r.installs, r.conversions!.global.proceeds]), [[5, 60], [6, 60]]);
   for (const field of ["installs", "installPaid", "purchases", "refunds", "proceeds"] as const) {
     assert.equal(report.flows.rows.reduce((sum, r) => sum + r.conversions!.global[field], 0),
       comparison.rows.reduce((sum, r) => sum + r.conversions!.global[field], 0) + (field === "installs" ? 1 : 0));
@@ -125,11 +125,11 @@ test("earlier 20/80 assignments retain their flow and revenue without entering t
     }
   }
   const report = buildVersyPaywallComparison(installs, events, attributes, asOf).noteExperiment!;
-  assert.deepEqual(report.flows.rows.map((row) => [row.installs, row.conversions!.global.proceeds]), Array(6).fill([2, 24]));
-  assert.deepEqual(report.overall.rows.map((row) => [row.installs, row.conversions!.global.proceeds]), [[3, 36], [3, 36]]);
+  assert.deepEqual(report.flows.rows.map((row) => [row.installs, row.conversions!.global.proceeds]), Array(VERSY_NOTE_FLOWS.length * 2).fill([2, 24]));
+  assert.deepEqual(report.overall.rows.map((row) => [row.installs, row.conversions!.global.proceeds]), [[5, 60], [5, 60]]);
   assert.deepEqual(report.overall.warnings, []);
   const experiment = versyNoteExperiment({ installs, events, attributes, startMs: start, endMs: end }, asOf);
-  assert.deepEqual(experiment.variants.map((row) => [row.users, row.proceeds]), [[3, 36], [3, 36]]);
+  assert.deepEqual(experiment.variants.map((row) => [row.users, row.proceeds]), [[5, 60], [5, 60]]);
 });
 
 test("all assigned nonpayers, including note dropouts, stay in their frozen flow", () => {
@@ -138,9 +138,9 @@ test("all assigned nonpayers, including note dropouts, stay in their frozen flow
   ] as [string, Record<string, string>][]));
   attributes.set("legacy", { versy_tracking_environment: "production", onboarding_offer_variant: "current" });
   const report = buildVersyNoteReport([...attributes.keys()].map((id) => install(id)), [], attributes, start, end, asOf);
-  assert.deepEqual(report.overall.rows.map((r) => r.installs), [3, 3]);
-  assert.deepEqual(report.flows.rows.map((r) => r.installs), Array(6).fill(1));
-  assert.deepEqual(report.reached.note, { note: 3, continued: 0, paywall: 0 });
+  assert.deepEqual(report.overall.rows.map((r) => r.installs), [5, 5]);
+  assert.deepEqual(report.flows.rows.map((r) => r.installs), Array(VERSY_NOTE_FLOWS.length * 2).fill(1));
+  assert.deepEqual(report.reached.note, { note: 5, continued: 0, paywall: 0 });
   assert.equal(report.overall.rows[1].conversions!.global.proceeds, 0);
   const html = renderToStaticMarkup(createElement(VersyPaywallNotePanel, { report }));
   assert.doesNotMatch(html, /<details|<summary|Compare within each onboarding flow/);

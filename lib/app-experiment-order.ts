@@ -3,7 +3,7 @@
 const experimentOrder: Record<string, readonly string[]> = {
   glow: ["glow-onboarding-copy", "glow-native-paywall", "glow-yearly-price"],
   poky: ["poky-plan-design-v2-combinations", "poky-plan-design-combinations", "poky-animated-plan", "poky_paywall_note_v1", "poky-trial-vs-current"],
-  versy: ["versy_paywall_note_v1", "versy-scroll-the-bible-v1", "versy-scroll-the-bible-v1-mexico", "versy-scroll-the-bible-v1-unknown", "versy-bible-widget-shorter-v1", "versy-yearly-paywall-access-v1",
+  versy: ["versy_paywall_note_v1", "versy-scroll-the-bible-v2", "versy-scroll-the-bible-v1", "versy-scroll-the-bible-v1-mexico", "versy-scroll-the-bible-v1-unknown", "versy-bible-widget-shorter-v1", "versy-yearly-paywall-access-v1",
     "versy-scroll-benefits-v1", "versy-yearly-price-v3", "versy-yearly-paywall-configuration-v3"],
 };
 

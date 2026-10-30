@@ -1,3 +1,5 @@
+import { isVersyScrollRoute } from "./versy-onboarding-routes";
+
 /** The app does not publish an immutable assignment-country attribute yet. */
 export function versyOnboardingAudience(installCountry: string, attributes?: Record<string, string>): "comparison" | "mexico" | "unknown" {
   const install = installCountry.trim().toUpperCase();
@@ -10,7 +12,7 @@ export function versyOnboardingAudience(installCountry: string, attributes?: Rec
 }
 
 export function versyOnboardingPaywallReached(attributes?: Record<string, string>): boolean {
-  const key = attributes?.onboarding_variant === "scroll_the_bible"
+  const key = isVersyScrollRoute(attributes?.onboarding_variant)
     ? "scroll_bible_trial_screen_seen" : "bible_widget_paywall_screen_seen";
   return ["true", "1"].includes(attributes?.[key] ?? "");
 }

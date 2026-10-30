@@ -753,3 +753,28 @@ user's previous scalar assignment is not reconstructed from a price or purchase.
 The immutable native gp1 assignments/transactions, note records and app-local legacy
 assignments remain untouched. Dashboard deployment and iOS release are separate;
 empty fixed-price rows before release do not indicate a live rollout.
+
+
+## October 30, 2026: Four Versy onboarding routes
+
+The next app build saves new assignments under `scroll_the_bible_v2`: Bible Short
+(`bible_widget_shorter`) receives 1/3; Current Scroll (`scroll_the_bible`), Animations
+(`scroll_the_bible_animations`) and Videos (`scroll_the_bible_videos`) each receive
+2/9. This applies in every country. Full Widget receives no new assignments.
+Existing route and experiment records stay unchanged. The v2 A/B card uses only
+production v2 records; v1 and earlier comparisons retain their original eligibility.
+
+Animations and Videos now run in Release with persisted progress, real completion
+into the full Bible app and the existing Scroll reviews/paywall/recovery sequence.
+All three Scroll routes use the same dismissible yearly/weekly flow, fixed standard
+$49.99 yearly SKU and independent 50/50 note assignment. Short remains hard.
+Debug preview controls and purchase-free preview completion are not available in Release.
+
+The Data comparison, note flow rows, journey funnel, native outcome records and
+placement report distinguish both new routes. Demo funnels show Welcome, scrolling
+hook, scrolling verses, books/chapters, explanations and search/study before reviews.
+Trial reminder is optional for non-trial-eligible users. New placements are
+`onboarding_scroll_bible_animations` and `onboarding_scroll_bible_videos`.
+Welcome remains the immutable outcome enrollment anchor; no historical users are
+relabelled or retrospectively enrolled. The flow map shows 33.33% / 22.22% / 22.22% /
+22.22%, followed by the independent 50/50 note. No new backend or ingestion is needed.

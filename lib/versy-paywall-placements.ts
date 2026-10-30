@@ -1,5 +1,7 @@
 export const VERSY_PAYWALL_PLACEMENTS = [
   "onboarding_scroll_bible",
+  "onboarding_scroll_bible_animations",
+  "onboarding_scroll_bible_videos",
   "verse_study_upgrade",
   "onboarding_bible_widget",
   "onboarding_bible_widget_shorter",
@@ -67,7 +69,9 @@ export function summarizeVersyPlacements(events: VersyPlacementEvent[], windowSt
     groups.set(placement, group);
     const flow = placement === "onboarding_bible_widget" ? "Bible Widget onboarding"
       : placement === "onboarding_bible_widget_shorter" ? "Bible Widget Shorter onboarding"
-      : placement === "onboarding_scroll_bible" ? "Bible Scroll onboarding" : null;
+      : placement === "onboarding_scroll_bible" ? "Bible Scroll onboarding"
+      : placement === "onboarding_scroll_bible_animations" ? "Bible Scroll Animations onboarding"
+      : placement === "onboarding_scroll_bible_videos" ? "Bible Scroll Videos onboarding" : null;
     if (flow) {
       const onboardingGroup = onboardingGroups.get(flow) ?? {
         reached: new Set<string>(), viewed: new Set<string>(), attempted: new Set<string>(), purchased: new Set<string>(),
@@ -82,7 +86,7 @@ export function summarizeVersyPlacements(events: VersyPlacementEvent[], windowSt
     return { placement, reached: group?.reached.size ?? 0, viewed: group?.viewed.size ?? 0,
       attempted: group?.attempted.size ?? 0, purchased: group?.purchased.size ?? 0 };
   });
-  const onboarding = ["Bible Widget onboarding", "Bible Widget Shorter onboarding", "Bible Scroll onboarding"].map((placement) => {
+  const onboarding = ["Bible Widget onboarding", "Bible Widget Shorter onboarding", "Bible Scroll onboarding", "Bible Scroll Animations onboarding", "Bible Scroll Videos onboarding"].map((placement) => {
     const group = onboardingGroups.get(placement);
     return { placement, reached: group?.reached.size ?? 0, viewed: group?.viewed.size ?? 0,
       attempted: group?.attempted.size ?? 0, purchased: group?.purchased.size ?? 0 };

@@ -33,7 +33,7 @@ test("glow and versy journeys follow each onboarding variant", () => {
   assert.equal(glow.variants[1].steps.some((step) => step.attribute.includes("affirmation_preview")), true);
 
   const versy = userJourneyDefinition("versy")!;
-  assert.deepEqual(versy.variants.map((variant) => variant.key), ["bible_widget", "bible_widget_shorter", "scroll_the_bible"]);
+  assert.deepEqual(versy.variants.map((variant) => variant.key), ["bible_widget", "bible_widget_shorter", "scroll_the_bible", "scroll_the_bible_animations", "scroll_the_bible_videos"]);
   const [widget, shorter] = versy.variants;
   assert.equal(widget.steps[0].attribute, "versy_journey_bible_widget_entry_screen_seen");
   assert.equal(widget.steps.find((step) => step.paywall)?.attribute, "versy_journey_bible_widget_paywall_screen_seen");

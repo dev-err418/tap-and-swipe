@@ -88,7 +88,7 @@ function ResultsTable({ title, rows }: { title: string; rows: VersyPlacementRow[
             </th>)}
           </tr></thead>
           <tbody>{rows.map((row) => <tr key={row.placement} className="border-b border-black/[0.04] last:border-0">
-            <td className="px-5 py-4 font-medium">{row.placement === "onboarding_bible_widget" ? "Bible Widget embedded paywall" : row.placement === "onboarding_bible_widget_shorter" ? "Bible Widget Shorter embedded paywall" : row.placement === "onboarding_scroll_bible" ? "Bible Scroll trial paywall" : row.placement === "verse_study_upgrade" ? "Verse study upgrade" : row.placement}</td>
+            <td className="px-5 py-4 font-medium">{row.placement === "onboarding_bible_widget" ? "Bible Widget embedded paywall" : row.placement === "onboarding_bible_widget_shorter" ? "Bible Widget Shorter embedded paywall" : row.placement === "onboarding_scroll_bible" ? "Bible Scroll trial paywall" : row.placement === "onboarding_scroll_bible_animations" ? "Bible Scroll Animations paywall" : row.placement === "onboarding_scroll_bible_videos" ? "Bible Scroll Videos paywall" : row.placement === "verse_study_upgrade" ? "Verse study upgrade" : row.placement}</td>
             <ConversionRateCell conversions={row.purchased} views={row.viewed} domain={domain} />
             <Cell>{count(row.reached)}</Cell><Cell>{count(row.viewed)}</Cell><Cell>{count(row.attempted)}</Cell><Cell>{count(row.purchased)}</Cell>
           </tr>)}</tbody>

@@ -34,8 +34,8 @@ export function appExperimentFlow(appId: string, selectedLanguage?: string): Exp
 function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   const [onboarding, access, price, note] = map.tests;
   const nodes: ExperimentFlowNode[] = [
-    { id: "start", x: 36, y: 212, width: 0, label: "New install", kind: "start", tone: "blue" },
-    { id: "reviews", x: 410, y: 212, width: 170, label: "Reviews", detail: "Everyone · no rating prompt", tone: "neutral" },
+    { id: "start", x: 36, y: 280, width: 0, label: "New install", kind: "start", tone: "blue" },
+    { id: "reviews", x: 410, y: 280, width: 170, label: "Reviews", detail: "Everyone · no rating prompt", tone: "neutral" },
   ];
   const edges: ExperimentFlowEdge[] = [];
   onboarding.branches.forEach((branch, index) => {
@@ -46,7 +46,7 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   });
   note.branches.forEach((branch, index) => {
     const id = `note-${branch.id}`;
-    nodes.push({ id, x: 650, y: 144 + index * 136, width: 200, label: branch.id === "note" ? "Team note" : "Skip note",
+    nodes.push({ id, x: 650, y: 212 + index * 136, width: 200, label: branch.id === "note" ? "Team note" : "Skip note",
       detail: "Keep assigned onboarding route", tone: "orange", experimentId: note.id, variantId: branch.id });
     edges.push({ from: "reviews", to: id, label: formatPaywallAllocation(branch.percent) });
     access.branches.forEach((mode) => edges.push({ from: id, to: `access-${mode.id}`, label: `Widget · ${mode.percent}%` }));
@@ -60,14 +60,14 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
     label: "Bible Scroll trial", detail: "Dismissible · yearly + weekly", tone: "orange" });
   price.branches.forEach((branch, index) => {
     const id = `price-${index}`;
-    nodes.push({ id, x: 1230, y: 144 + index * 136, width: 190,
+    nodes.push({ id, x: 1230, y: 212 + index * 136, width: 190,
       label: branch.label, detail: "100% rollout · next app build", tone: "orange" });
     [...access.branches.map((mode) => `access-${mode.id}`), "scroll-trial"].forEach((from) =>
       edges.push({ from, to: id, label: formatPaywallAllocation(branch.percent) }));
   });
-  return { width: 1470, height: 470, nodes, edges,
+  return { width: 1470, height: 570, nodes, edges,
     stages: [{ x: 150, label: "Onboarding flow" }, { x: 410, label: "Testimonials" },
-      { x: 650, label: "Team note · 80/20" }, { x: 950, label: "Existing paywall flow" }, { x: 1230, label: "Yearly price" }],
+      { x: 650, label: "Team note · 50/50" }, { x: 950, label: "Existing paywall flow" }, { x: 1230, label: "Yearly price" }],
     notes: map.notes };
 }
 

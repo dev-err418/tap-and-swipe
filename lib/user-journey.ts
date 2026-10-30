@@ -214,7 +214,7 @@ const VERSY_WIDGET_STEPS: UserJourneyStep[] = [
   ["improve", "Improve"],
   ["versePrayerTransition", "Verse"],
   ["reviews", "Reviews"],
-  ["teamNote", "Team note (80%)", true],
+  ["teamNote", "Team note (50% for new users)", true],
   ["premiumIntro", "Premium"],
   ["trialReminder", "Trial reminder"],
   ["paywall", "Paywall"],
@@ -291,7 +291,7 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
       variantAttribute: "versy_onboarding_journey_variant",
       showEmptyVariants: true,
       cohortAttributes: { versy_onboarding_journey_schema: "2", versy_tracking_environment: "production" },
-      note: "All languages and countries. Journeys starting at Welcome in the updated app only; earlier visits are not reconstructed. Widget full and shorter routes stay separate. Reviews appear in both new note variants; older soft Widget journeys may skip them. The team note is optional (80%). Includes historical forced Scroll assignments; this is a descriptive funnel, not an A/B result.",
+      note: "All languages and countries. Journeys starting at Welcome in the updated app only; earlier visits are not reconstructed. Widget full and shorter routes stay separate. Reviews appear in both new note variants; older soft Widget journeys may skip them. The team note is optional (50% for new users; saved 80% assignments remain historical). Current, Animations and Videos have separate paths. Includes historical forced Scroll assignments; this is a descriptive funnel, not an A/B result.",
       variants: [
         { key: "bible_widget", label: "Full", family: "Bible Widget", steps: VERSY_WIDGET_STEPS },
         { key: "bible_widget_shorter", label: "Shorter", family: "Bible Widget", steps: VERSY_WIDGET_STEPS.filter(
@@ -303,10 +303,21 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
           ["goal", "Learning goal"], ["obstacle", "Reading obstacle"],
           ["reassurance", "The Bible can make sense"], ["verseStory", "Verse explanation"],
           ["readingHabit", "Reading habit"], ["notifications", "Daily reminders"], ["reviews", "Reviews"],
-          ["teamNote", "Team note (80%)"], ["goDeeper", "Premium preview"], ["benefits", "Benefits"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
+          ["teamNote", "Team note (50% for new users)"], ["goDeeper", "Premium preview"], ["benefits", "Benefits"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
         ].map(([name, label]) => ({ attribute: `scroll_bible_${name}_screen_seen`, label,
           ...(["benefits", "teamNote"].includes(name) ? { branch: true } : {}),
           ...(name === "trial" ? { paywall: true } : {}) })) },
+        ...[
+          { key: "scroll_the_bible_animations", label: "Animations" },
+          { key: "scroll_the_bible_videos", label: "Videos" },
+        ].map(({ key, label }) => ({ key, label, family: "Bible Scroll", steps: [
+          ["welcome", "Welcome"], ["scrollingHours", "Scrolling hook"], ["feed", "Verse scrolling"],
+          ["reading", "Books and chapters"], ["explanation", "Verse explanations"], ["search", "Search and deeper study"],
+          ["reviews", "Reviews"], ["teamNote", "Team note (50%)"], ["goDeeper", "Premium preview"],
+          ["benefits", "Benefits"], ["remindPromise", "Trial reminder"], ["trial", "Trial paywall"],
+        ].map(([name, label]) => ({ attribute: `scroll_bible_${name}_screen_seen`, label,
+          ...(["teamNote", "remindPromise"].includes(name) ? { branch: true } : {}),
+          ...(name === "trial" ? { paywall: true } : {}) })) })),
       ].map((variant) => ({ ...variant, steps: variant.steps.map((step) => ({
         ...step, attribute: `versy_journey_${step.attribute}`,
         ...(step.attribute === "bible_widget_reviews_screen_seen" ? { branch: true } : {}),

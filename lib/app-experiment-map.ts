@@ -1,3 +1,4 @@
+import { VERSY_ONBOARDING_REPORT, VERSY_ONBOARDING_ROUTES } from "./versy-onboarding-routes";
 import { VERSY_FIXED_YEARLY_PRICE, VERSY_HARD_PAYWALL_EXPERIMENT } from "./versy-paywall-policy";
 import { GLOW_ONBOARDING_ID, GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOWS } from "./glow-onboarding-experience";
 import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
@@ -130,12 +131,8 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
     return {
       tests: [
         {
-          id: "versy-scroll-the-bible-v1", label: "Onboarding", scope: "New assignments · equal thirds", tone: "blue",
-          branches: [
-            { id: "bible_widget", label: "Bible widget", percent: 100 / 3 },
-            { id: "bible_widget_shorter", label: "Bible widget shorter", percent: 100 / 3 },
-            { id: "scroll_the_bible", label: "Bible Scroll", percent: 100 / 3 },
-          ],
+          id: VERSY_ONBOARDING_REPORT, label: "Onboarding", scope: "Next app build · ⅓ Bible Short · ⅔ Scroll, split equally", tone: "blue",
+          branches: VERSY_ONBOARDING_ROUTES.map(({ key, label, percent }) => ({ id: key, label, percent })),
         },
         {
           id: VERSY_HARD_PAYWALL_EXPERIMENT, label: "Yearly-only paywall", scope: "Next app build · both Widget flows · 100% hard", tone: "orange",
@@ -162,12 +159,12 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
         percent: 100,
       })),
       notes: [
-        "Current app code assigns new users equally to Bible Widget, Shorter and Bible Scroll, including Mexico. The next build makes both Widget paywalls 100% hard, including former dismissible assignments. Historical onboarding comparisons keep their original geographic eligibility.",
+        "The next app build assigns ⅓ of new users to Bible Short and ⅔ to Bible Scroll, split equally between Current, Animations and Videos (2/9 each overall), in every country. Full Widget gets no new assignments; existing users keep their saved route and experiment. The next build makes both Widget paywalls 100% hard, including former dismissible assignments. Historical onboarding comparisons keep their original geographic eligibility.",
         "Both note variants keep the existing reviews. The next app build adds the team note after reviews for 50% of new assignments across every route; 50% continue directly to their existing paywall flow. Existing 20/80 assignments stay unchanged and remain in historical flow totals, outside the current 50/50 comparison. The sticky assignment is independent of onboarding route, access and yearly price. No App Store review prompts during onboarding. Only explicitly enrolled production users enter this comparison, including review and note dropouts. Scroll benefits are now standard; the old benefits comparison remains historical.",
-        "Bible Scroll uses a dismissible trial timeline with yearly and weekly plans. The saved soft/hard assignment does not control this onboarding screen; access comparisons include widget variants only.",
+        "All three Bible Scroll variants use the same dismissible trial timeline with yearly and weekly plans. The saved soft/hard assignment does not control this onboarding screen; access comparisons include widget variants only.",
         "The next build uses the fixed US $49.99 yearly SKU for everyone, including upgrades. StoreKit supplies localized prices and trial eligibility. Price and access A/B tests are retired; older client records remain in historical comparisons and fixed assignments never enter them. Bible Scroll keeps its weekly option and dismissible timeline. Daily Gift keeps its separate discounted product.",
         "Daily Gift recovery also appears after onboarding paywall dismissal; the next build opens recovery after transaction cancellation on hard onboarding paywalls. Day-2 behavior remains: after 24 hours, eligible non-premium users see a sealed envelope then a discounted yearly offer on their first app open each local day. This 100% rollout uses YearlyDiscount, independently of yearly price assignment, and is reported in Paywalls as versy_daily_gift_v1 / daily_gift_app_open; historical app_open remains separate.",
-        "Existing widget assignments remain in bible_widget_shorter_v1 and are reported in a separate historical comparison. Current funnels use scroll_the_bible_v1 only. Country grouping uses reported and install geography, not immutable assignment geography.",
+        "New assignments use scroll_the_bible_v2 across all countries. Saved scroll_the_bible_v1 and bible_widget_shorter_v1 cohorts remain in historical comparisons with their original eligibility. The journey funnel keeps Full Widget history and separate Current, Animations and Videos paths.",
       ],
     };
   }

@@ -42,7 +42,7 @@ test("fixed hard rollout includes both Widgets, preserves original outcomes and 
   const report = buildVersyPaywallComparison([...attrs.keys()].map((id) => install(id)), [
     event("bible_widget", { periodType: "normal", netProceeds: 15 }), event("scroll_the_bible"),
   ], attrs, asOf);
-  assert.deepEqual(report.rows.map((r) => r.installs), [2, 1, 1]);
+  assert.deepEqual(report.rows.map((r) => r.installs), [2, 1, 1, 0, 0]);
   assert.equal(report.rows[0].conversions!.global.proceeds, 15);
   assert.equal(report.checkpoints.hard[0].paid, 1);
   assert.equal(report.noteExperiment!.flows.rows.find((r) => r.version === "bible_widget_shorter")!.installs, 1);
@@ -132,7 +132,7 @@ test("all countries and trial offers enter; widget flows pool and Scroll ignores
     install("old", { appVersion: "1.2.5", installedAt: start - hour }),
     ...[...attrs.keys()].map((id) => install(id)), install("full"),
   ], [], attrs, asOf);
-  assert.deepEqual(report.rows.map((row) => row.installs), [8, 1, 1]);
+  assert.deepEqual(report.rows.map((row) => row.installs), [8, 1, 1, 0, 0]);
   assert.deepEqual(report.checkpoints.hard.map((point) => point.installs), [8, 8]);
   assert.equal(report.warnings.length, 1);
   assert.doesNotMatch(JSON.stringify(report), /appUserId|originalTransactionId|transactionId/);
@@ -194,4 +194,26 @@ test("country slicing rebuilds the comparison, retaining anonymous transaction f
   assert.doesNotMatch(html, /7-day trials|excludes Mexico/);
   assert.doesNotMatch(html, /<details|<summary/);
   assert.match(renderToStaticMarkup(createElement(VersyPaywallComparisonPanel, { report: null })), /comparison is unavailable/);
+});
+
+
+test("v2 Scroll demos retain distinct revenue, nonpayers and immutable Welcome attribution", () => {
+  const attrs = new Map<string, Record<string, string>>();
+  for (const flow of ["scroll_the_bible_animations", "scroll_the_bible_videos"]) {
+    for (const suffix of ["paid", "free"]) attrs.set(`${flow}-${suffix}`, assignment({
+      onboarding_experiment_id: "scroll_the_bible_v2", onboarding_variant: flow,
+      [VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE]: enrollment({ variant: flow, paywall: flow, variantCount: 4 }),
+    }));
+  }
+  const report = buildVersyPaywallComparison([...attrs.keys()].map((id) => install(id)), [
+    event("scroll_the_bible_animations-paid", { periodType: "normal", netProceeds: 12 }),
+    event("scroll_the_bible_videos-paid", { periodType: "normal", netProceeds: 24 }),
+  ], attrs, asOf);
+  assert.equal(report.rows.find((r) => r.version === "bible_scroll")!.installs, 0);
+  for (const [suffix, proceeds] of [["animations", 12], ["videos", 24]] as const) {
+    const row = report.rows.find((r) => r.version === `bible_scroll_${suffix}`)!;
+    assert.equal(row.installs, 2);
+    assert.equal(row.conversions!.global.proceeds, proceeds);
+    assert.equal(report.noteExperiment!.flows.rows.find((r) => r.version === `scroll_the_bible_${suffix}`)!.installs, 2);
+  }
 });

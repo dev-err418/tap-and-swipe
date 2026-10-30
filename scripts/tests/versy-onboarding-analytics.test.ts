@@ -38,7 +38,7 @@ test("current funnel includes the optional benefits branch and explicit producti
 
 test("both note variants keep their route-specific paywall", () => {
   const flow = appExperimentFlow("versy")!;
-  for (const route of ["scroll_the_bible", "bible_widget", "bible_widget_shorter"]) {
+  for (const route of ["scroll_the_bible", "scroll_the_bible_animations", "scroll_the_bible_videos", "bible_widget_shorter"]) {
     assert.deepEqual(flow.edges.filter((edge) => edge.from === route).map((edge) => edge.to), ["reviews"]);
   }
   for (const id of ["note-control", "note-note"]) {
@@ -46,7 +46,7 @@ test("both note variants keep their route-specific paywall", () => {
     assert.deepEqual(flow.edges.filter((edge) => edge.from === id && edge.to.startsWith("access-")).map((edge) => edge.label), ["Widget · 100%"]);
   }
   assert.equal(flow.edges.filter((edge) => edge.from === "scroll-trial").length, 1);
-  assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["33.33%", "33.33%", "33.33%"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => edge.label), ["33.33%", "22.22%", "22.22%", "22.22%"]);
   assert.deepEqual(flow.nodes.filter((node) => node.id.startsWith("price-")).map((node) => node.label), ["$49.99/year (7d)"]);
   assert.equal(flow.nodes.find((node) => node.id === "scroll-trial")?.detail, "Dismissible · yearly + weekly");
   assert.ok(!flow.nodes.some((node) => node.id === "access-dismissible"));
@@ -85,5 +85,29 @@ test("the optional note never replaces the main journey drop-off baseline", () =
     ]);
     const drops = journeyDrops(result.variants.find((row) => row.key === route.key)!.steps, 100);
     assert.equal(drops[reviews + 2].lost, 0);
+  }
+});
+
+
+test("v2 has four production-only arms with exact weights, independent of historical geography", async () => {
+  const { VERSY_ONBOARDING_ROUTES, VERSY_ONBOARDING_V2_VARIANTS } = await import("../../lib/versy-onboarding-routes");
+  assert.ok(Math.abs(VERSY_ONBOARDING_ROUTES.reduce((sum, route) => sum + route.percent, 0) - 100) < 1e-10);
+  assert.equal(VERSY_ONBOARDING_ROUTES[0].percent, 100 / 3);
+  for (const route of VERSY_ONBOARDING_ROUTES.slice(1)) assert.equal(route.percent, 200 / 9);
+  assert.ok(VERSY_ONBOARDING_V2_VARIANTS.every((route) => route.attributes.onboarding_experiment_id === "scroll_the_bible_v2"
+    && route.attributes.versy_tracking_environment === "production"));
+  for (const key of ["scroll_the_bible_animations", "scroll_the_bible_videos"]) {
+    assert.equal(versyOnboardingPaywallReached({ onboarding_variant: key, scroll_bible_trial_screen_seen: "true" }), true);
+    assert.equal(versyOnboardingPaywallReached({ onboarding_variant: key, bible_widget_paywall_screen_seen: "true" }), false);
+    const route = userJourneyDefinition("versy")!.variants.find((route) => route.key === key)!;
+    assert.deepEqual(route.steps.slice(0, 7).map((step) => step.attribute),
+      ["welcome", "scrollingHours", "feed", "reading", "explanation", "search", "reviews"].map((s) => `versy_journey_scroll_bible_${s}_screen_seen`));
+    assert.equal(route.steps.find((step) => step.attribute.includes("remindPromise"))?.branch, true);
+    const report = buildUserJourney(userJourneyDefinition("versy")!, [
+      { variant: key, key: ASSIGNED_KEY, users: 20 },
+      { variant: key, key: "versy_journey_scroll_bible_trial_screen_seen", users: 7 },
+    ]);
+    assert.equal(report.variants.find((route) => route.key === key)?.completionShare, 7 / 20);
+    assert.equal(report.variants.find((route) => route.key === "scroll_the_bible")?.assigned, 0);
   }
 });

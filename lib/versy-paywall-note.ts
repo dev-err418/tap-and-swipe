@@ -1,3 +1,4 @@
+import { isVersyScrollRoute } from "./versy-onboarding-routes";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
@@ -7,8 +8,10 @@ export const VERSY_NOTE_EXPERIMENT = "versy_paywall_note_v1";
 export const VERSY_NOTE_ATTRIBUTE = "vn1_versy_paywall_note_v1";
 export const VERSY_NOTE_FLOWS = [
   { key: "bible_widget", label: "Bible Widget" },
-  { key: "bible_widget_shorter", label: "Bible Widget Shorter" },
-  { key: "scroll_the_bible", label: "Bible Scroll" },
+  { key: "bible_widget_shorter", label: "Bible Short" },
+  { key: "scroll_the_bible", label: "Bible Scroll · Current" },
+  { key: "scroll_the_bible_animations", label: "Bible Scroll · Animations" },
+  { key: "scroll_the_bible_videos", label: "Bible Scroll · Videos" },
 ] as const;
 export type VersyNoteAssignment = {
   schema: 1; experiment: typeof VERSY_NOTE_EXPERIMENT; allocation: "20_80" | "50_50";
@@ -29,7 +32,7 @@ export function parseVersyNoteAssignment(values: Record<string, string> | undefi
       || !["control", "note"].includes(String(r.variant)) || !VERSY_NOTE_FLOWS.some((f) => f.key === r.flow)
       || !["en", "de", "es", "pt"].includes(String(r.language)) || r.environment !== "production" || r.randomized !== true
       || !["hard", "dismissible"].includes(String(r.access)) || typeof r.yearlyProduct !== "string" || !r.yearlyProduct
-      || (r.flow === "scroll_the_bible" && r.access !== "dismissible")
+      || (isVersyScrollRoute(r.flow) && r.access !== "dismissible")
       || typeof r.assignedAt !== "number" || !Number.isFinite(r.assignedAt) || r.assignedAt <= 0 || r.assignedAt > asOf) return null;
     for (const key of ["viewedAt", "continuedAt", "paywallViewedAt"]) {
       const t = r[key];

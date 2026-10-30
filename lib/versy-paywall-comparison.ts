@@ -1,3 +1,4 @@
+import { VERSY_ONBOARDING_EXPERIMENT } from "./versy-onboarding-routes";
 import { buildVersyNoteReport, buildVersyPaywallFlowHistory, type VersyNoteReport } from "./versy-paywall-note";
 import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
@@ -18,7 +19,7 @@ export type VersyPaywallComparison = PaywallCohortComparison & {
   noteExperiment?: VersyNoteReport;
   checkpoints: Record<string, VersyPaywallCheckpoint[]>;
 };
-const LABELS = { hard: "Hard Widget", dismissible: "Dismissible Widget", bible_scroll: "Bible Scroll" };
+const LABELS = { hard: "Hard Widget", dismissible: "Dismissible Widget", bible_scroll: "Bible Scroll · Current", bible_scroll_animations: "Bible Scroll · Animations", bible_scroll_videos: "Bible Scroll · Videos" };
 const ONBOARDING_EXPERIMENT = "versy_onboarding_outcomes_v1";
 export const VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE = `gp1_a_${ONBOARDING_EXPERIMENT}`;
 
@@ -34,8 +35,10 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
     .flatMap((install) => {
       const values = attributes.get(install.appUserId);
       if (!values || values.versy_tracking_environment !== "production"
-        || values.onboarding_experiment_id !== "scroll_the_bible_v1") return [];
+        || !["scroll_the_bible_v1", VERSY_ONBOARDING_EXPERIMENT].includes(values.onboarding_experiment_id)) return [];
       const variant = values.onboarding_variant === "scroll_the_bible" ? "bible_scroll"
+        : values.onboarding_variant === "scroll_the_bible_animations" ? "bible_scroll_animations"
+        : values.onboarding_variant === "scroll_the_bible_videos" ? "bible_scroll_videos"
         : versyWidgetPaywallAccess(values);
       if (!variant) return [];
       const enrollment = assignments.get(`${install.appUserId}|${ONBOARDING_EXPERIMENT}`);
