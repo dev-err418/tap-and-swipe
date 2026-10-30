@@ -151,8 +151,8 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
           id: "versy_paywall_note_v1", label: "Team note", tone: "orange", planned: true,
           scope: "Next app build · all onboarding routes · reviews in both variants",
           branches: [
-            { id: "control", label: "Reviews → paywall", percent: 20 },
-            { id: "note", label: "Reviews → note → paywall", percent: 80 },
+            { id: "control", label: "Reviews → paywall", percent: 50 },
+            { id: "note", label: "Reviews → note → paywall", percent: 50 },
           ],
         },
       ],
@@ -163,7 +163,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       })),
       notes: [
         "Current app code assigns new users equally to Bible Widget, Shorter and Bible Scroll, including Mexico. The next build makes both Widget paywalls 100% hard, including former dismissible assignments. Historical onboarding comparisons keep their original geographic eligibility.",
-        "Both note variants keep the existing reviews. The next app build adds the team note after reviews for 80%, while 20% continue directly to their existing paywall flow. The sticky assignment is independent of onboarding route, access and yearly price. No App Store review prompts during onboarding. Only explicitly enrolled production users enter this comparison, including review and note dropouts. Scroll benefits are now standard; the old benefits comparison remains historical.",
+        "Both note variants keep the existing reviews. The next app build adds the team note after reviews for 50% of new assignments across every route; 50% continue directly to their existing paywall flow. Existing 20/80 assignments stay unchanged and remain in historical flow totals, outside the current 50/50 comparison. The sticky assignment is independent of onboarding route, access and yearly price. No App Store review prompts during onboarding. Only explicitly enrolled production users enter this comparison, including review and note dropouts. Scroll benefits are now standard; the old benefits comparison remains historical.",
         "Bible Scroll uses a dismissible trial timeline with yearly and weekly plans. The saved soft/hard assignment does not control this onboarding screen; access comparisons include widget variants only.",
         "The next build uses the fixed US $49.99 yearly SKU for everyone, including upgrades. StoreKit supplies localized prices and trial eligibility. Price and access A/B tests are retired; older client records remain in historical comparisons and fixed assignments never enter them. Bible Scroll keeps its weekly option and dismissible timeline. Daily Gift keeps its separate discounted product.",
         "Daily Gift recovery also appears after onboarding paywall dismissal; the next build opens recovery after transaction cancellation on hard onboarding paywalls. Day-2 behavior remains: after 24 hours, eligible non-premium users see a sealed envelope then a discounted yearly offer on their first app open each local day. This 100% rollout uses YearlyDiscount, independently of yearly price assignment, and is reported in Paywalls as versy_daily_gift_v1 / daily_gift_app_open; historical app_open remains separate.",

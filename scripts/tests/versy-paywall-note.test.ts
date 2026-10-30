@@ -10,7 +10,7 @@ import { buildVersyPaywallComparison, VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE } fr
 const day = 86_400_000, start = Date.parse("2026-10-26T00:00:00Z"), end = start + 7 * day, asOf = start + 20 * day;
 const install = (appUserId: string, installedAt = start, country = "US") => ({ appUserId, installedAt, appVersion: "1.2.9", country });
 const record = (extra: Partial<VersyNoteAssignment> = {}): VersyNoteAssignment => ({ schema: 1, experiment: VERSY_NOTE_EXPERIMENT,
-  allocation: "20_80", variant: "note", flow: "bible_widget", language: "en", assignedAt: start + 1000, environment: "production", randomized: true, access: "hard", yearlyProduct: "yearly", ...extra });
+  allocation: "50_50", variant: "note", flow: "bible_widget", language: "en", assignedAt: start + 1000, environment: "production", randomized: true, access: "hard", yearlyProduct: "yearly", ...extra });
 const attrs = (extra: Partial<VersyNoteAssignment> = {}, environment = "production") => ({ versy_tracking_environment: environment, [VERSY_NOTE_ATTRIBUTE]: JSON.stringify(record({ ...extra, environment } as Partial<VersyNoteAssignment>)) });
 type Event = Parameters<typeof buildVersyNoteReport>[1][number];
 const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUserId, originalTransactionId: appUserId,
@@ -87,9 +87,9 @@ test("invalid saved note assignments cannot be relabelled as historical users", 
   assert.deepEqual(report.overall.rows.map((r) => r.installs), [0, 0]);
 });
 
-test("reviews are shared before the 80/20 test and both arms keep the existing paywall paths", () => {
+test("reviews are shared before the 50/50 test and both arms keep the existing paywall paths", () => {
   const flow = appExperimentFlow("versy")!;
-  assert.deepEqual(flow.edges.filter((e) => e.from === "reviews").map((e) => [e.to, e.label]), [["note-control", "20%"], ["note-note", "80%"]]);
+  assert.deepEqual(flow.edges.filter((e) => e.from === "reviews").map((e) => [e.to, e.label]), [["note-control", "50%"], ["note-note", "50%"]]);
   for (const treatment of ["note-control", "note-note"]) {
     assert.deepEqual(flow.edges.filter((e) => e.from === treatment).map((e) => e.to), ["access-hard", "scroll-trial"]);
   }
@@ -99,13 +99,37 @@ test("strict production records reject missing, corrupt, future and impossible m
   assert.equal(parseVersyNoteAssignment(undefined, asOf), null);
   assert.equal(parseVersyNoteAssignment({ versy_tracking_environment: "production" }, asOf), null);
   assert.equal(parseVersyNoteAssignment(attrs({}, "sandbox"), asOf), null);
-  for (const patch of [{ schema: 2 }, { allocation: "50_50" }, { flow: "unknown" }, { assignedAt: asOf + 1 },
+  for (const patch of [{ schema: 2 }, { allocation: "40_60" }, { flow: "unknown" }, { assignedAt: asOf + 1 },
     { continuedAt: start + 2000 }, { paywallViewedAt: start + 3000 },
     { viewedAt: start + 3000, continuedAt: start + 2000 }, { variant: "control", viewedAt: start + 2000 },
     { flow: "scroll_the_bible", access: "hard" }]) {
     assert.equal(parseVersyNoteAssignment({ ...attrs(), [VERSY_NOTE_ATTRIBUTE]: JSON.stringify({ ...record(), ...patch }) }, asOf), null);
   }
   assert.deepEqual(parseVersyNoteAssignment({ ...attrs(), [VERSY_NOTE_ATTRIBUTE]: JSON.stringify(JSON.stringify(record())) }, asOf), record());
+});
+
+test("earlier 20/80 assignments retain their flow and revenue without entering the new 50/50 comparison", () => {
+  const attributes = new Map<string, Record<string, string>>();
+  const installs: ReturnType<typeof install>[] = [];
+  const events: Event[] = [];
+  for (const { key: flow } of VERSY_NOTE_FLOWS) {
+    for (const allocation of ["20_80", "50_50"] as const) {
+      for (const variant of ["control", "note"] as const) {
+        const id = `${flow}-${allocation}-${variant}`;
+        const value = attrs({ flow, access: "dismissible", allocation, variant });
+        assert.equal(parseVersyNoteAssignment(value, asOf)?.allocation, allocation);
+        attributes.set(id, { ...historicalAttrs(flow), ...value });
+        installs.push(install(id));
+        events.push(event(id));
+      }
+    }
+  }
+  const report = buildVersyPaywallComparison(installs, events, attributes, asOf).noteExperiment!;
+  assert.deepEqual(report.flows.rows.map((row) => [row.installs, row.conversions!.global.proceeds]), Array(6).fill([2, 24]));
+  assert.deepEqual(report.overall.rows.map((row) => [row.installs, row.conversions!.global.proceeds]), [[3, 36], [3, 36]]);
+  assert.deepEqual(report.overall.warnings, []);
+  const experiment = versyNoteExperiment({ installs, events, attributes, startMs: start, endMs: end }, asOf);
+  assert.deepEqual(experiment.variants.map((row) => [row.users, row.proceeds]), [[3, 36], [3, 36]]);
 });
 
 test("all assigned nonpayers, including note dropouts, stay in their frozen flow", () => {

@@ -94,7 +94,7 @@ test("Versy maps fixed hard Widget paywalls and one price without counting them 
     "versy-scroll-the-bible-v1", "versy_yearly_hard_paywalls_v1", "versy_yearly_price_fixed_4999_v1", "versy_paywall_note_v1",
   ]);
   assert.deepEqual(map.tests.map((row) => row.branches.map((branch) => branch.percent)),
-    [[100 / 3, 100 / 3, 100 / 3], [100], [100], [20, 80]]);
+    [[100 / 3, 100 / 3, 100 / 3], [100], [100], [50, 50]]);
   assert.deepEqual(map.tests[0].branches.map((branch) => branch.id), ["bible_widget", "bible_widget_shorter", "scroll_the_bible"]);
   assert.deepEqual(map.tests[1].branches.map((branch) => branch.id), ["hard"]);
   assert.deepEqual(map.tests[2].branches.map((branch) => branch.id), [

@@ -657,9 +657,9 @@ The new screen is localized in English, French, German and Spanish. `--preview-n
 
 ### Versy team note (`versy_paywall_note_v1`, next app build)
 
-The note has its own sticky 80% treatment / 20% control draw. Both variants keep the existing reviews (Widget full, Widget shorter and Bible Scroll). Treatment: reviews → team note → existing paywall flow; control: reviews → existing paywall flow. Scroll benefits are standard. No App Store rating requests run during onboarding.
+The note has its own sticky 50% treatment / 50% control draw for new assignments in every flow. Both variants keep the existing reviews (Widget full, Widget shorter and Bible Scroll). Treatment: reviews → team note → existing paywall flow; control: reviews → existing paywall flow. Existing 20/80 assignments keep their saved variant and allocation. Scroll benefits are standard. No App Store rating requests run during onboarding.
 
-Welcome prepares an assignment; reaching reviews enrolls it and freezes route, access, language and yearly product. Users resuming an older onboarding are not retrospectively enrolled. The scalar Superwall user attribute `vn1_versy_paywall_note_v1` carries JSON: schema `1`, experiment ID, allocation `20_80`, production environment, randomized `true`, variant `control`/`note`, flow, language (`en`/`es`/`pt`/`de`), access, yearlyProduct and assignedAt (Unix milliseconds). Optional first timestamps: viewedAt, continuedAt, paywallViewedAt. Development, sandbox, corrupt and temporally inconsistent assignments are excluded.
+Welcome prepares an assignment; reaching reviews enrolls it and freezes route, access, language and yearly product. Users resuming an older onboarding are not retrospectively enrolled. The scalar Superwall user attribute `vn1_versy_paywall_note_v1` carries JSON: schema `1`, experiment ID, allocation `50_50` (or preserved legacy `20_80`), production environment, randomized `true`, variant `control`/`note`, flow, language (`en`/`es`/`pt`/`de`), access, yearlyProduct and assignedAt (Unix milliseconds). Optional first timestamps: viewedAt, continuedAt, paywallViewedAt. Development, sandbox, corrupt and temporally inconsistent assignments are excluded.
 
 The existing Superwall attribute query fetches this field. The Versy app detail keeps
 the overall onboarding paywall comparison first, followed by the always-visible
@@ -677,8 +677,10 @@ are excluded with a warning, never relabelled as historical users. These pooled
 flow rows are descriptive and have no A/B win-probability columns.
 
 The separate **Team note A/B test**, its dedicated experiment card, flow map and
-optional journey step remain enrollment-based. Historical users never become
-randomized controls. Review and note dropouts remain in this test's denominator.
+optional journey step remain enrollment-based. The current A/B comparison includes
+only saved `50_50` assignments; both allocation eras remain in descriptive flow
+totals. Historical users never become randomized controls. Review and note
+dropouts remain in this test's denominator.
 A/B date filters use enrollment; the all-time flow table uses eligible installs.
 New subscription chains beginning after note enrollment, their linked renewals
 and refunds follow the saved arm. Unknown amounts withhold the A/B winner; the

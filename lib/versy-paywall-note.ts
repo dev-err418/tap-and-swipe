@@ -11,7 +11,7 @@ export const VERSY_NOTE_FLOWS = [
   { key: "scroll_the_bible", label: "Bible Scroll" },
 ] as const;
 export type VersyNoteAssignment = {
-  schema: 1; experiment: typeof VERSY_NOTE_EXPERIMENT; allocation: "20_80";
+  schema: 1; experiment: typeof VERSY_NOTE_EXPERIMENT; allocation: "20_80" | "50_50";
   variant: "control" | "note"; flow: typeof VERSY_NOTE_FLOWS[number]["key"];
   language: "en" | "de" | "es" | "pt"; assignedAt: number;
   environment: "production"; randomized: true; access: "hard" | "dismissible"; yearlyProduct: string;
@@ -25,7 +25,7 @@ export function parseVersyNoteAssignment(values: Record<string, string> | undefi
   try {
     let r: unknown = JSON.parse(values[VERSY_NOTE_ATTRIBUTE]);
     if (typeof r === "string") r = JSON.parse(r);
-    if (!object(r) || r.schema !== 1 || r.experiment !== VERSY_NOTE_EXPERIMENT || r.allocation !== "20_80"
+    if (!object(r) || r.schema !== 1 || r.experiment !== VERSY_NOTE_EXPERIMENT || !["20_80", "50_50"].includes(String(r.allocation))
       || !["control", "note"].includes(String(r.variant)) || !VERSY_NOTE_FLOWS.some((f) => f.key === r.flow)
       || !["en", "de", "es", "pt"].includes(String(r.language)) || r.environment !== "production" || r.randomized !== true
       || !["hard", "dismissible"].includes(String(r.access)) || typeof r.yearlyProduct !== "string" || !r.yearlyProduct
@@ -101,6 +101,8 @@ export function buildVersyNoteReport(installs: Install[], events: Events, attrib
     const values = attributes.get(install.appUserId);
     const assignment = parseVersyNoteAssignment(values, asOf);
     if (!assignment) { if (values?.[VERSY_NOTE_ATTRIBUTE] && values.versy_tracking_environment !== "development") invalid++; return []; }
+    // Keep the earlier allocation in descriptive history, not the current randomized comparison.
+    if (assignment.allocation !== "50_50") return [];
     const cohortDate = dateBasis === "install" ? install.installedAt : assignment.assignedAt;
     if (cohortDate < startMs || cohortDate >= endMs || cohortDate > asOf) return [];
     return [{ install, assignment, cohortDate }];
@@ -122,7 +124,7 @@ export function buildVersyNoteReport(installs: Install[], events: Events, attrib
       warnings: invalid ? [`${invalid} invalid team-note assignments were excluded.`] : [] };
   };
   return {
-    overall: compare({ control: "Reviews → paywall · 20%", note: "Reviews → note → paywall · 80%" }, (r) => r.variant),
+    overall: compare({ control: "Reviews → paywall · 50%", note: "Reviews → note → paywall · 50%" }, (r) => r.variant),
     flows: compare(Object.fromEntries((includeFlows ? VERSY_NOTE_FLOWS : []).flatMap(({ key, label }) => [
       [key, label], [`${key}_note`, `${label} + note`],
     ])), (r) => r.flow + (r.variant === "note" ? "_note" : "")),
@@ -157,8 +159,8 @@ export function versyNoteExperiment(facts: Facts, asOf = Date.now()): MobileAppE
     return m.missingMoney || m.missingProceeds || m.missingInstallMoney;
   });
   return { unavailableReason: incomplete ? "Some transaction amounts or identities are missing. Results are withheld until the data is complete." : undefined,
-    id: VERSY_NOTE_EXPERIMENT, title: "Team note before paywalls", subtitle: "80% with note · 20% without · reviews in both variants",
-    planningNote: "Next app build. Both variants show reviews; 80% then see the team note. No rating prompts during onboarding. Includes everyone reaching reviews, including non-payers and dropouts. The saved note assignment is independent of Widget/Scroll, hard/dismissible access and yearly price. Later purchases, linked renewals and refunds follow subscriptions started after enrollment.",
+    id: VERSY_NOTE_EXPERIMENT, title: "Team note before paywalls", subtitle: "50% with note · 50% without · reviews in both variants",
+    planningNote: "Next app build. Both variants show reviews; 50% of new assignments then see the team note, across every onboarding route. Existing 20/80 assignments stay unchanged and remain in historical flow totals, outside this 50/50 comparison. No rating prompts during onboarding. Includes everyone reaching reviews, including non-payers and dropouts. The saved note assignment is independent of Widget/Scroll, hard/dismissible access and yearly price. Later purchases, linked renewals and refunds follow subscriptions started after enrollment.",
     variants: incomplete ? [] : variants(), languageVariants: incomplete ? {} : languageVariants, randomized: true, scoreMetrics: ["appu", "download_paid"],
     showUsers: true, showInstalls: false, showTrials: true, showCompletion: true, completionLabel: "Reached paywall",
     paidRateLabel: "Assigned → paid", trialRateLabel: "Assigned → trial" };
