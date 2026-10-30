@@ -62,7 +62,7 @@ function pageFixture() {
     "@/components/analytics/AnalyticsDetailSkeleton": { AnalyticsDetailSkeleton: passthrough },
   };
   for (const component of [
-    "analytics/AppOverviewPanel", "analytics/GlowProductPanel", "analytics/AnalyticsPeriodSelect",
+    "analytics/VersyOfferBreakdown", "analytics/AppOverviewPanel", "analytics/GlowProductPanel", "analytics/AnalyticsPeriodSelect",
     "analytics/DeadProjectsDisclosure", "analytics/AppSprintFunnelPanel", "aso-debug/LicensesModal",
     "aso-debug/ProxyAnalyticsPanel", "aso-debug/ProxyHealthPanel", "aso-debug/LicenseUsagePanel",
     "aso-debug/FeedbackPanel", "aso-debug/TrialAbusePanel",

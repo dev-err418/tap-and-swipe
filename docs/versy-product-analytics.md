@@ -151,3 +151,41 @@ remain in overall onboarding and note-flow totals, using their original enrollme
 for lifetime outcomes. Country filters apply the same rules. See the
 [October 29 reporting contract](native-paywall-analytics.md#october-29-2026-versy-fixed-price-and-hard-widget-paywalls)
 for IDs, migration limits and release requirements.
+
+
+## Offer contributions to APPU (October 30, 2026)
+
+Versy APPU values now expose paid subscription counts and the product mix across
+Data, A/B tests, native paywalls/placements, chart tooltips, and the app directory.
+Click the counts below APPU for the detailed table. The experiment map offers a
+hover summary and the same detail tables when a node is opened.
+
+- **Main offer:** `com.arthurbuildsstuff.bible.yearly_3999_80` ($39.99) and
+  `com.arthurbuildsstuff.bible.yearly_4999` ($49.99), grouped with separate subrows.
+- **Side offer:** `com.arthurbuildsstuff.bible.Weekly`.
+- **Recovery / daily gift:** `com.arthurbuildsstuff.bible.YearlyDiscount` ($16.99).
+- **Other / historical:** all remaining products, including the retired $17.99
+  `yearly_2999_80` main product. Unknown products are never guessed from amounts.
+
+Prices are US references, not the amounts used in the calculation. Each contribution
+is authoritative USD net proceeds for that product divided by the **same full user
+cohort** as the adjacent APPU. The share column divides product net proceeds by total
+net proceeds. Non-payers stay in the denominator. Refunds reduce the original product's
+contribution; zero or negative overall proceeds have no percentage share or stacked bar.
+
+Counts are distinct paid subscription chains **per product**, not charge counts or
+trial starts. Renewals add proceeds without adding subscriptions, and refunds do not
+undo a previously paid subscription. A plan switch can appear under both purchased
+products. Product IDs come from the money event, or an unambiguous matching charge when
+a refund/renewal omits its product. Native reports can also use the immutable verified
+purchase context. The current assigned yearly product is never a substitute for the
+bought product. Promotions on an existing SKU remain with that SKU; this report does
+not infer recovery placement from discounted proceeds.
+
+Install, assignment, language, country and ad-source filters stay unchanged. D7/D14
+contributions use the matching mature cohort and outcome cutoff. The directory uses
+its existing period-revenue/download denominator and a product aggregate from the same
+revenue query, rather than borrowing the detail view's install-cohort revenue. Missing
+amounts or totals that do not reconcile show an unavailable mix. Only aggregates leave
+the server; subscription identities remain private. Snapshot schema v32 refreshes the
+new report shape. No database migration, app release or new ingestion is needed.

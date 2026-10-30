@@ -36,7 +36,7 @@ ORDER BY appUserId, key LIMIT 10000 FORMAT JSON`);
     const revenueQueries: Promise<PaywallRevenue[]>[] = [];
     for (let i = 0; i < recoveryUsers.length; i += 500) {
       revenueQueries.push(query<PaywallRevenue>(`
-SELECT appUserId, id, name, originalTransactionId, transactionId, isRefund, price, proceeds, ts, purchasedAt, attributionTs
+SELECT appUserId, id, name, originalTransactionId, transactionId, productId, isRefund, price, proceeds, ts, purchasedAt, attributionTs
 FROM open_revenue.attributed_events_by_ts_rep FINAL
 WHERE applicationId = ${applicationID} AND isSandbox = 0 AND source = 'integration' AND isFamilyShare = 0
   AND appUserId IN (${recoveryUsers.slice(i, i + 500).map(quote).join(",")})
@@ -46,7 +46,7 @@ LIMIT 50001 FORMAT JSON`));
     }
     for (let i = 0; i < originals.length; i += 500) {
       revenueQueries.push(query<PaywallRevenue>(`
-SELECT appUserId, id, name, originalTransactionId, transactionId, isRefund, price, proceeds, ts, purchasedAt, attributionTs
+SELECT appUserId, id, name, originalTransactionId, transactionId, productId, isRefund, price, proceeds, ts, purchasedAt, attributionTs
 FROM open_revenue.attributed_events_by_ts_rep FINAL
 WHERE applicationId = ${applicationID} AND isSandbox = 0 AND source = 'integration' AND isFamilyShare = 0
   AND originalTransactionId IN (${originals.slice(i, i + 500).map(quote).join(",")})

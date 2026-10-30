@@ -1,3 +1,4 @@
+import { createOfferAccumulator, hasVersyProducts, offerProductResolver, mergeOfferBreakdowns, type WithOfferBreakdown } from "./versy-offer-breakdown";
 import { appAnalyticsTrendBucket, parisDatetimeLocalValue, parisDatetimeToDate } from "./app-analytics-time";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { subscriptionActiveAt } from "./subscription-retention";
@@ -16,7 +17,7 @@ export type OverviewCohortMetric = {
   pendingSubscriptions: number;
   retainedSubscriptions: number;
 };
-export type OverviewAppuMetric = { installs: number; paid: number; trials: number; proceeds: number; missingMoney: number };
+export type OverviewAppuMetric = WithOfferBreakdown & { installs: number; paid: number; trials: number; proceeds: number; missingMoney: number };
 export type OverviewCohortPoint = {
   date: string;
   installs: number;
@@ -41,6 +42,7 @@ export type AppOverviewTrend = Pick<AppOverviewCohorts, "available" | "period" |
 };
 type Install = { appUserId: string; installedAt: number; language?: string };
 type Outcome = {
+  productId?: string;
   appUserId: string;
   originalTransactionId: string;
   transactionId: string;
@@ -119,6 +121,7 @@ export function overviewDailyPoints(report: AppOverviewTrend) {
     total.trials += point.total.trials;
     total.proceeds += point.total.proceeds;
     total.missingMoney += point.total.missingMoney;
+    mergeOfferBreakdowns(total, point.total);
     days.set(day, total);
   }
   return report.points.map((point) => {
@@ -220,6 +223,9 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
     const previous = money.get(key);
     if (!previous || event.attributionTs > previous.attributionTs) money.set(key, event);
   }
+  const addOffer = createOfferAccumulator();
+  const trackOffers = hasVersyProducts(events);
+  const offerProduct = offerProductResolver(events);
   const paidUsers = new Set<string>();
   for (const event of money.values()) {
     const install = selected.get(owners.get(event.originalTransactionId)?.user ?? event.appUserId)!;
@@ -234,6 +240,7 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
       languageMetric.paid++;
     }
     for (const metric of [point.total, languageMetric]) {
+      if (trackOffers) addOffer(metric, { ...event, productId: offerProduct(event), netProceeds: event.netProceeds == null ? null : event.isRefund ? -Math.abs(event.netProceeds) : event.netProceeds });
       if (event.netProceeds == null || !Number.isFinite(event.netProceeds)) metric.missingMoney++;
       else metric.proceeds += event.isRefund ? -Math.abs(event.netProceeds) : event.netProceeds;
     }
@@ -264,6 +271,7 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
     total.trials += point.total.trials;
     total.proceeds += point.total.proceeds;
     total.missingMoney += point.total.missingMoney;
+    mergeOfferBreakdowns(total, point.total);
     for (const [language, metric] of Object.entries(point.languages)) {
       const languageTotal = languages[language] ??= emptyAppuMetric();
       languageTotal.installs += metric.installs;
@@ -271,6 +279,7 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
       languageTotal.trials += metric.trials;
       languageTotal.proceeds += metric.proceeds;
       languageTotal.missingMoney += metric.missingMoney;
+      mergeOfferBreakdowns(languageTotal, metric);
       metric.proceeds = Math.round(metric.proceeds * 100) / 100;
     }
     point.total.proceeds = Math.round(point.total.proceeds * 100) / 100;

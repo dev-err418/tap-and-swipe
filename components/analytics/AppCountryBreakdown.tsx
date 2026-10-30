@@ -1,5 +1,7 @@
 "use client";
 
+import VersyOfferBreakdown from "./VersyOfferBreakdown";
+
 import { useState, type PointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Maximize2 } from "lucide-react";
@@ -186,8 +188,8 @@ function CountryRow({
 }
 
 function CountryTooltip({ tooltip }: { tooltip: CountryTooltipState }) {
-  const tooltipWidth = 192;
-  const tooltipHeight = 116;
+  const tooltipWidth = tooltip.row.offerBreakdown ? 390 : 192;
+  const tooltipHeight = tooltip.row.offerBreakdown ? 390 : 116;
   const gap = 14;
   const left = Math.max(8, Math.min(tooltip.x + gap, window.innerWidth - tooltipWidth - 8));
   const top =
@@ -204,13 +206,14 @@ function CountryTooltip({ tooltip }: { tooltip: CountryTooltipState }) {
   return (
     <div
       className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] grid min-w-48 gap-2 rounded-lg bg-[#f7f7f7] px-2.5 py-2 text-xs"
-      style={{ left, top }}
+      style={{ left, top, maxWidth: "calc(100vw - 16px)" }}
     >
       <div className="flex items-center gap-2 font-medium text-foreground">
         <span className="flex size-4 items-center justify-center">{tooltip.marker}</span>
         <span>{tooltip.label}</span>
       </div>
       <div className="grid gap-1.5">
+        <VersyOfferBreakdown inline breakdown={tooltip.row.offerBreakdown} users={tooltip.row.installs} proceeds={tooltip.row.proceeds} />
         {metrics.map((item) => (
           <div key={item.label} className="flex items-center justify-between gap-6 text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">

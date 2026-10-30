@@ -1,5 +1,7 @@
 "use client";
 
+import VersyOfferBreakdown, { VersyOffersScope } from "./VersyOfferBreakdown";
+
 import { useState } from "react";
 import { type NativePaywallReport, type NativePaywallRow } from "@/lib/native-paywall-analytics";
 import { DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS } from "./dashboard-surface";
@@ -52,7 +54,7 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
       ? Number(b.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id) - Number(a.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id) || a.name.localeCompare(b.name)
       : a.name.localeCompare(b.name)) ?? [];
 
-  return <div className="space-y-4">
+  return <VersyOffersScope enabled={appId === "versy"}><div className="space-y-4">
     {appId === "versy" && <section aria-label="Configured daily gift paywall" className="space-y-2 pt-2">
       <h2 className="px-1 text-sm font-semibold">Daily gift</h2>
       <div className={cn(DASHBOARD_SURFACE_CLASS, "space-y-2 p-5")}>
@@ -107,7 +109,7 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
         </> : <NativePaywallResultsTable title={appId === "versy" && group.experiment !== "versy_daily_gift_v1" ? "Onboarding variants" : group.outcomeScope ? "Flows" : "Paywalls"} rows={group.paywalls} experiment={group.experiment} language={group.language} flow={Boolean(group.outcomeScope)} showPaidUsers={appId === "versy"} />}
         <NativePaywallResultsTable title="Placements" rows={group.placements} placement showPaidUsers={appId === "versy"} />
       </div>)}
-  </div>;
+  </div></VersyOffersScope>;
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
@@ -170,7 +172,7 @@ export function NativePaywallResultsTable({ title, rows, experiment, language, p
               title="Hardcoded allocation in the app, not observed traffic or confirmation of App Store rollout."
               aria-label={`${formatPaywallAllocation(allocation)} configured allocation`}
             >{formatPaywallAllocation(allocation)}</span>}</div>{row.paywall && <div className="mt-1 text-[10px] text-muted-foreground">{row.paywall}</div>}</td>
-            <Cell>{row.users ? currency(row.proceeds / row.users) : "—"}</Cell>
+            <Cell>{row.users ? currency(row.proceeds / row.users) : "—"}<VersyOfferBreakdown enabled={experiment?.startsWith("versy") || undefined} breakdown={row.offerBreakdown} users={row.users} proceeds={row.proceeds} /></Cell>
             {showProbabilityBest && <ProbabilityBestCell
               chance={placement ? null : estimate.chanceBest}
               isLeader={!placement && estimate.chanceBest != null && estimate.chanceBest === uniqueHighestChance}

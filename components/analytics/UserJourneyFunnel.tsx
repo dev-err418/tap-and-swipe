@@ -1,5 +1,7 @@
 "use client";
 
+import VersyOfferBreakdown from "./VersyOfferBreakdown";
+
 import { Fragment, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Tooltip } from "radix-ui";
 import { APPU_CONFIDENCE_LEVEL, APPU_CONFIDENCE_Z, compareArpu } from "@/lib/arpu-comparison";
@@ -210,6 +212,7 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
                 <td title={bestAppu ? "Highest average proceeds per user among these cohorts" : "Average proceeds per user (USD)"}
                   className={cn("whitespace-nowrap px-3 py-4 text-right font-semibold tabular-nums", bestAppu && "bg-orange-100/80 text-orange-900")}>
                   {appu == null ? "—" : appu.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <VersyOfferBreakdown breakdown={metric?.offerBreakdown} users={metric?.installs ?? 0} proceeds={metric?.proceeds ?? 0} available={!!metric && !metric.missingProceeds} />
                 </td>
                 {fields.map((field) => {
                   const denominator = metric ? (field === "paid" ? metric.finishedTrials : metric.installs) : 0;

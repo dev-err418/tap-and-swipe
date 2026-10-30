@@ -1,5 +1,7 @@
 "use client";
 
+import VersyOfferBreakdown, { VersyOffersScope } from "./VersyOfferBreakdown";
+
 import { useState } from "react";
 import type {
   MobileAppExperiment,
@@ -68,7 +70,7 @@ export default function AppExperimentCard({
   </AppExperimentLayout>;
 
   return (
-    <AppExperimentLayout
+    <VersyOffersScope enabled={experiment.id.startsWith("versy")}><AppExperimentLayout
       title={experiment.title}
       titleAccessory={warningAnalysis ? <ExperimentWarningBadge analysis={warningAnalysis} /> : null}
       action={
@@ -128,7 +130,8 @@ export default function AppExperimentCard({
                 {languages.map((comparison) => {
                   const localized = comparison.variants.find((variant) => variant.key === row.key);
                   return <NumberTd key={comparison.language}>{localized && localized.installs > 0
-                    ? formatPreciseCurrency(localized.proceeds / localized.installs) : "—"}</NumberTd>;
+                    ? formatPreciseCurrency(localized.proceeds / localized.installs) : "—"}
+                    {localized && <VersyOfferBreakdown breakdown={localized.offerBreakdown} users={localized.installs} proceeds={localized.proceeds} />}</NumberTd>;
                 })}
                 {showUsers ? <NumberTd>{formatInt(row.users)}</NumberTd> : null}
                 {showInstalls ? <NumberTd>{formatInt(row.installs)}</NumberTd> : null}
@@ -148,11 +151,13 @@ export default function AppExperimentCard({
                 {showCohortAppu ? (
                   <NumberTd className={row.key === bestAppuD7Key ? "font-bold" : undefined}>
                     {formatPreciseCurrency(ratio(row.proceedsD7, row.installsD7))}
+                    <VersyOfferBreakdown breakdown={row.offersD7?.offerBreakdown} users={row.installsD7} proceeds={row.proceedsD7} />
                   </NumberTd>
                 ) : null}
                 {showCohortAppu ? (
                   <NumberTd className={row.key === bestAppuD14Key ? "font-bold" : undefined}>
                     {formatPreciseCurrency(ratio(row.proceedsD14, row.installsD14))}
+                    <VersyOfferBreakdown breakdown={row.offersD14?.offerBreakdown} users={row.installsD14} proceeds={row.proceedsD14} />
                   </NumberTd>
                 ) : null}
                 {showRetention ? <NumberTd>{formatPercent(ratio(row.retainedD7, row.eligibleD7))}</NumberTd> : null}
@@ -166,12 +171,13 @@ export default function AppExperimentCard({
                 {scoreAppu ? (
                   <NumberTd className={row.key === bestAppuKey ? "font-bold" : undefined}>
                     {formatPreciseCurrency(ratio(row.proceeds, row.installs))}
+                    <VersyOfferBreakdown breakdown={row.offerBreakdown} users={row.installs} proceeds={row.proceeds} />
                   </NumberTd>
                 ) : null}
               </tr>
             ))}
       </ExperimentTable>
-    </AppExperimentLayout>
+    </AppExperimentLayout></VersyOffersScope>
   );
 }
 
@@ -225,6 +231,7 @@ function variantsForCountry(variants: MobileAppExperimentVariant[], country: str
   return variants.map((variant) => ({
     ...variant,
     ...(variant.countries[country] ?? {
+      offerBreakdown: undefined, offersD7: undefined, offersD14: undefined,
       users: 0,
       sessions: 0,
       installs: 0,

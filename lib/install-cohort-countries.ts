@@ -1,8 +1,10 @@
+import { createOfferAccumulator, hasVersyProducts, offerProductResolver } from "./versy-offer-breakdown";
 import type { MobileAppCountryRow } from "./mobile-app-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 
 type Install = { appUserId: string; country: string; installedAt: number };
 type Outcome = {
+  productId?: string; transactionId?: string; isRefund?: boolean;
   appUserId: string; originalTransactionId: string; name: string; periodType: string;
   isTrialConversion: boolean; eventTs: number; netProceeds: number | null;
 };
@@ -26,6 +28,9 @@ export function installCohortCountries(facts: {
     point.installs++;
     result.set(row.country, point);
   }
+  const addOffer = createOfferAccumulator();
+  const trackOffers = hasVersyProducts(facts.events);
+  const offerProduct = offerProductResolver(facts.events);
   const seenTrial = new Set<string>();
   const seenConverted = new Set<string>();
   const seenPaid = new Set<string>();
@@ -38,6 +43,7 @@ export function installCohortCountries(facts: {
       seenTrial.add(event.appUserId);
       point.trials++;
     }
+    if (trackOffers && (isMobileMoneyEvent(event) || event.isRefund)) addOffer(point, { ...event, productId: offerProduct(event) });
     if (event.netProceeds == null || !Number.isFinite(event.netProceeds) || !isMobileMoneyEvent(event)) continue;
     point.proceeds += event.netProceeds;
     if (event.netProceeds > 0) {

@@ -1,3 +1,4 @@
+import { createOfferAccumulator, type WithOfferBreakdown } from "./versy-offer-breakdown";
 import { calculateExperimentReadiness, type ExperimentReadiness } from "./experiment-stats";
 
 /** Native iOS gp1 scalar-JSON attribute contract. See docs/native-paywall-analytics.md. */
@@ -33,6 +34,7 @@ export type PaywallPurchase = {
 
 export type PaywallAttribute = { appUserId: string; key: string; value: string };
 export type PaywallRevenue = {
+  productId?: string;
   appUserId?: string | null;
   id: string;
   name: string;
@@ -55,7 +57,7 @@ type Estimate = {
   readiness: ExperimentReadiness | null;
   reason: string | null;
 };
-export type NativePaywallRow = {
+export type NativePaywallRow = WithOfferBreakdown & {
   id: string;
   label: string;
   paywall: string;
@@ -141,7 +143,7 @@ export function parsePaywallAttributes(attributes: PaywallAttribute[]) {
   return { assignments, placements, purchases, invalid };
 }
 
-type Person = { record: PaywallRecord; convertedAt: number | null; money: { at: number; proceeds: number; revenue: number; refund: number }[] };
+type Person = { record: PaywallRecord; convertedAt: number | null; money: { at: number; proceeds: number; revenue: number; refund: number; productId?: string; originalTransactionId: string; transactionId: string }[]; missingMoney?: boolean };
 type WorkingRow = { id: string; label: string; paywall: string; people: Map<string, Person> };
 type WorkingGroup = { experiment: string; name: string; language: string; paywalls: Map<string, WorkingRow>; placements: Map<string, WorkingRow> };
 
@@ -265,6 +267,7 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
     if (!people.length) continue;
     if (event.price == null || event.proceeds == null || !Number.isFinite(Number(event.price)) || !Number.isFinite(Number(event.proceeds))) {
       missingMoney++;
+      for (const person of people) person.missingMoney = true;
       continue;
     }
     const refund = Number(event.isRefund) === 1 || Number(event.price) < 0;
@@ -273,9 +276,11 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
       for (const person of flowPeople) person.convertedAt = Math.min(person.convertedAt ?? Infinity, dateMs(event.ts));
     }
     for (const person of people) person.money.push({ at: dateMs(event.ts), proceeds,
+      productId: event.productId || item?.purchase.productID, originalTransactionId: event.originalTransactionId, transactionId: event.transactionId!,
       revenue: refund ? 0 : Math.max(0, Number(event.price)), refund: refund ? Math.abs(Number(event.price)) : 0 });
   }
 
+  for (const { owner, purchase } of awaitingMoney) for (const person of peopleFor(owner, purchase.context)) person.missingMoney = true;
   const output: NativePaywallGroup[] = [];
   for (const group of groups.values()) {
     const paywalls = [...group.paywalls.values()].sort((a, b) => a.id.localeCompare(b.id));
@@ -373,7 +378,13 @@ function summarize(row: WorkingRow, asOf: number, placement: boolean): NativePay
   const people = [...row.people.values()];
   const money = people.flatMap((p) => p.money);
   const stats = totalMoments(row, asOf);
-  return { id: row.id, label: row.label, paywall: row.paywall, users: people.length,
+  const offers: WithOfferBreakdown = {};
+  if (people.some((person) => person.record.experiment.startsWith("versy"))) {
+    const addOffer = createOfferAccumulator();
+    for (const event of money) addOffer(offers, { ...event, netProceeds: event.proceeds, isRefund: event.refund > 0 });
+    if (people.some((person) => person.missingMoney)) addOffer(offers, { netProceeds: null });
+  }
+  return { ...offers, id: row.id, label: row.label, paywall: row.paywall, users: people.length,
     views: people.filter((p) => p.record.viewedAt != null && p.record.viewedAt <= asOf).length,
     conversions: people.filter((p) => p.convertedAt != null).length,
     paid: people.filter((p) => p.money.some((m) => m.revenue > 0)).length,

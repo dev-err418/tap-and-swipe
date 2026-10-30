@@ -1,3 +1,4 @@
+import { createOfferAccumulator, hasVersyProducts, offerProductResolver, type WithOfferBreakdown } from "./versy-offer-breakdown";
 import type { buildAppOverviewCohorts } from "./app-overview-cohorts";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { journeyVersion } from "./user-journey";
@@ -5,7 +6,7 @@ import { journeyVersion } from "./user-journey";
 export const ACQUISITION_ATTRIBUTE_KEYS = ["acquisition_source", "apple_search_ads_attribution"] as const;
 
 export type AcquisitionGroup = "metaAds" | "asa" | "nonAds";
-export type VersionConversionMetric = { installs: number; trials: number; finishedTrials: number; paid: number; installPaid: number; purchases: number; refunds: number; proceeds: number; proceedsVariance: number | null; missingProceeds: boolean; missingInstallMoney: boolean; missingMoney: boolean };
+export type VersionConversionMetric = WithOfferBreakdown & { installs: number; trials: number; finishedTrials: number; paid: number; installPaid: number; purchases: number; refunds: number; proceeds: number; proceedsVariance: number | null; missingProceeds: boolean; missingInstallMoney: boolean; missingMoney: boolean };
 export type VersionConversions = Record<"global" | "ads" | AcquisitionGroup, VersionConversionMetric>;
 type Outcome = Parameters<typeof buildAppOverviewCohorts>[0]["events"][number];
 type Install = { appUserId: string; appVersion: string; installedAt: number };
@@ -27,6 +28,9 @@ export function acquisitionGroup(attributes: Record<string, string> | undefined)
 /** Trial conversion uses installs; paid conversion uses first trials whose recorded end has passed. */
 export function versionCohortConversions(installs: Install[], events: Outcome[], attributes: Map<string, Record<string, string>>,
   startMs: number, endMs: number, asOf = Date.now(), outcomesStart?: Map<string, number>): Map<string, VersionConversions> {
+  const addOffer = createOfferAccumulator();
+  const trackOffers = hasVersyProducts(events);
+  const offerProduct = offerProductResolver(events);
   const first = new Map<string, Install>();
   for (const install of installs) {
     const previous = first.get(install.appUserId);
@@ -89,6 +93,7 @@ export function versionCohortConversions(installs: Install[], events: Outcome[],
     // Free trial starts need no amount; all other cohort money includes refunds and renewals.
     const freeTrial = event.name === "initial_purchase" && event.periodType === "trial" && !event.isRefund;
     for (const metric of targets(user)) {
+      if (trackOffers && !freeTrial) addOffer(metric, { ...event, productId: offerProduct(event) });
       if (event.isRefund) metric.refunds++;
       else if (!freeTrial && event.netProceeds != null && Number.isFinite(event.netProceeds) && event.netProceeds > 0) metric.purchases++;
       if (event.netProceeds != null && Number.isFinite(event.netProceeds)) metric.proceeds += event.netProceeds;

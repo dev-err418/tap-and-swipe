@@ -1,5 +1,7 @@
 "use client";
 
+import VersyOfferBreakdown from "./VersyOfferBreakdown";
+
 import {
   Bar, CartesianGrid, ComposedChart, Line, ReferenceLine,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -141,6 +143,7 @@ function CohortTooltip({ active, point, available, notes, report, installLabel, 
       <div className="grid gap-1.5">
         <TooltipMetric label={installLabel} value={point.installs.toLocaleString("en-US")} color={INSTALL_COLOR} />
         <TooltipMetric label="APPU · daily average" value={appuLabel} color={APPU_COLOR} />
+        {total && <VersyOfferBreakdown inline breakdown={total.offerBreakdown} users={total.installs} proceeds={total.proceeds} available={available && !total.missingMoney} />}
         {showTrialRate ? <TooltipMetric label="Download → trial · daily rate" value={point.trialRate == null ? "—" : formatRate(point.trialRate)} color={TRIAL_COLOR} /> : null}
       </div>
       {available && total ? (

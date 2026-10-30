@@ -1,3 +1,4 @@
+import { createOfferAccumulator, hasVersyProducts, offerProductResolver, type WithOfferBreakdown } from "./versy-offer-breakdown";
 import { VERSY_ONBOARDING_REPORT, VERSY_ONBOARDING_V2_VARIANTS } from "./versy-onboarding-routes";
 import { versyNoteExperiment, VERSY_NOTE_ATTRIBUTE } from "./versy-paywall-note";
 import { buildDailyAppReport } from "./daily-app-report";
@@ -51,7 +52,7 @@ export type MobileAppTrendPoint = {
   paid: number;
 };
 
-export type MobileAppCountryRow = {
+export type MobileAppCountryRow = WithOfferBreakdown & {
   country: string;
   installs: number;
   proceeds: number;
@@ -82,7 +83,9 @@ export type MobileAppRetentionCountryRow = {
   weekly: { d1: RetentionSlice; d7: RetentionSlice; d30: RetentionSlice };
 };
 
-export type MobileAppExperimentSlice = {
+export type MobileAppExperimentSlice = WithOfferBreakdown & {
+  offersD7?: WithOfferBreakdown;
+  offersD14?: WithOfferBreakdown;
   users: number;
   sessions: number;
   sessionUserDays?: number;
@@ -166,7 +169,7 @@ export type TrialCancelTiming = {
   buckets: TrialCancelBucket[];
 };
 
-export type MobileAppAnalytics = SnapshotMetadata & {
+export type MobileAppAnalytics = SnapshotMetadata & WithOfferBreakdown & {
   id: "glow" | "poky" | "versy";
   name: string;
   iconUrl: string;
@@ -439,10 +442,9 @@ async function loadSuperwallAppAnalytics(
     ORDER BY bucket
     FORMAT JSON
   `;
-  const revenueQuery = `
-    SELECT bucket, round(sum(net_proceeds), 2) AS revenue
-    FROM (
+  const revenueFactsQuery = `
       SELECT ${bucketExpression} AS bucket, name, originalTransactionId, transactionId, isRefund,
+        argMax(productId, attributionTs) AS productId,
         if(
           isRefund = 1,
           -abs(toFloat64(argMax(proceeds, attributionTs))),
@@ -459,13 +461,16 @@ async function loadSuperwallAppAnalytics(
         AND ts < toDateTime64('${end}', 6, 'UTC')
         AND ts < now()
       GROUP BY bucket, name, originalTransactionId, transactionId, isRefund
-    )
-    GROUP BY bucket
-    ORDER BY bucket
-    FORMAT JSON
   `;
+  const revenueQuery = `SELECT bucket, ${app.id === "versy" ? "sum(net_proceeds)" : "round(sum(net_proceeds), 2)"} AS revenue
+    FROM (${revenueFactsQuery}) GROUP BY bucket ORDER BY bucket FORMAT JSON`;
+  const offerQuery = `SELECT ifNull(nullIf(productId, ''), 'unknown') AS product,
+    sum(net_proceeds) AS proceeds,
+    uniqExactIf(originalTransactionId, net_proceeds > 0 AND isRefund = 0) AS subscriptions
+    FROM (${revenueFactsQuery}) GROUP BY product FORMAT JSON`;
 
-  const [downloadResult, revenueResult, factsResult, paywallResult, journeyResult, onboardingExperienceResult] = await Promise.allSettled([
+
+  const [downloadResult, revenueResult, factsResult, paywallResult, journeyResult, onboardingExperienceResult, offerResult] = await Promise.allSettled([
     querySuperwall<{ bucket: string; downloads: string | number }>(
       downloadsQuery,
       app.organizationId,
@@ -503,6 +508,9 @@ async function loadSuperwallAppAnalytics(
       ? loadGlowOnboardingExperience(<T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey), app.applicationId,
           comparisonStartMs, comparisonEndMs, minimumInstallVersion)
       : Promise.resolve(null),
+    app.id === "versy" ? querySuperwall<{ product: string; proceeds: number | string; subscriptions: number | string }>(
+      offerQuery, app.organizationId, app.apiKey,
+    ) : Promise.resolve(null),
   ]);
 
   if (downloadResult.status === "rejected") throw downloadResult.reason;
@@ -580,7 +588,12 @@ async function loadSuperwallAppAnalytics(
     }
   }
 
+  const offers: WithOfferBreakdown = {};
+  if (offerResult.status === "fulfilled" && offerResult.value) offers.offerBreakdown = Object.fromEntries(
+    offerResult.value.map((row) => [row.product, { proceeds: Number(row.proceeds), subscriptions: Number(row.subscriptions), missingMoney: false }]),
+  );
   return {
+    ...offers,
     id: app.id,
     name: app.name,
     iconUrl: app.iconUrl,
@@ -951,6 +964,9 @@ function countriesFromFacts(facts: AppFacts): MobileAppCountryRow[] {
   };
   for (const row of facts.installs) bump(row.country).installs += 1;
 
+  const addOffer = createOfferAccumulator();
+  const trackOffers = hasVersyProducts(facts.events);
+  const offerProduct = offerProductResolver(facts.events);
   const trialIds = new Set<string>();
   const convertedIds = new Set<string>();
   const paidIds = new Set<string>();
@@ -960,6 +976,7 @@ function countriesFromFacts(facts: AppFacts): MobileAppCountryRow[] {
     const id = `${event.country}|${event.originalTransactionId}`;
     if (event.netProceeds != null && isMobileMoneyEvent(event)) {
       point.proceeds = roundMoney(point.proceeds + event.netProceeds);
+      if (trackOffers) addOffer(point, { ...event, productId: offerProduct(event), netProceeds: roundMoney(event.netProceeds) });
     }
     if (event.name === "initial_purchase" && event.periodType === "trial" && !trialIds.has(id)) {
       trialIds.add(id);
@@ -1364,6 +1381,9 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     }
   }
 
+  const addOffer = createOfferAccumulator();
+  const trackOffers = definition.id.startsWith("versy");
+  const offerProduct = offerProductResolver(facts.events);
   const seenTrial = new Set<string>();
   const seenConverted = new Set<string>();
   const seenPaid = new Set<string>();
@@ -1387,6 +1407,15 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
           proceedsD14: tenureProceeds(cohortStart, event.eventTs, now, 14, event.netProceeds),
           proceedsD30: tenureProceeds(cohortStart, event.eventTs, now, 30, event.netProceeds),
         });
+      }
+    }
+    if (trackOffers && (isMobileMoneyEvent(event) || event.isRefund)) for (const target of targets) {
+      const cohortStart = install.installedAt;
+      for (const slice of [target, target.countries[normalizeCountry(country)]]) {
+        const offer = { ...event, productId: offerProduct(event), netProceeds: event.netProceeds == null ? null : roundMoney(event.netProceeds) };
+        addOffer(slice, offer);
+        if (cohortStart + 7 * DAY_MS <= now && event.eventTs <= cohortStart + 7 * DAY_MS) addOffer(slice.offersD7 ??= {}, offer);
+        if (cohortStart + 14 * DAY_MS <= now && event.eventTs <= cohortStart + 14 * DAY_MS) addOffer(slice.offersD14 ??= {}, offer);
       }
     }
   }
@@ -1569,7 +1598,7 @@ function addExperimentMetrics(
   row: Partial<MobileAppExperimentSlice> & { country?: string },
 ) {
   const next = emptyExperimentSlice();
-  for (const key of Object.keys(next) as (keyof MobileAppExperimentSlice)[]) {
+  for (const key of Object.keys(next) as (Exclude<keyof MobileAppExperimentSlice, "offerBreakdown" | "offersD7" | "offersD14">)[]) {
     next[key] = Number(row[key] ?? 0);
   }
   target.users += next.users;

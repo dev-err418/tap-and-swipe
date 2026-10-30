@@ -1,5 +1,7 @@
 "use client";
 
+import { mergeOfferBreakdowns, versyOfferRows, type WithOfferBreakdown } from "@/lib/versy-offer-breakdown";
+
 import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import ExperimentMapDetails from "./ExperimentMapDetails";
@@ -199,6 +201,21 @@ export default function AppExperimentMap({
                 : showsExperimentAppu
                   ? `APPU ${formatAppu(experimentAppuValue)}`
                 : node.detail;
+            const offers: WithOfferBreakdown = {};
+            if (appId === "versy") {
+              if (showsPaywallMetrics) {
+                const group = experimentMapPaywallGroup(node, nativePaywalls, selectedLanguage);
+                const row = group?.paywalls.find((candidate) => matchesPaywallVariant(candidate, node.paywallMetric?.variant ?? node.variantId ?? ""));
+                if (row) mergeOfferBreakdowns(offers, row);
+              } else {
+                const source = cohortSource ?? visibleExperiments.find((experiment) => experiment.id === node.experimentId);
+                for (const row of source?.variants ?? []) if (node.cohortMetric?.variants.includes(row.key) || row.key === node.variantId) mergeOfferBreakdowns(offers, row);
+              }
+            }
+            const offerTitle = offers.offerBreakdown ? versyOfferRows(offers.offerBreakdown).map((row) =>
+              `${row.label}: ${row.subscriptions} paid subscriptions, ${users ? formatAppu(row.proceeds / users) : "—"} APPU`
+              + (row.children.length ? ` (${row.children.map((child) => `${child.label}: ${child.subscriptions}`).join(", ")})` : ""),
+            ).join(" · ") : null;
             const interactive = experimentMapDetailTarget(node, selectedLanguage) != null;
             if (node.kind === "start") {
               return (
@@ -226,7 +243,7 @@ export default function AppExperimentMap({
                   }
                 } : undefined}
               >
-                {cohortMetric?.appu != null && <title>{`${cohortMetric.users.toLocaleString("en-US")} users · ${formatAppu(cohortMetric.proceeds)} net proceeds, including non-payers`}</title>}
+                {offerTitle ? <title>{offerTitle}</title> : cohortMetric?.appu != null && <title>{`${cohortMetric.users.toLocaleString("en-US")} users · ${formatAppu(cohortMetric.proceeds)} net proceeds, including non-payers`}</title>}
                 <rect
                   x={node.x} y={node.y - 26} width={node.width} height={52} rx={13}
                   fill={isBest ? bestTone.fill : tone.fill}
