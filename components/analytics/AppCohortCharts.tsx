@@ -1,6 +1,7 @@
 "use client";
 
 import VersyOfferBreakdown from "./VersyOfferBreakdown";
+import { realizedAppuSuffix } from "@/lib/realized-appu";
 
 import {
   Bar, CartesianGrid, ComposedChart, Line, ReferenceLine,
@@ -135,7 +136,7 @@ function CohortTooltip({ active, point, available, notes, report, installLabel, 
 }) {
   if (!active || !point) return null;
   const total = point.dailyTotal;
-  const appuLabel = point.appu === null ? "—" : formatCurrency(point.appu);
+  const appuLabel = (point.appu === null ? "—" : formatCurrency(point.appu)) + (available ? realizedAppuSuffix(total?.realizedAppu) : "");
   const noteMatches = report ? notes.filter((note) =>
     overviewBucket(new Date(note.notedAt), report.period).getTime() === point.timestamp) : [];
   return (

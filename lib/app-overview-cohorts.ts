@@ -2,6 +2,7 @@ import { createOfferAccumulator, hasVersyProducts, offerProductResolver, mergeOf
 import { appAnalyticsTrendBucket, parisDatetimeLocalValue, parisDatetimeToDate } from "./app-analytics-time";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { subscriptionActiveAt } from "./subscription-retention";
+import { emptyRealizedAppu, isVersyAppu, mergeRealizedAppu, realizedAppuByUser, versyMember, type WithRealizedAppu } from "./realized-appu";
 
 export type OverviewPeriod = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 export type CohortDay = 7 | 14 | 30;
@@ -17,7 +18,7 @@ export type OverviewCohortMetric = {
   pendingSubscriptions: number;
   retainedSubscriptions: number;
 };
-export type OverviewAppuMetric = WithOfferBreakdown & { installs: number; paid: number; trials: number; proceeds: number; missingMoney: number };
+export type OverviewAppuMetric = WithOfferBreakdown & WithRealizedAppu & { installs: number; paid: number; trials: number; proceeds: number; missingMoney: number };
 export type OverviewCohortPoint = {
   date: string;
   installs: number;
@@ -122,6 +123,7 @@ export function overviewDailyPoints(report: AppOverviewTrend) {
     total.proceeds += point.total.proceeds;
     total.missingMoney += point.total.missingMoney;
     mergeOfferBreakdowns(total, point.total);
+    mergeRealizedAppu(total, point.total);
     days.set(day, total);
   }
   return report.points.map((point) => {
@@ -138,13 +140,14 @@ export function overviewDailyPoints(report: AppOverviewTrend) {
  * No older installs are borrowed to populate a recent-only period. The loader
  * supplies production server events; failed queries remain unavailable.
  */
-export function buildAppOverviewCohorts({ period, startMs, endMs, installs, events, downloads, available = true, asOf = Date.now() }: {
+export function buildAppOverviewCohorts({ period, startMs, endMs, installs, events, downloads, attributes, available = true, asOf = Date.now() }: {
   period: OverviewPeriod;
   startMs: number;
   endMs: number;
   installs: Install[];
   events: Outcome[];
   downloads: { bucket: Date; downloads: number }[];
+  attributes?: Map<string, Record<string, string>>;
   available?: boolean;
   asOf?: number;
 }): AppOverviewCohorts {
@@ -173,12 +176,19 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
   }
   const selected = new Map([...firstInstalls].filter(([, row]) =>
     row.installedAt >= startMs && row.installedAt < endMs && row.installedAt <= asOf));
+  const realized = isVersyAppu(events, attributes)
+    ? realizedAppuByUser([...selected.values()].map((install) => versyMember(install, attributes?.get(install.appUserId))), events, asOf) : null;
+  if (realized) for (const point of points.values()) point.total.realizedAppu = emptyRealizedAppu();
   for (const install of selected.values()) {
     const point = pointAt(install.installedAt);
     point.trackedInstalls++;
     point.total.installs++;
     const language = installLanguage(install);
     (point.languages[language] ??= emptyAppuMetric()).installs++;
+    if (realized) for (const metric of [point.total, point.languages[language]]) {
+      metric.realizedAppu ??= emptyRealizedAppu();
+      mergeRealizedAppu(metric, { realizedAppu: realized.get(install.appUserId) });
+    }
     for (const days of COHORT_DAYS) {
       const key = install.installedAt + days * DAY <= asOf ? "eligibleInstalls" : "pendingInstalls";
       point.checkpoints[days][key]++;
@@ -263,6 +273,7 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
   }
   const summary = emptyCheckpoints();
   const total = emptyAppuMetric();
+  if (realized) total.realizedAppu = emptyRealizedAppu();
   const languages: Record<string, OverviewAppuMetric> = {};
   const sorted = [...points.values()].sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
   for (const point of sorted) {
@@ -272,6 +283,7 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
     total.proceeds += point.total.proceeds;
     total.missingMoney += point.total.missingMoney;
     mergeOfferBreakdowns(total, point.total);
+    mergeRealizedAppu(total, point.total);
     for (const [language, metric] of Object.entries(point.languages)) {
       const languageTotal = languages[language] ??= emptyAppuMetric();
       languageTotal.installs += metric.installs;
@@ -280,6 +292,7 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
       languageTotal.proceeds += metric.proceeds;
       languageTotal.missingMoney += metric.missingMoney;
       mergeOfferBreakdowns(languageTotal, metric);
+      mergeRealizedAppu(languageTotal, metric);
       metric.proceeds = Math.round(metric.proceeds * 100) / 100;
     }
     point.total.proceeds = Math.round(point.total.proceeds * 100) / 100;

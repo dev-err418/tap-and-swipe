@@ -3,18 +3,20 @@
 import { createContext, Fragment, useContext, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { versyOfferRows, type OfferBreakdown } from "@/lib/versy-offer-breakdown";
+import type { WithRealizedAppu } from "@/lib/realized-appu";
+import RealizedAppu from "./RealizedAppu";
 
 const VersyOffersContext = createContext(false);
 export function VersyOffersScope({ enabled, children }: { enabled: boolean; children: ReactNode }) {
   return <VersyOffersContext.Provider value={enabled}>{children}</VersyOffersContext.Provider>;
 }
-type Props = { breakdown?: OfferBreakdown; users: number; proceeds: number; available?: boolean; enabled?: boolean; inline?: boolean };
+type Props = WithRealizedAppu & { breakdown?: OfferBreakdown; users: number; proceeds: number; available?: boolean; enabled?: boolean; inline?: boolean };
 const money = (value: number) => value.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const count = (value: number) => value.toLocaleString("en-US");
 const colors = ["#2563eb", "#f59e0b", "#8b5cf6", "#a1a1aa"];
 
 /** Same denominator as the adjacent APPU. Static mode also fits chart tooltips. */
-export default function VersyOfferBreakdown({ breakdown, users, proceeds, available = true, enabled, inline = false }: Props) {
+export default function VersyOfferBreakdown({ breakdown, realizedAppu, users, proceeds, available = true, enabled, inline = false }: Props) {
   const inVersy = useContext(VersyOffersContext);
   if (!(enabled ?? inVersy)) return null;
   const rows = versyOfferRows(breakdown);
@@ -32,7 +34,7 @@ export default function VersyOfferBreakdown({ breakdown, users, proceeds, availa
     </button></DialogTrigger>
     <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
       <DialogHeader><DialogTitle>Where APPU comes from</DialogTitle>
-        <DialogDescription>{count(users)} users · {money(proceeds)} net proceeds · {users > 0 ? money(proceeds / users) : "—"} total APPU</DialogDescription>
+        <DialogDescription>{count(users)} users · {money(proceeds)} net proceeds · {users > 0 ? money(proceeds / users) : "—"}<RealizedAppu metric={realizedAppu} /> total APPU</DialogDescription>
       </DialogHeader>
       <OfferMixTable rows={rows} users={users} proceeds={proceeds} />
       <p className="text-xs leading-relaxed text-muted-foreground">Counts are paid subscriptions per product. Renewals add proceeds without adding subscriptions; free trials are excluded. APPU contribution divides each offer’s net proceeds by all {count(users)} users, including non-payers. Contributions add up to total APPU before rounding. Refunds reduce proceeds.</p>

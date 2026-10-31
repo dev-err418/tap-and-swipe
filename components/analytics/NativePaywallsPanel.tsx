@@ -1,6 +1,7 @@
 "use client";
 
 import VersyOfferBreakdown, { VersyOffersScope } from "./VersyOfferBreakdown";
+import RealizedAppu from "./RealizedAppu";
 
 import { useState } from "react";
 import { type NativePaywallReport, type NativePaywallRow } from "@/lib/native-paywall-analytics";
@@ -172,7 +173,7 @@ export function NativePaywallResultsTable({ title, rows, experiment, language, p
               title="Hardcoded allocation in the app, not observed traffic or confirmation of App Store rollout."
               aria-label={`${formatPaywallAllocation(allocation)} configured allocation`}
             >{formatPaywallAllocation(allocation)}</span>}</div>{row.paywall && <div className="mt-1 text-[10px] text-muted-foreground">{row.paywall}</div>}</td>
-            <Cell>{row.users ? currency(row.proceeds / row.users) : "—"}<VersyOfferBreakdown enabled={experiment?.startsWith("versy") || undefined} breakdown={row.offerBreakdown} users={row.users} proceeds={row.proceeds} /></Cell>
+            <Cell>{row.users ? currency(row.proceeds / row.users) : "—"}<RealizedAppu metric={row.realizedAppu} /><VersyOfferBreakdown enabled={experiment?.startsWith("versy") || undefined} breakdown={row.offerBreakdown} realizedAppu={row.realizedAppu} users={row.users} proceeds={row.proceeds} /></Cell>
             {showProbabilityBest && <ProbabilityBestCell
               chance={placement ? null : estimate.chanceBest}
               isLeader={!placement && estimate.chanceBest != null && estimate.chanceBest === uniqueHighestChance}

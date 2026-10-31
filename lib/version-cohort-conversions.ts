@@ -2,11 +2,12 @@ import { createOfferAccumulator, hasVersyProducts, offerProductResolver, type Wi
 import type { buildAppOverviewCohorts } from "./app-overview-cohorts";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { journeyVersion } from "./user-journey";
+import { emptyRealizedAppu, isVersyAppu, mergeRealizedAppu, realizedAppuByUser, versyMember, type WithRealizedAppu } from "./realized-appu";
 
 export const ACQUISITION_ATTRIBUTE_KEYS = ["acquisition_source", "apple_search_ads_attribution"] as const;
 
 export type AcquisitionGroup = "metaAds" | "asa" | "nonAds";
-export type VersionConversionMetric = WithOfferBreakdown & { installs: number; trials: number; finishedTrials: number; paid: number; installPaid: number; purchases: number; refunds: number; proceeds: number; proceedsVariance: number | null; missingProceeds: boolean; missingInstallMoney: boolean; missingMoney: boolean };
+export type VersionConversionMetric = WithOfferBreakdown & WithRealizedAppu & { installs: number; trials: number; finishedTrials: number; paid: number; installPaid: number; purchases: number; refunds: number; proceeds: number; proceedsVariance: number | null; missingProceeds: boolean; missingInstallMoney: boolean; missingMoney: boolean };
 export type VersionConversions = Record<"global" | "ads" | AcquisitionGroup, VersionConversionMetric>;
 type Outcome = Parameters<typeof buildAppOverviewCohorts>[0]["events"][number];
 type Install = { appUserId: string; appVersion: string; installedAt: number };
@@ -64,6 +65,12 @@ export function versionCohortConversions(installs: Install[], events: Outcome[],
     const group = acquisitionGroup(attributes.get(user));
     return group === "nonAds" ? [report.global, report[group]] : [report.global, report.ads, report[group]];
   };
+  if (isVersyAppu(events, attributes)) {
+    const realized = realizedAppuByUser([...selected.values()].map((install) =>
+      versyMember(install, attributes.get(install.appUserId), outcomesStart?.get(install.appUserId))), events, asOf);
+    for (const report of reports.values()) for (const metric of Object.values(report)) metric.realizedAppu = emptyRealizedAppu();
+    for (const user of selected.keys()) for (const metric of targets(user)) mergeRealizedAppu(metric, { realizedAppu: realized.get(user) });
+  }
   for (const event of observed) {
     const owner = owners.get(event.originalTransactionId);
     const user = owner?.user ?? event.appUserId;

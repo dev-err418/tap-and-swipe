@@ -1,6 +1,7 @@
 "use client";
 
 import VersyOfferBreakdown from "./VersyOfferBreakdown";
+import { realizedAppuSuffix } from "@/lib/realized-appu";
 
 import { useState, type PointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -134,7 +135,7 @@ function CountryRow({
   const barWidth = Math.min(100, installWidth + appuWidth);
   const label = countryName(row.country);
   const marker = row.country === "unknown" ? "??" : countryFlag(row.country);
-  const metricValue = formatPreciseCurrency(row.installs > 0 ? row.proceeds / row.installs : 0);
+  const metricValue = formatPreciseCurrency(row.installs > 0 ? row.proceeds / row.installs : 0) + realizedAppuSuffix(row.realizedAppu);
   const updateTooltip = (event: PointerEvent<HTMLDivElement>) => {
     onTooltipChange({ row, label, marker, x: event.clientX, y: event.clientY });
   };
@@ -200,7 +201,7 @@ function CountryTooltip({ tooltip }: { tooltip: CountryTooltipState }) {
   const metrics = [
     { label: "Installs", value: formatInt(tooltip.row.installs), color: INSTALL_COLOR },
     { label: "Proceeds", value: formatCurrency(tooltip.row.proceeds) },
-    { label: "APPU", value: formatPreciseCurrency(appu), color: APPU_COLOR },
+    { label: "APPU", value: formatPreciseCurrency(appu) + realizedAppuSuffix(tooltip.row.realizedAppu), color: APPU_COLOR },
   ];
 
   return (

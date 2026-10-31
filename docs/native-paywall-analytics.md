@@ -778,3 +778,31 @@ Trial reminder is optional for non-trial-eligible users. New placements are
 Welcome remains the immutable outcome enrollment anchor; no historical users are
 relabelled or retrospectively enrolled. The flow map shows 33.33% / 22.22% / 22.22% /
 22.22%, followed by the independent 50/50 note. No new backend or ingestion is needed.
+
+## October 31, 2026: Versy realized APPU
+
+Versy displays a second value after total APPU: `$0.42 ($0.68 realized)`. This is
+net proceeds through report time for mature cohort members divided by those same
+mature members, including non-payers and cancelled trials. Existing APPU, purchase
+counts, conversion rates, offer counts and winner estimates retain their definitions.
+
+The maturity clock starts at the report's original install/enrollment boundary.
+The frozen standard yearly offer supplies the trial window: seven days, or three
+for the historical `.trial3` products. Unknown standard offers conservatively use
+seven days. Native Daily Gift has no trial window. When a verified trial exists,
+its recorded expiry must also have passed; a late trial delays maturity. Early
+cancellation or an early Apple paid-renewal notification never accelerates this
+clock. Unknown trial expiry leaves the member pending. Members are removed from
+both numerator and denominator until mature, even if they already paid.
+
+Renewals/refunds follow known original subscription owners and deduplicate by
+transaction and charge/refund direction. Earlier subscription chains remain
+excluded from later enrollment cohorts. Missing mature proceeds show unavailable;
+no mature users displays `(— realized)`, while mature users earning nothing display
+`($0.00 realized)`. Country, language, acquisition, version, price, flow and native
+placement slices calculate their own mature totals; aggregation sums numerators
+and denominators, never averages APPU values. Chart tooltips show the second value;
+the chart line and experiment scoring continue to use existing total APPU.
+
+Snapshot schema v33 carries the new aggregate field. No app release, source-data
+mutation or new ingestion is required; the dashboard needs deployment and refresh.

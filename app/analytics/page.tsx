@@ -1,4 +1,5 @@
 import VersyOfferBreakdown from "@/components/analytics/VersyOfferBreakdown";
+import RealizedAppu from "@/components/analytics/RealizedAppu";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -357,7 +358,7 @@ function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Perio
           <strong className="font-bold text-black">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
           proceeds
           <span className="mx-2 text-black/35">•</span>
-          <strong className="font-bold text-black">{appu === null ? "—" : formatPreciseCurrency(appu)}</strong>{" "}
+          <strong className="font-bold text-black">{appu === null ? "—" : formatPreciseCurrency(appu)}</strong><RealizedAppu metric={app.overviewCohorts?.available ? app.overviewCohorts.total.realizedAppu : undefined} />{" "}
           APPU
         </p>
         {app.id === "versy" && <div className="mt-3"><VersyOfferBreakdown enabled inline breakdown={app.offerBreakdown} users={app.downloads} proceeds={app.revenueCents / 100} available={app.offerBreakdown !== undefined} /></div>}

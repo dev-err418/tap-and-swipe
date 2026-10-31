@@ -1,4 +1,5 @@
 import { createOfferAccumulator, type WithOfferBreakdown } from "./versy-offer-breakdown";
+import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, versyProductTrialDays, type WithRealizedAppu } from "./realized-appu";
 import { calculateExperimentReadiness, type ExperimentReadiness } from "./experiment-stats";
 
 /** Native iOS gp1 scalar-JSON attribute contract. See docs/native-paywall-analytics.md. */
@@ -35,6 +36,8 @@ export type PaywallPurchase = {
 export type PaywallAttribute = { appUserId: string; key: string; value: string };
 export type PaywallRevenue = {
   productId?: string;
+  periodType?: string | null;
+  expirationAt?: string | null;
   appUserId?: string | null;
   id: string;
   name: string;
@@ -57,7 +60,7 @@ type Estimate = {
   readiness: ExperimentReadiness | null;
   reason: string | null;
 };
-export type NativePaywallRow = WithOfferBreakdown & {
+export type NativePaywallRow = WithOfferBreakdown & WithRealizedAppu & {
   id: string;
   label: string;
   paywall: string;
@@ -143,7 +146,7 @@ export function parsePaywallAttributes(attributes: PaywallAttribute[]) {
   return { assignments, placements, purchases, invalid };
 }
 
-type Person = { record: PaywallRecord; convertedAt: number | null; money: { at: number; proceeds: number; revenue: number; refund: number; productId?: string; originalTransactionId: string; transactionId: string }[]; missingMoney?: boolean };
+type Person = { record: PaywallRecord; convertedAt: number | null; money: { at: number; proceeds: number; revenue: number; refund: number; productId?: string; originalTransactionId: string; transactionId: string; name: string; periodType?: string; expiresAt: number; attributionTs: number }[]; missingMoney?: boolean };
 type WorkingRow = { id: string; label: string; paywall: string; people: Map<string, Person> };
 type WorkingGroup = { experiment: string; name: string; language: string; paywalls: Map<string, WorkingRow>; placements: Map<string, WorkingRow> };
 
@@ -276,6 +279,7 @@ export function buildNativePaywallReport(attributes: PaywallAttribute[], revenue
       for (const person of flowPeople) person.convertedAt = Math.min(person.convertedAt ?? Infinity, dateMs(event.ts));
     }
     for (const person of people) person.money.push({ at: dateMs(event.ts), proceeds,
+      name: event.name, periodType: event.periodType?.toLowerCase(), expiresAt: dateMs(event.expirationAt ?? ""), attributionTs: dateMs(event.attributionTs),
       productId: event.productId || item?.purchase.productID, originalTransactionId: event.originalTransactionId, transactionId: event.transactionId!,
       revenue: refund ? 0 : Math.max(0, Number(event.price)), refund: refund ? Math.abs(Number(event.price)) : 0 });
   }
@@ -379,12 +383,22 @@ function summarize(row: WorkingRow, asOf: number, placement: boolean): NativePay
   const money = people.flatMap((p) => p.money);
   const stats = totalMoments(row, asOf);
   const offers: WithOfferBreakdown = {};
+  const mature: WithRealizedAppu = {};
   if (people.some((person) => person.record.experiment.startsWith("versy"))) {
     const addOffer = createOfferAccumulator();
     for (const event of money) addOffer(offers, { ...event, netProceeds: event.proceeds, isRefund: event.refund > 0 });
     if (people.some((person) => person.missingMoney)) addOffer(offers, { netProceeds: null });
+    mature.realizedAppu = emptyRealizedAppu();
+    const realized = realizedAppuByUser([...row.people].map(([appUserId, person]) => ({ appUserId,
+      startedAt: person.record.assignedAt, trialDays: versyProductTrialDays(person.record.expectedProduct) })),
+    [...row.people].flatMap(([appUserId, person]) => person.money.map((event) => ({ ...event, appUserId,
+      eventTs: event.at, netProceeds: event.proceeds, isRefund: event.refund > 0 }))), asOf);
+    for (const [user, metric] of realized) {
+      if (row.people.get(user)?.missingMoney) metric.missingMoney = true;
+      mergeRealizedAppu(mature, { realizedAppu: metric });
+    }
   }
-  return { ...offers, id: row.id, label: row.label, paywall: row.paywall, users: people.length,
+  return { ...offers, ...mature, id: row.id, label: row.label, paywall: row.paywall, users: people.length,
     views: people.filter((p) => p.record.viewedAt != null && p.record.viewedAt <= asOf).length,
     conversions: people.filter((p) => p.convertedAt != null).length,
     paid: people.filter((p) => p.money.some((m) => m.revenue > 0)).length,

@@ -7,6 +7,7 @@ import { Tooltip } from "radix-ui";
 import { APPU_CONFIDENCE_LEVEL, APPU_CONFIDENCE_Z, compareArpu } from "@/lib/arpu-comparison";
 import { ArpuComparisonCells } from "./ArpuComparisonCells";
 import { AppuReadinessIndicator } from "./AppuReadinessIndicator";
+import RealizedAppu from "./RealizedAppu";
 import { createPortal } from "react-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
@@ -212,7 +213,8 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
                 <td title={bestAppu ? "Highest average proceeds per user among these cohorts" : "Average proceeds per user (USD)"}
                   className={cn("whitespace-nowrap px-3 py-4 text-right font-semibold tabular-nums", bestAppu && "bg-orange-100/80 text-orange-900")}>
                   {appu == null ? "—" : appu.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <VersyOfferBreakdown breakdown={metric?.offerBreakdown} users={metric?.installs ?? 0} proceeds={metric?.proceeds ?? 0} available={!!metric && !metric.missingProceeds} />
+                  <RealizedAppu metric={metric?.realizedAppu} />
+                  <VersyOfferBreakdown breakdown={metric?.offerBreakdown} realizedAppu={metric?.realizedAppu} users={metric?.installs ?? 0} proceeds={metric?.proceeds ?? 0} available={!!metric && !metric.missingProceeds} />
                 </td>
                 {fields.map((field) => {
                   const denominator = metric ? (field === "paid" ? metric.finishedTrials : metric.installs) : 0;

@@ -1,10 +1,11 @@
 import { createOfferAccumulator, hasVersyProducts, offerProductResolver } from "./versy-offer-breakdown";
 import type { MobileAppCountryRow } from "./mobile-app-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
+import { emptyRealizedAppu, isVersyAppu, mergeRealizedAppu, realizedAppuByUser, versyMember } from "./realized-appu";
 
 type Install = { appUserId: string; country: string; installedAt: number };
 type Outcome = {
-  productId?: string; transactionId?: string; isRefund?: boolean;
+  productId?: string; transactionId?: string; isRefund?: boolean; expiresAt?: number; attributionTs?: number;
   appUserId: string; originalTransactionId: string; name: string; periodType: string;
   isTrialConversion: boolean; eventTs: number; netProceeds: number | null;
 };
@@ -12,6 +13,7 @@ type Outcome = {
 /** Selected installs and their outcomes through now, grouped by install country. */
 export function installCohortCountries(facts: {
   startMs: number; endMs: number; installs: Install[]; events: Outcome[];
+  attributes?: Map<string, Record<string, string>>;
 }, asOf = Date.now()): MobileAppCountryRow[] {
   const installs = new Map<string, Install>();
   for (const row of facts.installs) {
@@ -21,11 +23,17 @@ export function installCohortCountries(facts: {
     if (!previous || row.installedAt < previous.installedAt) installs.set(row.appUserId, row);
   }
   const result = new Map<string, MobileAppCountryRow>();
+  const realized = isVersyAppu(facts.events, facts.attributes) ? realizedAppuByUser([...installs.values()]
+    .map((install) => versyMember(install, facts.attributes?.get(install.appUserId))), facts.events, asOf) : null;
   for (const row of installs.values()) {
     const point = result.get(row.country) ?? {
       country: row.country, installs: 0, proceeds: 0, trials: 0, converted: 0, paid: 0,
     };
     point.installs++;
+    if (realized) {
+      point.realizedAppu ??= emptyRealizedAppu();
+      mergeRealizedAppu(point, { realizedAppu: realized.get(row.appUserId) });
+    }
     result.set(row.country, point);
   }
   const addOffer = createOfferAccumulator();

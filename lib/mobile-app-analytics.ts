@@ -40,6 +40,7 @@ import { installCohortCountries } from "./install-cohort-countries";
 import { subscriptionActiveAt } from "./subscription-retention";
 import type { ActiveTrials } from "./active-trials";
 import { matchedCohortInstall } from "./experiment-install-cohort";
+import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, versyMember, type WithRealizedAppu } from "./realized-appu";
 import { buildAppOverviewCohorts, type AppOverviewCohorts } from "./app-overview-cohorts";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
@@ -52,7 +53,7 @@ export type MobileAppTrendPoint = {
   paid: number;
 };
 
-export type MobileAppCountryRow = WithOfferBreakdown & {
+export type MobileAppCountryRow = WithOfferBreakdown & WithRealizedAppu & {
   country: string;
   installs: number;
   proceeds: number;
@@ -83,7 +84,7 @@ export type MobileAppRetentionCountryRow = {
   weekly: { d1: RetentionSlice; d7: RetentionSlice; d30: RetentionSlice };
 };
 
-export type MobileAppExperimentSlice = WithOfferBreakdown & {
+export type MobileAppExperimentSlice = WithOfferBreakdown & WithRealizedAppu & {
   offersD7?: WithOfferBreakdown;
   offersD14?: WithOfferBreakdown;
   users: number;
@@ -606,6 +607,7 @@ async function loadSuperwallAppAnalytics(
       installs: facts?.installs ?? [],
       events: facts?.events ?? [],
       downloads: trend,
+      attributes: facts?.attributes,
       available: Boolean(facts),
     }) : null,
     markets,
@@ -1431,6 +1433,20 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     }
   }
 
+  if (definition.id.startsWith("versy")) {
+    const realized = realizedAppuByUser([...eligibleInstalls.values()].map((install) =>
+      versyMember(install, facts.attributes.get(install.appUserId))), facts.events, now);
+    for (const variant of [...variants, ...Object.values(languageVariants).flat()]) {
+      variant.realizedAppu = emptyRealizedAppu();
+      for (const country of Object.values(variant.countries)) country.realizedAppu = emptyRealizedAppu();
+    }
+    for (const install of eligibleInstalls.values()) for (const target of targetsFor(install.appUserId, facts.attributes.get(install.appUserId))) {
+      mergeRealizedAppu(target, { realizedAppu: realized.get(install.appUserId) });
+      const country = target.countries[normalizeCountry(install.country)];
+      if (country) mergeRealizedAppu(country, { realizedAppu: realized.get(install.appUserId) });
+    }
+  }
+
   return {
     id: definition.id,
     paidUsersOnly: definition.paidUsersOnly,
@@ -1598,7 +1614,7 @@ function addExperimentMetrics(
   row: Partial<MobileAppExperimentSlice> & { country?: string },
 ) {
   const next = emptyExperimentSlice();
-  for (const key of Object.keys(next) as (Exclude<keyof MobileAppExperimentSlice, "offerBreakdown" | "offersD7" | "offersD14">)[]) {
+  for (const key of Object.keys(next) as (Exclude<keyof MobileAppExperimentSlice, "offerBreakdown" | "offersD7" | "offersD14" | "realizedAppu">)[]) {
     next[key] = Number(row[key] ?? 0);
   }
   target.users += next.users;

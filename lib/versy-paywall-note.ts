@@ -143,7 +143,7 @@ export function versyNoteExperiment(facts: Facts, asOf = Date.now()): MobileAppE
     const metric = report.overall.rows.find((r) => r.version === key)!.conversions!.global;
     return { users: metric.installs, installs: metric.installs, sessions: 0, completed: report.reached[key].paywall,
       trials: metric.trials, converted: metric.paid, paid: metric.installPaid, proceeds: metric.proceeds,
-      proceedsVariance: metric.proceedsVariance ?? 0, offerBreakdown: metric.offerBreakdown,
+      proceedsVariance: metric.proceedsVariance ?? 0, offerBreakdown: metric.offerBreakdown, realizedAppu: metric.realizedAppu,
       installsD7: 0, proceedsD7: 0, eligibleD7: 0, retainedD7: 0, installsD14: 0, proceedsD14: 0, eligibleD14: 0, retainedD14: 0,
       installsD30: 0, proceedsD30: 0, eligibleD30: 0, retainedD30: 0 };
   };

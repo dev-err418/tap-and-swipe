@@ -26,6 +26,7 @@ import VersyPaywallComparisonPanel from "./VersyPaywallComparisonPanel";
 import type { VersyPaywallComparison } from "@/lib/versy-paywall-comparison";
 import VersyYearlyPriceTable from "./VersyYearlyPriceTable";
 import type { VersyYearlyPriceComparison } from "@/lib/versy-yearly-price-cohorts";
+import RealizedAppu from "./RealizedAppu";
 import PokyPaywallFlowTable from "./PokyPaywallFlowTable";
 import type { PaywallCohortComparison } from "@/lib/glow-paywall-cohort-comparisons";
 import type { GlowPaywallCohortComparisons } from "@/lib/glow-paywall-cohort-comparisons";
@@ -143,7 +144,7 @@ export default function AppOverviewPanel({
         <div className="min-w-0 border-b border-black/[0.08]">
           <div className="grid grid-cols-3 divide-x divide-black/[0.08]">
             <MetricSummary label={installLabel} value={formatInt(total?.installs ?? 0)} detail={`${overviewLanguageLabel(language)} · ${marketCountryLabel(country)} · ${windowLabel}`} />
-            <MetricSummary accessory={<VersyOfferBreakdown breakdown={total?.offerBreakdown} users={total?.installs ?? 0} proceeds={total?.proceeds ?? 0} available={cohortAvailable && !total?.missingMoney} />} label="APPU" value={appu == null ? "—" : formatPreciseCurrency(appu)} detail={!cohortAvailable || !total ? "Cohort data unavailable" : total.missingMoney > 0 ? "Proceeds data unavailable" : total.installs > 0 ? `${formatInt(total.installs)} tracked installs · through today` : "No tracked installs"} />
+            <MetricSummary accessory={<VersyOfferBreakdown breakdown={total?.offerBreakdown} realizedAppu={total?.realizedAppu} users={total?.installs ?? 0} proceeds={total?.proceeds ?? 0} available={cohortAvailable && !total?.missingMoney} />} label="APPU" value={<>{appu == null ? "—" : formatPreciseCurrency(appu)}{cohortAvailable && <RealizedAppu metric={total?.realizedAppu} />}</>} detail={!cohortAvailable || !total ? "Cohort data unavailable" : total.missingMoney > 0 ? "Proceeds data unavailable" : total.installs > 0 ? `${formatInt(total.installs)} tracked installs · through today` : "No tracked installs"} />
             <MetricSummary label="Conversion to paid" value={installToPaid == null ? "—" : formatRate(installToPaid)} detail={!cohortAvailable || !total ? "Cohort data unavailable" : total.missingMoney > 0 ? "Payment data unavailable" : `${formatInt(total.paid)} paid / ${formatInt(total.installs)} tracked installs · through today`} />
           </div>
         </div>
@@ -176,7 +177,7 @@ export default function AppOverviewPanel({
   );
 }
 
-function MetricSummary({ label, value, detail, accessory }: { label: string; value: string; detail: string; accessory?: ReactNode }) {
+function MetricSummary({ label, value, detail, accessory }: { label: string; value: ReactNode; detail: string; accessory?: ReactNode }) {
   return (
     <div className="min-w-0 px-4 py-4">
       <p className="text-sm text-muted-foreground">{label}</p>

@@ -1,6 +1,8 @@
 "use client";
 
 import VersyOfferBreakdown, { VersyOffersScope } from "./VersyOfferBreakdown";
+import RealizedAppu from "./RealizedAppu";
+import { emptyRealizedAppu } from "@/lib/realized-appu";
 
 import { useState } from "react";
 import type {
@@ -131,7 +133,8 @@ export default function AppExperimentCard({
                   const localized = comparison.variants.find((variant) => variant.key === row.key);
                   return <NumberTd key={comparison.language}>{localized && localized.installs > 0
                     ? formatPreciseCurrency(localized.proceeds / localized.installs) : "—"}
-                    {localized && <VersyOfferBreakdown breakdown={localized.offerBreakdown} users={localized.installs} proceeds={localized.proceeds} />}</NumberTd>;
+                    <RealizedAppu metric={localized?.realizedAppu} />
+                    {localized && <VersyOfferBreakdown breakdown={localized.offerBreakdown} realizedAppu={localized.realizedAppu} users={localized.installs} proceeds={localized.proceeds} />}</NumberTd>;
                 })}
                 {showUsers ? <NumberTd>{formatInt(row.users)}</NumberTd> : null}
                 {showInstalls ? <NumberTd>{formatInt(row.installs)}</NumberTd> : null}
@@ -171,7 +174,8 @@ export default function AppExperimentCard({
                 {scoreAppu ? (
                   <NumberTd className={row.key === bestAppuKey ? "font-bold" : undefined}>
                     {formatPreciseCurrency(ratio(row.proceeds, row.installs))}
-                    <VersyOfferBreakdown breakdown={row.offerBreakdown} users={row.installs} proceeds={row.proceeds} />
+                    <RealizedAppu metric={row.realizedAppu} />
+                    <VersyOfferBreakdown breakdown={row.offerBreakdown} realizedAppu={row.realizedAppu} users={row.installs} proceeds={row.proceeds} />
                   </NumberTd>
                 ) : null}
               </tr>
@@ -232,6 +236,7 @@ function variantsForCountry(variants: MobileAppExperimentVariant[], country: str
     ...variant,
     ...(variant.countries[country] ?? {
       offerBreakdown: undefined, offersD7: undefined, offersD14: undefined,
+      realizedAppu: variant.realizedAppu ? emptyRealizedAppu() : undefined,
       users: 0,
       sessions: 0,
       installs: 0,

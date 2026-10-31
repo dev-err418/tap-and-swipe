@@ -1,6 +1,7 @@
 "use client";
 
 import { mergeOfferBreakdowns, versyOfferRows, type WithOfferBreakdown } from "@/lib/versy-offer-breakdown";
+import { mergeRealizedAppu, realizedAppuSuffix, type WithRealizedAppu } from "@/lib/realized-appu";
 
 import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -191,7 +192,7 @@ export default function AppExperimentMap({
                 : experimentMetricKey ? experimentUsers.get(experimentMetricKey) : undefined;
             const label = users == null ? node.label : `${node.label} (${users.toLocaleString("en-US")})`;
             const isBest = isExperimentBest || (bestPathNodeIds.has(node.id) && (paywallMetric?.isBest === true || cohortMetric?.isBest === true));
-            const cardDetail = isOnboardingExperience
+            let cardDetail = isOnboardingExperience
                 ? flowReport?.status === "ready" ? `APPU ${formatAppu(onboardingMetric?.arpu)}`
                   : flowReport?.status === "unavailable" ? "Stats unavailable" : node.detail
                 : node.cohortMetric
@@ -201,16 +202,22 @@ export default function AppExperimentMap({
                 : showsExperimentAppu
                   ? `APPU ${formatAppu(experimentAppuValue)}`
                 : node.detail;
-            const offers: WithOfferBreakdown = {};
+            const offers: WithOfferBreakdown & WithRealizedAppu = {};
             if (appId === "versy") {
               if (showsPaywallMetrics) {
                 const group = experimentMapPaywallGroup(node, nativePaywalls, selectedLanguage);
                 const row = group?.paywalls.find((candidate) => matchesPaywallVariant(candidate, node.paywallMetric?.variant ?? node.variantId ?? ""));
-                if (row) mergeOfferBreakdowns(offers, row);
+                if (row) { mergeOfferBreakdowns(offers, row); mergeRealizedAppu(offers, row); }
               } else {
                 const source = cohortSource ?? visibleExperiments.find((experiment) => experiment.id === node.experimentId);
-                for (const row of source?.variants ?? []) if (node.cohortMetric?.variants.includes(row.key) || row.key === node.variantId) mergeOfferBreakdowns(offers, row);
+                for (const row of source?.variants ?? []) if (node.cohortMetric?.variants.includes(row.key) || row.key === node.variantId) {
+                  mergeOfferBreakdowns(offers, row); mergeRealizedAppu(offers, row);
+                }
               }
+            }
+            if (cardDetail?.startsWith("APPU ") && offers.realizedAppu) {
+              const suffix = realizedAppuSuffix(offers.realizedAppu);
+              cardDetail = cardDetail.includes(" · CR ") ? cardDetail.replace(" · CR ", `${suffix} · CR `) : cardDetail + suffix;
             }
             const offerTitle = offers.offerBreakdown ? versyOfferRows(offers.offerBreakdown).map((row) =>
               `${row.label}: ${row.subscriptions} paid subscriptions, ${users ? formatAppu(row.proceeds / users) : "—"} APPU`
@@ -256,7 +263,7 @@ export default function AppExperimentMap({
                   <text
                     x={node.x + 12} y={node.y + 14}
                     fill={showsPaywallMetrics ? TONES.orange.ink : isBest ? bestTone.ink : "#717171"}
-                    fontSize={10.5}
+                    fontSize={cardDetail.length > (node.width - 24) / 5.5 ? Math.max(8, (node.width - 24) / (cardDetail.length * 0.52)) : 10.5}
                     fontWeight={isBest || showsPaywallMetrics || showsExperimentAppu ? 600 : undefined}
                     className={isBest || showsPaywallMetrics || showsExperimentAppu ? "tabular-nums" : undefined}
                   >
