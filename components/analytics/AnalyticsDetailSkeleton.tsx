@@ -90,7 +90,7 @@ function AppOverviewSkeleton({ app, period }: { app: AppId; period: Period }) {
         </div>
         <div className="sm:justify-self-end"><AnalyticsPeriodSelect period={period} app={app} /></div>
       </div>
-      <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-[28px] border-0 bg-card shadow-none">
+      <div className="w-full min-w-0 max-w-full overflow-visible rounded-[28px] border-0 bg-card shadow-none">
         <div className="min-w-0 border-b border-foreground/[0.08]">
           <div className="grid grid-cols-3 divide-x divide-black/[0.08]">
             {metrics.map((label) => (

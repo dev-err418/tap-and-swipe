@@ -77,6 +77,15 @@ const APP_DAY_FORMATTER = new Intl.DateTimeFormat("en-US", {
   day: "2-digit",
 });
 
+const APP_REFRESH_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Europe/Paris",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZoneName: "short",
+});
+
 type WebsiteMetricsRow = {
   visitors: number;
   revenue_cents: number;
@@ -548,6 +557,7 @@ async function AppDetail({
   }
 
   const windowLabel = APP_PERIOD_LABELS[period];
+  const refreshedAt = app.snapshotUpdatedAt ? new Date(app.snapshotUpdatedAt) : null;
   const dailyConversions = new Map<string, { installs: number; conversions: number }>();
   for (const point of app.trend) {
     const day = appDayKey(point.bucket);
@@ -569,14 +579,19 @@ async function AppDetail({
 
   return (
     <div className="w-full min-w-0 space-y-10">
-      <div className="w-full min-w-0 space-y-5">
+      <div className="flex w-full min-w-0 items-center justify-between gap-3">
         <Link
           href={buildAnalyticsUrl({ period })}
-          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-sm font-medium text-muted-foreground shadow-none ring-0 transition-all hover:text-foreground active:translate-y-px"
+          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-card px-3 text-sm font-medium text-muted-foreground shadow-none ring-0 transition-all hover:text-foreground active:translate-y-px"
         >
           <ArrowLeft className="size-4" />
           All apps
         </Link>
+        {refreshedAt && Number.isFinite(refreshedAt.getTime()) ? (
+          <time dateTime={refreshedAt.toISOString()} className="text-right text-xs tabular-nums text-muted-foreground">
+            Last refreshed {APP_REFRESH_FORMATTER.format(refreshedAt)}
+          </time>
+        ) : null}
       </div>
 
       <AppOverviewPanel
