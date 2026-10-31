@@ -22,13 +22,13 @@ export default function ExpandableGroup({
   return (
     <>
       <tr
-        className="border-b border-white/5 cursor-pointer"
+        className="border-b border-foreground/5 cursor-pointer"
         onClick={() => setOpen((o) => !o)}
       >
         <td className="py-2">
           <span className="flex items-center">
             <span
-              className={`mr-1.5 text-[10px] text-[#c9c4bc] transition-transform ${open ? "rotate-90" : ""}`}
+              className={`mr-1.5 text-[10px] text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
             >
               &#9654;
             </span>
@@ -37,11 +37,11 @@ export default function ExpandableGroup({
           </span>
         </td>
         <td className="py-2 text-right tabular-nums">{count}</td>
-        <td className="py-2 text-right tabular-nums text-[#c9c4bc]">{pct}%</td>
+        <td className="py-2 text-right tabular-nums text-muted-foreground">{pct}%</td>
       </tr>
       {open &&
         subRows.map((r) => (
-          <tr key={r.source} className="border-b border-white/5 text-[#c9c4bc]">
+          <tr key={r.source} className="border-b border-foreground/5 text-muted-foreground">
             <td className="py-1.5 pl-8">{r.label}</td>
             <td className="py-1.5 text-right tabular-nums">{r.count}</td>
             <td className="py-1.5 text-right tabular-nums">

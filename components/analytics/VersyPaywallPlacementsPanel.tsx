@@ -81,13 +81,13 @@ function ResultsTable({ title, rows }: { title: string; rows: VersyPlacementRow[
     <div className={cn(DASHBOARD_SURFACE_CLASS, "overflow-hidden")}>
       <div className="overflow-x-auto scrollbar-none">
         <table className="w-full min-w-[900px] text-left text-xs">
-          <thead><tr className="border-b border-black/[0.06] text-muted-foreground">
+          <thead><tr className="border-b border-foreground/[0.06] text-muted-foreground">
             <th className="min-w-[180px] px-5 py-3 font-medium">{title === "Placements" ? "Placement" : "Paywall"}</th>
             {columns.map(([label, hint]) => <th key={label} className={cn("px-3 py-3 text-right font-medium", label === "Conv. rate" ? "min-w-[260px]" : "min-w-24")}>
               <abbr title={hint} className="cursor-help whitespace-nowrap no-underline">{label}</abbr>
             </th>)}
           </tr></thead>
-          <tbody>{rows.map((row) => <tr key={row.placement} className="border-b border-black/[0.04] last:border-0">
+          <tbody>{rows.map((row) => <tr key={row.placement} className="border-b border-foreground/[0.04] last:border-0">
             <td className="px-5 py-4 font-medium">{row.placement === "onboarding_bible_widget" ? "Bible Widget embedded paywall" : row.placement === "onboarding_bible_widget_shorter" ? "Bible Widget Shorter embedded paywall" : row.placement === "onboarding_scroll_bible" ? "Bible Scroll trial paywall" : row.placement === "onboarding_scroll_bible_animations" ? "Bible Scroll Animations paywall" : row.placement === "onboarding_scroll_bible_videos" ? "Bible Scroll Videos paywall" : row.placement === "verse_study_upgrade" ? "Verse study upgrade" : row.placement}</td>
             <ConversionRateCell conversions={row.purchased} views={row.viewed} domain={domain} />
             <Cell>{count(row.reached)}</Cell><Cell>{count(row.viewed)}</Cell><Cell>{count(row.attempted)}</Cell><Cell>{count(row.purchased)}</Cell>
@@ -113,12 +113,12 @@ function ConversionRateCell({ conversions, views, domain }: { conversions: numbe
     <div className="flex items-center justify-end gap-3">
       <span className="min-w-11 text-right">{percent(interval.rate)}</span>
       <div className="group relative h-5 w-44 shrink-0 outline-none" tabIndex={0} aria-label={`95% conversion range ${range}`}>
-        <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#1d4ed8]/10" />
-        <span className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#1d4ed8]/55" style={{ left: `${lowerPosition}%`, width: `${upperPosition - lowerPosition}%` }} />
-        <span className="absolute top-1/2 z-10 h-[18px] w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45" style={{ left: `${lowerPosition}%` }} />
-        <span className="absolute top-1/2 z-10 h-[18px] w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45" style={{ left: `${upperPosition}%` }} />
-        <span className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#1d4ed8] shadow-[0_0_0_2px_rgba(29,78,216,0.16)]" style={{ left: `${position(interval.rate)}%` }} />
-        <span role="tooltip" className="dashboard-tooltip-shadow pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden rounded-lg border border-[#1d4ed8]/15 bg-[#f7f7f7] px-3 py-2 text-xs font-semibold text-black group-hover:block group-focus:block">{range}</span>
+        <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-analytics-blue/10" />
+        <span className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-analytics-blue/55" style={{ left: `${lowerPosition}%`, width: `${upperPosition - lowerPosition}%` }} />
+        <span className="absolute top-1/2 z-10 h-[18px] w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/45" style={{ left: `${lowerPosition}%` }} />
+        <span className="absolute top-1/2 z-10 h-[18px] w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/45" style={{ left: `${upperPosition}%` }} />
+        <span className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card bg-analytics-blue shadow-[0_0_0_2px_rgba(29,78,216,0.16)]" style={{ left: `${position(interval.rate)}%` }} />
+        <span role="tooltip" className="dashboard-tooltip-shadow pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden rounded-lg border border-analytics-blue/15 bg-popover px-3 py-2 text-xs font-semibold text-foreground group-hover:block group-focus:block">{range}</span>
       </div>
     </div>
   </td>;

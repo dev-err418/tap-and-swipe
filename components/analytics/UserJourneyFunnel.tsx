@@ -26,7 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 
-const DROP_COLOR = "#f97316";
+const DROP_COLOR = "var(--analytics-orange)";
 
 export default function UserJourneyFunnel({
   report,
@@ -161,19 +161,19 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
   const fields = showInstallPaid ? ["trials", "paid", "installPaid"] as const : ["trials", "paid"] as const;
   if (!cohorts.length) return <p className="text-sm text-muted-foreground">No known first-seen versions in this install window.</p>;
   return <Tooltip.Provider delayDuration={150}><div className="space-y-3">
-    <div className="min-w-0 overflow-x-auto rounded-xl border border-black/[0.06] scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" role="region" aria-label={rowHeading === "First version" ? "Conversions by first-seen version" : `Conversions by ${rowHeading.toLowerCase()}`} tabIndex={0}>
+    <div className="min-w-0 overflow-x-auto rounded-xl border border-foreground/[0.06] scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" role="region" aria-label={rowHeading === "First version" ? "Conversions by first-seen version" : `Conversions by ${rowHeading.toLowerCase()}`} tabIndex={0}>
       <table className="w-full text-left text-xs" style={{ minWidth: 136 + audiences.length * ((showInstallPaid ? 560 : 440) + (showAppuComparison ? showArpuGraph ? 540 : 176 : 0) + (showRefundRate ? 112 : 0)) }}>
-        <thead className="bg-[#f8f8f8]">
-          {!allUsersOnly ? <tr className="border-b border-black/[0.06]">
-            <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-32 bg-[#f8f8f8] px-4 py-3 font-medium">{rowHeading}</th>
-            {audiences.map(({ key, label }) => <th key={key} title={key === "asa" ? "Apple Search Ads" : key === "nonAds" ? "No recorded ad attribution" : undefined} scope="colgroup" colSpan={(showInstallPaid ? 5 : 4) + (showAppuComparison ? 2 : 0) + (showRefundRate ? 1 : 0)} className="border-l border-black/[0.06] px-3 py-3 font-medium">
+        <thead className="bg-analytics-subtle">
+          {!allUsersOnly ? <tr className="border-b border-foreground/[0.06]">
+            <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-32 bg-analytics-subtle px-4 py-3 font-medium">{rowHeading}</th>
+            {audiences.map(({ key, label }) => <th key={key} title={key === "asa" ? "Apple Search Ads" : key === "nonAds" ? "No recorded ad attribution" : undefined} scope="colgroup" colSpan={(showInstallPaid ? 5 : 4) + (showAppuComparison ? 2 : 0) + (showRefundRate ? 1 : 0)} className="border-l border-foreground/[0.06] px-3 py-3 font-medium">
               {label}{key === "nonAds" ? <span className="ml-2 font-normal text-muted-foreground">No recorded ad attribution</span> : null}
             </th>)}
           </tr> : null}
           <tr className="text-muted-foreground">
-            {allUsersOnly ? <th scope="col" className="sticky left-0 z-10 min-w-32 bg-[#f8f8f8] px-4 py-3 text-foreground font-medium">{rowHeading}</th> : null}
+            {allUsersOnly ? <th scope="col" className="sticky left-0 z-10 min-w-32 bg-analytics-subtle px-4 py-3 text-foreground font-medium">{rowHeading}</th> : null}
             {audiences.map(({ key: audience }) => <Fragment key={audience}>
-              <th scope="col" className="min-w-24 border-l border-black/[0.06] px-3 py-3 text-right font-medium">Installs</th>
+              <th scope="col" className="min-w-24 border-l border-foreground/[0.06] px-3 py-3 text-right font-medium">Installs</th>
               {showAppuComparison ? <>
                 <th scope="col" className={cn("whitespace-nowrap px-3 py-3 text-right font-medium", showArpuGraph ? "min-w-[460px]" : "min-w-24")} title={`Observed APPU lift and approximate ${Math.round(APPU_CONFIDENCE_LEVEL * 100)}% interval versus the first populated row. Hover for details.`}>APPU lift</th>
                 <th scope="col" className="min-w-20 whitespace-nowrap px-3 py-3 text-right font-medium" title="Estimated chance of highest APPU among populated rows in this audience">Win %</th>
@@ -189,10 +189,10 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
           </tr>
         </thead>
         <tbody className="[&>tr>td]:py-2 [&>tr>th]:py-2">
-          {cohorts.map((cohort) => <tr key={cohort.version} className="border-t border-black/[0.06]">
-            <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-white px-4 py-4 font-medium">
+          {cohorts.map((cohort) => <tr key={cohort.version} className="border-t border-foreground/[0.06]">
+            <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-card px-4 py-4 font-medium">
               {onRowClick && (!clickableRows || clickableRows.includes(cohort.version)) ? <button type="button" aria-haspopup="dialog" aria-label={`View screens for ${labelFor(cohort.version)}`}
-                className="cursor-pointer rounded-sm text-left underline decoration-black/20 underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="cursor-pointer rounded-sm text-left underline decoration-foreground/20 underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 onClick={(event) => onRowClick(cohort.version, event.currentTarget)}>{labelFor(cohort.version)}</button>
                 : labelFor(cohort.version)}
             </th>
@@ -206,12 +206,12 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
                   && candidate.proceeds / candidate.installs > appu;
               });
               return <Fragment key={audience}>
-                <td className="border-l border-black/[0.06] px-3 py-4 text-right tabular-nums">{metric ? metric.installs.toLocaleString("en-US") : "—"}</td>
+                <td className="border-l border-foreground/[0.06] px-3 py-4 text-right tabular-nums">{metric ? metric.installs.toLocaleString("en-US") : "—"}</td>
                 {showAppuComparison ? <ArpuComparisonCells result={comparisons[audience].results.find((result) => result.key === cohort.version)!}
                   showGraph={showArpuGraph} metric={metric} label={labelFor(cohort.version)} extent={comparisons[audience].extent}
                   baselineLabel={labelFor(comparisons[audience].results[0]?.baseline ?? cohort.version)} /> : null}
                 <td title={bestAppu ? "Highest average proceeds per user among these cohorts" : "Average proceeds per user (USD)"}
-                  className={cn("whitespace-nowrap px-3 py-4 text-right font-semibold tabular-nums", bestAppu && "bg-orange-100/80 text-orange-900")}>
+                  className={cn("whitespace-nowrap px-3 py-4 text-right font-semibold tabular-nums", bestAppu && "bg-analytics-highlight-bg text-analytics-highlight")}>
                   {appu == null ? "—" : appu.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   <RealizedAppu metric={metric?.realizedAppu} />
                   <VersyOfferBreakdown breakdown={metric?.offerBreakdown} realizedAppu={metric?.realizedAppu} users={metric?.installs ?? 0} proceeds={metric?.proceeds ?? 0} available={!!metric && !metric.missingProceeds} />
@@ -228,11 +228,11 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
                   });
                   return <td key={field}
                     title={field === "paid" ? `${metric?.paid ?? 0} paid / ${denominator} finished trials${best ? " · Highest observed rate" : ""}` : best ? "Highest observed conversion rate among these cohorts" : undefined}
-                    className={cn("whitespace-nowrap px-3 py-4 text-right tabular-nums", best && "bg-orange-100/80 text-orange-900")}>
+                    className={cn("whitespace-nowrap px-3 py-4 text-right tabular-nums", best && "bg-analytics-highlight-bg text-analytics-highlight")}>
                     {!available ? "—" : <>
                       {best ? <span className="sr-only">Highest observed conversion: </span> : null}
                       <span className="font-semibold">{formatPercent(rate)}</span>
-                      <span className={cn("ml-1", best ? "text-orange-800/70" : "text-muted-foreground")}>({metric[field].toLocaleString("en-US")}{` / ${denominator.toLocaleString("en-US")}`})</span>
+                      <span className={cn("ml-1", best ? "text-analytics-highlight/75" : "text-muted-foreground")}>({metric[field].toLocaleString("en-US")}{` / ${denominator.toLocaleString("en-US")}`})</span>
                     </>}
                   </td>;
                 })}
@@ -314,14 +314,14 @@ export function JourneyVariant({ variant }: { variant: UserJourneyVariantResult 
                 }}
                 onBlur={() => setTooltip(null)}
               >
-                <span className="pb-1 text-center text-[11px] font-medium tabular-nums text-black/70">{percent}%</span>
-                <span className="relative min-h-0 flex-1 border-b border-black/10">
+                <span className="pb-1 text-center text-[11px] font-medium tabular-nums text-foreground/70">{percent}%</span>
+                <span className="relative min-h-0 flex-1 border-b border-foreground/10">
                   <span
-                    className={cn("absolute inset-x-0.5 bottom-0 rounded-t-md", !steep && !step.branch && "bg-[#1d4ed8]", step.branch && "bg-black/20")}
+                    className={cn("absolute inset-x-0.5 bottom-0 rounded-t-md", !steep && !step.branch && "bg-analytics-blue", step.branch && "bg-foreground/20")}
                     style={{ height: `${height}%`, backgroundColor: steep ? DROP_COLOR : undefined }}
                   />
                 </span>
-                <span className="block w-full min-w-0 truncate pt-1.5 text-center text-[11px] text-black/80">{step.label}</span>
+                <span className="block w-full min-w-0 truncate pt-1.5 text-center text-[11px] text-foreground/80">{step.label}</span>
                 <span className="text-center text-[11px] tabular-nums text-muted-foreground">{step.users.toLocaleString("en-US")}</span>
               </li>
             );
@@ -355,7 +355,7 @@ function JourneyTooltipCard({ tooltip }: { tooltip: JourneyTooltip }) {
   return (
     <div
       role="tooltip"
-      className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] grid min-w-52 gap-2 rounded-lg bg-[#f7f7f7] px-2.5 py-2 text-xs"
+      className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] grid min-w-52 gap-2 rounded-lg bg-popover px-2.5 py-2 text-xs"
       style={{ left, top }}
     >
       <div className="font-medium text-foreground">{tooltip.label}</div>

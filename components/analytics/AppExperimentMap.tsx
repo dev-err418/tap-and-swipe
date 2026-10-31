@@ -26,14 +26,14 @@ import {
 import { cn } from "@/lib/utils";
 
 const TONES = {
-  blue: { line: "#a8b9eb", ink: "#284dae", fill: "#f5f7ff", border: "#dce4f8" },
-  orange: { line: "#ebc09c", ink: "#a95317", fill: "#fff8f1", border: "#f1dfcf" },
-  neutral: { line: "#c8cbd2", ink: "#525866", fill: "#fafafa", border: "#e8e9ec" },
+  blue: { line: "light-dark(#a8b9eb, #405581)", ink: "light-dark(#284dae, #a9beff)", fill: "light-dark(#f5f7ff, #252e41)", border: "light-dark(#dce4f8, #354462)" },
+  orange: { line: "light-dark(#ebc09c, #765236)", ink: "light-dark(#a95317, #f5bc8d)", fill: "light-dark(#fff8f1, #362b23)", border: "light-dark(#f1dfcf, #594330)" },
+  neutral: { line: "light-dark(#c8cbd2, #4a4a4a)", ink: "var(--muted-foreground)", fill: "var(--analytics-subtle)", border: "var(--border)" },
 };
 const BEST_TONES = {
-  blue: { line: "#6f89d8", ink: "#284dae", fill: "#e5ebff" },
-  orange: { line: "#d98245", ink: "#a95317", fill: "#fff0e4" },
-  neutral: { line: "#8f96a3", ink: "#525866", fill: "#f0f1f3" },
+  blue: { line: "var(--analytics-blue)", ink: TONES.blue.ink, fill: "light-dark(#e5ebff, #2e3d5e)" },
+  orange: { line: "var(--analytics-orange)", ink: TONES.orange.ink, fill: "light-dark(#fff0e4, #4d3627)" },
+  neutral: { line: "var(--muted-foreground)", ink: "var(--foreground)", fill: "var(--analytics-control)" },
 };
 const LANGUAGE_LABELS: Record<string, string> = { en: "English", es: "Spanish", de: "German", fr: "French" };
 const LANGUAGE_FLAGS: Record<string, string> = { en: "🇬🇧", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷" };
@@ -130,7 +130,7 @@ export default function AppExperimentMap({
         >
           <desc>{flow.edges.map((edge) => `${nodes.get(edge.from)!.label} to ${nodes.get(edge.to)!.label}${edge.label ? `: ${edge.label}` : ""}${edge.conditional ? " only on cancel or dismissal" : ""}.`).join(" ")}</desc>
           {flow.stages.map((stage) => (
-            <text key={stage.label} x={stage.x} y={20} fill="#717171" fontSize={12}>{stage.label}</text>
+            <text key={stage.label} x={stage.x} y={20} fill="var(--muted-foreground)" fontSize={12}>{stage.label}</text>
           ))}
           {flow.edges.map((edge) => {
             const from = nodes.get(edge.from)!;
@@ -228,8 +228,8 @@ export default function AppExperimentMap({
               return (
                 <g key={node.id}>
                   <circle cx={node.x} cy={node.y} r={6} fill={tone.ink} />
-                  <text x={node.x} y={node.y + 28} textAnchor="middle" fill="#717171" fontSize={12}>Start</text>
-                  <text x={node.x} y={node.y + 44} textAnchor="middle" fill="#717171" fontSize={10}>onboarding</text>
+                  <text x={node.x} y={node.y + 28} textAnchor="middle" fill="var(--muted-foreground)" fontSize={12}>Start</text>
+                  <text x={node.x} y={node.y + 44} textAnchor="middle" fill="var(--muted-foreground)" fontSize={10}>onboarding</text>
                 </g>
               );
             }
@@ -258,11 +258,11 @@ export default function AppExperimentMap({
                   strokeWidth={isBest ? 2 : 1}
                   className={interactive ? "transition-[filter,stroke-width] duration-150 group-hover:brightness-95 group-focus-visible:[stroke:#1d4ed8] group-focus-visible:[stroke-width:3] motion-reduce:transition-none" : undefined}
                 />
-                <text x={node.x + 12} y={node.y + (cardDetail ? -4 : 4)} fill="#252525" fontSize={mapLabelFontSize(label, node.width)}>{label}</text>
+                <text x={node.x + 12} y={node.y + (cardDetail ? -4 : 4)} fill="var(--foreground)" fontSize={mapLabelFontSize(label, node.width)}>{label}</text>
                 {cardDetail ? (
                   <text
                     x={node.x + 12} y={node.y + 14}
-                    fill={showsPaywallMetrics ? TONES.orange.ink : isBest ? bestTone.ink : "#717171"}
+                    fill={showsPaywallMetrics ? TONES.orange.ink : isBest ? bestTone.ink : "var(--muted-foreground)"}
                     fontSize={cardDetail.length > (node.width - 24) / 5.5 ? Math.max(8, (node.width - 24) / (cardDetail.length * 0.52)) : 10.5}
                     fontWeight={isBest || showsPaywallMetrics || showsExperimentAppu ? 600 : undefined}
                     className={isBest || showsPaywallMetrics || showsExperimentAppu ? "tabular-nums" : undefined}
@@ -277,7 +277,7 @@ export default function AppExperimentMap({
       </div>
     </DashboardCard>
     <Dialog open={Boolean(activeNode)} onOpenChange={(open) => { if (!open) setActiveNodeId(null); }}>
-      <DialogContent ref={dialogContentRef} className="flex max-h-[88dvh] flex-col gap-0 overflow-hidden rounded-3xl bg-[#f5f5f5] p-0 sm:max-w-5xl motion-reduce:animate-none"
+      <DialogContent ref={dialogContentRef} className="flex max-h-[88dvh] flex-col gap-0 overflow-hidden rounded-3xl bg-background p-0 sm:max-w-5xl motion-reduce:animate-none"
         onOpenAutoFocus={(event) => { event.preventDefault(); dialogContentRef.current?.focus(); }}
         onCloseAutoFocus={(event) => { event.preventDefault(); triggerRef.current?.focus(); }}>
         <DialogTitle className="sr-only">{activeNode?.label}</DialogTitle>

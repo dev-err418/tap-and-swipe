@@ -18,7 +18,7 @@ export default function ActiveTrialsChart({ report, windowLabel }: { report: Act
           <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} interval={0} />
           <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={36} />
           <Tooltip cursor={{ fill: "var(--muted)", opacity: 0.4 }} content={<ActiveTrialsTooltip />} />
-          <Bar dataKey="active" name="Active trials" fill="#1d4ed8" radius={[4, 4, 0, 0]} maxBarSize={52} isAnimationActive={false}>
+          <Bar dataKey="active" name="Active trials" fill="var(--analytics-blue)" radius={[4, 4, 0, 0]} maxBarSize={52} isAnimationActive={false}>
             <LabelList dataKey="active" position="top" className="fill-foreground" />
           </Bar>
         </BarChart>
@@ -41,7 +41,7 @@ function ActiveTrialsTooltip({ active, payload }: {
     <div role="tooltip" className="dashboard-tooltip-shadow w-[16rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-popover text-xs text-popover-foreground ring-1 ring-foreground/5">
       <div className="grid gap-2 px-2.5 py-2">
         <div className="font-medium text-foreground">{point.label}</div>
-        <TooltipMetric label="Active trials" value={point.active.toLocaleString("en-US")} color="#1d4ed8" />
+        <TooltipMetric label="Active trials" value={point.active.toLocaleString("en-US")} color="var(--analytics-blue)" />
       </div>
     </div>
   );

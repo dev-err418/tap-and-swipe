@@ -14,10 +14,10 @@ interface TrialAbuseRow {
 }
 
 const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
-  active: { bg: "bg-emerald-400/20", text: "text-emerald-400", label: "Active" },
-  warned: { bg: "bg-yellow-400/20", text: "text-yellow-400", label: "Warned" },
-  revoked: { bg: "bg-red-400/20", text: "text-red-400", label: "Revoked" },
-  appeal_pending: { bg: "bg-blue-400/20", text: "text-blue-400", label: "Appeal" },
+  active: { bg: "bg-emerald-400/20", text: "text-analytics-green", label: "Active" },
+  warned: { bg: "bg-yellow-400/20", text: "text-analytics-highlight", label: "Warned" },
+  revoked: { bg: "bg-red-400/20", text: "text-destructive", label: "Revoked" },
+  appeal_pending: { bg: "bg-blue-400/20", text: "text-analytics-blue", label: "Appeal" },
 };
 
 const COLLAPSED_COUNT = 10;
@@ -64,18 +64,18 @@ export default function TrialAbusePanel() {
     setActing(null);
   }
 
-  if (loading) return <p className="text-sm text-[#c9c4bc]/60">Loading trial abuse data...</p>;
-  if (rows.length === 0) return <p className="text-sm text-[#c9c4bc]/60">No trial abuse detected.</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">Loading trial abuse data...</p>;
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground">No trial abuse detected.</p>;
 
   const shown = expanded ? rows : rows.slice(0, COLLAPSED_COUNT);
   const hasMore = rows.length > COLLAPSED_COUNT;
 
   return (
     <div className="space-y-2">
-      <div className="rounded-2xl border border-white/5 bg-white/5 overflow-hidden">
+      <div className="rounded-2xl border border-foreground/5 bg-foreground/5 overflow-hidden">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-[#c9c4bc]/60 border-b border-white/10">
+            <tr className="text-muted-foreground border-b border-foreground/10">
               <th className="text-left px-4 py-2 font-medium">Machine ID</th>
               <th className="text-right px-4 py-2 font-medium">Licenses</th>
               <th className="text-left px-4 py-2 font-medium">Details</th>
@@ -84,22 +84,22 @@ export default function TrialAbusePanel() {
           </thead>
           <tbody>
             {shown.map((r) => (
-              <tr key={r.machine_id} className="border-b border-white/5 align-top">
+              <tr key={r.machine_id} className="border-b border-foreground/5 align-top">
                 <td className="px-4 py-2">
                   <button
                     onClick={() => copyId(r.machine_id)}
-                    className="font-mono text-[#c9c4bc] hover:text-[#f4cf8f] transition-colors cursor-pointer text-left"
+                    className="font-mono text-muted-foreground hover:text-analytics-highlight transition-colors cursor-pointer text-left"
                     title={`Click to copy: ${r.machine_id}`}
                   >
                     {copied === r.machine_id ? (
-                      <span className="text-emerald-400">Copied!</span>
+                      <span className="text-analytics-green">Copied!</span>
                     ) : (
                       r.machine_id.slice(0, 14) + "..."
                     )}
                   </button>
                 </td>
                 <td className="px-4 py-2 text-right">
-                  <span className="rounded px-1.5 py-0.5 text-[10px] font-bold bg-red-400/20 text-red-400">
+                  <span className="rounded px-1.5 py-0.5 text-[10px] font-bold bg-red-400/20 text-destructive">
                     {r.license_count}
                   </span>
                 </td>
@@ -114,8 +114,8 @@ export default function TrialAbusePanel() {
                           <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${badge.bg} ${badge.text}`}>
                             {badge.label}
                           </span>
-                          <span className="font-mono text-[#c9c4bc]/40 text-[10px]">{key.slice(0, 14)}...</span>
-                          {email && <span className="text-[#c9c4bc]/60 truncate max-w-[180px]">{email}</span>}
+                          <span className="font-mono text-muted-foreground text-[10px]">{key.slice(0, 14)}...</span>
+                          {email && <span className="text-muted-foreground truncate max-w-[180px]">{email}</span>}
                         </div>
                       );
                     })}
@@ -132,14 +132,14 @@ export default function TrialAbusePanel() {
                             <button
                               onClick={() => handleAction(key, "clear")}
                               disabled={isActing}
-                              className="rounded px-2 py-0.5 text-[10px] font-medium bg-emerald-400/20 text-emerald-400 hover:bg-emerald-400/30 disabled:opacity-50 transition-colors"
+                              className="rounded px-2 py-0.5 text-[10px] font-medium bg-emerald-400/20 text-analytics-green hover:bg-emerald-400/30 disabled:opacity-50 transition-colors"
                             >
                               {isActing ? "..." : "Clear"}
                             </button>
                             <button
                               onClick={() => handleAction(key, "revoke")}
                               disabled={isActing}
-                              className="rounded px-2 py-0.5 text-[10px] font-medium bg-red-400/20 text-red-400 hover:bg-red-400/30 disabled:opacity-50 transition-colors"
+                              className="rounded px-2 py-0.5 text-[10px] font-medium bg-red-400/20 text-destructive hover:bg-red-400/30 disabled:opacity-50 transition-colors"
                             >
                               {isActing ? "..." : "Revoke"}
                             </button>
@@ -158,7 +158,7 @@ export default function TrialAbusePanel() {
       {hasMore && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-xs text-[#c9c4bc]/60 hover:text-[#f4cf8f] transition-colors"
+          className="text-xs text-muted-foreground hover:text-analytics-highlight transition-colors"
         >
           {expanded ? "Show less" : `Show all ${rows.length} machines`}
         </button>

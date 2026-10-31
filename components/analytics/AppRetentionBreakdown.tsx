@@ -14,8 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const YEARLY_COLOR = "#1d4ed8";
-const WEEKLY_COLOR = "#f97316";
+const YEARLY_COLOR = "var(--analytics-blue)";
+const WEEKLY_COLOR = "var(--analytics-orange)";
 const PREVIEW_ROWS = 10;
 
 type RetentionMetric = "installs" | "d1" | "d7" | "d30";
@@ -67,14 +67,14 @@ function RetentionDetails({ rows, metric }: { rows: MobileAppRetentionCountryRow
         <Maximize2 className="size-3" aria-hidden />
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden bg-white p-0 sm:max-w-3xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden bg-card p-0 sm:max-w-3xl">
           <DialogHeader className="px-6 pt-6 pr-16">
             <DialogTitle>Subscription retention</DialogTitle>
             <DialogDescription>
               {rows.length.toLocaleString("en-US")} {rows.length === 1 ? "country" : "countries"} for the selected period, sorted by {METRIC_LABELS[metric].toLowerCase()}.
             </DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 max-h-[65dvh] overflow-auto overscroll-contain border-t border-black/[0.06] p-0 pr-0.5">
+          <div className="min-h-0 max-h-[65dvh] overflow-auto overscroll-contain border-t border-foreground/[0.06] p-0 pr-0.5">
             <RetentionTable rows={rows} metric={metric} />
           </div>
         </DialogContent>
@@ -163,7 +163,7 @@ function RetentionRow({
           className="pointer-events-none absolute inset-0 z-20"
           style={{ clipPath: `inset(0 ${100 - yearlyRate * 50 - weeklyRate * 50}% 0 0)` }}
         >
-          <div className="flex h-full min-w-0 items-center gap-2 px-3 text-sm font-medium text-white">
+          <div className="flex h-full min-w-0 items-center gap-2 px-3 text-sm font-medium analytics-bar-label">
             <span className="flex size-5 shrink-0 items-center justify-center text-base">{marker}</span>
             <span className="min-w-0 flex-1 truncate">{label}</span>
             <span className="shrink-0 font-mono text-xs font-medium tabular-nums">{row.overall[day].eligible > 0 ? formatRate(rate(row.overall[day])) : "—"}</span>
@@ -197,7 +197,7 @@ function RetentionTooltip({ tooltip }: { tooltip: RetentionTooltipState }) {
 
   return (
     <div
-      className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] grid min-w-56 gap-2 rounded-lg bg-[#f7f7f7] px-2.5 py-2 text-xs"
+      className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] grid min-w-56 gap-2 rounded-lg bg-popover px-2.5 py-2 text-xs"
       style={{ left, top }}
     >
       <div className="flex items-center gap-2 font-medium text-foreground">

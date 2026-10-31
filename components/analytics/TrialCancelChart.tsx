@@ -14,8 +14,8 @@ import {
 import type { TrialCancelTiming } from "@/lib/mobile-app-analytics";
 import { DashboardCard } from "@/components/analytics/DashboardCard";
 
-const SURVIVAL_COLOR = "#1d4ed8";
-const QUALIFIED_COLOR = "#f97316";
+const SURVIVAL_COLOR = "var(--analytics-blue)";
+const QUALIFIED_COLOR = "var(--analytics-orange)";
 
 const BUCKET_MINUTES: Record<string, number> = {
   "0-5m": 5,
@@ -255,7 +255,7 @@ function Stat({
   return (
     <div className="min-w-0">
       <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className={`mt-0.5 text-lg font-semibold tabular-nums ${accent ? "text-[#1d4ed8]" : "text-black"}`}>
+      <p className={`mt-0.5 text-lg font-semibold tabular-nums ${accent ? "text-analytics-blue" : "text-foreground"}`}>
         {value}
       </p>
       <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{detail}</p>

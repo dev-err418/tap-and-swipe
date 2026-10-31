@@ -1,0 +1,46 @@
+/* AppSprint Web's palette, scoped to analytics, including body-portalled dialogs.
+   Native color-scheme resolves System before hydration and follows OS changes. */
+:root:has([data-analytics-theme]) {
+  color-scheme: light dark;
+  --background: light-dark(#f4f4f4, #121212);
+  --foreground: light-dark(#141414, #f5f5f5);
+  --card: light-dark(#ffffff, #222222);
+  --card-foreground: var(--foreground);
+  --popover: light-dark(#ffffff, #262626);
+  --popover-foreground: var(--foreground);
+  /* AppSprint's ASO/account surfaces use the orange primary in both modes. */
+  --primary: #f97316;
+  --primary-foreground: #ffffff;
+  --secondary: light-dark(oklch(0.967 0.001 286.375), #262626);
+  --secondary-foreground: var(--foreground);
+  --muted: light-dark(oklch(0.97 0 0), #262626);
+  --muted-foreground: light-dark(oklch(0.556 0 0), #a0a0a0);
+  --accent: oklch(0.81 0.14 82);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: light-dark(oklch(0.577 0.245 27.325), oklch(0.704 0.191 22.216));
+  --border: light-dark(oklch(0.922 0 0), rgb(255 255 255 / 10%));
+  --input: light-dark(oklch(0.922 0 0), rgb(255 255 255 / 15%));
+  --ring: light-dark(oklch(0.708 0 0), oklch(0.556 0 0));
+  --analytics-subtle: light-dark(#f8f8f7, #262626);
+  --analytics-control: light-dark(#e6e6e6, #262626);
+  --analytics-blue: light-dark(#1d4ed8, #7c9eff);
+  --analytics-orange: light-dark(#f97316, #fb923c);
+  --analytics-green: light-dark(#047857, #34d399);
+  --analytics-violet: light-dark(#7c3aed, #a78bfa);
+  --analytics-highlight: light-dark(#92590a, #f5ce76);
+  --analytics-highlight-bg: light-dark(#ffedd5, #473321);
+}
+
+:root:has([data-analytics-theme="light"]) { color-scheme: light; }
+:root:has([data-analytics-theme="dark"]) { color-scheme: dark; }
+
+.analytics-canvas { background-color: var(--background); }
+
+:root:has([data-analytics-theme]) .dashboard-tooltip-shadow {
+  box-shadow: 0 4px 24px rgb(0 0 0 / 16%), 0 0 0 1px var(--border);
+}
+
+/* Keep labels on solid chart bars legible as the series brighten in dark mode. */
+:root:has([data-analytics-theme]) .analytics-bar-label {
+  color: light-dark(#ffffff, #141414);
+}

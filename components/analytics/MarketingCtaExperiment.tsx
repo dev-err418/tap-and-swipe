@@ -14,13 +14,13 @@ export default function MarketingCtaExperiment({ rows, windowDays }: { rows: Row
   return <DashboardCard title="SEO page CTA A/B test" action={<span className="text-xs text-muted-foreground">50/50 · Last {windowDays} days</span>} contentClassName="min-w-0 p-0">
     <div className="flex items-center gap-3 px-4 py-3">
       <label htmlFor="cta-page" className="text-sm text-muted-foreground">Page</label>
-      <select id="cta-page" value={page} onChange={(event) => setPage(event.target.value)} className="rounded-lg border border-black/10 bg-white px-3 py-1.5 text-sm">
+      <select id="cta-page" value={page} onChange={(event) => setPage(event.target.value)} className="rounded-lg border border-foreground/10 bg-card px-3 py-1.5 text-sm">
         <option value="all">All tested pages</option>{pages.map(([path, label]) => <option key={path} value={path}>{label}</option>)}
       </select>
     </div>
     <div className="overflow-x-auto"><table className="w-max min-w-full text-sm">
-      <thead><tr className="border-y border-black/10 text-left text-xs text-black/50">{["Page / position", "Experience", "Eligible visitors", "CTA viewers", "Clickers", "Clicks / eligible visitor", "Clicks / CTA viewer", "Checkout visitors", "Paid visitors"].map((label, index) => <th key={label} className={`whitespace-nowrap px-4 py-3 font-medium ${index > 1 ? "text-right" : ""}`}>{label}</th>)}</tr></thead>
-      <tbody>{visible.map((row) => <tr key={`${row.experiment}:${row.page}:${row.placement}:${row.variant}`} className="border-b border-black/[0.07]">
+      <thead><tr className="border-y border-foreground/10 text-left text-xs text-muted-foreground">{["Page / position", "Experience", "Eligible visitors", "CTA viewers", "Clickers", "Clicks / eligible visitor", "Clicks / CTA viewer", "Checkout visitors", "Paid visitors"].map((label, index) => <th key={label} className={`whitespace-nowrap px-4 py-3 font-medium ${index > 1 ? "text-right" : ""}`}>{label}</th>)}</tr></thead>
+      <tbody>{visible.map((row) => <tr key={`${row.experiment}:${row.page}:${row.placement}:${row.variant}`} className="border-b border-foreground/[0.07]">
         <td className="px-4 py-3"><a href={`https://appsprint.app${row.page}`} target="_blank" rel="noreferrer" className="font-medium hover:underline">{row.pageLabel}</a><div className="mt-1 text-xs text-muted-foreground">{row.position ?? placements[row.placement] ?? row.placement}</div></td>
         <td className="max-w-xs px-4 py-3"><span className="font-medium">{row.variant === "control" ? "A" : "B"}</span> · {row.label}</td>
         <td className="px-4 py-3 text-right tabular-nums">{row.eligibleVisitors?.toLocaleString() ?? "—"}</td>

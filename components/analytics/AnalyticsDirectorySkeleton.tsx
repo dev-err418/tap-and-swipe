@@ -51,7 +51,7 @@ export function AnalyticsDirectorySkeleton({ periodLabel, access }: { periodLabe
 
 export function AppTotalsSkeleton({ periodLabel, name = "Arthur" }: { periodLabel: string; name?: string }) {
   return (
-    <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+    <p className="min-w-0 text-lg text-muted-foreground sm:text-xl">
       Hey {name}, you got <MetricBone /> downloads and <MetricBone /> proceeds {periodLabel}.
     </p>
   );
@@ -59,7 +59,7 @@ export function AppTotalsSkeleton({ periodLabel, name = "Arthur" }: { periodLabe
 
 export function WebsiteTotalsSkeleton({ periodLabel }: { periodLabel: string }) {
   return (
-    <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+    <p className="min-w-0 text-lg text-muted-foreground sm:text-xl">
       Hey Arthur, you got <MetricBone /> visitors and made <MetricBone /> {periodLabel}.
     </p>
   );
@@ -146,7 +146,7 @@ function DirectoryCardSkeleton({
       {testLabel ? (
         <span
           aria-label={testLabel}
-          className="absolute top-4 right-4 inline-flex size-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold leading-none tabular-nums text-white shadow-sm ring-2 ring-white"
+          className="absolute top-4 right-4 inline-flex size-6 items-center justify-center rounded-full bg-destructive/100 text-xs font-bold leading-none tabular-nums text-white shadow-sm ring-2 ring-card"
         >
           {tests}
         </span>
@@ -162,18 +162,18 @@ function DirectoryCardSkeleton({
         />
         <h2 className="truncate text-xl font-semibold tracking-tight">{title}</h2>
       </div>
-      <div aria-hidden className="my-3 h-32 rounded-xl bg-black/[0.04] motion-safe:animate-pulse" />
-      <p className="text-base text-black/55">
+      <div aria-hidden className="my-3 h-32 rounded-xl bg-foreground/[0.04] motion-safe:animate-pulse" />
+      <p className="text-base text-muted-foreground">
         {metric === "app" ? (
           <>
             <MetricBone /> proceeds
-            <span className="mx-2 text-black/35">•</span>
+            <span className="mx-2 text-muted-foreground">•</span>
             <MetricBone /> APPU
           </>
         ) : (
           <>
             <MetricBone /> visitors
-            <span className="mx-2 text-black/35">•</span>
+            <span className="mx-2 text-muted-foreground">•</span>
             <MetricBone /> revenue
           </>
         )}
@@ -186,7 +186,7 @@ function MetricBone() {
   return (
     <span
       aria-hidden
-      className="inline-block h-[1.05em] w-14 translate-y-[0.12em] rounded bg-black/10 align-middle motion-safe:animate-pulse"
+      className="inline-block h-[1.05em] w-14 translate-y-[0.12em] rounded bg-foreground/10 align-middle motion-safe:animate-pulse"
     />
   );
 }

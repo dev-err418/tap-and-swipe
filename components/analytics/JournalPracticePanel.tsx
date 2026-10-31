@@ -22,7 +22,7 @@ export default function JournalPracticePanel({ report }: { report: JournalPracti
           <ExperimentTh>Variant</ExperimentTh>
           {["Assigned users", "D1 return", "D7 return", "Sessions / user / day"].map((label) => <ExperimentTh key={label} right>{label}</ExperimentTh>)}
         </>}>
-          {report.rows.map((row, index) => <tr key={row.variant} className="border-b border-black/[0.07]">
+          {report.rows.map((row, index) => <tr key={row.variant} className="border-b border-foreground/[0.07]">
             <ExperimentTd><ExperimentVariantLabel index={index}>{row.label}</ExperimentVariantLabel></ExperimentTd>
             <ExperimentNumberTd>{row.users.toLocaleString()}</ExperimentNumberTd>
             <ExperimentNumberTd><span title={`${row.d1.retained} / ${row.d1.eligible} eligible users`}><ReturnRate metric={row.d1} /></span></ExperimentNumberTd>

@@ -31,9 +31,9 @@ export default function DeadProjectsDisclosure({ period }: { period: Period }) {
     <div className="space-y-6">
       {open ? (
         <section className="space-y-6">
-          <h3 className="text-lg font-semibold tracking-tight text-black/55">Dead project</h3>
-          {loading ? <p className="text-sm text-black/45">Loading…</p> : null}
-          {failed ? <p className="text-sm text-black/45">Dead projects could not be loaded.</p> : null}
+          <h3 className="text-lg font-semibold tracking-tight text-muted-foreground">Dead project</h3>
+          {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+          {failed ? <p className="text-sm text-muted-foreground">Dead projects could not be loaded.</p> : null}
           {cards && cards.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {cards.map((card) => (
@@ -55,7 +55,7 @@ export default function DeadProjectsDisclosure({ period }: { period: Period }) {
         <button
           type="button"
           onClick={() => void toggle()}
-          className="text-sm font-medium text-black/45 transition-colors hover:text-black"
+          className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           {open ? "See less" : "See more"}
         </button>

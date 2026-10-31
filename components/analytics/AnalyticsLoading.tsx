@@ -30,7 +30,7 @@ export default function AnalyticsLoading({ access }: { access: AnalyticsAccess }
 
   return (
     <main
-      className="min-h-screen px-4 py-6 text-black sm:px-6 sm:py-8"
+      className="min-h-screen px-4 py-6 text-foreground sm:px-6 sm:py-8"
       aria-busy="true"
       aria-label="Loading analytics"
     >

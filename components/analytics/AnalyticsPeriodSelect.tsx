@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AnalyticsThemeSetting } from "./AnalyticsTheme";
 import {
   Select,
   SelectContent,
@@ -39,43 +40,46 @@ export default function AnalyticsPeriodSelect({
   const [isPending, startTransition] = useTransition();
 
   return (
-    <Select
-      value={period}
-      disabled={isPending}
-      onValueChange={(value) => {
-        const nextPeriod = value as Period;
-        if (nextPeriod === period) return;
-        const params = new URLSearchParams();
-        if (nextPeriod !== "week") params.set("period", nextPeriod);
-        if (site) params.set("site", site);
-        if (app) params.set("app", app);
-        const query = params.toString();
-        startTransition(() => {
-          router.push(`/analytics${query ? `?${query}` : ""}`);
-        });
-      }}
-    >
-      <SelectTrigger
-        aria-label="Analytics period"
-        className={`${DASHBOARD_PICKER_TRIGGER_CLASS} w-full sm:w-[160px]`}
+    <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+      <AnalyticsThemeSetting />
+      <Select
+        value={period}
+        disabled={isPending}
+        onValueChange={(value) => {
+          const nextPeriod = value as Period;
+          if (nextPeriod === period) return;
+          const params = new URLSearchParams();
+          if (nextPeriod !== "week") params.set("period", nextPeriod);
+          if (site) params.set("site", site);
+          if (app) params.set("app", app);
+          const query = params.toString();
+          startTransition(() => {
+            router.push(`/analytics${query ? `?${query}` : ""}`);
+          });
+        }}
       >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent
-        position="popper"
-        align="end"
-        className={DASHBOARD_POPOVER_CLASS}
-      >
-        {PERIOD_OPTIONS.map((option) => (
-          <SelectItem
-            key={option.value}
-            value={option.value}
-            className={DASHBOARD_POPOVER_ITEM_CLASS}
-          >
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+        <SelectTrigger
+          aria-label="Analytics period"
+          className={`${DASHBOARD_PICKER_TRIGGER_CLASS} w-full sm:w-[160px]`}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent
+          position="popper"
+          align="end"
+          className={DASHBOARD_POPOVER_CLASS}
+        >
+          {PERIOD_OPTIONS.map((option) => (
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              className={DASHBOARD_POPOVER_ITEM_CLASS}
+            >
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

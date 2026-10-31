@@ -1,4 +1,3 @@
-import VersyOfferBreakdown from "@/components/analytics/VersyOfferBreakdown";
 import RealizedAppu from "@/components/analytics/RealizedAppu";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -23,6 +22,7 @@ import {
 } from "@/lib/mobile-app-analytics";
 import AppOverviewPanel from "@/components/analytics/AppOverviewPanel";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
+import { AnalyticsThemeSetting } from "@/components/analytics/AnalyticsTheme";
 import { AnalyticsDirectorySkeleton, AppCardSkeleton, AppTotalsSkeleton, WebsiteCardSkeleton, WebsiteTotalsSkeleton } from "@/components/analytics/AnalyticsDirectorySkeleton";
 import { AnalyticsDetailSkeleton } from "@/components/analytics/AnalyticsDetailSkeleton";
 import DeadProjectsDisclosure from "@/components/analytics/DeadProjectsDisclosure";
@@ -128,7 +128,7 @@ export default async function AnalyticsPage({
   const viewKey = detailApp ? `app:${detailApp}` : detailSite ? `site:${detailSite}` : "directory";
 
   return (
-    <main className="min-h-screen px-4 py-6 text-black sm:px-6 sm:py-8">
+    <main className="min-h-screen px-4 py-6 text-foreground sm:px-6 sm:py-8">
       <div className="mx-auto w-full min-w-0 max-w-6xl">
         <Suspense key={`${viewKey}:${period}`} fallback={
           detailApp ? (
@@ -158,7 +158,7 @@ export default async function AnalyticsPage({
           href="/analytics?tab=appsprint"
           aria-label="AppSprint"
           title="AppSprint"
-          className="fixed right-4 bottom-4 z-50 inline-flex size-10 items-center justify-center rounded-full bg-white text-black/60 transition-colors hover:text-black"
+          className="fixed right-4 bottom-4 z-50 inline-flex size-10 items-center justify-center rounded-full bg-card text-muted-foreground transition-colors hover:text-foreground"
         >
           <Command className="size-4" />
         </Link>
@@ -224,11 +224,11 @@ async function AppTotals({ period, access }: { period: Period; access: Analytics
   const downloads = apps.reduce((sum, app) => sum + app.downloads, 0);
   const revenueCents = apps.reduce((sum, app) => sum + app.revenueCents, 0);
   return (
-    <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+    <p className="min-w-0 text-lg text-muted-foreground sm:text-xl">
       Hey {access.name}, you got{" "}
-      <strong className="font-semibold text-black">{formatNumber(downloads)} downloads</strong>
+      <strong className="font-semibold text-foreground">{formatNumber(downloads)} downloads</strong>
       {" "}and{" "}
-      <strong className="font-semibold text-black">{formatRevenue(revenueCents)}</strong>
+      <strong className="font-semibold text-foreground">{formatRevenue(revenueCents)}</strong>
       {" "}proceeds {PERIOD_SUMMARY_LABELS[period]}.
     </p>
   );
@@ -270,16 +270,16 @@ async function WebsiteTotals({ period }: { period: Period }) {
     sites[1] ? websiteData("community", "community", sites[1]) : null,
   ].filter((site) => site !== null);
   if (cards.length === 0) {
-    return <p className="text-lg text-black/55 sm:text-xl">Website analytics could not be loaded.</p>;
+    return <p className="text-lg text-muted-foreground sm:text-xl">Website analytics could not be loaded.</p>;
   }
   const visitors = cards.reduce((sum, site) => sum + site.metrics.visitors, 0);
   const revenueCents = cards.reduce((sum, site) => sum + site.metrics.revenue_cents, 0);
   return (
-    <p className="min-w-0 text-lg text-black/55 sm:text-xl">
+    <p className="min-w-0 text-lg text-muted-foreground sm:text-xl">
       Hey Arthur, you got{" "}
-      <strong className="font-semibold text-black">{formatNumber(visitors)} visitors</strong>
+      <strong className="font-semibold text-foreground">{formatNumber(visitors)} visitors</strong>
       {" "}and made{" "}
-      <strong className="font-semibold text-black">{formatRevenue(revenueCents)}</strong>{" "}
+      <strong className="font-semibold text-foreground">{formatRevenue(revenueCents)}</strong>{" "}
       {PERIOD_SUMMARY_LABELS[period]}.
     </p>
   );
@@ -336,7 +336,7 @@ function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Perio
   return (
     <Link
       href={buildAnalyticsUrl({ period, app: app.id })}
-      className={`relative block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${DASHBOARD_SURFACE_CLASS}`}
+      className={`relative block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/40 ${DASHBOARD_SURFACE_CLASS}`}
     >
       <div className="pointer-events-none select-none">
         <ProjectExperimentBadge count={activeTests} />
@@ -354,14 +354,13 @@ function MobileAppCard({ app, period }: { app: MobileAppAnalytics; period: Perio
 
         <WebsiteMiniChart points={points} ariaLabel="New user trend line and proceeds bars" />
 
-        <p className="text-base text-black/55">
-          <strong className="font-bold text-black">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
+        <p className="text-base text-muted-foreground">
+          <strong className="font-bold text-foreground">{formatCompactRevenue(app.revenueCents)}</strong>{" "}
           proceeds
-          <span className="mx-2 text-black/35">•</span>
-          <strong className="font-bold text-black">{appu === null ? "—" : formatPreciseCurrency(appu)}</strong><RealizedAppu metric={app.overviewCohorts?.available ? app.overviewCohorts.total.realizedAppu : undefined} />{" "}
+          <span className="mx-2 text-muted-foreground">•</span>
+          <strong className="font-bold text-foreground">{appu === null ? "—" : formatPreciseCurrency(appu)}</strong><RealizedAppu metric={app.overviewCohorts?.available ? app.overviewCohorts.total.realizedAppu : undefined} />{" "}
           APPU
         </p>
-        {app.id === "versy" && <div className="mt-3"><VersyOfferBreakdown enabled inline breakdown={app.offerBreakdown} users={app.downloads} proceeds={app.revenueCents / 100} available={app.offerBreakdown !== undefined} /></div>}
       </div>
     </Link>
   );
@@ -403,7 +402,7 @@ async function WebsiteDetail({
       <div className="space-y-5">
         <Link
           href={buildAnalyticsUrl({ period })}
-          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-medium text-black/60 shadow-none ring-0 transition-all hover:text-black active:translate-y-px"
+          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-sm font-medium text-muted-foreground shadow-none ring-0 transition-all hover:text-foreground active:translate-y-px"
         >
           <ArrowLeft className="size-4" />
           All websites
@@ -412,11 +411,11 @@ async function WebsiteDetail({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <WebsiteFavicon domain={domain} size="large" />
-            <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
-              <strong className="font-semibold text-black">{domain}</strong> got{" "}
-              <strong className="font-semibold text-black">{formatNumber(visitors)} visitors</strong>{" "}
+            <h1 className="min-w-0 text-lg font-normal text-muted-foreground sm:text-xl">
+              <strong className="font-semibold text-foreground">{domain}</strong> got{" "}
+              <strong className="font-semibold text-foreground">{formatNumber(visitors)} visitors</strong>{" "}
               and{" "}
-              <strong className="font-semibold text-black">{formatRevenue(revenueCents)} revenue</strong>{" "}
+              <strong className="font-semibold text-foreground">{formatRevenue(revenueCents)} revenue</strong>{" "}
               {PERIOD_SUMMARY_LABELS[period]}.
             </h1>
           </div>
@@ -436,7 +435,7 @@ async function WebsiteDetail({
       ) : (
         <div className={`px-6 py-16 text-center ${DASHBOARD_SURFACE_CLASS}`}>
           <p className="font-medium">{domain} analytics could not be loaded.</p>
-          <p className="mt-1 text-sm text-black/50">
+          <p className="mt-1 text-sm text-muted-foreground">
             Check the analytics endpoint and shared-secret configuration.
           </p>
         </div>
@@ -457,17 +456,17 @@ function getWebsiteAnalytics(site: WebsiteSite, period: Period) {
 
 function AppSprintOperations() {
   return (
-    <main className="min-h-screen bg-[#2a2725] px-4 py-6 text-[#f1ebe2] sm:px-8 sm:py-8">
+    <main className="min-h-screen px-4 py-6 text-foreground sm:px-8 sm:py-8">
       <div className="mx-auto w-full min-w-0 max-w-6xl">
         <div className="mb-8 flex items-center justify-between gap-3">
           <Link
             href="/analytics"
-            className="inline-flex h-7 items-center gap-1 rounded-full bg-white/10 px-2.5 text-xs font-medium text-[#f1ebe2]/70 transition-colors hover:bg-white/15 hover:text-[#f1ebe2]"
+            className="inline-flex h-7 items-center gap-1 rounded-full bg-card/10 px-2.5 text-xs font-medium text-foreground/70 transition-colors hover:bg-card/15 hover:text-foreground"
           >
             <ArrowLeft className="size-3" />
             Analytics
           </Link>
-          <LicensesModal />
+          <div className="flex items-center gap-2"><AnalyticsThemeSetting /><LicensesModal /></div>
         </div>
 
         <h1 className="mb-8 text-2xl font-bold tracking-tight">AppSprint ASO operations</h1>
@@ -538,12 +537,12 @@ async function AppDetail({
       <div className="space-y-5">
         <Link
           href={buildAnalyticsUrl({ period })}
-          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-medium text-black/60 shadow-none ring-0 transition-all hover:text-black active:translate-y-px"
+          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-sm font-medium text-muted-foreground shadow-none ring-0 transition-all hover:text-foreground active:translate-y-px"
         >
           <ArrowLeft className="size-4" />
           All apps
         </Link>
-        <p className="text-lg text-black/55">App analytics could not be loaded.</p>
+        <p className="text-lg text-muted-foreground">App analytics could not be loaded.</p>
       </div>
     );
   }
@@ -573,7 +572,7 @@ async function AppDetail({
       <div className="w-full min-w-0 space-y-5">
         <Link
           href={buildAnalyticsUrl({ period })}
-          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-medium text-black/60 shadow-none ring-0 transition-all hover:text-black active:translate-y-px"
+          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-sm font-medium text-muted-foreground shadow-none ring-0 transition-all hover:text-foreground active:translate-y-px"
         >
           <ArrowLeft className="size-4" />
           All apps
@@ -590,8 +589,8 @@ async function AppDetail({
               height={40}
               className="size-10 shrink-0 rounded-[10px]"
             />
-            <h1 className="min-w-0 text-lg font-normal text-black/55 sm:text-xl">
-              <strong className="font-semibold text-black">{app.name}</strong>
+            <h1 className="min-w-0 text-lg font-normal text-muted-foreground sm:text-xl">
+              <strong className="font-semibold text-foreground">{app.name}</strong>
             </h1>
           </div>}
         headerEnd={<AnalyticsPeriodSelect period={period} app={app.id} />}

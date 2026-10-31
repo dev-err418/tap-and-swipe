@@ -20,11 +20,11 @@ import {
   useXAxisScale,
 } from "recharts";
 
-const VISIT_COLOR = "#1d4ed8";
-const REVENUE_COLOR = "#f97316";
-const RATE_COLOR = "#16a34a";
-const NOTE_COLOR = "#7c3aed";
-const REVENUE_STROKE = "color-mix(in oklch, #f97316, black 10%)";
+const VISIT_COLOR = "var(--analytics-blue)";
+const REVENUE_COLOR = "var(--analytics-orange)";
+const RATE_COLOR = "var(--analytics-green)";
+const NOTE_COLOR = "var(--analytics-violet)";
+const REVENUE_STROKE = "color-mix(in oklch, var(--analytics-orange), var(--foreground) 10%)";
 const BAR_RADIUS = 8;
 
 export type FunnelTrendPoint = {
@@ -115,7 +115,7 @@ export function VisitorsRevenueChart({
               type="button"
               aria-label="Add chart note"
               onClick={() => onAddNote(new Date().toISOString())}
-              className="flex size-8 items-center justify-center rounded-full border border-violet-200 text-violet-600 hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-violet-500"
+              className="flex size-8 items-center justify-center rounded-full border border-analytics-violet/25 text-analytics-violet hover:bg-analytics-violet/10 focus-visible:outline-2 focus-visible:outline-violet-500"
             >
               <Plus size={16} aria-hidden />
             </button>
@@ -312,7 +312,7 @@ export function ChartNoteButton({
             onAddNote(point.date);
           }}
           onKeyDown={(event) => event.stopPropagation()}
-          className="flex size-7 cursor-pointer items-center justify-center rounded-full border border-violet-300 bg-white text-violet-600 shadow-sm hover:bg-violet-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-violet-600"
+          className="flex size-7 cursor-pointer items-center justify-center rounded-full border border-analytics-violet/40 bg-card text-analytics-violet shadow-sm hover:bg-analytics-violet/10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-violet-600"
         >
           <Plus size={14} aria-hidden />
         </button>
@@ -368,17 +368,17 @@ function NoteLabel({ x, y, note }: { x: number; y: number; note: AnalyticsChartN
         width={labelWidth}
         height={labelHeight}
         rx={9}
-        fill="white"
+        fill="var(--card)"
         stroke={NOTE_COLOR}
         strokeOpacity={0.32}
       />
-      <text x={x} y={y + 7} textAnchor="middle" fill="#171717" fontSize={10.5} fontWeight={600}>
+      <text x={x} y={y + 7} textAnchor="middle" fill="var(--foreground)" fontSize={10.5} fontWeight={600}>
         {title}
       </text>
       <text x={x} y={y + 21} textAnchor="middle" fill={NOTE_COLOR} fontSize={9.5} fontWeight={600}>
         {version}
       </text>
-      <circle cx={x} cy={y + labelHeight} r={5.5} fill={NOTE_COLOR} stroke="white" strokeWidth={2} />
+      <circle cx={x} cy={y + labelHeight} r={5.5} fill={NOTE_COLOR} stroke="var(--card)" strokeWidth={2} />
     </g>
   );
 }

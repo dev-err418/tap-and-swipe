@@ -83,7 +83,7 @@ export default function AppExperimentCard({
         <ExperimentStats key={item.key} analysis={item.analysis} title={item.title} titleClassName="font-bold" showReadiness={experiment.randomized !== false || !!experiment.planningNote} historical={experiment.randomized === false} />
       ))}
       {experiment.planningNote && ((experiment.id.startsWith("versy-") || experiment.id === "versy_paywall_note_v1") || experiment.id === "poky-native-recovery-holdout" || experiment.id === "poky-trial-vs-current") ? (
-        <p className="border-b border-black/[0.08] px-4 py-3 text-xs text-black/55">{experiment.planningNote}</p>
+        <p className="border-b border-foreground/[0.08] px-4 py-3 text-xs text-muted-foreground">{experiment.planningNote}</p>
       ) : null}
       <ExperimentTable headings={<>
               <Th>Variant</Th>
@@ -93,7 +93,7 @@ export default function AppExperimentCard({
               {showPaid ? <Th right>Paid</Th> : null}
               <Th right>Proceeds</Th>
               {showSessions ? (
-                <Th right className={scoreSessions ? "font-bold text-black" : undefined}>
+                <Th right className={scoreSessions ? "font-bold text-foreground" : undefined}>
                   {experiment.sessionsLabel ?? "Sessions / subscribed day"}
                 </Th>
               ) : null}
@@ -101,12 +101,12 @@ export default function AppExperimentCard({
               {showTrials ? <Th right>{experiment.trialRateLabel ?? "Download → trial"}</Th> : null}
               {showTrials ? <Th right>Trial → paid</Th> : null}
               {showCohortAppu ? (
-                <Th right className="font-bold text-black">
+                <Th right className="font-bold text-foreground">
                   APPU D7
                 </Th>
               ) : null}
               {showCohortAppu ? (
-                <Th right className="font-bold text-black">
+                <Th right className="font-bold text-foreground">
                   APPU D14
                 </Th>
               ) : null}
@@ -114,18 +114,18 @@ export default function AppExperimentCard({
               {showRetention ? <Th right>D14 subscribed</Th> : null}
               {showRetention ? <Th right>D30 subscribed</Th> : null}
               {showDownloadPaid ? (
-                <Th right className={scoreDownloadPaid ? "font-bold text-black" : undefined}>
+                <Th right className={scoreDownloadPaid ? "font-bold text-foreground" : undefined}>
                   {experiment.paidRateLabel ?? "Download → paid"}
                 </Th>
               ) : null}
               {scoreAppu ? (
-                <Th right className="font-bold text-black">
+                <Th right className="font-bold text-foreground">
                   APPU
                 </Th>
               ) : null}
       </>}>
             {variants.map((row, index) => (
-              <tr key={row.key} className="border-b border-black/[0.07]">
+              <tr key={row.key} className="border-b border-foreground/[0.07]">
                 <Td>
                   <ExperimentVariantLabel index={index}>{row.label}</ExperimentVariantLabel>
                 </Td>

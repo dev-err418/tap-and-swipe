@@ -18,9 +18,9 @@ import {
 } from "./AppSprintFunnelCharts";
 
 type PlotPoint = ReturnType<typeof overviewDailyPoints>[number] & { timestamp: number };
-const INSTALL_COLOR = "#f97316";
-const APPU_COLOR = "#1d4ed8";
-const TRIAL_COLOR = "#059669";
+const INSTALL_COLOR = "var(--analytics-orange)";
+const APPU_COLOR = "var(--analytics-blue)";
+const TRIAL_COLOR = "var(--analytics-green)";
 
 export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote, installLabel = "Installs", showTrialRate = false }: {
   report: AppOverviewTrend | null;
@@ -63,37 +63,37 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
         <LegendItem color={INSTALL_COLOR} label={installLabel} />
         <LegendItem color={APPU_COLOR} label="APPU · daily average" />
         {showTrialRate ? <LegendItem color={TRIAL_COLOR} label="Download → trial · daily rate" /> : null}
-        {visibleNotes.length > 0 ? <LegendItem color="#7c3aed" label="Notes" /> : null}
+        {visibleNotes.length > 0 ? <LegendItem color="var(--analytics-violet)" label="Notes" /> : null}
       </div>
       <div className="h-80 w-full text-xs sm:h-96" aria-label={showTrialRate ? "Installs, APPU and download-to-trial rate by install date" : "Installs and APPU by install date"}>
         {points.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={points} accessibilityLayer margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
-              <CartesianGrid yAxisId="installs" vertical={false} stroke="#000000" strokeOpacity={0.055} />
+              <CartesianGrid yAxisId="installs" vertical={false} stroke="var(--foreground)" strokeOpacity={0.055} />
               <XAxis
                 dataKey="timestamp" type="number" scale="time" domain={domain}
                 ticks={points.length === 1 ? [first!] : undefined}
                 tickFormatter={(value: number) => formatDate(value, period)}
                 tickLine={false} axisLine={false} minTickGap={36} tickMargin={10}
-                height={32} tick={{ fill: "#888", fontSize: 11 }}
+                height={32} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
               />
               <XAxis xAxisId="daily-appu" dataKey="timestamp" type="number" scale="time" domain={domain} hide />
               <YAxis
                 yAxisId="installs" width={42} tickLine={false} axisLine={false}
-                tick={{ fill: "#888", fontSize: 11 }} tickCount={5}
+                tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} tickCount={5}
                 domain={[0, "auto"]} allowDecimals={false}
                 tickFormatter={(value: number) => new Intl.NumberFormat("en-US", { notation: "compact" }).format(value)}
               />
               <YAxis
                 yAxisId="appu" orientation="right" width={56} tickLine={false} axisLine={false}
-                tick={{ fill: "#888", fontSize: 11 }} tickCount={5} domain={appuDomain}
+                tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} tickCount={5} domain={appuDomain}
                 tickFormatter={(value: number) => formatCurrency(value)}
               />
               {showTrialRate ? <YAxis
                 yAxisId="trialRate" domain={[0, 0.5]} allowDataOverflow hide
               /> : null}
               <Tooltip
-                filterNull={false} cursor={{ stroke: "#000", strokeOpacity: 0.12, strokeDasharray: "3 3" }}
+                filterNull={false} cursor={{ stroke: "var(--foreground)", strokeOpacity: 0.12, strokeDasharray: "3 3" }}
                 content={({ active, payload }) => (
                   <CohortTooltip active={active} point={payload?.[0]?.payload as PlotPoint | undefined}
                     showTrialRate={showTrialRate}
@@ -111,16 +111,16 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
               {visibleNotes.map((note) => (
                 <ReferenceLine key={note.id} yAxisId="installs"
                   x={overviewBucket(new Date(note.notedAt), period).getTime()}
-                  stroke="#7c3aed" strokeDasharray="4 4" strokeWidth={1.5}
+                  stroke="var(--analytics-violet)" strokeDasharray="4 4" strokeWidth={1.5}
                   zIndex={500} label={<NoteMarker note={note} onClick={onNoteClick} />} />
               ))}
               <ChartNoteButton points={points} onAddNote={onAddNote} timeZone={APP_ANALYTICS_TIME_ZONE} />
             </ComposedChart>
           </ResponsiveContainer>
-        ) : <p role="status" className="flex h-full items-center justify-center text-sm text-black/45">Cohort data unavailable</p>}
+        ) : <p role="status" className="flex h-full items-center justify-center text-sm text-muted-foreground">Cohort data unavailable</p>}
       </div>
-      {!report?.available ? <p role="status" className="mt-1 px-1 text-[11px] text-black/45">Cohort data unavailable. Install totals remain visible.</p> : null}
-      {report?.available && appuValues.length === 0 ? <p role="status" className="mt-1 px-1 text-[11px] text-black/45">{report.total?.missingMoney > 0 ? "APPU unavailable: proceeds data is incomplete." : "No tracked installs yet."}</p> : null}
+      {!report?.available ? <p role="status" className="mt-1 px-1 text-[11px] text-muted-foreground">Cohort data unavailable. Install totals remain visible.</p> : null}
+      {report?.available && appuValues.length === 0 ? <p role="status" className="mt-1 px-1 text-[11px] text-muted-foreground">{report.total?.missingMoney > 0 ? "APPU unavailable: proceeds data is incomplete." : "No tracked installs yet."}</p> : null}
     </div>
   );
 }
@@ -155,7 +155,7 @@ function CohortTooltip({ active, point, available, notes, report, installLabel, 
         </div>
       ) : <p className="text-[11px] text-muted-foreground">APPU unavailable</p>}
       {noteMatches.map((note) => (
-        <div key={note.id} className="flex items-start justify-between gap-3 border-t border-foreground/[0.06] pt-2 text-violet-600">
+        <div key={note.id} className="flex items-start justify-between gap-3 border-t border-foreground/[0.06] pt-2 text-analytics-violet">
           <span className="inline-flex min-w-0 items-start gap-1.5"><span className="mt-1 size-2 shrink-0 rounded-sm bg-violet-600" /><span className="break-words">{note.title}</span></span>
           {note.appVersion && note.appVersion !== "Unknown" ? (
             <span className="shrink-0 font-mono tabular-nums">{/^v/i.test(note.appVersion) ? note.appVersion : `v${note.appVersion}`}</span>

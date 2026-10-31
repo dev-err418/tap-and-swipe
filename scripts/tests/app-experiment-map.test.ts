@@ -299,10 +299,10 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
   assert.match(markup, /German/);
   assert.equal(markup.match(/APPU \$/g)?.length, 3);
   assert.equal(markup.match(/ · CR /g)?.length, 6);
-  assert.match(markup, /fill="#fff0e4"/);
+  assert.match(markup, /fill="light-dark\(#fff0e4, #4d3627\)"/);
   const englishUsers = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "en").get("yr_49")!.users!;
   assert.match(markup, new RegExp(`\\$49\\.99/year \\(7d\\) \\(${englishUsers.toLocaleString("en-US")}\\)`));
-  assert.match(markup, /stroke="#d98245"/);
+  assert.match(markup, /stroke="var\(--analytics-orange\)"/);
   assert.match(markup, /stroke-width="3"/);
   assert.doesNotMatch(markup, /height="68"/);
   assert.doesNotMatch(markup, /% conf/);

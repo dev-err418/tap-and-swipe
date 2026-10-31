@@ -7,10 +7,10 @@ type Status = "Pro" | "Solo" | "Trialing" | "Expired";
 const STATUSES: Status[] = ["Pro", "Solo", "Trialing", "Expired"];
 
 const STATUS_COLORS: Record<Status, string> = {
-  Pro: "bg-[#f4cf8f]/20 text-[#f4cf8f]",
-  Solo: "bg-blue-500/20 text-blue-400",
+  Pro: "bg-primary/20 text-analytics-highlight",
+  Solo: "bg-blue-500/20 text-analytics-blue",
   Trialing: "bg-purple-500/20 text-purple-400",
-  Expired: "bg-red-500/20 text-red-400",
+  Expired: "bg-destructive/100/20 text-destructive",
 };
 
 interface Feedback {
@@ -64,12 +64,12 @@ export default function FeedbackPanel() {
     setRemoving(null);
   };
 
-  if (loading) return <p className="text-sm text-[#c9c4bc]/60">Loading feedback...</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">Loading feedback...</p>;
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/5 bg-white/5 p-12 text-center">
-        <p className="text-sm text-[#c9c4bc]">No feedback yet.</p>
+      <div className="rounded-2xl border border-foreground/5 bg-foreground/5 p-12 text-center">
+        <p className="text-sm text-muted-foreground">No feedback yet.</p>
       </div>
     );
   }
@@ -82,8 +82,8 @@ export default function FeedbackPanel() {
           onClick={() => setActiveTab("All")}
           className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
             activeTab === "All"
-              ? "bg-white/10 text-[#f1ebe2]"
-              : "text-[#c9c4bc]/60 hover:text-[#c9c4bc]"
+              ? "bg-foreground/10 text-foreground"
+              : "text-muted-foreground hover:text-muted-foreground"
           }`}
         >
           All ({items.length})
@@ -95,7 +95,7 @@ export default function FeedbackPanel() {
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               activeTab === s
                 ? `${STATUS_COLORS[s]}`
-                : "text-[#c9c4bc]/60 hover:text-[#c9c4bc]"
+                : "text-muted-foreground hover:text-muted-foreground"
             }`}
           >
             {s} ({counts[s]})
@@ -106,7 +106,7 @@ export default function FeedbackPanel() {
       {/* Feedback list */}
       <div className="space-y-3">
         {filtered.map((f) => (
-          <div key={f.id} className="flex items-start gap-4 rounded-xl border border-white/5 bg-white/5 p-4">
+          <div key={f.id} className="flex items-start gap-4 rounded-xl border border-foreground/5 bg-foreground/5 p-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span
@@ -115,8 +115,8 @@ export default function FeedbackPanel() {
                   {f.status}
                 </span>
               </div>
-              <p className="text-sm text-[#f1ebe2] whitespace-pre-wrap">{f.message}</p>
-              <div className="mt-2 flex items-center gap-3 text-[10px] text-[#c9c4bc]/50">
+              <p className="text-sm text-foreground whitespace-pre-wrap">{f.message}</p>
+              <div className="mt-2 flex items-center gap-3 text-[10px] text-muted-foreground">
                 <span className="font-mono">{f.license_key}{f.stripe_customer_id ? ` · ${f.stripe_customer_id}` : ""}</span>
                 <span>{new Date(f.created_at).toLocaleString()}</span>
               </div>
@@ -124,7 +124,7 @@ export default function FeedbackPanel() {
             <button
               onClick={() => remove(f.id)}
               disabled={removing === f.id}
-              className="shrink-0 rounded-lg border border-[#f4cf8f]/20 p-2 text-[#f4cf8f] transition-colors hover:bg-[#f4cf8f]/10 disabled:opacity-40"
+              className="shrink-0 rounded-lg border border-primary/20 p-2 text-analytics-highlight transition-colors hover:bg-primary/10 disabled:opacity-40"
               title="Remove"
             >
               <Check className={`h-4 w-4 ${removing === f.id ? "animate-pulse" : ""}`} />
@@ -132,7 +132,7 @@ export default function FeedbackPanel() {
           </div>
         ))}
         {filtered.length === 0 && (
-          <p className="text-sm text-[#c9c4bc]/50 text-center py-8">
+          <p className="text-sm text-muted-foreground text-center py-8">
             No {activeTab.toLowerCase()} feedback.
           </p>
         )}

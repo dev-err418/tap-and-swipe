@@ -76,7 +76,7 @@ export default function InviteManager({ initialInvites }: { initialInvites: Invi
           <select
             value={tier}
             onChange={(e) => setTier(e.target.value as "boilerplate" | "full")}
-            className="rounded-lg bg-white/10 border border-white/10 px-3 py-1.5 text-sm text-[#f1ebe2] outline-none"
+            className="rounded-lg bg-foreground/10 border border-foreground/10 px-3 py-1.5 text-sm text-foreground outline-none"
           >
             <option value="boilerplate">Launcher</option>
             <option value="full">Full</option>
@@ -84,7 +84,7 @@ export default function InviteManager({ initialInvites }: { initialInvites: Invi
           <button
             onClick={generateInvite}
             disabled={loading}
-            className="rounded-lg bg-[#f4cf8f] px-4 py-1.5 text-sm font-bold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 disabled:opacity-50"
+            className="rounded-lg bg-primary px-4 py-1.5 text-sm font-bold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50"
           >
             {loading ? "Generating..." : "Generate invite"}
           </button>
@@ -92,11 +92,11 @@ export default function InviteManager({ initialInvites }: { initialInvites: Invi
       </div>
 
       {invites.length === 0 ? (
-        <p className="text-sm text-[#c9c4bc]">No invites yet</p>
+        <p className="text-sm text-muted-foreground">No invites yet</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-[#c9c4bc] border-b border-white/10">
+            <tr className="text-muted-foreground border-b border-foreground/10">
               <th className="text-left pb-2 font-medium">Link</th>
               <th className="text-left pb-2 font-medium">Tier</th>
               <th className="text-left pb-2 font-medium">Status</th>
@@ -106,7 +106,7 @@ export default function InviteManager({ initialInvites }: { initialInvites: Invi
           </thead>
           <tbody>
             {invites.map((inv) => (
-              <tr key={inv.id} className="border-b border-white/5">
+              <tr key={inv.id} className="border-b border-foreground/5">
                 <td className="py-2 font-mono text-xs max-w-[200px] truncate">
                   {inv.url}
                 </td>
@@ -115,7 +115,7 @@ export default function InviteManager({ initialInvites }: { initialInvites: Invi
                     className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
                       inv.tier === "full"
                         ? "bg-purple-500/10 text-purple-400"
-                        : "bg-[#f4cf8f]/10 text-[#f4cf8f]"
+                        : "bg-primary/10 text-analytics-highlight"
                     }`}
                   >
                     {inv.tier === "boilerplate" ? "Launcher" : "Full"}
@@ -123,16 +123,16 @@ export default function InviteManager({ initialInvites }: { initialInvites: Invi
                 </td>
                 <td className="py-2">
                   {inv.used ? (
-                    <span className="inline-block rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400">
+                    <span className="inline-block rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-analytics-green">
                       Used{inv.discordId ? ` (${inv.discordId})` : ""}
                     </span>
                   ) : (
-                    <span className="inline-block rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-[#c9c4bc]">
+                    <span className="inline-block rounded-full bg-foreground/10 px-2 py-0.5 text-xs font-medium text-muted-foreground">
                       Unused
                     </span>
                   )}
                 </td>
-                <td className="py-2 text-[#c9c4bc] text-xs">
+                <td className="py-2 text-muted-foreground text-xs">
                   {new Date(inv.createdAt).toLocaleDateString()}
                 </td>
                 <td className="py-2 text-right">
@@ -140,14 +140,14 @@ export default function InviteManager({ initialInvites }: { initialInvites: Invi
                     {!inv.used && (
                       <button
                         onClick={() => copyUrl(inv)}
-                        className="rounded-lg bg-white/10 px-3 py-1 text-xs font-medium text-[#f1ebe2] transition-colors hover:bg-white/20"
+                        className="rounded-lg bg-foreground/10 px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-foreground/20"
                       >
                         {copiedId === inv.id ? "Copied!" : "Copy"}
                       </button>
                     )}
                     <button
                       onClick={() => deleteInvite(inv.id)}
-                      className="rounded-lg bg-red-500/10 px-3 py-1 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/20"
+                      className="rounded-lg bg-destructive/100/10 px-3 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive/100/20"
                     >
                       Delete
                     </button>

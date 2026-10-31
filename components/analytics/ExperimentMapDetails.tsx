@@ -30,5 +30,5 @@ export default function ExperimentMapDetails({ node, language, experiments, nati
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <p role="status" className="rounded-2xl bg-white p-8 text-center text-sm text-muted-foreground">{children}</p>;
+  return <p role="status" className="rounded-2xl bg-card p-8 text-center text-sm text-muted-foreground">{children}</p>;
 }

@@ -9,6 +9,14 @@ html {
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-analytics-subtle: var(--analytics-subtle);
+  --color-analytics-control: var(--analytics-control);
+  --color-analytics-blue: var(--analytics-blue);
+  --color-analytics-orange: var(--analytics-orange);
+  --color-analytics-highlight: var(--analytics-highlight);
+  --color-analytics-highlight-bg: var(--analytics-highlight-bg);
+  --color-analytics-green: var(--analytics-green);
+  --color-analytics-violet: var(--analytics-violet);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-uncut);
@@ -175,10 +183,6 @@ html {
   &::-webkit-scrollbar {
     display: none;
   }
-}
-
-.analytics-canvas {
-  background-color: hsl(0 0% 25% / 6%);
 }
 
 .dashboard-tooltip-shadow {

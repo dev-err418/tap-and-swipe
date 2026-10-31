@@ -70,9 +70,9 @@ function isLegacyHealthData(data: HealthData): data is LegacyHealthData {
 
 function StatusBadge({ status }: { status: "healthy" | "cooling" | "burned" }) {
   const colors = {
-    healthy: "bg-emerald-400/20 text-emerald-400",
-    cooling: "bg-yellow-400/20 text-yellow-400",
-    burned: "bg-red-400/20 text-red-400",
+    healthy: "bg-emerald-400/20 text-analytics-green",
+    cooling: "bg-yellow-400/20 text-analytics-highlight",
+    burned: "bg-red-400/20 text-destructive",
   };
   const labels = { healthy: "HEALTHY", cooling: "COOLING", burned: "BURNED" };
   return (
@@ -88,15 +88,15 @@ function SemaphoreGauge({ label, active, max }: { label: string; active: number;
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between">
-        <p className="text-xs text-[#c9c4bc]">
-          <span className="font-mono text-[#f4cf8f]">{active}/{max}</span>{" "}
+        <p className="text-xs text-muted-foreground">
+          <span className="font-mono text-analytics-highlight">{active}/{max}</span>{" "}
           {label}
         </p>
-        {full && <span className="text-[10px] text-red-400 font-semibold">SATURATED</span>}
+        {full && <span className="text-[10px] text-destructive font-semibold">SATURATED</span>}
       </div>
-      <div className="h-3 w-full rounded-full bg-white/5 overflow-hidden">
+      <div className="h-3 w-full rounded-full bg-foreground/5 overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${full ? "bg-red-400" : "bg-[#f4cf8f]"}`}
+          className={`h-full rounded-full transition-all ${full ? "bg-red-400" : "bg-primary"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -129,8 +129,8 @@ export default function ProxyHealthPanel() {
     return () => clearInterval(iv);
   }, [fetchHealth]);
 
-  if (error) return <p className="text-sm text-red-400">Health fetch error: {error}</p>;
-  if (!data) return <p className="text-sm text-[#c9c4bc]/60">Loading live health...</p>;
+  if (error) return <p className="text-sm text-destructive">Health fetch error: {error}</p>;
+  if (!data) return <p className="text-sm text-muted-foreground">Loading live health...</p>;
 
   if (!isLegacyHealthData(data)) {
     const ok = data.ok === true || data.status === "ok" || data.status === "healthy";
@@ -146,22 +146,22 @@ export default function ProxyHealthPanel() {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className={`rounded-xl border p-4 ${ok ? "border-emerald-400/20 bg-emerald-400/5" : "border-red-400/20 bg-red-400/5"}`}>
-          <p className={`text-[10px] font-semibold uppercase tracking-wider ${ok ? "text-emerald-400/80" : "text-red-400/80"}`}>
+          <p className={`text-[10px] font-semibold uppercase tracking-wider ${ok ? "text-analytics-green/80" : "text-destructive/80"}`}>
             Edge status
           </p>
-          <p className={`mt-1 text-xl font-bold ${ok ? "text-emerald-400" : "text-red-400"}`}>
+          <p className={`mt-1 text-xl font-bold ${ok ? "text-analytics-green" : "text-destructive"}`}>
             {ok ? "Healthy" : "Check failed"}
           </p>
         </div>
-        <div className="rounded-xl border border-white/5 bg-white/5 p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Service</p>
-          <p className="mt-1 text-xl font-bold text-[#f4cf8f]">{data.service ?? "appsprint-aso-edge"}</p>
-          <p className="mt-0.5 text-[10px] text-[#c9c4bc]/40">{data.environment ?? "unknown"}</p>
+        <div className="rounded-xl border border-foreground/5 bg-foreground/5 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Service</p>
+          <p className="mt-1 text-xl font-bold text-analytics-highlight">{data.service ?? "appsprint-aso-edge"}</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">{data.environment ?? "unknown"}</p>
         </div>
-        <div className="rounded-xl border border-white/5 bg-white/5 p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Last check</p>
-          <p className="mt-1 text-xl font-bold text-[#f4cf8f]">{checkedAt}</p>
-          <p className="mt-0.5 text-[10px] text-[#c9c4bc]/40">Cloudflare edge liveness</p>
+        <div className="rounded-xl border border-foreground/5 bg-foreground/5 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Last check</p>
+          <p className="mt-1 text-xl font-bold text-analytics-highlight">{checkedAt}</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">Cloudflare edge liveness</p>
         </div>
       </div>
     );
@@ -178,7 +178,7 @@ export default function ProxyHealthPanel() {
       {/* Burn alert */}
       {burnedCount > 0 && (
         <div className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3">
-          <p className="text-sm font-bold text-red-400">
+          <p className="text-sm font-bold text-destructive">
             {burnedCount} proxy{burnedCount > 1 ? "ies" : ""} BURNED (403 IP-banned) — auto-recovering in up to 1h
           </p>
         </div>
@@ -207,25 +207,25 @@ export default function ProxyHealthPanel() {
                   <div
                     key={p.ip}
                     className={`rounded-xl border p-3 ${
-                      p.burned ? "border-red-400/30 bg-red-400/5" : "border-white/5 bg-white/5"
+                      p.burned ? "border-red-400/30 bg-red-400/5" : "border-foreground/5 bg-foreground/5"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-mono text-[#c9c4bc] truncate">{p.ip}</p>
+                      <p className="text-xs font-mono text-muted-foreground truncate">{p.ip}</p>
                       <StatusBadge status={status} />
                     </div>
-                    <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden mb-1">
+                    <div className="h-2 w-full rounded-full bg-foreground/5 overflow-hidden mb-1">
                       <div
-                        className={`h-full rounded-full ${p.burned ? "bg-red-400" : p.coolingDown ? "bg-yellow-400" : "bg-[#f4cf8f]"}`}
+                        className={`h-full rounded-full ${p.burned ? "bg-red-400" : p.coolingDown ? "bg-yellow-400" : "bg-primary"}`}
                         style={{ width: `${usagePct}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-[#c9c4bc]/60">
+                    <p className="text-[10px] text-muted-foreground">
                       {p.windowUsed}/{p.windowLimit} req/5s
-                      {p.consecutive403 > 0 && <span className="text-red-400 ml-1">({p.consecutive403} 403s)</span>}
+                      {p.consecutive403 > 0 && <span className="text-destructive ml-1">({p.consecutive403} 403s)</span>}
                     </p>
                     {burnMap.get(p.ip) && (
-                      <p className={`text-[10px] mt-0.5 ${(burnMap.get(p.ip)?.burns ?? 0) >= 5 ? "text-red-400 font-semibold" : "text-orange-400/70"}`}>
+                      <p className={`text-[10px] mt-0.5 ${(burnMap.get(p.ip)?.burns ?? 0) >= 5 ? "text-destructive font-semibold" : "text-orange-400/70"}`}>
                         {burnMap.get(p.ip)!.burns}x burned (48h)
                       </p>
                     )}
@@ -236,7 +236,7 @@ export default function ProxyHealthPanel() {
             {hasMore && (
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="text-xs text-[#c9c4bc]/60 hover:text-[#f4cf8f] transition-colors"
+                className="text-xs text-muted-foreground hover:text-analytics-highlight transition-colors"
               >
                 {expanded ? "Show less" : `Show all ${sorted.length} proxies`}
               </button>
@@ -247,31 +247,31 @@ export default function ProxyHealthPanel() {
 
       {/* Cache + concurrency row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Cache</p>
-          <p className="text-lg font-bold text-[#f4cf8f]">{u.cache.size}/{u.cache.maxSize}</p>
-          <p className="text-[10px] text-[#c9c4bc]/40">Hit rate: {hitRate}%</p>
+        <div className="rounded-xl border border-foreground/5 bg-foreground/5 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Cache</p>
+          <p className="text-lg font-bold text-analytics-highlight">{u.cache.size}/{u.cache.maxSize}</p>
+          <p className="text-[10px] text-muted-foreground">Hit rate: {hitRate}%</p>
         </div>
-        <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Inflight</p>
-          <p className="text-lg font-bold text-[#f4cf8f]">{u.inflight}</p>
-          <p className="text-[10px] text-[#c9c4bc]/40">Dedup hits: {u.dedupHits}</p>
+        <div className="rounded-xl border border-foreground/5 bg-foreground/5 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Inflight</p>
+          <p className="text-lg font-bold text-analytics-highlight">{u.inflight}</p>
+          <p className="text-[10px] text-muted-foreground">Dedup hits: {u.dedupHits}</p>
         </div>
-        <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Upstream Req</p>
-          <p className="text-lg font-bold text-[#f4cf8f]">{u.upstreamRequests.toLocaleString()}</p>
-          <p className="text-[10px] text-[#c9c4bc]/40">Total since boot</p>
+        <div className="rounded-xl border border-foreground/5 bg-foreground/5 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Upstream Req</p>
+          <p className="text-lg font-bold text-analytics-highlight">{u.upstreamRequests.toLocaleString()}</p>
+          <p className="text-[10px] text-muted-foreground">Total since boot</p>
         </div>
-        <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Proxies</p>
-          <p className="text-lg font-bold text-[#f4cf8f]">{u.itunesProxies}</p>
-          <p className="text-[10px] text-[#c9c4bc]/40">{burnedCount} burned</p>
+        <div className="rounded-xl border border-foreground/5 bg-foreground/5 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Proxies</p>
+          <p className="text-lg font-bold text-analytics-highlight">{u.itunesProxies}</p>
+          <p className="text-[10px] text-muted-foreground">{burnedCount} burned</p>
         </div>
       </div>
 
       {/* Live semaphore gauges */}
-      <div className="rounded-2xl border border-white/5 bg-white/5 p-5">
-        <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Live Concurrency</h4>
+      <div className="rounded-2xl border border-foreground/5 bg-foreground/5 p-5">
+        <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Live Concurrency</h4>
         <div className="grid grid-cols-2 gap-6">
           {Object.entries(u.concurrency).map(([domain, sem]) => (
             <SemaphoreGauge
@@ -286,15 +286,15 @@ export default function ProxyHealthPanel() {
 
       {/* Route limiters */}
       {routes && Object.keys(routes).length > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-white/5 p-5">
-          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Route Limiters</h4>
+        <div className="rounded-2xl border border-foreground/5 bg-foreground/5 p-5">
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Route Limiters</h4>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {Object.entries(routes).map(([name, stats]) => (
               <div key={name}>
-                <p className="text-[10px] text-[#c9c4bc]/60 truncate">{name}</p>
-                <p className="text-sm font-mono text-[#f4cf8f]">{stats.active}/{stats.maxActive}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{name}</p>
+                <p className="text-sm font-mono text-analytics-highlight">{stats.active}/{stats.maxActive}</p>
                 {stats.rejected > 0 && (
-                  <p className="text-[10px] text-red-400">{stats.rejected} rejected</p>
+                  <p className="text-[10px] text-destructive">{stats.rejected} rejected</p>
                 )}
               </div>
             ))}

@@ -70,7 +70,7 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
             <div className="space-y-2">
               {report.features.filter((feature) => feature.users > 0).map((feature) => (
                 <div key={feature.event} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 text-sm">
-                  <span className="truncate text-black/75">{feature.label}</span>
+                  <span className="truncate text-foreground/75">{feature.label}</span>
                   <span className="font-medium tabular-nums">{number(feature.users)} users</span>
                   <span className="w-24 text-right tabular-nums text-muted-foreground">{feature.eventsPerUser?.toFixed(1) ?? "—"} / user</span>
                 </div>
@@ -83,7 +83,7 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
             <div className="space-y-2">
               {report.widgets.sources.map((source) => (
                 <div key={source.source} className="flex justify-between gap-4 text-sm">
-                  <span className="text-black/75">{sourceLabel(source.source)}</span>
+                  <span className="text-foreground/75">{sourceLabel(source.source)}</span>
                   <span className="font-medium tabular-nums">{number(source.users)} adds · {number(source.promptedUsers)} saw prompt</span>
                 </div>
               ))}
@@ -100,7 +100,7 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
             <div className="space-y-2">
               {report.screens.slice(0, 8).map((screen) => (
                 <div key={screen.screen} className="flex justify-between gap-3 text-sm">
-                  <span className="text-black/75">{screen.screen.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ")}</span>
+                  <span className="text-foreground/75">{screen.screen.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ")}</span>
                   <span className="tabular-nums">{duration(screen.secondsPerUser)} · {number(screen.users)} users</span>
                 </div>
               ))}
@@ -111,7 +111,7 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
             <div className="space-y-2">
               {report.categories.slice(0, 8).map((category) => (
                 <div key={category.category} className="flex justify-between gap-3 text-sm">
-                  <span className="text-black/75">{category.category.replaceAll("_", " ")}</span>
+                  <span className="text-foreground/75">{category.category.replaceAll("_", " ")}</span>
                   <span className="font-medium tabular-nums">{number(category.users)} users</span>
                 </div>
               ))}
@@ -169,7 +169,7 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
       {report.status === "ready" ? (
         <DashboardCard title="Reasons people shared" action={<span className="text-xs text-muted-foreground">Optional Settings feedback</span>}>
           {report.feedback.length ? <div className="flex flex-wrap gap-2">
-            {report.feedback.map((item) => <span key={item.reason} className="rounded-full bg-black/[0.05] px-3 py-1 text-xs text-black/70">
+            {report.feedback.map((item) => <span key={item.reason} className="rounded-full bg-foreground/[0.05] px-3 py-1 text-xs text-foreground/70">
               {item.reason.replaceAll("_", " ")}: {number(item.users)}
             </span>)}
           </div> : <p className="text-sm text-muted-foreground">No subscription feedback submitted in this period.</p>}
@@ -214,7 +214,7 @@ function CancellationPanel({ kind, report }: { kind: "trial" | "paid"; report: G
         </p>
         {report.topPriorActions.length > 0 && <div className="flex flex-wrap gap-2">
           {report.topPriorActions.slice(0, 6).map((feature) => (
-            <span key={feature.event} className="rounded-full bg-black/[0.05] px-3 py-1 text-xs text-black/70">
+            <span key={feature.event} className="rounded-full bg-foreground/[0.05] px-3 py-1 text-xs text-foreground/70">
               {feature.label}: {number(feature.users)} users
             </span>
           ))}
@@ -247,7 +247,7 @@ function CancellationPanel({ kind, report }: { kind: "trial" | "paid"; report: G
 }
 
 function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return <div className="rounded-2xl bg-black/[0.035] p-3">
+  return <div className="rounded-2xl bg-foreground/[0.035] p-3">
     <div className="text-xs text-muted-foreground">{label}</div>
     <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
     <div className="mt-1 text-xs text-muted-foreground">{detail}</div>

@@ -138,11 +138,11 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         {languagePicker}
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-[11px] text-black/40" title={`${APP_ANALYTICS_TIME_ZONE} · daylight saving adjusts automatically`}>Paris time</span>
-          <button type="button" onClick={() => openComposer()} className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium text-black/60 hover:bg-black/[0.03] focus-visible:outline-2 focus-visible:outline-black/40"><Plus size={13} aria-hidden /> Add note</button>
+          <span className="text-[11px] text-muted-foreground" title={`${APP_ANALYTICS_TIME_ZONE} · daylight saving adjusts automatically`}>Paris time</span>
+          <button type="button" onClick={() => openComposer()} className="inline-flex items-center gap-1.5 rounded-full border border-foreground/10 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-foreground/[0.03] focus-visible:outline-2 focus-visible:outline-foreground/40"><Plus size={13} aria-hidden /> Add note</button>
         </div>
       </div>
-      {error && !composerOpen ? <p role="status" className="mb-4 text-xs text-red-600">{error}</p> : null}
+      {error && !composerOpen ? <p role="status" className="mb-4 text-xs text-destructive">{error}</p> : null}
       <AppCohortCharts
         report={cohorts}
         showTrialRate={appId === "glow" || appId === "versy"}
@@ -161,7 +161,7 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
           if (!isOpen) setSelectedNote(null);
         }}
       >
-        <DialogContent className="rounded-3xl border-0 bg-white sm:max-w-md">
+        <DialogContent className="rounded-3xl border-0 bg-card sm:max-w-md">
           {selectedNote ? (
             <>
               <DialogHeader>
@@ -170,14 +170,14 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
                   {formatAppVersion(selectedNote.appVersion)} · {formatNoteDate(selectedNote.notedAt)}
                 </DialogDescription>
               </DialogHeader>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-black/65">{selectedNote.content}</p>
-              {manageError ? <p className="text-sm text-red-600">{manageError}</p> : null}
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/65">{selectedNote.content}</p>
+              {manageError ? <p className="text-sm text-destructive">{manageError}</p> : null}
               <DialogFooter className="sm:justify-between">
                 <button
                   type="button"
                   disabled={removing}
                   onClick={() => removeNote(selectedNote)}
-                  className="h-9 rounded-full px-4 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-45"
+                  className="h-9 rounded-full px-4 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-45"
                 >
                   {removing ? "Removing…" : "Remove"}
                 </button>
@@ -185,7 +185,7 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
                   type="button"
                   disabled={removing}
                   onClick={() => editNote(selectedNote)}
-                  className="h-9 rounded-full bg-black px-4 text-sm font-medium text-white transition-colors hover:bg-black/85 disabled:opacity-45"
+                  className="h-9 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 disabled:opacity-45"
                 >
                   Edit
                 </button>
@@ -202,7 +202,7 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
           if (!isOpen) setEditingNote(null);
         }}
       >
-        <DialogContent className="rounded-3xl border-0 bg-white sm:max-w-md">
+        <DialogContent className="rounded-3xl border-0 bg-card sm:max-w-md">
           <form onSubmit={saveNote} className="space-y-5">
             <DialogHeader>
               <DialogTitle>{editingNote ? "Edit chart note" : "Add chart note"}</DialogTitle>
@@ -214,18 +214,18 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
             </DialogHeader>
 
             <label className="block text-sm">
-              <span className="font-medium text-black/70">Date and time (Paris)</span>
+              <span className="font-medium text-foreground/70">Date and time (Paris)</span>
               <input
                 type="datetime-local"
                 required
                 value={notedAt}
                 onChange={(event) => setNotedAt(event.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-black/10 px-3 py-2.5 text-sm focus:border-black/30 focus:outline-none"
+                className="mt-1.5 w-full rounded-xl border border-foreground/10 px-3 py-2.5 text-sm focus:border-foreground/30 focus:outline-none"
               />
             </label>
 
             <label className="block text-sm">
-              <span className="font-medium text-black/70">Title</span>
+              <span className="font-medium text-foreground/70">Title</span>
               <input
                 type="text"
                 required
@@ -233,12 +233,12 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="New onboarding shipped"
-                className="mt-1.5 w-full rounded-xl border border-black/10 px-3 py-2.5 text-sm focus:border-black/30 focus:outline-none"
+                className="mt-1.5 w-full rounded-xl border border-foreground/10 px-3 py-2.5 text-sm focus:border-foreground/30 focus:outline-none"
               />
             </label>
 
             <label className="block text-sm">
-              <span className="font-medium text-black/70">App version</span>
+              <span className="font-medium text-foreground/70">App version</span>
               <input
                 type="text"
                 required
@@ -246,12 +246,12 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
                 value={appVersion}
                 onChange={(event) => setAppVersion(event.target.value)}
                 placeholder="1.7.0"
-                className="mt-1.5 w-full rounded-xl border border-black/10 px-3 py-2.5 text-sm focus:border-black/30 focus:outline-none"
+                className="mt-1.5 w-full rounded-xl border border-foreground/10 px-3 py-2.5 text-sm focus:border-foreground/30 focus:outline-none"
               />
             </label>
 
             <label className="block text-sm">
-              <span className="font-medium text-black/70">What changed?</span>
+              <span className="font-medium text-foreground/70">What changed?</span>
               <textarea
                 required
                 rows={4}
@@ -259,24 +259,24 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
                 value={content}
                 onChange={(event) => setContent(event.target.value)}
                 placeholder="Shipped the new onboarding, changed pricing…"
-                className="mt-1.5 w-full resize-y rounded-xl border border-black/10 px-3 py-2.5 text-sm focus:border-black/30 focus:outline-none"
+                className="mt-1.5 w-full resize-y rounded-xl border border-foreground/10 px-3 py-2.5 text-sm focus:border-foreground/30 focus:outline-none"
               />
             </label>
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
             <DialogFooter>
               <button
                 type="button"
                 onClick={() => setComposerOpen(false)}
-                className="h-9 rounded-full px-4 text-sm font-medium text-black/55 transition-colors hover:bg-black/[0.04] hover:text-black"
+                className="h-9 rounded-full px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving || !title.trim() || !content.trim() || !appVersion.trim() || !notedAt}
-                className="h-9 rounded-full bg-black px-4 text-sm font-medium text-white transition-colors hover:bg-black/85 disabled:opacity-45"
+                className="h-9 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85 disabled:opacity-45"
               >
                 {saving ? "Saving…" : editingNote ? "Save changes" : "Pin note"}
               </button>

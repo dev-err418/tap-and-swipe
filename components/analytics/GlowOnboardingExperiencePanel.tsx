@@ -22,7 +22,7 @@ export default function GlowOnboardingExperiencePanel({ report }: { report: Glow
         <ExperimentTh>Variant</ExperimentTh>
         {["Assigned users", "Onboarding completion", "Net proceeds", "APPU", "Sessions / user / day", "Avg time to cancel"].map((label) => <ExperimentTh key={label} right>{label}</ExperimentTh>)}
       </>}>
-        {report.rows.map((row, index) => <tr key={row.variant} className="border-b border-black/[0.07]">
+        {report.rows.map((row, index) => <tr key={row.variant} className="border-b border-foreground/[0.07]">
           <ExperimentTd><ExperimentVariantLabel index={index}>{row.label}</ExperimentVariantLabel></ExperimentTd>
           <ExperimentNumberTd>{row.users.toLocaleString()}</ExperimentNumberTd>
           <ExperimentNumberTd><span title={`${row.completed} / ${row.users} assigned users`}>{row.users ? `${(100 * row.completed / row.users).toFixed(1)}%` : "—"}</span></ExperimentNumberTd>

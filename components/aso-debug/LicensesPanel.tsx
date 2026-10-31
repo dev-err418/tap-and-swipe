@@ -124,10 +124,10 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
     l.active && (!l.status || l.status === "active");
 
   const statusClass = (l: License) => {
-    if (l.status === "revoked") return "bg-red-500/10 text-red-400";
-    if (l.status === "warned") return "bg-yellow-500/10 text-yellow-300";
-    if (l.status === "appeal_pending") return "bg-blue-500/10 text-blue-300";
-    return l.active ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400";
+    if (l.status === "revoked") return "bg-destructive/100/10 text-destructive";
+    if (l.status === "warned") return "bg-yellow-500/10 text-analytics-highlight";
+    if (l.status === "appeal_pending") return "bg-blue-500/10 text-analytics-blue";
+    return l.active ? "bg-green-500/10 text-analytics-green" : "bg-destructive/100/10 text-destructive";
   };
 
   const renderCell = (l: License, field: string, displayValue: string | null, truncate?: number) => {
@@ -142,7 +142,7 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
             if (e.key === "Enter") commitEdit();
             if (e.key === "Escape") cancelEdit();
           }}
-          className="h-7 w-full rounded border border-[#f4cf8f]/40 bg-white/5 px-2 text-xs text-[#f1ebe2] outline-none"
+          className="h-7 w-full rounded border border-primary/40 bg-foreground/5 px-2 text-xs text-foreground outline-none"
         />
       );
     }
@@ -150,7 +150,7 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
     return (
       <button
         onClick={() => startEdit(l.key, field, displayValue)}
-        className="text-left w-full hover:text-[#f4cf8f] transition-colors cursor-text"
+        className="text-left w-full hover:text-analytics-highlight transition-colors cursor-text"
         title="Click to edit"
       >
         {displayValue ? (
@@ -160,7 +160,7 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
             displayValue
           )
         ) : (
-          <span className="text-[#c9c4bc]/30">&mdash;</span>
+          <span className="text-muted-foreground">&mdash;</span>
         )}
       </button>
     );
@@ -171,13 +171,13 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
       {/* Search + Generate */}
       <div className="mb-6 flex items-center gap-3 flex-wrap">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c9c4bc]/50" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search key, email, customer, whop id..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-72 rounded-lg border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-[#f1ebe2] placeholder:text-[#c9c4bc]/50 outline-none transition-colors focus:border-[#f4cf8f]/40"
+            className="h-10 w-72 rounded-lg border border-foreground/10 bg-foreground/5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary/40"
           />
         </div>
         <div className="flex-1" />
@@ -187,12 +187,12 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && generate()}
-          className="h-10 w-60 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-[#f1ebe2] placeholder:text-[#c9c4bc]/50 outline-none transition-colors focus:border-[#f4cf8f]/40"
+          className="h-10 w-60 rounded-lg border border-foreground/10 bg-foreground/5 px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary/40"
         />
         <button
           onClick={generate}
           disabled={generating}
-          className="flex h-10 items-center gap-2 rounded-lg bg-[#f4cf8f] px-5 text-sm font-semibold text-[#2a2725] transition-all hover:bg-[#f4cf8f]/90 hover:ring-4 hover:ring-[#f4cf8f]/20 disabled:cursor-wait disabled:opacity-60"
+          className="flex h-10 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:ring-4 hover:ring-primary/20 disabled:cursor-wait disabled:opacity-60"
         >
           <Plus className="h-4 w-4" />
           {generating ? "Generating..." : "Generate Key"}
@@ -201,18 +201,18 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
 
       {/* Table */}
       {loading ? (
-        <p className="text-sm text-[#c9c4bc]/60">Loading...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       ) : licenses.length === 0 ? (
-        <div className="rounded-2xl border border-white/5 bg-white/5 p-12 text-center">
-          <p className="text-sm text-[#c9c4bc]">
+        <div className="rounded-2xl border border-foreground/5 bg-foreground/5 p-12 text-center">
+          <p className="text-sm text-muted-foreground">
             {search ? "No licenses match your search." : "No license keys yet."}
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-white/5 bg-white/5">
+        <div className="overflow-hidden rounded-2xl border border-foreground/5 bg-foreground/5">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-[#c9c4bc]/60">
+              <tr className="border-b border-foreground/10 text-xs uppercase tracking-wider text-muted-foreground">
                 <th className="px-4 py-3 font-medium">Key</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Customer</th>
@@ -226,17 +226,17 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
             </thead>
             <tbody>
               {licenses.map((l) => (
-                <tr key={l.id} className="border-b border-white/5 transition-colors hover:bg-white/5">
+                <tr key={l.id} className="border-b border-foreground/5 transition-colors hover:bg-foreground/5">
                   <td className="px-4 py-3">
                     <button
                       onClick={() => copyKey(l.key)}
-                      className="group flex items-center gap-2 font-mono text-xs text-[#f4cf8f] transition-opacity hover:opacity-80"
+                      className="group flex items-center gap-2 font-mono text-xs text-analytics-highlight transition-opacity hover:opacity-80"
                       title="Click to copy"
                     >
                       {copiedKey === l.key ? (
                         <>
-                          <Check className="h-3.5 w-3.5 text-green-400" />
-                          <span className="text-green-400">Copied!</span>
+                          <Check className="h-3.5 w-3.5 text-analytics-green" />
+                          <span className="text-analytics-green">Copied!</span>
                         </>
                       ) : (
                         <>
@@ -246,10 +246,10 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                       )}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-[#c9c4bc]">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {renderCell(l, "email", l.email, 24)}
                   </td>
-                  <td className="px-4 py-3 text-[#c9c4bc]">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {l.stripe_customer_id ? (
                       renderCell(l, "stripe_customer_id", l.stripe_customer_id, 16)
                     ) : l.whop_membership_id ? (
@@ -258,7 +258,7 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                           Whop
                         </span>
                         <span
-                          className="font-mono text-xs text-[#c9c4bc]/80"
+                          className="font-mono text-xs text-muted-foreground"
                           title={l.whop_membership_id}
                         >
                           {l.whop_membership_id.length > 16
@@ -281,7 +281,7 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                           setEditing(null);
                         }}
                         onBlur={cancelEdit}
-                        className="h-7 rounded border border-[#f4cf8f]/40 bg-white/5 px-2 text-xs text-[#f1ebe2] outline-none"
+                        className="h-7 rounded border border-primary/40 bg-foreground/5 px-2 text-xs text-foreground outline-none"
                       >
                         <option value="solo">Solo</option>
                         <option value="pro">Pro</option>
@@ -295,8 +295,8 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                         <span
                           className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                             l.plan === "pro"
-                              ? "bg-[#f4cf8f]/10 text-[#f4cf8f]"
-                              : "bg-blue-500/10 text-blue-400"
+                              ? "bg-primary/10 text-analytics-highlight"
+                              : "bg-blue-500/10 text-analytics-blue"
                           }`}
                         >
                           {l.plan === "pro" ? "Pro" : l.plan === "solo" ? "Solo" : l.plan ?? "—"}
@@ -321,7 +321,7 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                     {l.machine_id ? (
                       <div className="flex items-center gap-1.5">
                         <span
-                          className="max-w-[120px] truncate font-mono text-xs text-[#c9c4bc]/60"
+                          className="max-w-[120px] truncate font-mono text-xs text-muted-foreground"
                           title={l.machine_id}
                         >
                           {l.machine_id.slice(0, 8)}...
@@ -329,20 +329,20 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                         <button
                           onClick={() => resetMachine(l.key)}
                           disabled={resettingMachine === l.key}
-                          className="rounded p-1 text-[#c9c4bc]/40 transition-colors hover:bg-white/10 hover:text-[#f4cf8f] disabled:opacity-40"
+                          className="rounded p-1 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-analytics-highlight disabled:opacity-40"
                           title="Reset machine binding"
                         >
                           <RotateCcw className={`h-3 w-3 ${resettingMachine === l.key ? "animate-spin" : ""}`} />
                         </button>
                       </div>
                     ) : (
-                      <span className="text-xs text-[#c9c4bc]/30">Unbound</span>
+                      <span className="text-xs text-muted-foreground">Unbound</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-[#c9c4bc]/60">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {new Date(l.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3 text-[#c9c4bc]/60">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {l.last_used_at ? new Date(l.last_used_at).toLocaleDateString() : "Never"}
                   </td>
                   <td className="px-4 py-3">
@@ -351,15 +351,15 @@ export default function LicensesPanel({ limit }: { limit?: number } = {}) {
                         onClick={() => updateField(l.key, "active", !isEffectivelyActive(l))}
                         className={`rounded-lg border px-3 py-1 text-xs font-medium transition-colors ${
                           isEffectivelyActive(l)
-                            ? "border-red-500/20 text-red-400 hover:bg-red-500/10"
-                            : "border-green-500/20 text-green-400 hover:bg-green-500/10"
+                            ? "border-red-500/20 text-destructive hover:bg-destructive/100/10"
+                            : "border-green-500/20 text-analytics-green hover:bg-green-500/10"
                         }`}
                       >
                         {isEffectivelyActive(l) ? "Deactivate" : "Activate"}
                       </button>
                       <button
                         onClick={() => deleteLicense(l.key)}
-                        className="rounded p-1.5 text-[#c9c4bc]/30 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                        className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-destructive/100/10 hover:text-destructive"
                         title="Delete license"
                       >
                         <Trash2 className="h-3.5 w-3.5" />

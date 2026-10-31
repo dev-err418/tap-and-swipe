@@ -50,10 +50,10 @@ type Period = "1h" | "6h" | "24h" | "7d" | "30d";
 
 function SummaryCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-white/5 p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c9c4bc]/60">{label}</p>
-      <p className="mt-1 text-xl font-bold text-[#f4cf8f]">{value}</p>
-      {sub && <p className="mt-0.5 text-[10px] text-[#c9c4bc]/40">{sub}</p>}
+    <div className="rounded-xl border border-foreground/5 bg-foreground/5 p-4">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xl font-bold text-analytics-highlight">{value}</p>
+      {sub && <p className="mt-0.5 text-[10px] text-muted-foreground">{sub}</p>}
     </div>
   );
 }
@@ -64,16 +64,16 @@ function SemaphoreGauge({ label, peakActive, peakQueued, max }: { label: string;
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between">
-        <p className="text-xs text-[#c9c4bc]">
-          <span className="font-mono text-[#f4cf8f]">{peakActive}/{max}</span>{" "}
+        <p className="text-xs text-muted-foreground">
+          <span className="font-mono text-analytics-highlight">{peakActive}/{max}</span>{" "}
           {label}
-          {peakQueued > 0 && <span className="text-[#c9c4bc]/40"> +{peakQueued} queued</span>}
+          {peakQueued > 0 && <span className="text-muted-foreground"> +{peakQueued} queued</span>}
         </p>
-        {full && <span className="text-[10px] text-red-400 font-semibold">SATURATED</span>}
+        {full && <span className="text-[10px] text-destructive font-semibold">SATURATED</span>}
       </div>
-      <div className="h-3 w-full rounded-full bg-white/5 overflow-hidden">
+      <div className="h-3 w-full rounded-full bg-foreground/5 overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${full ? "bg-red-400" : "bg-[#f4cf8f]"}`}
+          className={`h-full rounded-full transition-all ${full ? "bg-red-400" : "bg-primary"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -109,9 +109,9 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
 
   const periods: Period[] = ["1h", "6h", "24h", "7d", "30d"];
 
-  if (loading && !data) return <p className="text-sm text-[#c9c4bc]/60">Loading proxy analytics...</p>;
-  if (error && !data) return <p className="text-sm text-red-400">Proxy analytics fetch error: {error}</p>;
-  if (!data) return <p className="text-sm text-[#c9c4bc]/60">No proxy analytics data yet.</p>;
+  if (loading && !data) return <p className="text-sm text-muted-foreground">Loading proxy analytics...</p>;
+  if (error && !data) return <p className="text-sm text-destructive">Proxy analytics fetch error: {error}</p>;
+  if (!data) return <p className="text-sm text-muted-foreground">No proxy analytics data yet.</p>;
 
   const { summary: s, timeseries } = data;
   const maxReq = Math.max(1, ...timeseries.map((r) => r.requests));
@@ -136,13 +136,13 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
             key={p}
             onClick={() => setPeriod(p)}
             className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors ${
-              period === p ? "bg-[#f4cf8f] text-[#2a2725]" : "bg-white/5 text-[#c9c4bc] hover:bg-white/10"
+              period === p ? "bg-primary text-primary-foreground" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
             }`}
           >
             {p}
           </button>
         ))}
-        {loading && <span className="ml-2 self-center text-xs text-[#c9c4bc]/40">updating...</span>}
+        {loading && <span className="ml-2 self-center text-xs text-muted-foreground">updating...</span>}
       </div>
 
       {/* Summary cards */}
@@ -154,9 +154,9 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
         {/* Token Health Card */}
         {s.tokenExpired401s > 0 ? (
           <div className="rounded-xl border border-red-400/20 bg-red-400/5 p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-red-400/80">Token Expired (401s)</p>
-            <p className="mt-1 text-xl font-bold text-red-400">{s.tokenExpired401s}</p>
-            <p className="mt-0.5 text-[10px] text-red-400/60">Apple token had to be refreshed</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-destructive/80">Token Expired (401s)</p>
+            <p className="mt-1 text-xl font-bold text-destructive">{s.tokenExpired401s}</p>
+            <p className="mt-0.5 text-[10px] text-destructive/60">Apple token had to be refreshed</p>
           </div>
         ) : (
           <SummaryCard label="Token Expired (401s)" value="0" sub="Token healthy" />
@@ -164,18 +164,18 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
       </div>
 
       {/* Request volume chart */}
-      <div className="rounded-2xl border border-white/5 bg-white/5 p-5">
-        <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Request Volume</h4>
+      <div className="rounded-2xl border border-foreground/5 bg-foreground/5 p-5">
+        <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Request Volume</h4>
         {timeseries.length === 0 ? (
-          <p className="text-sm text-[#c9c4bc]/40">No data in this period</p>
+          <p className="text-sm text-muted-foreground">No data in this period</p>
         ) : (
           <div className="flex items-end gap-[2px]" style={{ height: 120 }}>
             {timeseries.map((r, i) => {
               const h = (r.requests / maxReq) * 100;
               return (
                 <div key={i} className="group relative flex-1 min-w-[2px]" style={{ height: "100%" }}>
-                  <div className="absolute bottom-0 w-full rounded-t bg-[#f4cf8f] transition-all hover:bg-[#f4cf8f]/80" style={{ height: `${Math.max(h, 1)}%` }} />
-                  <div className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded bg-[#1a1917] px-2 py-1 text-[10px] text-[#f1ebe2] shadow group-hover:block">
+                  <div className="absolute bottom-0 w-full rounded-t bg-primary transition-all hover:bg-primary/80" style={{ height: `${Math.max(h, 1)}%` }} />
+                  <div className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded bg-[#1a1917] px-2 py-1 text-[10px] text-foreground shadow group-hover:block">
                     {r.requests} req &middot; {fmtTime(r.bucket)}
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
             })}
           </div>
         )}
-        <div className="mt-2 flex justify-between text-[10px] text-[#c9c4bc]/40">
+        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
           {timeseries.length > 0 && (
             <>
               <span>{fmtTime(timeseries[0].bucket)}</span>
@@ -195,8 +195,8 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
 
       {/* Rate limits chart */}
       {s.rateLimits > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-white/5 p-5">
-          <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Rate Limits Over Time</h4>
+        <div className="rounded-2xl border border-foreground/5 bg-foreground/5 p-5">
+          <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rate Limits Over Time</h4>
           <div className="flex items-end gap-[2px]" style={{ height: 80 }}>
             {timeseries.map((r, i) => {
               const total = r.rate_limits_global + r.rate_limits_auth + r.rate_limits_license + r.rate_limits_suggestions;
@@ -213,14 +213,14 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
                     {pctL > 0 && <div className="w-full bg-yellow-400" style={{ height: `${pctL}%` }} />}
                     {pctS > 0 && <div className="w-full bg-blue-400" style={{ height: `${pctS}%` }} />}
                   </div>
-                  <div className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded bg-[#1a1917] px-2 py-1 text-[10px] text-[#f1ebe2] shadow group-hover:block">
+                  <div className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded bg-[#1a1917] px-2 py-1 text-[10px] text-foreground shadow group-hover:block">
                     {total} limits &middot; {fmtTime(r.bucket)}
                   </div>
                 </div>
               );
             })}
           </div>
-          <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-[#c9c4bc]/60">
+          <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-red-400" /> Global</span>
             <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-orange-400" /> Auth</span>
             <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-yellow-400" /> License</span>
@@ -230,15 +230,15 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
       )}
 
       {/* Semaphore load */}
-      <div className="rounded-2xl border border-white/5 bg-white/5 p-5">
-        <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#c9c4bc]/60">Proxy / Semaphore Load</h4>
+      <div className="rounded-2xl border border-foreground/5 bg-foreground/5 p-5">
+        <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Proxy / Semaphore Load</h4>
         <div className="grid grid-cols-2 gap-6">
           <SemaphoreGauge label="amp-api-edge" peakActive={s.semAmpPeakActive} peakQueued={s.semAmpPeakQueued} max={AMP_MAX} />
           <SemaphoreGauge label="itunes.apple.com" peakActive={s.semItunesPeakActive} peakQueued={s.semItunesPeakQueued} max={ITUNES_MAX} />
         </div>
         {timeseries.length > 0 && (
           <div className="mt-6">
-            <h4 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#c9c4bc]/40">Semaphore Peak Active Over Time</h4>
+            <h4 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Semaphore Peak Active Over Time</h4>
             <div className="flex items-end gap-[2px]" style={{ height: 60 }}>
               {timeseries.map((r, i) => {
                 const ampPct = (r.sem_amp_peak_active / AMP_MAX) * 100;
@@ -246,8 +246,8 @@ export default function ProxyAnalyticsPanel({ ampMax, itunesMax }: { ampMax?: nu
                 const maxPct = Math.max(ampPct, itunesPct);
                 return (
                   <div key={i} className="group relative flex-1 min-w-[2px]" style={{ height: "100%" }}>
-                    <div className="absolute bottom-0 w-full rounded-t bg-[#f4cf8f]/50" style={{ height: `${Math.max(maxPct, 1)}%` }} />
-                    <div className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded bg-[#1a1917] px-2 py-1 text-[10px] text-[#f1ebe2] shadow group-hover:block">
+                    <div className="absolute bottom-0 w-full rounded-t bg-primary/50" style={{ height: `${Math.max(maxPct, 1)}%` }} />
+                    <div className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded bg-[#1a1917] px-2 py-1 text-[10px] text-foreground shadow group-hover:block">
                       amp:{r.sem_amp_peak_active}/{AMP_MAX} itunes:{r.sem_itunes_peak_active}/{ITUNES_MAX}
                     </div>
                   </div>

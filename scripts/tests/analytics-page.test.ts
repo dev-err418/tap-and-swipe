@@ -57,12 +57,13 @@ function pageFixture() {
     "@/lib/app-experiment-map": { activeABTestCount: () => 0 },
     "@/lib/website-ab-tests": { activeWebsiteABTestCount },
     "@/components/analytics/dashboard-surface": { DASHBOARD_SURFACE_CLASS: "" },
+    "@/components/analytics/AnalyticsTheme": { AnalyticsThemeSetting: passthrough },
     "@/components/analytics/website-summary-card": { formatCompactRevenue: String, ProjectExperimentBadge: passthrough, WebsiteFavicon: passthrough, WebsiteMiniChart: passthrough, WebsiteSummaryCard: passthrough },
     "@/components/analytics/AnalyticsDirectorySkeleton": { AnalyticsDirectorySkeleton, AppCardSkeleton: passthrough, AppTotalsSkeleton: passthrough, WebsiteCardSkeleton: passthrough, WebsiteTotalsSkeleton: passthrough },
     "@/components/analytics/AnalyticsDetailSkeleton": { AnalyticsDetailSkeleton: passthrough },
   };
   for (const component of [
-    "analytics/VersyOfferBreakdown", "analytics/RealizedAppu", "analytics/AppOverviewPanel", "analytics/GlowProductPanel", "analytics/AnalyticsPeriodSelect",
+    "analytics/RealizedAppu", "analytics/AppOverviewPanel", "analytics/GlowProductPanel", "analytics/AnalyticsPeriodSelect",
     "analytics/DeadProjectsDisclosure", "analytics/AppSprintFunnelPanel", "aso-debug/LicensesModal",
     "aso-debug/ProxyAnalyticsPanel", "aso-debug/ProxyHealthPanel", "aso-debug/LicenseUsagePanel",
     "aso-debug/FeedbackPanel", "aso-debug/TrialAbusePanel",

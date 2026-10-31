@@ -61,11 +61,11 @@ function Breakdown({ title, rows, label }: { title: string; rows: WinbackPaywall
   return <div className="min-w-0 overflow-x-auto">
     <h3 className="mb-2 text-sm font-semibold">{title}</h3>
     <table className="w-full min-w-[25rem] text-left text-sm">
-      <thead className="border-b border-black/10 text-xs text-muted-foreground"><tr>
+      <thead className="border-b border-foreground/10 text-xs text-muted-foreground"><tr>
         <th className="py-2 font-medium">{title}</th><th className="py-2 text-right font-medium">Viewers</th>
         <th className="py-2 text-right font-medium">Purchasers</th><th className="py-2 text-right font-medium">Conversion</th>
       </tr></thead>
-      <tbody>{rows.map((row) => <tr key={label(row)} className="border-b border-black/[0.06] last:border-0">
+      <tbody>{rows.map((row) => <tr key={label(row)} className="border-b border-foreground/[0.06] last:border-0">
         <td className="py-2 pr-3">{label(row)}</td><td className="py-2 text-right tabular-nums">{count(row.viewers)}</td>
         <td className="py-2 text-right tabular-nums">{count(row.buyers)}</td><td className="py-2 text-right tabular-nums">{rate(row.conversionRate)}</td>
       </tr>)}</tbody>

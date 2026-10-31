@@ -1,11 +1,11 @@
 export const DASHBOARD_SURFACE_CLASS =
-  "rounded-[28px] border-0 bg-white shadow-none";
+  "rounded-[28px] border-0 bg-card shadow-none";
 
 export const APP_ANALYTICS_HEADER_CLASS =
-  "sticky top-4 z-30 flex min-h-[60px] w-full flex-col gap-3 rounded-[30px] border-0 bg-white px-4 py-2 sm:top-6 sm:grid sm:h-[60px] sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:px-6 [&_[data-slot=select-trigger]]:bg-foreground/[0.045] [&_[data-slot=select-trigger]]:hover:bg-foreground/[0.045]";
+  "sticky top-4 z-30 flex min-h-[60px] w-full flex-col gap-3 rounded-[30px] border-0 bg-card px-4 py-2 sm:top-6 sm:grid sm:h-[60px] sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:px-6 [&_[data-slot=select-trigger]]:bg-foreground/[0.045] [&_[data-slot=select-trigger]]:hover:bg-foreground/[0.045]";
 
 export const DASHBOARD_PICKER_TRIGGER_CLASS =
-  "h-10 cursor-pointer gap-1.5 rounded-full border-0 bg-white px-3 text-sm font-medium text-foreground shadow-none transition-[background-color,box-shadow] hover:bg-white focus-visible:ring-2 focus-visible:ring-ring/40 data-[size=default]:h-10 data-open:bg-white data-popup-open:bg-white disabled:cursor-not-allowed";
+  "h-10 cursor-pointer gap-1.5 rounded-full border-0 bg-card px-3 text-sm font-medium text-foreground shadow-none transition-[background-color,box-shadow] hover:bg-card focus-visible:ring-2 focus-visible:ring-ring/40 data-[size=default]:h-10 data-open:bg-card data-popup-open:bg-card disabled:cursor-not-allowed";
 
 export const DASHBOARD_POPOVER_CLASS =
   "z-[80] min-w-[12rem] rounded-3xl border-0 bg-popover p-1.5 shadow-lg ring-0";
@@ -20,7 +20,7 @@ export const DASHBOARD_TAB_CLASS =
   "h-[26px] cursor-pointer rounded-full border text-[11px] font-medium transition-[background-color,border-color,color,box-shadow]";
 
 export const DASHBOARD_TAB_ACTIVE_CLASS =
-  "border-black/[0.06] bg-white text-foreground shadow-xs";
+  "border-foreground/[0.06] bg-card text-foreground shadow-xs";
 
 export const DASHBOARD_TAB_INACTIVE_CLASS =
-  "border-transparent text-[#717171] hover:bg-white/60 hover:text-foreground";
+  "border-transparent text-muted-foreground hover:bg-card/60 hover:text-foreground";

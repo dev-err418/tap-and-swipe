@@ -5,10 +5,10 @@ import { createPortal } from "react-dom";
 import type { ExperimentAnalysis, ExperimentReadiness, VariantExperimentResult } from "@/lib/experiment-stats";
 import { cn } from "@/lib/utils";
 
-const WIN_COLOR = "#1d4ed8";
-const LOSE_COLOR = "#f97316";
-const WIN_SOFT = "color-mix(in oklch, #1d4ed8 12%, white)";
-const LOSE_SOFT = "color-mix(in oklch, #f97316 14%, white)";
+const WIN_COLOR = "var(--analytics-blue)";
+const LOSE_COLOR = "var(--analytics-orange)";
+const WIN_SOFT = "color-mix(in oklch, var(--analytics-blue) 12%, var(--card))";
+const LOSE_SOFT = "color-mix(in oklch, var(--analytics-orange) 14%, var(--card))";
 
 export function ExperimentWarningBadge({ analysis }: { analysis: ExperimentAnalysis }) {
   if (analysis.sufficientData) return null;
@@ -46,10 +46,10 @@ export default function ExperimentStats({
     estimatedCompletionAt: null,
   } : analysis.readiness;
   return (
-    <div className="border-b border-black/[0.08] px-4 py-4">
+    <div className="border-b border-foreground/[0.08] px-4 py-4">
       {title || showReadiness ? (
         <div className="mb-3 flex items-center gap-2">
-          {title ? <p className={cn("text-xs font-semibold text-black", titleClassName)}>{title}</p> : null}
+          {title ? <p className={cn("text-xs font-semibold text-foreground", titleClassName)}>{title}</p> : null}
           {showReadiness ? <ReadinessIndicator readiness={readiness} /> : null}
         </div>
       ) : null}
@@ -76,7 +76,7 @@ export function ReadinessIndicator({ readiness }: { readiness: ExperimentReadine
         : "Planning pending";
   const statusColor = readiness.status === "decisive" ? WIN_COLOR
     : readiness.status === "inconclusive" ? LOSE_COLOR
-      : "#525252";
+      : "var(--muted-foreground)";
   const ringColor = readiness.status === "decisive" ? WIN_COLOR : LOSE_COLOR;
   const completion = readiness.estimatedCompletionAt
     ? `around ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "Europe/Paris" }).format(new Date(readiness.estimatedCompletionAt))}`
@@ -99,7 +99,7 @@ export function ReadinessIndicator({ readiness }: { readiness: ExperimentReadine
   return <>
     <button
       type="button"
-      className="inline-flex size-6 shrink-0 cursor-help items-center justify-center rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#1d4ed8]/40"
+      className="inline-flex size-6 shrink-0 cursor-help items-center justify-center rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-analytics-blue/40"
       aria-label={ariaLabel}
       onPointerEnter={(event) => setTooltip({ x: event.clientX, y: event.clientY })}
       onPointerMove={(event) => setTooltip({ x: event.clientX, y: event.clientY })}
@@ -145,7 +145,7 @@ function ReadinessTooltip({ readiness, label, statusColor, completion, x, y }: {
 
   return <div
     role="tooltip"
-    className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] w-80 rounded-lg bg-[#f7f7f7] px-3 py-2.5 text-xs text-muted-foreground"
+    className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] w-80 rounded-lg bg-popover px-3 py-2.5 text-xs text-muted-foreground"
     style={{ left, top }}
   >
     <div className="font-semibold" style={{ color: statusColor }}>{label}</div>
@@ -329,7 +329,7 @@ function IntervalTooltip({
 
   return (
     <div
-      className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] grid min-w-48 gap-2 rounded-lg bg-[#f7f7f7] px-2.5 py-2 text-xs"
+      className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] grid min-w-48 gap-2 rounded-lg bg-popover px-2.5 py-2 text-xs"
       style={{ left, top }}
     >
       <div className="font-medium text-foreground">{label}</div>

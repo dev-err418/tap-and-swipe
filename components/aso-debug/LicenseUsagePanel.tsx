@@ -16,12 +16,12 @@ type SortKey = "total" | "today";
 
 function StatusPill({ plan, active }: { plan: string | null; active: boolean | null }) {
   if (active === false) {
-    return <span className="rounded px-1.5 py-0.5 text-[10px] font-bold bg-red-400/20 text-red-400">INACTIVE</span>;
+    return <span className="rounded px-1.5 py-0.5 text-[10px] font-bold bg-red-400/20 text-destructive">INACTIVE</span>;
   }
   const label = (plan || "solo").toUpperCase();
   const colors = plan === "pro"
     ? "bg-purple-400/20 text-purple-400"
-    : "bg-emerald-400/20 text-emerald-400";
+    : "bg-emerald-400/20 text-analytics-green";
   return <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${colors}`}>{label}</span>;
 }
 
@@ -76,32 +76,32 @@ export default function LicenseUsagePanel() {
             key={p}
             onClick={() => setPeriod(p)}
             className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors ${
-              period === p ? "bg-[#f4cf8f] text-[#2a2725]" : "bg-white/5 text-[#c9c4bc] hover:bg-white/10"
+              period === p ? "bg-primary text-primary-foreground" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
             }`}
           >
             {p}
           </button>
         ))}
-        {loading && <span className="ml-2 self-center text-xs text-[#c9c4bc]/40">loading...</span>}
+        {loading && <span className="ml-2 self-center text-xs text-muted-foreground">loading...</span>}
       </div>
 
       {sorted.length === 0 ? (
-        <p className="text-sm text-[#c9c4bc]/60">No license usage data yet.</p>
+        <p className="text-sm text-muted-foreground">No license usage data yet.</p>
       ) : (
-        <div className="rounded-2xl border border-white/5 bg-white/5 overflow-hidden">
+        <div className="rounded-2xl border border-foreground/5 bg-foreground/5 overflow-hidden">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-[#c9c4bc]/60 border-b border-white/10">
+              <tr className="text-muted-foreground border-b border-foreground/10">
                 <th className="text-left px-4 py-2 font-medium">License Key</th>
                 <th className="text-left px-4 py-2 font-medium">Status</th>
                 <th
-                  className="text-right px-4 py-2 font-medium cursor-pointer hover:text-[#f4cf8f]"
+                  className="text-right px-4 py-2 font-medium cursor-pointer hover:text-analytics-highlight"
                   onClick={() => setSortBy("today")}
                 >
                   Today {sortBy === "today" && "▼"}
                 </th>
                 <th
-                  className="text-right px-4 py-2 font-medium cursor-pointer hover:text-[#f4cf8f]"
+                  className="text-right px-4 py-2 font-medium cursor-pointer hover:text-analytics-highlight"
                   onClick={() => setSortBy("total")}
                 >
                   Total ({period}) {sortBy === "total" && "▼"}
@@ -116,32 +116,32 @@ export default function LicenseUsagePanel() {
                 return (
                   <tr
                     key={r.license_key}
-                    className={`border-b border-white/5 ${hot ? "bg-red-400/5" : ""}`}
+                    className={`border-b border-foreground/5 ${hot ? "bg-red-400/5" : ""}`}
                   >
                     <td className="px-4 py-2">
                       <button
                         onClick={() => copyKey(r.license_key)}
-                        className="font-mono text-[#c9c4bc] hover:text-[#f4cf8f] transition-colors cursor-pointer text-left"
+                        className="font-mono text-muted-foreground hover:text-analytics-highlight transition-colors cursor-pointer text-left"
                         title={`Click to copy: ${r.license_key}`}
                       >
                         {copied === r.license_key ? (
-                          <span className="text-emerald-400">Copied!</span>
+                          <span className="text-analytics-green">Copied!</span>
                         ) : (
                           r.license_key.slice(0, 12) + "..."
                         )}
                       </button>
-                      {r.email && <p className="text-[10px] text-[#c9c4bc]/40 truncate max-w-[160px]">{r.email}</p>}
+                      {r.email && <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">{r.email}</p>}
                     </td>
                     <td className="px-4 py-2">
                       <StatusPill plan={r.plan} active={r.active} />
                     </td>
-                    <td className="px-4 py-2 text-right tabular-nums text-[#f4cf8f]">
+                    <td className="px-4 py-2 text-right tabular-nums text-analytics-highlight">
                       {(r.today_requests ?? 0).toLocaleString()}
                     </td>
-                    <td className="px-4 py-2 text-right tabular-nums text-[#f4cf8f]">
+                    <td className="px-4 py-2 text-right tabular-nums text-analytics-highlight">
                       {r.total_requests.toLocaleString()}
                     </td>
-                    <td className={`px-4 py-2 text-right tabular-nums ${hot ? "text-red-400 font-bold" : "text-[#c9c4bc]/60"}`}>
+                    <td className={`px-4 py-2 text-right tabular-nums ${hot ? "text-destructive font-bold" : "text-muted-foreground"}`}>
                       {avg.toLocaleString()}
                     </td>
                   </tr>
@@ -152,7 +152,7 @@ export default function LicenseUsagePanel() {
           {sorted.length > 10 && (
             <button
               onClick={() => setShowAll(!showAll)}
-              className="w-full py-2 text-xs font-semibold text-[#c9c4bc]/60 hover:text-[#f4cf8f] transition-colors border-t border-white/5"
+              className="w-full py-2 text-xs font-semibold text-muted-foreground hover:text-analytics-highlight transition-colors border-t border-foreground/5"
             >
               {showAll ? "Show top 10" : `Show all (${sorted.length})`}
             </button>

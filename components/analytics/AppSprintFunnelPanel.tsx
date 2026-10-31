@@ -26,8 +26,8 @@ import {
 } from "@/components/ui/dialog";
 
 const PREVIEW_ROWS = 10;
-const POSTBACK_TINT_ORANGE = "#f97316";
-const VISITOR_BLUE = "#1d4ed8";
+const POSTBACK_TINT_ORANGE = "var(--analytics-orange)";
+const VISITOR_BLUE = "var(--analytics-blue)";
 const VISITOR_BAR_SHARE = 62;
 const REVENUE_BAR_SHARE = 100 - VISITOR_BAR_SHARE;
 
@@ -83,8 +83,8 @@ export default function AppSprintFunnelPanel({
   const onboardingAnalysis = analyzeExperiment((experimentAnalytics.onboardingExperiment ?? []).map((row) => ({ key: row.variant, label: row.label, exposures: row.visitors, conversions: row.completed, revenue: row.revenue })), "conversion_rate", "Completion rate", readinessWindow);
   return (
     <section className="space-y-4">
-      <div className="min-w-0 overflow-visible rounded-[28px] border-0 bg-white shadow-none">
-        <div className="min-w-0 overflow-x-auto border-b border-black/[0.08]">
+      <div className="min-w-0 overflow-visible rounded-[28px] border-0 bg-card shadow-none">
+        <div className="min-w-0 overflow-x-auto border-b border-foreground/[0.08]">
           <div className="grid min-w-[48rem] grid-cols-4 divide-x divide-black/[0.08]">
             <MetricSummary label="Visitors" value={formatInt(visits)} detail={windowLabel} />
             <MetricSummary label="Revenue" value={formatCurrency(revenue)} detail={`${formatInt(analytics.totals.asoPaid)} paid (${formatPercent(ratio(analytics.totals.asoPaid, visits))})`} />
@@ -99,13 +99,13 @@ export default function AppSprintFunnelPanel({
 
       {showPricingExperiment ? <DashboardCard title="Pricing A/B test" titleAccessory={cumulativePricing ? <span className="text-xs text-muted-foreground">Prior $108/year data included</span> : <ExperimentWarningBadge analysis={pricingAnalysis} />} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">{cumulativePricing ? "50% $108 / 50% €108 · Cumulative" : experimentWindowLabel}</span>} contentClassName="min-w-0 p-0">
         <ExperimentStats analysis={pricingAnalysis} title="Paid conversion rate" titleClassName="font-bold" historical={cumulativePricing} showReadiness={!cumulativePricing} />
-        {cumulativePricing ? <p className="border-b border-black/[0.08] px-4 py-3 text-xs text-black/55">Directional comparison: the $108 offer includes prior test data, so these estimates do not establish a winner for the current test. Chance to win and bars compare paid conversion, not revenue in different currencies. Early estimates can change as more visitors pay.</p> : null}
+        {cumulativePricing ? <p className="border-b border-foreground/[0.08] px-4 py-3 text-xs text-muted-foreground">Directional comparison: the $108 offer includes prior test data, so these estimates do not establish a winner for the current test. Chance to win and bars compare paid conversion, not revenue in different currencies. Early estimates can change as more visitors pay.</p> : null}
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
-            <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-black">Revenue / visitor</Th></tr></thead>
+            <thead><tr className="border-b border-foreground/10 text-left text-xs text-muted-foreground"><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-foreground">Revenue / visitor</Th></tr></thead>
             <tbody>
               {pricingRows.map((row, index) => (
-                <tr key={row.variant} className="border-b border-black/[0.07]">
+                <tr key={row.variant} className="border-b border-foreground/[0.07]">
                   <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatPreciseCurrency(row.revenue, row.currency)}</NumberTd><NumberTd className="font-bold">{formatPreciseCurrency(ratio(row.revenue, row.visitors), row.currency)}</NumberTd>
                 </tr>
@@ -117,7 +117,7 @@ export default function AppSprintFunnelPanel({
       </DashboardCard> : null}
 
       {showPricingExperiment && pricingPageUpdate ? <DashboardCard title="October 15 page update" titleAccessory={<span className="text-xs text-muted-foreground">Before vs after</span>} titleClassName="flex items-center gap-1.5" action={<span className="text-xs text-muted-foreground">15 Oct 2026 · Paris time</span>} contentClassName="min-w-0 p-0">
-        <p className="border-b border-black/[0.08] px-4 py-3 text-xs text-black/55">
+        <p className="border-b border-foreground/[0.08] px-4 py-3 text-xs text-muted-foreground">
           {Date.parse(experimentAnalytics.generatedAt) < Date.parse(pricingPageUpdate.cutoffAt)
             ? "After starts on 15 October. The new page has no visitors yet."
             : "Compare visitors who saw the pricing page before and from 15 October onward."}
@@ -125,7 +125,7 @@ export default function AppSprintFunnelPanel({
         </p>
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
-            <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Period</Th><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-black">Revenue / visitor</Th></tr></thead>
+            <thead><tr className="border-b border-foreground/10 text-left text-xs text-muted-foreground"><Th>Period</Th><Th>Offer</Th><Th right>Visitors</Th><Th right>Checkouts</Th><Th right>Checkout rate</Th><Th right>Trials</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Initial revenue</Th><Th right className="font-bold text-foreground">Revenue / visitor</Th></tr></thead>
             <tbody>
               {pricingPageUpdate.before.filter(isActivePricingRow).flatMap((beforeRow) => {
                 const afterRow = pricingPageUpdate.after.find((row) => row.variant === beforeRow.variant);
@@ -143,10 +143,10 @@ export default function AppSprintFunnelPanel({
         <ExperimentStats analysis={heroAnalysis} />
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
-            <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
+            <thead><tr className="border-b border-foreground/10 text-left text-xs text-muted-foreground"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
             <tbody>
               {experimentAnalytics.heroPreviewExperiment.map((row, index) => (
-                <tr key={row.variant} className="border-b border-black/[0.07]">
+                <tr key={row.variant} className="border-b border-foreground/[0.07]">
                   <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
                 </tr>
@@ -160,10 +160,10 @@ export default function AppSprintFunnelPanel({
         <ExperimentStats analysis={trialAnalysis} />
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
-            <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Trial</Th><Th right>Trial rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
+            <thead><tr className="border-b border-foreground/10 text-left text-xs text-muted-foreground"><Th>Variant</Th><Th right>Visitors</Th><Th right>Payment page</Th><Th right>Page rate</Th><Th right>Trial</Th><Th right>Trial rate</Th><Th right>Paid</Th><Th right>Paid rate</Th><Th right>Revenue</Th></tr></thead>
             <tbody>
               {(experimentAnalytics.trialExperiment ?? []).map((row, index) => (
-                <tr key={row.variant} className="border-b border-black/[0.07]">
+                <tr key={row.variant} className="border-b border-foreground/[0.07]">
                   <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatPercent(ratio(row.paymentPageViews, row.visitors))}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatPercent(ratio(row.trials, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatPercent(ratio(row.paid, row.visitors))}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
                 </tr>
@@ -177,10 +177,10 @@ export default function AppSprintFunnelPanel({
         <ExperimentStats analysis={onboardingAnalysis} />
         <div className="overflow-x-auto">
           <table className="w-max min-w-full text-sm">
-            <thead><tr className="border-b border-black/10 text-left text-xs text-black/50"><Th>Variant</Th><Th right>Started</Th><Th right>Completed</Th><Th right>Completion rate</Th><Th right>Payment page</Th><Th right>Trial</Th><Th right>Paid</Th><Th right>Revenue</Th></tr></thead>
+            <thead><tr className="border-b border-foreground/10 text-left text-xs text-muted-foreground"><Th>Variant</Th><Th right>Started</Th><Th right>Completed</Th><Th right>Completion rate</Th><Th right>Payment page</Th><Th right>Trial</Th><Th right>Paid</Th><Th right>Revenue</Th></tr></thead>
             <tbody>
               {(experimentAnalytics.onboardingExperiment ?? []).map((row, index) => (
-                <tr key={row.variant} className="border-b border-black/[0.07]">
+                <tr key={row.variant} className="border-b border-foreground/[0.07]">
                   <Td><div className="flex items-center gap-2 whitespace-nowrap"><Badge>Variant {variantLetter(index)}</Badge><span className="font-medium">{row.label}</span></div></Td>
                   <NumberTd>{formatInt(row.visitors)}</NumberTd><NumberTd>{formatInt(row.completed)}</NumberTd><NumberTd>{formatPercent(ratio(row.completed, row.visitors))}</NumberTd><NumberTd>{formatInt(row.paymentPageViews)}</NumberTd><NumberTd>{formatInt(row.trials)}</NumberTd><NumberTd>{formatInt(row.paid)}</NumberTd><NumberTd>{formatCurrency(row.revenue)}</NumberTd>
                 </tr>
@@ -239,7 +239,7 @@ function isActivePricingRow(row: AppSprintPricingRow) {
 }
 
 function PricingPageUpdateRow({ period, row }: { period: "Before" | "After"; row: AppSprintPricingRow }) {
-  return <tr className={cn("border-b border-black/[0.07]", period === "After" && "bg-black/[0.015]")}>
+  return <tr className={cn("border-b border-foreground/[0.07]", period === "After" && "bg-foreground/[0.015]")}>
     <Td><Badge>{period}</Badge></Td>
     <Td><span className="font-medium">{row.currency === "EUR" ? "€108/year" : "$108/year"}</span></Td>
     <NumberTd>{formatInt(row.visitors)}</NumberTd>
@@ -395,12 +395,12 @@ function BreakdownDetails({
         <Maximize2 className="size-3" aria-hidden />
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden bg-white p-0 sm:max-w-3xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden bg-card p-0 sm:max-w-3xl">
           <DialogHeader className="px-6 pt-6 pr-16">
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 max-h-[65dvh] overflow-auto overscroll-contain border-t border-black/[0.06] p-0 pr-0.5">
+          <div className="min-h-0 max-h-[65dvh] overflow-auto overscroll-contain border-t border-foreground/[0.06] p-0 pr-0.5">
             <BreakdownTable
               rows={rows}
               metric={metric}
@@ -526,7 +526,7 @@ function BreakdownRow({
           className="pointer-events-none absolute inset-0 z-20"
           style={{ clipPath: `inset(0 ${100 - barWidth}% 0 0)` }}
         >
-          <div className="flex h-full min-w-0 items-center gap-2 px-3 text-sm font-medium text-white">
+          <div className="flex h-full min-w-0 items-center gap-2 px-3 text-sm font-medium analytics-bar-label">
             <span className="flex size-5 shrink-0 items-center justify-center text-base">{rowPrefix}</span>
             <span className="min-w-0 flex-1 truncate">{label}</span>
             <span className="shrink-0 font-mono text-xs font-medium tabular-nums">{metricValue}</span>
@@ -554,7 +554,7 @@ function BreakdownTooltip({ tooltip }: { tooltip: BreakdownTooltipState }) {
 
   return (
     <div
-      className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] grid min-w-48 gap-2 rounded-lg bg-[#f7f7f7] px-2.5 py-2 text-xs"
+      className="dashboard-tooltip-shadow pointer-events-none fixed z-[100] grid min-w-48 gap-2 rounded-lg bg-popover px-2.5 py-2 text-xs"
       style={{ left, top }}
     >
       <div className="flex items-center gap-2 font-medium text-foreground">
@@ -589,7 +589,7 @@ function toRevenueArms(rows: { variant: string; label: string; visitors: number;
 function Th({ children, right = false, className }: { children: React.ReactNode; right?: boolean; className?: string }) { return <th className={cn("whitespace-nowrap px-4 py-3 font-medium", right && "text-right", className)}>{children}</th>; }
 function Td({ children }: { children: React.ReactNode }) { return <td className="whitespace-nowrap px-4 py-3">{children}</td>; }
 function NumberTd({ children, className }: { children: React.ReactNode; className?: string }) { return <td className={cn("whitespace-nowrap px-4 py-3 text-right font-mono tabular-nums", className)}>{children}</td>; }
-function Badge({ children }: { children: React.ReactNode }) { return <span className="inline-flex rounded-md bg-black/[0.055] px-2 py-0.5 text-xs font-medium">{children}</span>; }
+function Badge({ children }: { children: React.ReactNode }) { return <span className="inline-flex rounded-md bg-foreground/[0.055] px-2 py-0.5 text-xs font-medium">{children}</span>; }
 
 function sortRows<T extends AppSprintFunnelBreakdownRow>(rows: T[], metric: BreakdownMetric) {
   return [...rows].sort((a, b) => {

@@ -25,18 +25,18 @@ export function ArpuComparisonCells({ result, metric, label, baselineLabel, exte
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content side="top" sideOffset={8} collisionPadding={12}
-            className="z-[100] w-80 rounded-xl border border-black/10 bg-white p-4 text-xs text-zinc-900 shadow-xl">
+            className="z-[100] w-80 rounded-xl border border-foreground/10 bg-card p-4 text-xs text-foreground shadow-xl">
             <div className="mb-3 font-semibold">{label}</div>
             <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 tabular-nums">
-              <dt className="text-zinc-500">Net proceeds</dt><dd className="text-right">{metric && !metric.missingProceeds ? metric.proceeds.toLocaleString("en-US", { style: "currency", currency: "USD" }) : "—"}</dd>
-              <dt className="text-zinc-500">Installs</dt><dd className="text-right">{metric?.installs.toLocaleString("en-US") ?? "—"}</dd>
-              <dt className="text-zinc-500">Chance to win</dt><dd className="text-right">{result.winProbability == null ? "—" : percent(result.winProbability)}</dd>
-              <dt className="text-zinc-500">APPU lift</dt><dd className="text-right">{result.isBaseline ? "Baseline" : result.lift == null ? "—" : delta(result.lift)}</dd>
-              <dt className="text-zinc-500">{Math.round(APPU_CONFIDENCE_LEVEL * 100)}% interval</dt><dd className="text-right">{result.interval ? `[${delta(result.interval[0])}, ${delta(result.interval[1])}]` : "—"}</dd>
+              <dt className="text-muted-foreground">Net proceeds</dt><dd className="text-right">{metric && !metric.missingProceeds ? metric.proceeds.toLocaleString("en-US", { style: "currency", currency: "USD" }) : "—"}</dd>
+              <dt className="text-muted-foreground">Installs</dt><dd className="text-right">{metric?.installs.toLocaleString("en-US") ?? "—"}</dd>
+              <dt className="text-muted-foreground">Chance to win</dt><dd className="text-right">{result.winProbability == null ? "—" : percent(result.winProbability)}</dd>
+              <dt className="text-muted-foreground">APPU lift</dt><dd className="text-right">{result.isBaseline ? "Baseline" : result.lift == null ? "—" : delta(result.lift)}</dd>
+              <dt className="text-muted-foreground">{Math.round(APPU_CONFIDENCE_LEVEL * 100)}% interval</dt><dd className="text-right">{result.interval ? `[${delta(result.interval[0])}, ${delta(result.interval[1])}]` : "—"}</dd>
             </dl>
-            <p className="mt-3 text-zinc-500">Compared with {baselineLabel}. Win % estimates the chance of highest APPU among populated rows in this audience.</p>
-            <p className="mt-2 text-zinc-500">Normal approximation using net proceeds per install, including non-payers and refunds. Cohort ages and audiences can differ; this is not proof of a causal lift.</p>
-            {result.reason ? <p className="mt-2 text-amber-700">{result.reason}</p> : null}
+            <p className="mt-3 text-muted-foreground">Compared with {baselineLabel}. Win % estimates the chance of highest APPU among populated rows in this audience.</p>
+            <p className="mt-2 text-muted-foreground">Normal approximation using net proceeds per install, including non-payers and refunds. Cohort ages and audiences can differ; this is not proof of a causal lift.</p>
+            {result.reason ? <p className="mt-2 text-analytics-highlight">{result.reason}</p> : null}
             <Tooltip.Arrow className="fill-white" />
           </Tooltip.Content>
         </Tooltip.Portal>

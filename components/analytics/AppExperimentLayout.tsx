@@ -16,7 +16,7 @@ export function AppExperimentLayout({ title, subtitle, titleAccessory, action, c
 export function ExperimentTable({ headings, children, caption }: { headings: ReactNode; children: ReactNode; caption?: string }) {
   return <div className="overflow-x-auto"><table className="w-max min-w-full text-sm">
     {caption && <caption className="sr-only">{caption}</caption>}
-    <thead><tr className="border-b border-black/10 text-left text-xs text-black/50">{headings}</tr></thead>
+    <thead><tr className="border-b border-foreground/10 text-left text-xs text-muted-foreground">{headings}</tr></thead>
     <tbody>{children}</tbody>
   </table></div>;
 }
@@ -32,7 +32,7 @@ export function ExperimentNumberTd({ children, className }: { children: ReactNod
 }
 export function ExperimentVariantLabel({ index, children }: { index: number; children: ReactNode }) {
   return <div className="flex items-center gap-2 whitespace-nowrap">
-    <span className="inline-flex rounded-md bg-black/[0.055] px-2 py-0.5 text-xs font-medium">Variant {String.fromCharCode(65 + Math.max(0, index))}</span>
+    <span className="inline-flex rounded-md bg-foreground/[0.055] px-2 py-0.5 text-xs font-medium">Variant {String.fromCharCode(65 + Math.max(0, index))}</span>
     <span className="font-medium">{children}</span>
   </div>;
 }

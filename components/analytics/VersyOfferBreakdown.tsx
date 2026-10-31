@@ -28,7 +28,7 @@ export default function VersyOfferBreakdown({ breakdown, realizedAppu, users, pr
     <DialogTrigger asChild>
     <button type="button" aria-haspopup="dialog"
       aria-label="View offer counts and APPU contribution"
-      className="mt-1 block w-full cursor-pointer rounded-sm text-right text-[10px] font-normal leading-4 text-muted-foreground underline decoration-black/20 underline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+      className="mt-1 block w-full cursor-pointer rounded-sm text-right text-[10px] font-normal leading-4 text-muted-foreground underline decoration-foreground/20 underline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
       Main {count(rows[0].subscriptions)} · Weekly {count(rows[1].subscriptions)} · Recovery {count(rows[2].subscriptions)}
       {rows[3] ? ` · Other ${count(rows[3].subscriptions)}` : ""}
     </button></DialogTrigger>
@@ -60,7 +60,7 @@ function OfferMixTable({ rows, users, proceeds, compact = false }: {
           <th className="px-2 text-right font-medium">APPU contribution</th><th className="pl-2 text-right font-medium">Share</th>
         </tr></thead>
         <tbody>{rows.map((row, index) => <Fragment key={row.key}>
-          <tr className="border-b border-black/5">
+          <tr className="border-b border-foreground/5">
             <th className="py-2 pr-3 font-medium"><span aria-hidden className="mr-1.5 inline-block size-2 rounded-sm" style={{ backgroundColor: colors[index] }} />{row.label}<span className="block text-[10px] font-normal text-muted-foreground">{row.detail}</span></th>
             <td className="px-2 text-right">{count(row.subscriptions)}</td>
             {!compact && <td className="px-2 text-right">{money(row.proceeds)}</td>}

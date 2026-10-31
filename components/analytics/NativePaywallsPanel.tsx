@@ -12,10 +12,10 @@ import { ReadinessIndicator } from "@/components/analytics/ExperimentStats";
 
 const languages: Record<string, string> = { all: "All languages", en: "English", es: "Spanish", de: "German", fr: "French", pt: "Portuguese" };
 const languageFlags: Record<string, string> = { all: "🌐", en: "🇬🇧", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷", pt: "🇧🇷" };
-const WIN_COLOR = "#1d4ed8";
-const LOSE_COLOR = "#f97316";
-const WIN_SOFT = "color-mix(in oklch, #1d4ed8 12%, white)";
-const LOSE_SOFT = "color-mix(in oklch, #f97316 14%, white)";
+const WIN_COLOR = "var(--analytics-blue)";
+const LOSE_COLOR = "var(--analytics-orange)";
+const WIN_SOFT = "color-mix(in oklch, var(--analytics-blue) 12%, var(--card))";
+const LOSE_SOFT = "color-mix(in oklch, var(--analytics-orange) 14%, var(--card))";
 const currency = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const percent = (n: number | null) => n == null ? "—" : `${(n * 100).toFixed(1)}%`;
 const count = (n: number) => n.toLocaleString("en-US");
@@ -68,7 +68,7 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
       <h2 className="px-1 text-sm font-semibold">Glow yearly price comparison</h2>
       <div className={cn(DASHBOARD_SURFACE_CLASS, "space-y-3 p-5")}>
         <div className="flex flex-wrap gap-2">
-          {GLOW_YEARLY_PRICES.map(({ id, price }) => <span key={id} className="rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-2 py-1 text-xs text-[#1d4ed8]">
+          {GLOW_YEARLY_PRICES.map(({ id, price }) => <span key={id} className="rounded-md border border-analytics-blue/15 bg-analytics-blue/[0.07] px-2 py-1 text-xs text-analytics-blue">
             {price} <span className="ml-1 font-semibold tabular-nums">{formatPaywallAllocation(GLOW_YEARLY_PRICE_EXPERIMENT.variants.find((variant) => variant.id === id)!.percent)}</span>
           </span>)}
         </div>
@@ -84,7 +84,7 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
         <div className="flex flex-wrap gap-2" role="group" aria-label="Language audience">
           {availableLanguages.map((code) => <button type="button" key={code} aria-pressed={code === selectedLanguage} onClick={() => setLanguage(code)} className={cn(DASHBOARD_TAB_CLASS, "h-8 px-3", code === selectedLanguage ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS)}><span aria-hidden="true" className="mr-1.5">{languageFlags[code] ?? "🌐"}</span>{languages[code] ?? code.toUpperCase()}</button>)}
         </div>
-        {report?.warnings.map((warning) => <p role="status" key={warning} className="text-xs text-amber-700">{warning}</p>)}
+        {report?.warnings.map((warning) => <p role="status" key={warning} className="text-xs text-analytics-highlight">{warning}</p>)}
       </div>
     </section>
     {report?.status === "unavailable" || !report ? <Empty>Paywall data could not be loaded. Refresh to retry.</Empty>
@@ -158,18 +158,18 @@ export function NativePaywallResultsTable({ title, rows, experiment, language, p
     <div className={cn(DASHBOARD_SURFACE_CLASS, "overflow-hidden")}>
       <div className="overflow-x-auto scrollbar-none">
         <table className="w-full min-w-[1220px] text-left text-xs">
-          <thead><tr className="border-b border-black/[0.06] text-muted-foreground"><th className="min-w-[180px] px-5 py-3 font-medium">{placement ? "Placement" : flow ? "Flow" : "Paywall"}</th>{columns.map(([label, hint]) => <th key={label} className={cn(columnWidth(label), "px-3 py-3 text-right font-medium")}><abbr title={hint} className="cursor-help whitespace-nowrap no-underline">{label}</abbr></th>)}</tr></thead>
+          <thead><tr className="border-b border-foreground/[0.06] text-muted-foreground"><th className="min-w-[180px] px-5 py-3 font-medium">{placement ? "Placement" : flow ? "Flow" : "Paywall"}</th>{columns.map(([label, hint]) => <th key={label} className={cn(columnWidth(label), "px-3 py-3 text-right font-medium")}><abbr title={hint} className="cursor-help whitespace-nowrap no-underline">{label}</abbr></th>)}</tr></thead>
         <tbody>{sortedRows.map((row) => {
           const estimate = row.estimate;
           const allocation = !placement && experiment ? nativePaywallAllocation(experiment, row.id, row.paywall, language) : null;
           const refundRate = row.grossRevenue > 0 ? row.refunds / row.grossRevenue : null;
           const highRefundRate = refundRate != null && refundRate > 0.1;
           return <tr key={row.id} className={cn(
-            "border-b border-black/[0.04] last:border-0",
-            highRefundRate && "border-red-200 bg-red-100/80 text-red-950 [&_.text-muted-foreground]:text-red-700",
+            "border-b border-foreground/[0.04] last:border-0",
+            highRefundRate && "border-destructive/20 bg-destructive/15 text-destructive [&_.text-muted-foreground]:text-destructive",
           )}>
             <td className="px-5 py-4"><div className="flex items-center gap-2 font-medium"><span>{showGlowYearlyPrice ? glowYearlyPrice(row.id, row.paywall) ?? row.label : row.label}</span>{allocation != null && <span
-              className="inline-flex shrink-0 rounded-md border border-[#1d4ed8]/15 bg-[#1d4ed8]/[0.07] px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-[#1d4ed8]"
+              className="inline-flex shrink-0 rounded-md border border-analytics-blue/15 bg-analytics-blue/[0.07] px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-analytics-blue"
               title="Hardcoded allocation in the app, not observed traffic or confirmation of App Store rollout."
               aria-label={`${formatPaywallAllocation(allocation)} configured allocation`}
             >{formatPaywallAllocation(allocation)}</span>}</div>{row.paywall && <div className="mt-1 text-[10px] text-muted-foreground">{row.paywall}</div>}</td>
@@ -232,10 +232,10 @@ function ProbabilityIntervalBar({ interval, bound, isLeader }: { interval: [numb
   const range = `${formatDelta(start)} – ${formatDelta(end)}`;
   const explanation = "95% confidence interval for total APPU lift versus the first paywall. If the range crosses 0%, either paywall could still be better.";
   return <div className="group relative h-2 w-40 cursor-default rounded-full bg-foreground/[0.06] outline-none" tabIndex={0} aria-label={`APPU lift range ${range}. ${explanation}`}>
-    {start < 0 ? <span className="absolute inset-y-0 rounded-l-full bg-[#f97316]" style={{ left: `${left}%`, width: `${zero - left}%`, opacity: isLeader ? 0.88 : 0.5 }} /> : null}
-    {end > 0 ? <span className="absolute inset-y-0 rounded-r-full bg-[#1d4ed8]" style={{ left: `${zero}%`, width: `${right - zero}%`, opacity: isLeader ? 0.88 : 0.5 }} /> : null}
+    {start < 0 ? <span className="absolute inset-y-0 rounded-l-full bg-analytics-orange" style={{ left: `${left}%`, width: `${zero - left}%`, opacity: isLeader ? 0.88 : 0.5 }} /> : null}
+    {end > 0 ? <span className="absolute inset-y-0 rounded-r-full bg-analytics-blue" style={{ left: `${zero}%`, width: `${right - zero}%`, opacity: isLeader ? 0.88 : 0.5 }} /> : null}
     <span className="absolute top-[-3px] h-3.5 w-px bg-foreground/40" style={{ left: `${zero}%` }} />
-    <span role="tooltip" className="dashboard-tooltip-shadow pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden w-72 rounded-lg bg-[#f7f7f7] px-3 py-2 text-left text-xs text-black group-hover:block group-focus:block"><span className="font-semibold">{range}</span><span className="mt-1 block font-normal text-muted-foreground">{explanation}</span></span>
+    <span role="tooltip" className="dashboard-tooltip-shadow pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden w-72 rounded-lg bg-popover px-3 py-2 text-left text-xs text-foreground group-hover:block group-focus:block"><span className="font-semibold">{range}</span><span className="mt-1 block font-normal text-muted-foreground">{explanation}</span></span>
   </div>;
 }
 
@@ -260,12 +260,12 @@ function ConversionRateCell({ conversions, views, domain }: { conversions: numbe
     <div className="flex items-center justify-end gap-3">
       <span className="min-w-11 text-right">{percent(interval.rate)}</span>
       <div className="group relative h-5 w-44 shrink-0 outline-none" tabIndex={0} aria-label={`95% conversion range ${range}`}>
-        <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#1d4ed8]/10" />
-        <span className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#1d4ed8]/55" style={{ left: `${lowerPosition}%`, width: `${upperPosition - lowerPosition}%` }} />
-        <span className="absolute top-1/2 z-10 h-[18px] w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45" style={{ left: `${lowerPosition}%` }} />
-        <span className="absolute top-1/2 z-10 h-[18px] w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45" style={{ left: `${upperPosition}%` }} />
-        <span className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#1d4ed8] shadow-[0_0_0_2px_rgba(29,78,216,0.16)]" style={{ left: `${ratePosition}%` }} />
-        <span role="tooltip" className="dashboard-tooltip-shadow pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden rounded-lg border border-[#1d4ed8]/15 bg-[#f7f7f7] px-3 py-2 text-xs font-semibold text-black group-hover:block group-focus:block">{range}</span>
+        <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-analytics-blue/10" />
+        <span className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-analytics-blue/55" style={{ left: `${lowerPosition}%`, width: `${upperPosition - lowerPosition}%` }} />
+        <span className="absolute top-1/2 z-10 h-[18px] w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/45" style={{ left: `${lowerPosition}%` }} />
+        <span className="absolute top-1/2 z-10 h-[18px] w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/45" style={{ left: `${upperPosition}%` }} />
+        <span className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card bg-analytics-blue shadow-[0_0_0_2px_rgba(29,78,216,0.16)]" style={{ left: `${ratePosition}%` }} />
+        <span role="tooltip" className="dashboard-tooltip-shadow pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden rounded-lg border border-analytics-blue/15 bg-popover px-3 py-2 text-xs font-semibold text-foreground group-hover:block group-focus:block">{range}</span>
       </div>
     </div>
   </td>;

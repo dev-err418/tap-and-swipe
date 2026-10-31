@@ -140,8 +140,8 @@ export default function AppOverviewPanel({
         {countryPicker ?? <div />}
         <div className="sm:justify-self-end">{headerEnd}</div>
       </div> : countryPicker}
-      <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-[28px] border-0 bg-white shadow-none">
-        <div className="min-w-0 border-b border-black/[0.08]">
+      <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-[28px] border-0 bg-card shadow-none">
+        <div className="min-w-0 border-b border-foreground/[0.08]">
           <div className="grid grid-cols-3 divide-x divide-black/[0.08]">
             <MetricSummary label={installLabel} value={formatInt(total?.installs ?? 0)} detail={`${overviewLanguageLabel(language)} · ${marketCountryLabel(country)} · ${windowLabel}`} />
             <MetricSummary accessory={<VersyOfferBreakdown breakdown={total?.offerBreakdown} realizedAppu={total?.realizedAppu} users={total?.installs ?? 0} proceeds={total?.proceeds ?? 0} available={cohortAvailable && !total?.missingMoney} />} label="APPU" value={<>{appu == null ? "—" : formatPreciseCurrency(appu)}{cohortAvailable && <RealizedAppu metric={total?.realizedAppu} />}</>} detail={!cohortAvailable || !total ? "Cohort data unavailable" : total.missingMoney > 0 ? "Proceeds data unavailable" : total.installs > 0 ? `${formatInt(total.installs)} tracked installs · through today` : "No tracked installs"} />

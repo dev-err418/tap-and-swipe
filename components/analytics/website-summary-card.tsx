@@ -28,7 +28,7 @@ export function WebsiteSummaryCard({
   return (
     <Link
       href={analyticsHref({ period, site })}
-      className={`relative block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${DASHBOARD_SURFACE_CLASS}`}
+      className={`relative block cursor-pointer overflow-hidden p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/40 ${DASHBOARD_SURFACE_CLASS}`}
     >
       <div className="pointer-events-none select-none">
         <ProjectExperimentBadge count={activeTests} />
@@ -37,11 +37,11 @@ export function WebsiteSummaryCard({
           <h2 className="truncate text-xl font-semibold tracking-tight">{domain}</h2>
         </div>
         <WebsiteMiniChart points={trend} />
-        <p className="text-base text-black/55">
-          <strong className="font-bold text-black">{formatCompactNumber(metrics.visitors)}</strong>{" "}
+        <p className="text-base text-muted-foreground">
+          <strong className="font-bold text-foreground">{formatCompactNumber(metrics.visitors)}</strong>{" "}
           visitors
-          <span className="mx-2 text-black/35">•</span>
-          <strong className="font-bold text-black">{formatCompactRevenue(metrics.revenue_cents)}</strong>{" "}
+          <span className="mx-2 text-muted-foreground">•</span>
+          <strong className="font-bold text-foreground">{formatCompactRevenue(metrics.revenue_cents)}</strong>{" "}
           revenue
         </p>
       </div>
@@ -56,15 +56,15 @@ export function ProjectExperimentBadge({ count }: { count: number }) {
     <span
       aria-label={label}
       title={label}
-      className="absolute top-4 right-4 inline-flex size-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold leading-none tabular-nums text-white shadow-sm ring-2 ring-white"
+      className="absolute top-4 right-4 inline-flex size-6 items-center justify-center rounded-full bg-destructive/100 text-xs font-bold leading-none tabular-nums text-white shadow-sm ring-2 ring-card"
     >
       {count}
     </span>
   );
 }
 
-const VISITOR_CHART_COLOR = "#1d4ed8";
-const POSTBACK_ORANGE = "#f97316";
+const VISITOR_CHART_COLOR = "var(--analytics-blue)";
+const POSTBACK_ORANGE = "var(--analytics-orange)";
 
 export function WebsiteMiniChart({
   points,
