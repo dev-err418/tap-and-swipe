@@ -41,10 +41,6 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
                 value={`${number(report.cancellations.matchedCount + report.paidCancellations.matchedCount)} / ${number(report.cancellations.recentCount + report.paidCancellations.recentCount)}`}
                 detail={`Trial ${number(report.cancellations.matchedCount)}/${number(report.cancellations.recentCount)} · paid ${number(report.paidCancellations.matchedCount)}/${number(report.paidCancellations.recentCount)}`} />
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Notification allow rate uses first permission answers. The other notification figures use each user’s latest app snapshot in the period. Widget prevalence is users seen with a widget during the selected period, not an install conversion rate.
-              Widget prompt source is inferred from the most recent invitation within 24 hours.
-            </p>
           </>
         )}
       </DashboardCard>
@@ -89,7 +85,6 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
               ))}
               {report.widgets.sources.length === 0 && <p className="text-sm text-muted-foreground">No new widget adds detected yet.</p>}
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">Add source is inferred from the latest prompt within 24 hours. These are not conversion rates: iOS does not reveal which prompt caused installation.</p>
           </DashboardCard>
         </div>
       ) : null}
@@ -138,7 +133,6 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
               </div>
             ))}
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">A user can appear in multiple phases over time. Unknown includes Superwall access without a verified StoreKit transaction and events before phase tracking began.</p>
         </DashboardCard>
       ) : null}
 
@@ -157,7 +151,6 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">Percentages show the share who tried each feature at least once in their first 12 hours. The 72 hour outcome means no cancellation was observed by then, not that a subscription was ultimately retained.</p>
           </> : <p className="text-sm text-muted-foreground">
             {report.trialComparison.status === "truncated" ? "The trial sample exceeded the safe query limit; widen the data pipeline before interpreting this comparison."
               : report.trialComparison.status === "unavailable" ? "The trial comparison is temporarily unavailable."
@@ -173,7 +166,6 @@ export default function GlowProductPanel({ report, appName = "Glow" }: { report:
               {item.reason.replaceAll("_", " ")}: {number(item.users)}
             </span>)}
           </div> : <p className="text-sm text-muted-foreground">No subscription feedback submitted in this period.</p>}
-          <p className="mt-3 text-xs text-muted-foreground">This is an optional self report from people who opened the feedback sheet. It is not a representative cancellation survey.</p>
         </DashboardCard>
       ) : null}
 

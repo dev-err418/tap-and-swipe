@@ -73,8 +73,6 @@ export default function GlowPaywallCohortTables({ report, windowLabel }: {
         {!comparison || comparison.status === "unavailable"
           ? <p role="status" className="py-2 text-sm text-muted-foreground">{title} reporting is unavailable. Refresh to retry.</p>
           : <>
-            {key === "flows" && <p className="pb-2 text-xs text-muted-foreground">Current flow and Versy reminder flow include their previous results. New note variants are shown separately.</p>}
-            {key === "flowPrices" && <p className="pb-2 text-xs text-muted-foreground">Includes previous results. Note and no-note variants are combined within each flow.</p>}
             {comparison.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
             <JourneyVersionComparison cohorts={comparison.rows} rowLabels={comparison.labels} rowHeading={heading}
               allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate

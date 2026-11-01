@@ -8,7 +8,6 @@ export default function VersyYearlyPriceTable({ report }: { report: VersyYearlyP
   return <>
     <DashboardCard title="Yearly price · fixed $49.99" contentClassName="pt-0"
       action={<span className="text-xs text-muted-foreground">100% rollout · {experimentCohortLabel("versy")}</span>}>
-      <p className="pb-3 text-xs text-muted-foreground">Next app build: one yearly price for everyone. Outcomes start at the fixed-price assignment, including non-payers. US reference price; StoreKit supplies localized prices and trial eligibility. This is a rollout, with no A/B winner.</p>
       {!report || report.rollout.status === "unavailable"
         ? <p role="status" className="py-2 text-sm text-muted-foreground">Fixed yearly price reporting is unavailable. Refresh to retry.</p>
         : <>
@@ -24,7 +23,6 @@ export default function VersyYearlyPriceTable({ report }: { report: VersyYearlyP
     {!report || report.status === "unavailable"
       ? <p role="status" className="py-2 text-sm text-muted-foreground">Yearly price reporting is unavailable. Refresh to retry.</p>
       : <>
-        <p className="pb-3 text-xs text-muted-foreground">Retired $39.99 / $49.99 test. Only records still carrying the old randomized assignments appear here; upgraded fixed-price users are excluded. Historical purchase attribution remains in the native paywall report.</p>
         {report.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
         <JourneyVersionComparison cohorts={report.rows} rowLabels={report.labels} rowHeading="Price"
           allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate />

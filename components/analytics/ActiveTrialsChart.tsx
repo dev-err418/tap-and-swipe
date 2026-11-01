@@ -9,7 +9,6 @@ export default function ActiveTrialsChart({ report, windowLabel }: { report: Act
   return <DashboardCard title="Trials still active" action={<span className="text-xs text-muted-foreground">{windowLabel}</span>} contentClassName="min-w-0">
     <div className="mb-4">
       <p className="text-2xl font-semibold tabular-nums">{report.total.toLocaleString("en-US")}</p>
-      <p className="text-xs text-muted-foreground">Currently unexpired, with no recorded cancellation or paid conversion</p>
     </div>
     <div className="h-64 w-full text-xs" aria-label="Currently active trials by elapsed day since trial start">
       <ResponsiveContainer width="100%" height="100%">
@@ -25,7 +24,6 @@ export default function ActiveTrialsChart({ report, windowLabel }: { report: Act
       </ResponsiveContainer>
     </div>
     {report.total === 0 ? <p className="mt-2 text-sm text-muted-foreground">No confirmed active trials from the selected period.</p> : null}
-    <p className="mt-3 text-xs text-muted-foreground">The date filter selects trial starts; status is checked through now. Day 0 is the first 24 hours. A 7-day trial normally expires or converts before the Day 7 bar. Recorded expiry dates also apply to older 3-day trials.</p>
     {report.unknownExpiry > 0 ? <p className="mt-2 text-xs text-muted-foreground">{report.unknownExpiry.toLocaleString("en-US")} trials excluded because their expiry is unknown.</p> : null}
     {report.older > 0 ? <p className="mt-2 text-xs text-muted-foreground">{report.older.toLocaleString("en-US")} active trials aged 8+ days are included in the total, outside these bars.</p> : null}
   </DashboardCard>;

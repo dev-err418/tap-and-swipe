@@ -19,18 +19,15 @@ export default function VersyPaywallNotePanel({ report }: { report: VersyNoteRep
   return <Dialog open={preview !== null} onOpenChange={(open) => { if (!open) setPreview(null); }}>
     <DashboardCard title="Paywall flows · note variants" contentClassName="pt-0"
       action={<span className="text-xs text-muted-foreground">{experimentCohortLabel("versy")}</span>}>
-      <p className="pb-2 text-xs text-muted-foreground">Without-note rows combine previous users and current controls. Includes all countries and trial lengths. These are historical and current performance totals.</p>
       {report.flows.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
       <JourneyVersionComparison cohorts={report.flows.rows} rowLabels={report.flows.labels} rowHeading="Flow"
         allUsersOnly showInstallPaid showRefundRate onRowClick={openPreview} />
     </DashboardCard>
     <DashboardCard title="Team note A/B test" contentClassName="pt-0">
-      <p className="pb-2 text-xs text-muted-foreground">50% with note · 50% without · Reviews in both variants{report.overall.status === "empty" ? " · Waiting for the updated app" : ""}</p>
       {report.overall.warnings.map((warning) => <p key={warning} role="status" className="text-xs text-muted-foreground">{warning}</p>)}
       <JourneyVersionComparison cohorts={report.overall.rows} rowLabels={report.overall.labels} rowHeading="Note treatment"
         allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate onRowClick={openPreview} />
       <p className="mt-2 text-xs text-muted-foreground">Note seen: {report.reached.note.note} · Continued: {report.reached.note.continued} · Reached paywall: {report.reached.note.paywall}</p>
-      <p className="mt-3 text-xs text-muted-foreground">Includes everyone enrolled in the 50/50 split at reviews, including non-payers and people who leave before the paywall. Independent of yearly price and paywall access. Earlier 20/80 assignments remain in historical flow totals and are excluded from this comparison, as are users without a saved note assignment.</p>
       <button type="button" className="mt-3 text-sm underline underline-offset-4" onClick={(event) => openPreview("note", event.currentTarget)}>Preview reviews and note</button>
     </DashboardCard>
     <DialogContent className="max-h-[95dvh] overflow-auto sm:max-w-3xl"

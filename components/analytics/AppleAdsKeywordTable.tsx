@@ -1,57 +1,57 @@
-import type { AppleAdsKeywordReport } from "@/lib/apple-ads-keyword-analytics";
+import type { AppleAdsKeywordReport, AppleAdsKeywordRow } from "@/lib/apple-ads-keyword-analytics";
+import { cn } from "@/lib/utils";
 import { DashboardCard } from "./DashboardCard";
+import RealizedAppu from "./RealizedAppu";
 
-const money = (amount: number) => amount.toLocaleString("en-US", { style: "currency", currency: "USD" });
-const percent = (numerator: number, denominator: number) => denominator ? `${(100 * numerator / denominator).toFixed(1)}%` : "—";
+const money = (amount: number, currency = "USD") => amount.toLocaleString("en-US", { style: "currency", currency });
+const rate = (n: number, d: number) => d > 0 ? n / d : null;
+const percent = (value: number | null) => value == null ? "—" : `${(100 * value).toFixed(1)}%`;
+const highlight = (value: number | null, values: (number | null)[]) => value != null && value > 0 && !values.some((other) => other != null && other > value);
 
-export default function AppleAdsKeywordTable({ report, country, windowLabel }: {
+export default function AppleAdsKeywordTable({ report, country }: {
   report: AppleAdsKeywordReport | null | undefined; country: string; windowLabel: string;
 }) {
   const rows = country === "all" ? report?.rows : report?.countries[country] ?? [];
+  const value = (row: AppleAdsKeywordRow, kind: "appu" | "trial" | "paid" | "paidCr" | "roas") => {
+    if (kind === "trial") return rate(row.trials, row.users);
+    if (row.missingMoney) return null;
+    if (kind === "paid") return rate(row.convertedTrials, row.finishedTrials);
+    if (kind === "paidCr") return rate(row.paidUsers, row.users);
+    if (kind === "roas") return row.spendUsd && row.spendUsd > 0 ? row.proceeds / row.spendUsd : null;
+    return rate(row.proceeds, row.users);
+  };
+  const cell = (row: AppleAdsKeywordRow, kind: "appu" | "trial" | "paid" | "paidCr" | "roas") => {
+    const metric = value(row, kind);
+    const best = highlight(metric, (rows ?? []).map((other) => value(other, kind)));
+    const denominator = kind === "paid" ? row.finishedTrials : row.users;
+    const numerator = kind === "trial" ? row.trials : kind === "paid" ? row.convertedTrials : row.paidUsers;
+    return <td className={cn("whitespace-nowrap px-3 py-2 text-right tabular-nums", best && "bg-analytics-highlight-bg text-analytics-highlight")}
+      title={kind === "roas" ? "Attributed USD net proceeds / keyword spend converted with the latest ECB reference rate. Spend uses UTC days and results are provisional." : undefined}>
+      <span className="font-semibold">{kind === "appu" ? metric == null ? "—" : money(metric) : percent(metric)}</span>
+      {kind === "appu" ? <RealizedAppu metric={row.realizedAppu} /> : null}
+      {kind === "roas" ? <span className="ml-1 text-[0.8em] font-normal text-muted-foreground" title="Realized ROAS uses a separate mature acquisition window and its full keyword spend.">({row.realizedRoas == null ? "—" : percent(row.realizedRoas)} realized)</span> : null}
+      {kind !== "appu" && kind !== "roas" && metric != null ? <span className={cn("ml-1", best ? "text-analytics-highlight/75" : "text-muted-foreground")}>({numerator} / {denominator})</span> : null}
+    </td>;
+  };
   return <DashboardCard title="Apple Ads keywords" contentClassName="pt-0">
-    <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
-      {windowLabel} · Superwall first-launch cohorts, with attributed subscription revenue through the latest refresh.
-      Superwall provides spend at campaign level, not by keyword, so keyword spend and ROAS are unavailable. Bids are not spend.
-    </p>
-    {!report?.available ? <p className="py-4 text-sm text-muted-foreground">Keyword data is temporarily unavailable.</p>
-      : !rows?.length ? <p className="py-4 text-sm text-muted-foreground">No Apple Ads keyword-attributed users in this selection.</p>
-      : <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs" style={{ minWidth: 960 }}>
-          <thead className="border-b border-foreground/[0.08] text-muted-foreground">
-            <tr>
-              <th scope="col" className="px-3 py-3 font-medium">Keyword</th>
-              <th scope="col" className="px-3 py-3 text-right font-medium" title="Unique Superwall first-launch users with positive Apple Ads attribution">Users</th>
-              <th scope="col" className="px-3 py-3 text-right font-medium">Trials</th>
-              <th scope="col" className="px-3 py-3 text-right font-medium" title="Trial-start users divided by all attributed users">Trial rate</th>
-              <th scope="col" className="px-3 py-3 text-right font-medium" title="Paid conversions divided by trials whose recorded trial period ended">Trial → paid</th>
-              <th scope="col" className="px-3 py-3 text-right font-medium" title="Unique users with a recorded paid purchase, including direct purchases">Paid users</th>
-              <th scope="col" className="px-3 py-3 text-right font-medium" title="Paid users divided by all attributed users">Paid CR</th>
-              <th scope="col" className="px-3 py-3 text-right font-medium" title="Net subscription proceeds attributed to users acquired by this keyword">Attributed net revenue</th>
-              <th scope="col" className="px-3 py-3 text-right font-medium" title="Net proceeds divided by every user in the cohort, including nonpayers">APPU</th>
-              <th scope="col" className="px-3 py-3 text-right font-medium">Spend</th>
-              <th scope="col" className="px-3 py-3 text-right font-medium">ROAS</th>
-            </tr>
-          </thead>
-          <tbody>{rows.map((row) => <tr key={row.key} className="border-b border-foreground/[0.05] last:border-0">
-            <td className="px-3 py-3"><span className="font-medium text-foreground">{row.keyword}</span>
-              <span className="mt-0.5 block text-[10px] text-muted-foreground">Campaign {row.campaignId}</span></td>
-            <td className="px-3 py-3 text-right tabular-nums">{row.users}</td>
-            <td className="px-3 py-3 text-right tabular-nums">{row.trials}</td>
-            <td className="px-3 py-3 text-right tabular-nums">{percent(row.trials, row.users)}</td>
-            <td className="px-3 py-3 text-right tabular-nums" title={`${row.convertedTrials} paid / ${row.finishedTrials} finished trials`}>
-              {row.missingMoney ? "—" : percent(row.convertedTrials, row.finishedTrials)} <span className="text-muted-foreground">({row.convertedTrials}/{row.finishedTrials})</span></td>
-            <td className="px-3 py-3 text-right tabular-nums">{row.missingMoney ? "—" : row.paidUsers}</td>
-            <td className="px-3 py-3 text-right tabular-nums">{row.missingMoney ? "—" : percent(row.paidUsers, row.users)}</td>
-            <td className="px-3 py-3 text-right tabular-nums">{row.missingMoney ? "—" : money(row.proceeds)}</td>
-            <td className="px-3 py-3 text-right font-semibold tabular-nums">{row.missingMoney || !row.users ? "—" : money(row.proceeds / row.users)}</td>
-            <td className="px-3 py-3 text-right text-muted-foreground">—</td><td className="px-3 py-3 text-right text-muted-foreground">—</td>
+    {!report?.available ? <p role="status" className="py-2 text-sm text-muted-foreground">Keyword data is temporarily unavailable.</p>
+      : !rows?.length ? <p className="py-2 text-sm text-muted-foreground">No Apple Ads keyword-attributed users in this selection.</p>
+      : <div className="min-w-0 overflow-x-auto rounded-xl border border-foreground/[0.06] scrollbar-none" role="region" aria-label="Apple Ads keyword performance" tabIndex={0}>
+        <table className="w-full text-left text-xs" style={{ minWidth: 1050 }}>
+          <thead className="bg-analytics-subtle"><tr className="text-muted-foreground">
+            <th scope="col" className="sticky left-0 z-10 min-w-32 bg-analytics-subtle px-4 py-3 font-medium text-foreground">Keyword</th>
+            {["Users", "Spend", "APPU", "Trial start", "Trial → paid", "Paid CR", "Attributed net revenue", "ROAS"].map((heading) =>
+              <th scope="col" key={heading} className="whitespace-nowrap px-3 py-3 text-right font-medium">{heading}</th>)}
+          </tr></thead>
+          <tbody>{rows.map((row) => <tr key={row.key} className="border-t border-foreground/[0.06]">
+            <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-card px-4 py-2 font-medium">{row.keyword}</th>
+            <td className="border-l border-foreground/[0.06] px-3 py-2 text-right tabular-nums">{row.users}</td>
+            <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums" title="Apple Ads keyword spend, including taps with no install; UTC reporting dates.">{row.spend == null || !row.spendCurrency ? "—" : money(row.spend, row.spendCurrency)}</td>
+            {cell(row, "appu")}{cell(row, "trial")}{cell(row, "paid")}{cell(row, "paidCr")}
+            <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums" title="Attributed net proceeds in USD, including recorded renewals and refunds">{row.missingMoney ? "—" : money(row.proceeds)}</td>
+            {cell(row, "roas")}
           </tr>)}</tbody>
         </table>
       </div>}
-    <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-      Users are attributed first launches, not Apple download counts. APPU includes nonpayers; paid users include direct purchases.
-      Trial-to-paid uses ended trials only. Proceeds include recorded renewals and refunds, in USD; attribution and recent outcomes may be delayed.
-      {report?.excludedConflictingAttribution ? ` ${report.excludedConflictingAttribution} users with conflicting Meta attribution are excluded.` : ""}
-    </p>
   </DashboardCard>;
 }

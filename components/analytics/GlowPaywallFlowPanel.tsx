@@ -30,7 +30,6 @@ export default function GlowPaywallFlowPanel({ report }: { report: GlowOnboardin
           <ExperimentNumberTd>{currency(row.arpu)}</ExperimentNumberTd>
         </tr>)}
       </ExperimentTable>
-      <p className="px-4 py-3 text-xs text-muted-foreground">Enrollment starts on the first assigned screen in either IAM or manifest-audio, including testimonials for note variants. Note variants show testimonials, then the team note, then the original three-screen flow. Users who leave on either new screen remain in the denominator. The reminder flow offers 2 or 3 days before trial expiry (adjusted for shorter trials). All four variants receive the same independent three-price × 3-day/7-day trial test. The reminder flow also offers a fixed Weekly plan without a trial in View all plans. Weekly purchases count in that user’s assigned flow; Weekly is not a separate price-test arm. Total APPU includes all post-assignment net proceeds, renewals and refunds, including recovery purchases. Free trial starts are not paid conversions. All languages; users installed on v1.8.3 or later, across all time.</p>
       {report.historical && <details className="border-t border-foreground/[0.07] p-4">
         <summary className="cursor-pointer text-sm font-medium">Previous 50/50 paywall-flow experiment</summary>
         <GlowPaywallFlowPanel report={report.historical} />

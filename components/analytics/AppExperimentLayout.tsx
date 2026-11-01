@@ -3,13 +3,13 @@ import { DashboardCard } from "@/components/analytics/DashboardCard";
 import { cn } from "@/lib/utils";
 
 /** Shared A/B-test presentation; each report keeps its own metric definitions. */
-export function AppExperimentLayout({ title, subtitle, titleAccessory, action, children, label }: {
+export function AppExperimentLayout({ title, titleAccessory, action, children, label }: {
   title: ReactNode; subtitle?: ReactNode; titleAccessory?: ReactNode;
   action?: ReactNode; children: ReactNode; label?: string;
 }) {
   return <DashboardCard title={title} titleAccessory={titleAccessory}
     titleClassName="flex items-center gap-1.5" aria-label={label}
-    action={action || subtitle ? <div className="flex items-center gap-2">{action}{subtitle ? <span className="text-xs text-muted-foreground">{subtitle}</span> : null}</div> : undefined}
+    action={action}
     contentClassName="min-w-0 p-0">{children}</DashboardCard>;
 }
 

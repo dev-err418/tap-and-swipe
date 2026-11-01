@@ -1,5 +1,6 @@
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { versionCohortConversions } from "./version-cohort-conversions";
+import type { RealizedAppu } from "./realized-appu";
 
 /** Superwall records attribution and subscription outcomes; its imported ad spend is campaign-level. */
 export const APPLE_ADS_KEYWORD_ATTRIBUTE_KEYS = [
@@ -7,6 +8,8 @@ export const APPLE_ADS_KEYWORD_ATTRIBUTE_KEYS = [
   "apple_search_ads_keyword_id", "apple_search_ads_keyword_name",
   "acquisition_keyword_id", "acquisition_keyword_name",
   "apple_search_ads_country_or_region", "acquisition_source",
+  "gp1_a_native_yearly_prices_v4", "gp1_a_native_yearly_prices_v5",
+  "gp1_a_versy_onboarding_outcomes_v1", "yearly_price_assigned_at", "yearly_price_product_id",
 ] as const;
 
 type Install = { appUserId: string; installedAt: number; appVersion: string };
@@ -14,7 +17,9 @@ type Outcome = Parameters<typeof versionCohortConversions>[1][number] & { purcha
 export type AppleAdsKeywordRow = {
   key: string; keyword: string; campaignId: string; keywordIds: string[];
   users: number; trials: number; finishedTrials: number; convertedTrials: number;
-  paidUsers: number; proceeds: number; missingMoney: boolean;
+  paidUsers: number; proceeds: number; missingMoney: boolean; realizedAppu?: RealizedAppu;
+  spend?: number | null; spendCurrency?: string; spendUsd?: number | null;
+  realizedRoas?: number | null;
 };
 export type AppleAdsKeywordReport = {
   available: boolean;
@@ -83,7 +88,7 @@ export function buildAppleAdsKeywordReport(installs: Install[], events: Outcome[
       const metric = metrics.get(group.version)!.global;
       return { key, keyword: group.keyword, campaignId: group.campaignId, keywordIds: [...group.ids].sort(),
         users: metric.installs, trials: metric.trials, finishedTrials: metric.finishedTrials,
-        convertedTrials: metric.paid, paidUsers: metric.installPaid, proceeds: metric.proceeds,
+        convertedTrials: metric.paid, paidUsers: metric.installPaid, proceeds: metric.proceeds, realizedAppu: metric.realizedAppu,
         missingMoney: metric.missingProceeds || [...group.users].some((user) => missingDateUsers.has(user)) };
     }).sort((a, b) => b.users - a.users || a.keyword.localeCompare(b.keyword));
   };

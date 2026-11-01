@@ -32,7 +32,6 @@ export default function GlowOnboardingExperiencePanel({ report }: { report: Glow
           <ExperimentNumberTd><span title={`First subscription or trial start to first cancellation; ${row.cancelledUsers} cancelled users; active subscriptions excluded`}>{duration(row.avgTimeToCancelMs)}{row.avgTimeToCancelMs !== null && <span className="ml-1 text-xs text-muted-foreground">({row.cancelledUsers})</span>}</span></ExperimentNumberTd>
         </tr>)}
       </ExperimentTable>
-      <p className="px-4 py-3 text-xs text-muted-foreground">Sessions cover each user’s first 31 days. Time to cancel starts at the first subscription or trial and averages only users who cancelled, through today; active subscriptions and refunds are excluded.</p>
     </>}
   </AppExperimentLayout>
     {report?.historical && <details className="mt-4"><summary>{report.historical.experiment === GLOW_ONBOARDING_LEGACY_ID ? "Historical IAM wording comparison" : "Historical Copy mascot comparison"}</summary><GlowOnboardingExperiencePanel report={report.historical} /></details>}

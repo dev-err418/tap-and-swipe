@@ -73,7 +73,6 @@ export default function PokyPaywallFlowTable({ report, windowLabel }: { report: 
   };
   return <Dialog open={selectedFlow !== null} onOpenChange={(open) => { if (!open) setSelectedFlow(null); }}>
     {note ? <DashboardCard title="Team note A/B test" contentClassName="pt-0">
-      <p className="pb-2 text-xs text-muted-foreground">80% with the note · 20% original flow · Same split within each offer{note.overall.status === "empty" ? " · Waiting for the updated app" : ""}</p>
       {note.overall.warnings.map((warning) => <p key={warning} role="status" className="text-xs text-muted-foreground">{warning}</p>)}
       <JourneyVersionComparison cohorts={note.overall.rows} rowLabels={note.overall.labels} rowHeading="Note treatment"
         allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate />
@@ -87,7 +86,6 @@ export default function PokyPaywallFlowTable({ report, windowLabel }: { report: 
             onRowClick={openPreview} />
         </section>)}
       </details>
-      <p className="mt-3 text-xs text-muted-foreground">Includes people who leave before the paywall. Flow labels reflect enrollment; US override entrants start in HP. Base offer assignments, including historical users, remain in the separate table below.</p>
     </DashboardCard> : null}
     <DashboardCard title="Paywall flows" contentClassName="pt-0"
     titleAccessory={report && report.status !== "unavailable" ? <AppuReadinessIndicator cohorts={report.rows} /> : null}
@@ -95,7 +93,6 @@ export default function PokyPaywallFlowTable({ report, windowLabel }: { report: 
     {!report || report.status === "unavailable"
       ? <p role="status" className="py-2 text-sm text-muted-foreground">Paywall flow reporting is unavailable. Refresh to retry.</p>
       : <>
-        <p className="pb-2 text-xs text-muted-foreground">New assignments: HP 50% · Trials 50% · Trial users split equally between 3-day, 7-day current and 7-day mascot (⅓ each){report.status === "empty" ? " · Waiting for new assignments" : ""}</p>
         {report.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
         <JourneyVersionComparison cohorts={report.rows} rowLabels={report.labels} rowHeading="Paywall flow"
           allUsersOnly showAppuComparison showArpuGraph showInstallPaid showRefundRate

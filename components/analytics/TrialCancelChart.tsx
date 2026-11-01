@@ -145,7 +145,6 @@ export default function TrialCancelChart({
           No confirmed 7-day trials in this cohort.
         </p>
       )}
-      <p className="mt-3 text-xs text-muted-foreground">Only trials with a recorded 7-day duration. Three-day trials and unknown durations are excluded. Shows cancellations observed through now; recent trials have not yet completed all seven days.</p>
     </DashboardCard>
   );
 }

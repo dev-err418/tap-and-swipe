@@ -43,6 +43,7 @@ import { matchedCohortInstall } from "./experiment-install-cohort";
 import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, realizedAppuMember, type WithRealizedAppu } from "./realized-appu";
 import { buildAppOverviewCohorts, type AppOverviewCohorts } from "./app-overview-cohorts";
 import { APPLE_ADS_KEYWORD_ATTRIBUTE_KEYS, buildAppleAdsKeywordReport, type AppleAdsKeywordReport } from "./apple-ads-keyword-analytics";
+import { addAppleKeywordSpend, keywordMatureEnd, keywordUtcStart } from "./apple-ads-keyword-spend";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -407,7 +408,7 @@ async function getSuperwallAppAnalytics(
   sessions = true,
   includeReports = true,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":four-onboarding-routes-20261030" : ":yearly-trial3-20261023"}:keyword-cohorts-v1`;
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":four-onboarding-routes-20261030" : ":yearly-trial3-20261023"}:keyword-cohorts-v2`;
   return analyticsSnapshot(`mobile:${cacheKey}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports));
 }
@@ -425,6 +426,8 @@ async function loadSuperwallAppAnalytics(
   const end = clickhouseDate(before);
   const startMs = since.getTime();
   const endMs = before.getTime();
+  const keywordStartMs = keywordUtcStart(startMs);
+  const keywordEndMs = Math.min(Date.now(), keywordUtcStart(endMs + DAY_MS - 1));
   const minimumInstallVersion = experimentMinimumInstallVersion(app.id);
   const comparisonStartMs = minimumInstallVersion ? 0 : startMs;
   const comparisonEndMs = minimumInstallVersion ? Date.now() : endMs;
@@ -474,7 +477,7 @@ async function loadSuperwallAppAnalytics(
     FROM (${revenueFactsQuery}) GROUP BY product FORMAT JSON`;
 
 
-  const [downloadResult, revenueResult, factsResult, paywallResult, journeyResult, onboardingExperienceResult, offerResult] = await Promise.allSettled([
+  const [downloadResult, revenueResult, factsResult, paywallResult, journeyResult, onboardingExperienceResult, offerResult, keywordFactsResult] = await Promise.allSettled([
     querySuperwall<{ bucket: string; downloads: string | number }>(
       downloadsQuery,
       app.organizationId,
@@ -515,6 +518,8 @@ async function loadSuperwallAppAnalytics(
     app.id === "versy" ? querySuperwall<{ product: string; proceeds: number | string; subscriptions: number | string }>(
       offerQuery, app.organizationId, app.apiKey,
     ) : Promise.resolve(null),
+    includeCountries && app.id !== "poky" ? loadAppFacts(app, clickhouseDate(new Date(keywordStartMs)),
+      clickhouseDate(new Date(keywordEndMs)), keywordStartMs, keywordEndMs, false, false) : Promise.resolve(null),
   ]);
 
   if (downloadResult.status === "rejected") throw downloadResult.reason;
@@ -527,6 +532,16 @@ async function loadSuperwallAppAnalytics(
   }
 
   const facts = factsResult.status === "fulfilled" ? factsResult.value : null;
+  let appleAdsKeywords: AppleAdsKeywordReport | null = null;
+  if (keywordFactsResult.status === "fulfilled" && keywordFactsResult.value) {
+    const source = keywordFactsResult.value, asOf = Date.now();
+    const matureEnd = Math.min(keywordEndMs, keywordMatureEnd(asOf));
+    appleAdsKeywords = buildAppleAdsKeywordReport(source.installs, source.events, source.attributes, keywordStartMs, keywordEndMs, asOf);
+    const mature = buildAppleAdsKeywordReport(source.installs, source.events, source.attributes, keywordStartMs, matureEnd, asOf);
+    const managed = app.id === "glow" ? ["2144907578", "2144909195", "2144928240"] : ["2144909436", "2144908600"];
+    const campaigns = [...new Set([...managed, ...appleAdsKeywords.rows.map((row) => row.campaignId)])].filter((id) => /^\d+$/.test(id));
+    appleAdsKeywords = await addAppleKeywordSpend(appleAdsKeywords, mature, keywordStartMs, keywordEndMs, matureEnd, campaigns);
+  }
   const comparisonFacts: AppFacts | null = facts?.comparisonCohort ? {
     ...facts, ...facts.comparisonCohort, migrationHistory: undefined,
     startMs: facts.comparisonCohort.installs.reduce((earliest, install) => Math.min(earliest, install.installedAt), comparisonEndMs),
@@ -641,8 +656,7 @@ async function loadSuperwallAppAnalytics(
     countryComparisons: comparisonFacts ? buildAppCountryComparisons({ appId: app.id, countries, installs: comparisonFacts.installs,
       events: comparisonFacts.events, attributes: comparisonFacts.attributes, asOf: comparisonEndMs,
       journey: journeyBase, journeyCountries }) : undefined,
-    appleAdsKeywords: includeCountries && app.id !== "poky" && facts
-      ? buildAppleAdsKeywordReport(facts.installs, facts.events, facts.attributes, startMs, endMs, Date.now()) : null,
+    appleAdsKeywords,
   };
 }
 
