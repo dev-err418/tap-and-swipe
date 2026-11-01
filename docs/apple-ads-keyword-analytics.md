@@ -23,8 +23,19 @@ Apple spend remains in its original currency; ROAS uses the latest ECB USD
 reference rate for EUR, not transaction-day FX. Unsupported currencies or a
 failed FX read leave ROAS unavailable.
 
-Realized APPU uses the existing mature-user definition. Realized ROAS is
-computed separately from full keyword spend and Superwall proceeds in the
-older acquisition window ending at least eight days before the current UTC
-day, and only if every matched user in that window is mature. No spend is
-allocated to individual users. Missing values are never interpreted as zero.
+Realized APPU uses the existing mature-user definition. Estimated realized ROAS
+uses that same mature-user APPU divided by average acquisition cost
+(`keyword USD spend / all attributed users`) for the selected period and country.
+It assumes mature users have the same average acquisition cost as the full
+keyword cohort; Apple does not supply individual-user spend. The full keyword
+cost includes taps that never installed. This is an estimate, displayed with
+`≈` and explained in its tooltip, rather than a separate older-period ROAS.
+
+The previous fixed eight-day cutoff made realized ROAS empty in Last week even
+when three-day trials had matured. There is now one acquisition window for the
+keyword row, its realized APPU and spend. Recent pending users no longer blank
+the entire row. With no mature users the UI shows `realized pending`; incomplete
+money or missing/zero spend remains unavailable, while mature non-payers show
+0.0%. Negative net proceeds remain negative. Total ROAS keeps its definition.
+Snapshot v35 refreshes the changed calculation; the UI also derives the value
+from the row's existing aggregates, so an older stored ratio is not reused.

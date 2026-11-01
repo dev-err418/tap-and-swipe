@@ -2,6 +2,7 @@ import { createSign } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { AppleAdsKeywordReport, AppleAdsKeywordRow } from "./apple-ads-keyword-analytics";
+import { realizedKeywordRoas } from "./apple-ads-keyword-roas";
 
 type Config = { clientId: string; teamId: string; keyId: string; orgId: string; privateKey: string };
 type SpendRow = { campaignId: string; keyword: string; country: string; amount: number; currency: string };
@@ -77,22 +78,18 @@ async function campaignSpend(settings: Config, token: string, campaign: string, 
 }
 
 /** Daily UTC spend includes taps that never installed; rates use the latest ECB reference rate. */
-export async function addAppleKeywordSpend(report: AppleAdsKeywordReport, mature: AppleAdsKeywordReport,
-  startMs: number, endMs: number, matureEndMs: number, campaignIds: string[]): Promise<AppleAdsKeywordReport> {
+export async function addAppleKeywordSpend(report: AppleAdsKeywordReport,
+  startMs: number, endMs: number, campaignIds: string[]): Promise<AppleAdsKeywordReport> {
   const settings = await config();
   if (!settings) return report;
   try {
     const token = await accessToken(settings);
-    const [fx, results] = await Promise.all([usdPerEuro(), Promise.allSettled(campaignIds.map(async (campaign) => {
-      const [current, old] = await Promise.all([campaignSpend(settings, token, campaign, startMs, endMs),
-        campaignSpend(settings, token, campaign, startMs, matureEndMs)]);
-      return { current, old };
-    }))]);
+    const [fx, results] = await Promise.all([usdPerEuro(), Promise.allSettled(campaignIds.map((campaign) =>
+      campaignSpend(settings, token, campaign, startMs, endMs)))]);
     const success = results.flatMap((result) => result.status === "fulfilled" ? [result.value] : []);
-    const costs = success.flatMap((result) => result.current);
-    const oldCosts = success.flatMap((result) => result.old);
+    const costs = success.flat();
     const convert = (amount: number, currency: string) => currency === "USD" ? amount : currency === "EUR" && fx != null ? amount * fx : null;
-    function add(rows: AppleAdsKeywordRow[], matureRows: AppleAdsKeywordRow[], country?: string): AppleAdsKeywordRow[] {
+    function add(rows: AppleAdsKeywordRow[], country?: string): AppleAdsKeywordRow[] {
       const relevant = costs.filter((entry) => !country || entry.country === country);
       const result = rows.map((row) => ({ ...row }));
       for (const entry of relevant) {
@@ -109,19 +106,13 @@ export async function addAppleKeywordSpend(report: AppleAdsKeywordReport, mature
         row.spendCurrency = matches[0].currency;
         row.spend = matches.reduce((sum, entry) => sum + entry.amount, 0);
         row.spendUsd = convert(row.spend, row.spendCurrency);
-        const old = oldCosts.filter((entry) => (!country || entry.country === country) && keyOf(entry.campaignId, entry.keyword) === row.key);
-        const cohort = matureRows.find((item) => item.key === row.key);
-        if (cohort?.realizedAppu && cohort.realizedAppu.users === cohort.users && cohort.users > 0
-          && !cohort.realizedAppu.missingMoney && !cohort.missingMoney && old.length && old.every((entry) => entry.currency === row.spendCurrency)) {
-          const matureSpend = convert(old.reduce((sum, entry) => sum + entry.amount, 0), row.spendCurrency);
-          if (matureSpend && matureSpend > 0) row.realizedRoas = cohort.realizedAppu.proceeds / matureSpend;
-        }
+        row.realizedRoas = realizedKeywordRoas(row);
       }
       return result.sort((a, b) => b.users - a.users || (b.spend ?? 0) - (a.spend ?? 0));
     }
     const countries = new Set([...Object.keys(report.countries), ...costs.map((entry) => entry.country)]);
-    return { ...report, rows: add(report.rows, mature.rows), countries: Object.fromEntries([...countries].map((country) => [country,
-      add(report.countries[country] ?? [], mature.countries[country] ?? [], country)])) };
+    return { ...report, rows: add(report.rows), countries: Object.fromEntries([...countries].map((country) => [country,
+      add(report.countries[country] ?? [], country)])) };
   } catch (error) {
     console.error("apple_ads_keyword_spend_unavailable", error instanceof Error ? error.message : "unknown error");
     return report;
@@ -129,4 +120,3 @@ export async function addAppleKeywordSpend(report: AppleAdsKeywordReport, mature
 }
 
 export const keywordUtcStart = (ms: number) => Math.floor(ms / DAY) * DAY;
-export const keywordMatureEnd = (asOf: number) => keywordUtcStart(asOf - 8 * DAY);

@@ -43,7 +43,7 @@ import { matchedCohortInstall } from "./experiment-install-cohort";
 import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, realizedAppuMember, type WithRealizedAppu } from "./realized-appu";
 import { buildAppOverviewCohorts, type AppOverviewCohorts } from "./app-overview-cohorts";
 import { APPLE_ADS_KEYWORD_ATTRIBUTE_KEYS, buildAppleAdsKeywordReport, type AppleAdsKeywordReport } from "./apple-ads-keyword-analytics";
-import { addAppleKeywordSpend, keywordMatureEnd, keywordUtcStart } from "./apple-ads-keyword-spend";
+import { addAppleKeywordSpend, keywordUtcStart } from "./apple-ads-keyword-spend";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -535,12 +535,10 @@ async function loadSuperwallAppAnalytics(
   let appleAdsKeywords: AppleAdsKeywordReport | null = null;
   if (keywordFactsResult.status === "fulfilled" && keywordFactsResult.value) {
     const source = keywordFactsResult.value, asOf = Date.now();
-    const matureEnd = Math.min(keywordEndMs, keywordMatureEnd(asOf));
     appleAdsKeywords = buildAppleAdsKeywordReport(source.installs, source.events, source.attributes, keywordStartMs, keywordEndMs, asOf);
-    const mature = buildAppleAdsKeywordReport(source.installs, source.events, source.attributes, keywordStartMs, matureEnd, asOf);
     const managed = app.id === "glow" ? ["2144907578", "2144909195", "2144928240"] : ["2144909436", "2144908600"];
     const campaigns = [...new Set([...managed, ...appleAdsKeywords.rows.map((row) => row.campaignId)])].filter((id) => /^\d+$/.test(id));
-    appleAdsKeywords = await addAppleKeywordSpend(appleAdsKeywords, mature, keywordStartMs, keywordEndMs, matureEnd, campaigns);
+    appleAdsKeywords = await addAppleKeywordSpend(appleAdsKeywords, keywordStartMs, keywordEndMs, campaigns);
   }
   const comparisonFacts: AppFacts | null = facts?.comparisonCohort ? {
     ...facts, ...facts.comparisonCohort, migrationHistory: undefined,

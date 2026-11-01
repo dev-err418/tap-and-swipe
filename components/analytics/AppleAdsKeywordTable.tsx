@@ -2,6 +2,7 @@ import type { AppleAdsKeywordReport, AppleAdsKeywordRow } from "@/lib/apple-ads-
 import { cn } from "@/lib/utils";
 import { DashboardCard } from "./DashboardCard";
 import RealizedAppu from "./RealizedAppu";
+import { realizedKeywordRoas } from "@/lib/apple-ads-keyword-roas";
 
 const money = (amount: number, currency = "USD") => amount.toLocaleString("en-US", { style: "currency", currency });
 const rate = (n: number, d: number) => d > 0 ? n / d : null;
@@ -22,6 +23,11 @@ export default function AppleAdsKeywordTable({ report, country }: {
   };
   const cell = (row: AppleAdsKeywordRow, kind: "appu" | "trial" | "paid" | "paidCr" | "roas") => {
     const metric = value(row, kind);
+    const realized = kind === "roas" ? realizedKeywordRoas(row) : null;
+    const pending = !row.realizedAppu || row.realizedAppu.users === 0;
+    const realizedExplanation = pending ? "No users in this selection have completed their trial observation window yet."
+      : realized == null ? "Realized ROAS is unavailable because proceeds or positive USD keyword spend are missing."
+      : "Estimated realized ROAS: mature-user APPU / average acquisition cost for this keyword and country in the selected period. Assumes mature users have the same average acquisition cost as all attributed users; includes spend on taps without installs.";
     const best = highlight(metric, (rows ?? []).map((other) => value(other, kind)));
     const denominator = kind === "paid" ? row.finishedTrials : row.users;
     const numerator = kind === "trial" ? row.trials : kind === "paid" ? row.convertedTrials : row.paidUsers;
@@ -29,7 +35,9 @@ export default function AppleAdsKeywordTable({ report, country }: {
       title={kind === "roas" ? "Attributed USD net proceeds / keyword spend converted with the latest ECB reference rate. Spend uses UTC days and results are provisional." : undefined}>
       <span className="font-semibold">{kind === "appu" ? metric == null ? "—" : money(metric) : percent(metric)}</span>
       {kind === "appu" ? <RealizedAppu metric={row.realizedAppu} /> : null}
-      {kind === "roas" ? <span className="ml-1 text-[0.8em] font-normal text-muted-foreground" title="Realized ROAS uses a separate mature acquisition window and its full keyword spend.">({row.realizedRoas == null ? "—" : percent(row.realizedRoas)} realized)</span> : null}
+      {kind === "roas" ? <span className="ml-1 text-[0.8em] font-normal text-muted-foreground" title={realizedExplanation}>
+        {pending ? "(realized pending)" : `(${realized == null ? "—" : `≈${percent(realized)}`} realized)`}
+      </span> : null}
       {kind !== "appu" && kind !== "roas" && metric != null ? <span className={cn("ml-1", best ? "text-analytics-highlight/75" : "text-muted-foreground")}>({numerator} / {denominator})</span> : null}
     </td>;
   };
