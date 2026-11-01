@@ -42,6 +42,7 @@ import type { ActiveTrials } from "./active-trials";
 import { matchedCohortInstall } from "./experiment-install-cohort";
 import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, versyMember, type WithRealizedAppu } from "./realized-appu";
 import { buildAppOverviewCohorts, type AppOverviewCohorts } from "./app-overview-cohorts";
+import { APPLE_ADS_KEYWORD_ATTRIBUTE_KEYS, buildAppleAdsKeywordReport, type AppleAdsKeywordReport } from "./apple-ads-keyword-analytics";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -196,6 +197,7 @@ export type MobileAppAnalytics = SnapshotMetadata & WithOfferBreakdown & {
   versyPaywallComparison?: VersyPaywallComparison | null;
   paywallFlowComparison?: PaywallCohortComparison | null;
   countryComparisons?: AppCountryComparisons;
+  appleAdsKeywords?: AppleAdsKeywordReport | null;
 };
 
 const SUPERWALL_ORGANIZATION_ID = 16256;
@@ -257,6 +259,7 @@ type AttributedRow = {
   attributionTs: number;
   installedAt: number;
   expiresAt: number;
+  purchasedAt?: number;
 };
 
 type SessionRow = {
@@ -404,7 +407,7 @@ async function getSuperwallAppAnalytics(
   sessions = true,
   includeReports = true,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":four-onboarding-routes-20261030" : ":yearly-trial3-20261023"}`;
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":four-onboarding-routes-20261030" : ":yearly-trial3-20261023"}:keyword-cohorts-v1`;
   return analyticsSnapshot(`mobile:${cacheKey}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports));
 }
@@ -638,6 +641,8 @@ async function loadSuperwallAppAnalytics(
     countryComparisons: comparisonFacts ? buildAppCountryComparisons({ appId: app.id, countries, installs: comparisonFacts.installs,
       events: comparisonFacts.events, attributes: comparisonFacts.attributes, asOf: comparisonEndMs,
       journey: journeyBase, journeyCountries }) : undefined,
+    appleAdsKeywords: includeCountries && app.id !== "poky" && facts
+      ? buildAppleAdsKeywordReport(facts.installs, facts.events, facts.attributes, startMs, endMs, Date.now()) : null,
   };
 }
 
@@ -668,6 +673,7 @@ async function loadAppFacts(
 ): Promise<AppFacts> {
   const environmentKey = app.id === "versy" ? "versy_tracking_environment" : app.id === "poky" ? "poky_tracking_environment" : null;
   const keys = [...new Set([...(includeReports ? attributeKeysFor(app.id) : ACQUISITION_ATTRIBUTE_KEYS), ...journeyCohortAttributeKeys(app.id),
+    ...(app.id === "glow" || app.id === "versy" ? APPLE_ADS_KEYWORD_ATTRIBUTE_KEYS : []),
     ...(app.id === "glow" ? GLOW_PAYWALL_COHORT_KEYS : []), ...(app.id === "versy" ? VERSY_ATTRIBUTE_KEYS : []),
     ...(app.id === "poky" ? POKY_TRIAL_OFFER_ATTRIBUTE_KEYS : []),
     ...(environmentKey ? [environmentKey] : [])])];
@@ -823,6 +829,7 @@ async function fetchAttributedEvents(app: SuperwallAppConfig, start: string): Pr
     attributionTs: string;
     installedAt: string | null;
     expiresAt: string | null;
+    purchasedAt: string | null;
   }>(
     `
 SELECT
@@ -840,7 +847,8 @@ SELECT
   ts AS eventTs,
   attributionTs,
   installDate AS installedAt,
-  expirationAt AS expiresAt
+  expirationAt AS expiresAt,
+  purchasedAt
 FROM open_revenue.attributed_events_by_ts_rep FINAL
 WHERE applicationId = ${app.applicationId}
   AND isSandbox = 0
@@ -890,6 +898,7 @@ FORMAT JSON
         attributionTs: parseTs(row.attributionTs),
         installedAt: parseTs(row.installedAt),
         expiresAt: parseTs(row.expiresAt),
+        purchasedAt: parseTs(row.purchasedAt),
       },
     ];
   });

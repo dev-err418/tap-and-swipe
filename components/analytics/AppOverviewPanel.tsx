@@ -34,6 +34,8 @@ import { DashboardCard } from "@/components/analytics/DashboardCard";
 import UserJourneyFunnel, { JourneyVersionComparison } from "@/components/analytics/UserJourneyFunnel";
 import type { UserJourneyReport } from "@/lib/user-journey";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
+import AppleAdsKeywordTable from "./AppleAdsKeywordTable";
+import type { AppleAdsKeywordReport } from "@/lib/apple-ads-keyword-analytics";
 
 export default function AppOverviewPanel({
   appId,
@@ -51,6 +53,7 @@ export default function AppOverviewPanel({
   paywallFlowComparison = null,
   countryComparisons,
   countryBreakdown,
+  appleAdsKeywords,
   headerStart,
   headerEnd,
 }: {
@@ -73,6 +76,7 @@ export default function AppOverviewPanel({
   paywallFlowComparison?: PaywallCohortComparison | null;
   countryComparisons?: AppCountryComparisons;
   countryBreakdown?: { countries: MobileAppCountryRow[]; available: boolean; windowLabel: string };
+  appleAdsKeywords?: AppleAdsKeywordReport | null;
   headerStart?: ReactNode;
   headerEnd?: ReactNode;
 }) {
@@ -168,6 +172,7 @@ export default function AppOverviewPanel({
         {appId === "versy" ? <VersyPaywallComparisonPanel key={`paywalls:${country}`} report={selectedVersyPaywalls} /> : null}
         {appId === "poky" ? <PokyPaywallFlowTable key={country} report={selectedPokyPaywalls} windowLabel={windowLabel} /> : null}
         {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={comparisonLabel ?? windowLabel} /> : null}
+        {appId === "glow" || appId === "versy" ? <AppleAdsKeywordTable report={appleAdsKeywords} country={country} windowLabel={windowLabel} /> : null}
         <div className="grid min-w-0 gap-4 xl:grid-cols-2">
           <AppCountryBreakdown countries={selectedCountries} windowLabel={countryBreakdown?.windowLabel} available={countryBreakdown?.available} />
           <AppConversionBreakdown countries={selectedCountries} conversion="paid" windowLabel={countryBreakdown?.windowLabel} available={countryBreakdown?.available} />

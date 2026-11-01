@@ -627,6 +627,7 @@ async function AppDetail({
         versyPaywallComparison={app.versyPaywallComparison}
         paywallFlowComparison={app.paywallFlowComparison}
         countryComparisons={app.countryComparisons}
+        appleAdsKeywords={app.appleAdsKeywords}
         countryBreakdown={{ countries: countryReport?.dataCountries ?? [], available: Boolean(countryReport?.cohortDataAvailable), windowLabel: "Last 30 days" }}
       />
     </div>
