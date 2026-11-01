@@ -1,6 +1,7 @@
 import type { MobileAppExperiment, MobileAppExperimentSlice, MobileAppExperimentVariant } from "./mobile-app-analytics";
 import { isPokyOfferAssignment, pokyOfferVariants, POKY_OFFER_VARIANTS } from "./poky-onboarding-offer";
 import { POKY_NOTE_ATTRIBUTE } from "./poky-paywall-note";
+import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, realizedAppuMember } from "./realized-appu";
 export { POKY_ONBOARDING_OFFER_EXPERIMENT } from "./poky-onboarding-offer";
 
 export const POKY_TRIAL_OFFER_ATTRIBUTE_KEYS = [
@@ -18,14 +19,14 @@ type Install = { appUserId: string; country: string; installedAt: number; langua
 type Outcome = {
   appUserId: string; eventTs: number; name: string; netProceeds: number | null;
   originalTransactionId: string; transactionId: string; attributionTs: number;
-  isRefund: boolean; productId: string; periodType: string;
+  isRefund: boolean; productId: string; periodType: string; expiresAt?: number;
 };
 type Facts = {
   startMs: number; endMs: number; installs: Install[]; events: Outcome[];
   attributes: Map<string, Record<string, string>>;
 };
 
-const empty = (): MobileAppExperimentSlice => ({ users: 0, sessions: 0, installs: 0, completed: 0, trials: 0, converted: 0, paid: 0, proceeds: 0, installsD7: 0, proceedsD7: 0, eligibleD7: 0, retainedD7: 0, installsD14: 0, proceedsD14: 0, eligibleD14: 0, retainedD14: 0, installsD30: 0, proceedsD30: 0, eligibleD30: 0, retainedD30: 0 });
+const empty = (): MobileAppExperimentSlice => ({ realizedAppu: emptyRealizedAppu(), users: 0, sessions: 0, installs: 0, completed: 0, trials: 0, converted: 0, paid: 0, proceeds: 0, installsD7: 0, proceedsD7: 0, eligibleD7: 0, retainedD7: 0, installsD14: 0, proceedsD14: 0, eligibleD14: 0, retainedD14: 0, installsD30: 0, proceedsD30: 0, eligibleD30: 0, retainedD30: 0 });
 const variants = (): MobileAppExperimentVariant[] => pokyOfferVariants().map(({ key, label }) => ({ ...empty(), key, label, countries: {} }));
 
 /** Assignment time selects the cohort; Apple money follows each new subscription through today. */
@@ -58,6 +59,12 @@ export function pokyTrialOfferExperiment(facts: Facts, asOf = Date.now()): Mobil
       .flatMap((row) => [row, row.countries[country] ??= empty()]);
     for (const slice of slices) { slice.users++; slice.installs++; }
     cohort.set(appUserId, { assignedAt, slices });
+  }
+
+  const realized = realizedAppuByUser([...cohort].map(([appUserId, { assignedAt }]) =>
+    realizedAppuMember({ appUserId, installedAt: assignedAt }, facts.attributes.get(appUserId), assignedAt, asOf)), facts.events, asOf);
+  for (const [user, { slices }] of cohort) for (const slice of slices) {
+    mergeRealizedAppu(slice, { realizedAppu: realized.get(user) });
   }
 
   const eligibleOriginals = new Set<string>();

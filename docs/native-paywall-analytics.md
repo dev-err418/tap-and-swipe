@@ -806,3 +806,29 @@ the chart line and experiment scoring continue to use existing total APPU.
 
 Snapshot schema v33 carries the new aggregate field. No app release, source-data
 mutation or new ingestion is required; the dashboard needs deployment and refresh.
+
+## November 1, 2026: Glow and Poky realized APPU
+
+Glow and Poky now show the same `($0.68 realized)` secondary value alongside
+total APPU in the overview, chart tooltips, country/language/version/acquisition
+slices, compact comparisons and native paywall reports. The existing total APPU,
+conversion metrics and experiment scoring retain their definitions.
+
+Glow uses the saved `gp1_a_native_yearly_prices_v4` / `v5` assignment's annual
+product to select the seven- or three-day observation window, preserving v4 when
+both records exist. Poky uses its validated production onboarding-offer
+assignment: HP has no trial window, `trial` has three days, and `trial_7d` /
+`trial_7d_mascot` have seven. Native paywall rows use their frozen expected
+product, including no-trial Weekly/recovery offers. Unknown or invalid offers
+conservatively retain a seven-day window; missing assignments never imply HP.
+
+Recorded trial expiry must also have passed. Non-payers and cancelled trials
+remain in mature denominators, and early charges never accelerate eligibility.
+Each report retains its original install/enrollment boundary and transaction
+attribution. Glow's bottom country charts keep their existing 72-hour base
+cohort; their additional realized value applies the offered/recorded trial
+window within that same cohort.
+
+Snapshot schema v34 refreshes the new aggregates. Existing attribute queries
+already include the assignments, so no app release, database migration or new
+ingestion is needed. The dashboard needs deployment and snapshot refresh.

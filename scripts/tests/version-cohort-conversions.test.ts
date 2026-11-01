@@ -64,9 +64,9 @@ test("denominators include nonpayers, conversions stay with first version and fo
   ], new Map([["a", { acquisition_source: "meta" }], ["b", { acquisition_source: "meta" }]]), start, end, asOf);
   const version = report.get("1.2.1")!;
   assert.equal(report.has("1.2.2"), false);
-  assert.deepEqual(version.global, { installs: 4, trials: 1, finishedTrials: 1, paid: 1, installPaid: 2, purchases: 2, refunds: 0, proceeds: 10, proceedsVariance: 25 / 3, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
-  assert.deepEqual(version.ads, { installs: 2, trials: 1, finishedTrials: 1, paid: 1, installPaid: 1, purchases: 1, refunds: 0, proceeds: 5, proceedsVariance: 12.5, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
-  assert.deepEqual(version.nonAds, { installs: 2, trials: 0, finishedTrials: 0, paid: 0, installPaid: 1, purchases: 1, refunds: 0, proceeds: 5, proceedsVariance: 12.5, missingProceeds: false, missingInstallMoney: false, missingMoney: false });
+  assert.deepEqual(version.global, { installs: 4, trials: 1, finishedTrials: 1, paid: 1, installPaid: 2, purchases: 2, refunds: 0, proceeds: 10, proceedsVariance: 25 / 3, missingProceeds: false, missingInstallMoney: false, missingMoney: false, realizedAppu: { users: 4, proceeds: 10, missingMoney: false } });
+  assert.deepEqual(version.ads, { installs: 2, trials: 1, finishedTrials: 1, paid: 1, installPaid: 1, purchases: 1, refunds: 0, proceeds: 5, proceedsVariance: 12.5, missingProceeds: false, missingInstallMoney: false, missingMoney: false, realizedAppu: { users: 2, proceeds: 5, missingMoney: false } });
+  assert.deepEqual(version.nonAds, { installs: 2, trials: 0, finishedTrials: 0, paid: 0, installPaid: 1, purchases: 1, refunds: 0, proceeds: 5, proceedsVariance: 12.5, missingProceeds: false, missingInstallMoney: false, missingMoney: false, realizedAppu: { users: 2, proceeds: 5, missingMoney: false } });
 });
 
 test("deduplicates transaction revisions and refunds do not undo paid conversion", () => {

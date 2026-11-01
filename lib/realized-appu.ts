@@ -1,6 +1,12 @@
 import { isMobileMoneyEvent } from "./mobile-app-money";
+import { isPokyOfferAssignment } from "./poky-onboarding-offer";
 
 const DAY = 86_400_000;
+const GLOW_YEARLY_PRODUCTS: Record<string, string> = {
+  yr_34: "com.arthurbuildsstuff.glow.yearly.3499",
+  yr_49: "com.arthurbuildsstuff.glow.Annual",
+  yr_59: "com.arthurbuildsstuff.glow.pro.yearly",
+};
 export type RealizedAppu = { users: number; proceeds: number; missingMoney: boolean };
 export type WithRealizedAppu = { realizedAppu?: RealizedAppu };
 type Member = { appUserId: string; startedAt: number; trialDays: number };
@@ -52,9 +58,47 @@ export function versyMember(install: { appUserId: string; installedAt: number },
   return { appUserId: install.appUserId, startedAt, trialDays: versyProductTrialDays(product) };
 }
 
-export function isVersyAppu(events: { productId?: string }[], attributes?: Map<string, Record<string, string>>) {
-  return events.some((event) => event.productId?.startsWith("com.arthurbuildsstuff.bible."))
-    || [...(attributes?.values() ?? [])].some((values) => values.versy_tracking_environment !== undefined);
+/** Offered observation window, including non-payers; purchases never select the cohort. */
+export function productTrialDays(product?: string): number {
+  if (product === "arthurbuildsstuff.peptides.yearly.trial") return 3;
+  if (product === "arthurbuildsstuff.peptides.yearly.trial7") return 7;
+  if (["arthurbuildsstuff.peptides.yearly", "arthurbuildsstuff.peptides.yearly.5999",
+    "arthurbuildsstuff.peptides.weekly.899", "arthurbuildsstuff.peptides.yearly.recovery.2499",
+    "com.arthurbuildsstuff.glow.Weekly"].includes(product ?? "")) return 0;
+  return versyProductTrialDays(product);
+}
+
+/** Match each app's saved assignment; unknown offers keep the full seven-day window. */
+export function realizedAppuMember(install: { appUserId: string; installedAt: number },
+  attributes?: Record<string, string>, outcomeStart = install.installedAt, asOf = Date.now()): Member {
+  const startedAt = Math.max(install.installedAt, outcomeStart);
+  if (isPokyOfferAssignment(attributes)) {
+    const assignedAt = Number(attributes?.onboarding_offer_assigned_at);
+    if (Number.isFinite(assignedAt) && assignedAt > 0 && assignedAt <= asOf) {
+      const variant = attributes!.onboarding_offer_variant;
+      return { appUserId: install.appUserId, startedAt,
+        trialDays: variant === "current" ? 0 : variant === "trial" ? 3 : 7 };
+    }
+  }
+  // Glow retains its original v4 record on upgrade; never replace it with v5.
+  for (const experiment of ["native_yearly_prices_v4", "native_yearly_prices_v5"]) {
+    const value = attributes?.[`gp1_a_${experiment}`];
+    if (value === undefined) continue;
+    try {
+      let record = JSON.parse(value);
+      if (typeof record === "string") record = JSON.parse(record);
+      const threeDay = experiment === "native_yearly_prices_v5" && typeof record?.variant === "string" && record.variant.endsWith("_3d");
+      const baseProduct = GLOW_YEARLY_PRODUCTS[threeDay ? record.variant.slice(0, -3) : record?.variant];
+      if (record?.schema === 1 && record.environment === "production" && record.experiment === experiment
+        && Number.isFinite(record.assignedAt) && record.assignedAt > 0 && record.assignedAt <= asOf
+        && record.randomized === true && record.variantCount === (experiment === "native_yearly_prices_v4" ? 3 : 6)
+        && record.variant === record.paywall && baseProduct && record.expectedProduct === `${baseProduct}${threeDay ? ".trial3" : ""}`) {
+        return { appUserId: install.appUserId, startedAt, trialDays: productTrialDays(record.expectedProduct) };
+      }
+    } catch { /* Invalid saved assignments cannot shorten the observation window. */ }
+    return { appUserId: install.appUserId, startedAt, trialDays: 7 };
+  }
+  return versyMember(install, attributes, outcomeStart);
 }
 
 /** Mature users include non-payers and cancelled trials. A paid charge never qualifies a user early. */

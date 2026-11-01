@@ -1,5 +1,5 @@
 import { createOfferAccumulator, type WithOfferBreakdown } from "./versy-offer-breakdown";
-import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, versyProductTrialDays, type WithRealizedAppu } from "./realized-appu";
+import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, productTrialDays, type WithRealizedAppu } from "./realized-appu";
 import { calculateExperimentReadiness, type ExperimentReadiness } from "./experiment-stats";
 
 /** Native iOS gp1 scalar-JSON attribute contract. See docs/native-paywall-analytics.md. */
@@ -388,15 +388,15 @@ function summarize(row: WorkingRow, asOf: number, placement: boolean): NativePay
     const addOffer = createOfferAccumulator();
     for (const event of money) addOffer(offers, { ...event, netProceeds: event.proceeds, isRefund: event.refund > 0 });
     if (people.some((person) => person.missingMoney)) addOffer(offers, { netProceeds: null });
-    mature.realizedAppu = emptyRealizedAppu();
-    const realized = realizedAppuByUser([...row.people].map(([appUserId, person]) => ({ appUserId,
-      startedAt: person.record.assignedAt, trialDays: versyProductTrialDays(person.record.expectedProduct) })),
-    [...row.people].flatMap(([appUserId, person]) => person.money.map((event) => ({ ...event, appUserId,
-      eventTs: event.at, netProceeds: event.proceeds, isRefund: event.refund > 0 }))), asOf);
-    for (const [user, metric] of realized) {
-      if (row.people.get(user)?.missingMoney) metric.missingMoney = true;
-      mergeRealizedAppu(mature, { realizedAppu: metric });
-    }
+  }
+  mature.realizedAppu = emptyRealizedAppu();
+  const realized = realizedAppuByUser([...row.people].map(([appUserId, person]) => ({ appUserId,
+    startedAt: person.record.assignedAt, trialDays: productTrialDays(person.record.expectedProduct) })),
+  [...row.people].flatMap(([appUserId, person]) => person.money.map((event) => ({ ...event, appUserId,
+    eventTs: event.at, netProceeds: event.proceeds, isRefund: event.refund > 0 }))), asOf);
+  for (const [user, metric] of realized) {
+    if (row.people.get(user)?.missingMoney) metric.missingMoney = true;
+    mergeRealizedAppu(mature, { realizedAppu: metric });
   }
   return { ...offers, ...mature, id: row.id, label: row.label, paywall: row.paywall, users: people.length,
     views: people.filter((p) => p.record.viewedAt != null && p.record.viewedAt <= asOf).length,

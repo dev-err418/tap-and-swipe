@@ -58,7 +58,7 @@ test("the chart uses cohort timing and label even when date-window market timing
       appId, installs: 0, windowLabel: "Last 7 days", trend: [], countries: [], plans: [], retention: [], markets,
       trialCancelTiming: timing,
     }));
-    const chart = html.slice(html.indexOf("Trial survival"));
+    const chart = html.slice(html.indexOf("Trial survival"), html.indexOf("Only trials with a recorded 7-day duration."));
     assert.match(chart, new RegExp(`Installed on v${experimentMinimumInstallVersion(appId)}\\+`));
     assert.match(chart, /1 of 1 would qualify/);
     assert.doesNotMatch(chart, /of 43 would qualify|Last 7 days/);

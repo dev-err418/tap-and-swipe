@@ -2,12 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { realizedAppuByUser, realizedAppuValue, versyMember } from "../../lib/realized-appu";
+import { realizedAppuByUser, realizedAppuValue, versyMember, realizedAppuMember, productTrialDays } from "../../lib/realized-appu";
 import { buildAppOverviewCohorts, overviewDailyPoints } from "../../lib/app-overview-cohorts";
 import { buildAnalyticsMarkets } from "../../lib/analytics-markets";
 import { versionCohortConversions } from "../../lib/version-cohort-conversions";
 import { buildNativePaywallReport, type PaywallRecord, type PaywallRevenue } from "../../lib/native-paywall-analytics";
 import RealizedAppu from "../../components/analytics/RealizedAppu";
+import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
+import { glowMatureCountries } from "../../lib/glow-mature-countries";
+import { installCohortCountries } from "../../lib/install-cohort-countries";
+import { buildGlowPaywallCohortComparisons } from "../../lib/glow-paywall-cohort-comparisons";
+import { buildPokyPaywallFlowComparison } from "../../lib/poky-paywall-flow-cohorts";
 
 const start = Date.parse("2026-10-01T00:00:00Z"), day = 86_400_000, asOf = start + 10 * day;
 const annual = "com.arthurbuildsstuff.bible.yearly_4999";
@@ -110,4 +115,88 @@ test("parentheses show realized APPU and distinguish no mature users from mature
   assert.match(renderToStaticMarkup(createElement(RealizedAppu, { metric: { users: 0, proceeds: 0, missingMoney: false } })), /\(— realized\)/);
   assert.match(renderToStaticMarkup(createElement(RealizedAppu, { metric: { users: 2, proceeds: 0, missingMoney: false } })), /\(\$0.00 realized\)/);
   assert.equal(renderToStaticMarkup(createElement(RealizedAppu, {})), "");
+});
+
+const glowPrice = (threeDay = true, extra = {}) => ({ schema: 1, environment: "production", experiment: "native_yearly_prices_v5",
+  experimentName: "Yearly prices", variant: threeDay ? "yr_49_3d" : "yr_49", variantName: "Annual",
+  paywall: threeDay ? "yr_49_3d" : "yr_49", language: "en", assignedAt: start + 6 * day,
+  expectedProduct: `com.arthurbuildsstuff.glow.Annual${threeDay ? ".trial3" : ""}`, randomized: true, variantCount: 6, ...extra });
+const glowAttributes = (threeDay = true) => ({ gp1_a_native_yearly_prices_v5: JSON.stringify(glowPrice(threeDay)) });
+const pokyAttributes = (variant = "trial") => ({ poky_tracking_environment: "production", onboarding_offer_experiment: "poky_onboarding_trial_v4",
+  onboarding_offer_allocation: "50_50_trials_equal", onboarding_offer_variant: variant, onboarding_offer_assigned_at: String(start + 6 * day) });
+
+test("Glow and Poky use their saved offered duration, preserve older assignments and keep invalid records conservative", () => {
+  const enrolled = install("user", 6);
+  const days = (attrs: Record<string, string>) => realizedAppuMember(enrolled, attrs, undefined, asOf).trialDays;
+  assert.equal(days(glowAttributes()), 3);
+  assert.equal(days(glowAttributes(false)), 7);
+  assert.equal(days({ ...glowAttributes(), gp1_a_native_yearly_prices_v4: JSON.stringify(glowPrice(false, {
+    experiment: "native_yearly_prices_v4", variantCount: 3 })) }), 7);
+  assert.equal(days({ gp1_a_native_yearly_prices_v5: JSON.stringify(JSON.stringify(glowPrice())) }), 3);
+  for (const extra of [{ environment: "development" }, { experiment: "wrong" }, { assignedAt: asOf + 1 },
+    { expectedProduct: "com.arthurbuildsstuff.glow.pro.yearly.trial3" }, { variantCount: 3 }]) {
+    assert.equal(days({ gp1_a_native_yearly_prices_v5: JSON.stringify(glowPrice(true, extra)) }), 7);
+  }
+  assert.equal(days({ ...glowAttributes(), gp1_a_native_yearly_prices_v4: "broken" }), 7);
+  for (const [variant, duration] of [["current", 0], ["trial", 3], ["trial_7d", 7], ["trial_7d_mascot", 7]] as const) {
+    assert.equal(days(pokyAttributes(variant)), duration);
+  }
+  for (const extra of [{ poky_tracking_environment: "development" }, { onboarding_offer_allocation: "unknown" },
+    { onboarding_offer_assigned_at: String(asOf + 1) }, { poky_us_hp_override_seen: "true" }] as Record<string, string>[]) {
+    assert.equal(days({ ...pokyAttributes("current"), ...extra }), 7);
+  }
+  assert.equal(days({}), 7);
+  assert.equal(productTrialDays("arthurbuildsstuff.peptides.yearly"), 0);
+  assert.equal(productTrialDays("arthurbuildsstuff.peptides.yearly.trial"), 3);
+  assert.equal(productTrialDays("arthurbuildsstuff.peptides.yearly.trial7"), 7);
+  assert.equal(productTrialDays("arthurbuildsstuff.peptides.unknown"), 7);
+});
+
+for (const app of ["glow", "poky"] as const) test(`${app} renders realized APPU and keeps daily, market, version and country aggregates aligned`, () => {
+  const attrs = app === "glow" ? glowAttributes : (threeDay = true) => pokyAttributes(threeDay ? "trial" : "trial_7d");
+  const productId = app === "glow" ? "com.arthurbuildsstuff.glow.Annual.trial3" : "arthurbuildsstuff.peptides.yearly.trial";
+  const installs = [install("paid", 6), install("free", 6), install("seven", 6), install("open", 6), install("cancelled", 6)];
+  const attributes = new Map(installs.map((row) => [row.appUserId, { ...attrs(row.appUserId !== "seven"), acquisition_source: "meta" }]));
+  const initial = event("paid", { productId, eventTs: start + 6 * day, expiresAt: start + 9 * day });
+  const events = [initial, { ...initial, name: "renewal", periodType: "normal", transactionId: "r", netProceeds: 40, eventTs: start + 9 * day },
+    { ...initial, appUserId: "cancelled", originalTransactionId: "cancelled", transactionId: "c" },
+    { ...initial, appUserId: "cancelled", originalTransactionId: "cancelled", transactionId: "c", name: "cancellation", eventTs: start + 7 * day },
+    { ...initial, appUserId: "open", originalTransactionId: "open", transactionId: "o", expiresAt: asOf + day },
+    { ...initial, appUserId: "open", originalTransactionId: "open", transactionId: "early", name: "renewal", periodType: "normal", netProceeds: 99, eventTs: asOf - 1 },
+  ];
+  const input = { period: "month" as const, startMs: start, endMs: asOf + 1, asOf, installs, attributes, events, downloads: [] };
+  const overview = buildAppOverviewCohorts(input);
+  const expected = { users: 3, proceeds: 40, missingMoney: false };
+  assert.deepEqual(overview.total.realizedAppu, expected);
+  assert.equal(overview.total.installs, 5);
+  assert.equal(overview.total.proceeds, 139); // Total APPU still includes the early charge.
+  assert.deepEqual(overviewDailyPoints(overview).find((p) => p.total.installs)?.dailyTotal.realizedAppu, expected);
+  const markets = buildAnalyticsMarkets(input);
+  assert.deepEqual(markets.slices["en:US"].overview.total.realizedAppu, expected);
+  assert.deepEqual(markets.slices["all:all"].versions[0].conversions?.global.realizedAppu, expected);
+  assert.deepEqual(markets.slices["all:all"].conversions.metaAds.realizedAppu, expected);
+  const countryInput = { ...input, events: events.map((e) => ({ ...e, periodType: e.periodType ?? "normal", isTrialConversion: e.name === "renewal" })) };
+  const countries = app === "glow" ? glowMatureCountries(countryInput, asOf) : installCohortCountries(countryInput, asOf);
+  assert.deepEqual(countries[0].realizedAppu, expected);
+  const html = renderToStaticMarkup(createElement(AppOverviewPanel, { appId: app, installs: 5, trend: [], countries: [], plans: [], retention: [],
+    windowLabel: "Last month", overviewCohorts: overview }));
+  assert.match(html, /\(\$13.33 realized\)/);
+  const comparison = app === "glow" ? buildGlowPaywallCohortComparisons(installs, events, attributes, start, asOf + 1, asOf).prices
+    : buildPokyPaywallFlowComparison(installs, events, attributes, start, asOf + 1, asOf);
+  const row = comparison.rows.find((r) => r.version === (app === "glow" ? "yr_49_3d" : "trial"))!;
+  assert.deepEqual(row.conversions?.global.realizedAppu, expected);
+});
+
+for (const [experiment, productId, duration] of [
+  ["native_yearly_prices_v5", "com.arthurbuildsstuff.glow.Annual.trial3", 3],
+  ["poky_onboarding_trial_v4", "arthurbuildsstuff.peptides.yearly.trial7", 7],
+  ["poky_native_main_v1_en", "arthurbuildsstuff.peptides.yearly", 0],
+] as const) test(`${experiment} native APPU includes nonviewers once the offered window has passed`, () => {
+  const assignment: PaywallRecord = { schema: 1, environment: "production", experiment, experimentName: "Paywall", variant: "annual", variantName: "Annual",
+    paywall: "annual", language: "en", assignedAt: start, randomized: true, variantCount: 1, expectedProduct: productId };
+  const attrs = ["paid", "free"].map((appUserId) => ({ appUserId, key: `gp1_a_${experiment}`, value: JSON.stringify(assignment) }));
+  const before = buildNativePaywallReport(attrs, [], start, asOf + 1, start + Math.max(0, duration * day - 1)).groups[0].paywalls[0];
+  assert.equal(before.realizedAppu?.users, duration === 0 ? 2 : 0);
+  const mature = buildNativePaywallReport(attrs, [], start, asOf + 1, start + duration * day).groups[0].paywalls[0];
+  assert.deepEqual(mature.realizedAppu, { users: 2, proceeds: 0, missingMoney: false });
 });

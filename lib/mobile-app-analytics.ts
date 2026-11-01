@@ -40,7 +40,7 @@ import { installCohortCountries } from "./install-cohort-countries";
 import { subscriptionActiveAt } from "./subscription-retention";
 import type { ActiveTrials } from "./active-trials";
 import { matchedCohortInstall } from "./experiment-install-cohort";
-import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, versyMember, type WithRealizedAppu } from "./realized-appu";
+import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, realizedAppuMember, type WithRealizedAppu } from "./realized-appu";
 import { buildAppOverviewCohorts, type AppOverviewCohorts } from "./app-overview-cohorts";
 import { APPLE_ADS_KEYWORD_ATTRIBUTE_KEYS, buildAppleAdsKeywordReport, type AppleAdsKeywordReport } from "./apple-ads-keyword-analytics";
 
@@ -1442,18 +1442,16 @@ function attributeExperiment(facts: AppFacts, definition: AttributeExperimentDef
     }
   }
 
-  if (definition.id.startsWith("versy")) {
-    const realized = realizedAppuByUser([...eligibleInstalls.values()].map((install) =>
-      versyMember(install, facts.attributes.get(install.appUserId))), facts.events, now);
-    for (const variant of [...variants, ...Object.values(languageVariants).flat()]) {
-      variant.realizedAppu = emptyRealizedAppu();
-      for (const country of Object.values(variant.countries)) country.realizedAppu = emptyRealizedAppu();
-    }
-    for (const install of eligibleInstalls.values()) for (const target of targetsFor(install.appUserId, facts.attributes.get(install.appUserId))) {
-      mergeRealizedAppu(target, { realizedAppu: realized.get(install.appUserId) });
-      const country = target.countries[normalizeCountry(install.country)];
-      if (country) mergeRealizedAppu(country, { realizedAppu: realized.get(install.appUserId) });
-    }
+  const realized = realizedAppuByUser([...eligibleInstalls.values()].map((install) =>
+    realizedAppuMember(install, facts.attributes.get(install.appUserId), undefined, now)), facts.events, now);
+  for (const variant of [...variants, ...Object.values(languageVariants).flat()]) {
+    variant.realizedAppu = emptyRealizedAppu();
+    for (const country of Object.values(variant.countries)) country.realizedAppu = emptyRealizedAppu();
+  }
+  for (const install of eligibleInstalls.values()) for (const target of targetsFor(install.appUserId, facts.attributes.get(install.appUserId))) {
+    mergeRealizedAppu(target, { realizedAppu: realized.get(install.appUserId) });
+    const country = target.countries[normalizeCountry(install.country)];
+    if (country) mergeRealizedAppu(country, { realizedAppu: realized.get(install.appUserId) });
   }
 
   return {

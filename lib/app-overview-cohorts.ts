@@ -2,7 +2,7 @@ import { createOfferAccumulator, hasVersyProducts, offerProductResolver, mergeOf
 import { appAnalyticsTrendBucket, parisDatetimeLocalValue, parisDatetimeToDate } from "./app-analytics-time";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import { subscriptionActiveAt } from "./subscription-retention";
-import { emptyRealizedAppu, isVersyAppu, mergeRealizedAppu, realizedAppuByUser, versyMember, type WithRealizedAppu } from "./realized-appu";
+import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, realizedAppuMember, type WithRealizedAppu } from "./realized-appu";
 
 export type OverviewPeriod = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 export type CohortDay = 7 | 14 | 30;
@@ -176,16 +176,15 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
   }
   const selected = new Map([...firstInstalls].filter(([, row]) =>
     row.installedAt >= startMs && row.installedAt < endMs && row.installedAt <= asOf));
-  const realized = isVersyAppu(events, attributes)
-    ? realizedAppuByUser([...selected.values()].map((install) => versyMember(install, attributes?.get(install.appUserId))), events, asOf) : null;
-  if (realized) for (const point of points.values()) point.total.realizedAppu = emptyRealizedAppu();
+  const realized = realizedAppuByUser([...selected.values()].map((install) => realizedAppuMember(install, attributes?.get(install.appUserId), undefined, asOf)), events, asOf);
+  for (const point of points.values()) point.total.realizedAppu = emptyRealizedAppu();
   for (const install of selected.values()) {
     const point = pointAt(install.installedAt);
     point.trackedInstalls++;
     point.total.installs++;
     const language = installLanguage(install);
     (point.languages[language] ??= emptyAppuMetric()).installs++;
-    if (realized) for (const metric of [point.total, point.languages[language]]) {
+    for (const metric of [point.total, point.languages[language]]) {
       metric.realizedAppu ??= emptyRealizedAppu();
       mergeRealizedAppu(metric, { realizedAppu: realized.get(install.appUserId) });
     }
@@ -273,7 +272,7 @@ export function buildAppOverviewCohorts({ period, startMs, endMs, installs, even
   }
   const summary = emptyCheckpoints();
   const total = emptyAppuMetric();
-  if (realized) total.realizedAppu = emptyRealizedAppu();
+  total.realizedAppu = emptyRealizedAppu();
   const languages: Record<string, OverviewAppuMetric> = {};
   const sorted = [...points.values()].sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
   for (const point of sorted) {

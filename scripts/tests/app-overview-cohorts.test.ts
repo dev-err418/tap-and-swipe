@@ -32,7 +32,7 @@ test("fixed-age APPU includes non-payers, linked renewals and refunds, and exclu
   assert.equal(data.summary[14].proceeds, 115);
   assert.equal(data.summary[30].eligibleInstalls, 2);
   assert.equal(data.points.reduce((sum, point) => sum + point.trackedInstalls, 0), 3);
-  assert.deepEqual(data.total, { installs: 3, paid: 2, trials: 0, proceeds: 315, missingMoney: 0 });
+  assert.deepEqual(data.total, { installs: 3, paid: 2, trials: 0, proceeds: 315, missingMoney: 0, realizedAppu: { users: 2, proceeds: 115, missingMoney: false } });
   assert.equal(totalCohortAppu(data.total), 105);
 });
 
@@ -186,9 +186,9 @@ test("language APPU keeps non-payers, uses the first install's language and foll
   ], { downloads: [{ bucket: new Date(start), downloads: 10 }] });
   assert.equal(overviewForLanguage(data, "all"), data);
   assert.deepEqual(data.languages, {
-    es: { installs: 2, paid: 1, trials: 0, proceeds: 30, missingMoney: 0 },
-    en: { installs: 1, paid: 1, trials: 0, proceeds: 8, missingMoney: 0 },
-    unknown: { installs: 1, paid: 0, trials: 0, proceeds: 0, missingMoney: 0 },
+    es: { installs: 2, paid: 1, trials: 0, proceeds: 30, missingMoney: 0, realizedAppu: { users: 2, proceeds: 30, missingMoney: false } },
+    en: { installs: 1, paid: 1, trials: 0, proceeds: 8, missingMoney: 0, realizedAppu: { users: 1, proceeds: 8, missingMoney: false } },
+    unknown: { installs: 1, paid: 0, trials: 0, proceeds: 0, missingMoney: 0, realizedAppu: { users: 1, proceeds: 0, missingMoney: false } },
   });
   const spanish = overviewForLanguage(data, "es");
   assert.equal(totalCohortAppu(spanish.total), 15);
@@ -207,7 +207,7 @@ test("missing language and missing proceeds stay explicit and affect only their 
     { ...install("malformed"), language: "not a language" },
   ], [event("english"), event("missing", 0, { netProceeds: null })]);
   assert.equal(totalCohortAppu(overviewForLanguage(data, "en").total), 10);
-  assert.deepEqual(data.languages.unknown, { installs: 2, paid: 0, trials: 0, proceeds: 0, missingMoney: 1 });
+  assert.deepEqual(data.languages.unknown, { installs: 2, paid: 0, trials: 0, proceeds: 0, missingMoney: 1, realizedAppu: { users: 2, proceeds: 0, missingMoney: true } });
   assert.equal(totalCohortAppu(overviewForLanguage(data, "unknown").total), null);
   assert.equal(totalCohortAppu(data.total), null);
   assert.equal(overviewForLanguage(report([], [], { available: false }), "en").available, false);

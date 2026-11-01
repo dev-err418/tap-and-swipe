@@ -16,5 +16,5 @@ test("cohort proceeds and payers follow selected installs, even when older users
       { appUserId: "old", originalTransactionId: "b", name: "renewal", periodType: "weekly", isTrialConversion: false, eventTs: 160, netProceeds: 50 },
     ],
   }, 300);
-  assert.deepEqual(rows, [{ country: "FR", installs: 2, proceeds: 15, trials: 0, converted: 0, paid: 1 }]);
+  assert.deepEqual(rows, [{ country: "FR", installs: 2, proceeds: 15, trials: 0, converted: 0, paid: 1, realizedAppu: { users: 0, proceeds: 0, missingMoney: false } }]);
 });

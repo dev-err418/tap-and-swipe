@@ -1,5 +1,6 @@
 import type { MobileAppCountryRow } from "./mobile-app-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
+import { emptyRealizedAppu, mergeRealizedAppu, realizedAppuByUser, realizedAppuMember } from "./realized-appu";
 
 const TRIAL_MS = 3 * 86_400_000;
 type Install = { appUserId: string; country: string; installedAt: number };
@@ -7,13 +8,15 @@ type Outcome = {
   appUserId: string; originalTransactionId: string; transactionId: string;
   name: string; periodType: string; isTrialConversion: boolean;
   eventTs: number; attributionTs: number; netProceeds: number | null;
+  expiresAt?: number; isRefund?: boolean;
 };
 
 /** Selected install cohorts for the Countries/APPU and CR charts, observed through asOf,
  * including non-payers and cancelled trials after the full 72 hours.
  * A late trial start postpones eligibility; an early purchase never accelerates it.
  */
-export function glowMatureCountries(facts: { startMs: number; endMs: number; installs: Install[]; events: Outcome[] }, asOf = Date.now()): MobileAppCountryRow[] {
+export function glowMatureCountries(facts: { startMs: number; endMs: number; installs: Install[]; events: Outcome[];
+  attributes?: Map<string, Record<string, string>> }, asOf = Date.now()): MobileAppCountryRow[] {
   const installs = new Map<string, Install>();
   for (const install of facts.installs) {
     if (!install.appUserId || !Number.isFinite(install.installedAt)) continue;
@@ -45,10 +48,14 @@ export function glowMatureCountries(facts: { startMs: number; endMs: number; ins
   }
   for (const [user, startedAt] of trialStarts) if (startedAt + TRIAL_MS > asOf) installs.delete(user);
 
+  const realized = realizedAppuByUser([...installs.values()].map((install) =>
+    realizedAppuMember(install, facts.attributes?.get(install.appUserId), undefined, asOf)), facts.events, asOf);
   const countries = new Map<string, MobileAppCountryRow>();
   for (const [user, install] of installs) {
     const row = countries.get(install.country) ?? { country: install.country, installs: 0, proceeds: 0, trials: 0, converted: 0, paid: 0 };
     row.installs++;
+    row.realizedAppu ??= emptyRealizedAppu();
+    mergeRealizedAppu(row, { realizedAppu: realized.get(user) });
     if (trialStarts.has(user)) row.trials++;
     countries.set(install.country, row);
   }

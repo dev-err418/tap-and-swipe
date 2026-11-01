@@ -21,7 +21,7 @@ test("72-hour maturity excludes recent installs and trials from every metric, in
     event("converted", 0), event("converted", 3, { name: "renewal", periodType: "normal", isTrialConversion: true, netProceeds: 20 }),
     event("recent", 8), event("late", 9), event("direct", 8, { periodType: "normal", netProceeds: 100 }),
   ]);
-  assert.deepEqual(glowMatureCountries(input, now), [{ country: "US", installs: 2, trials: 1, paid: 1, converted: 1, proceeds: 20 }]);
+  assert.deepEqual(glowMatureCountries(input, now), [{ country: "US", installs: 2, trials: 1, paid: 1, converted: 1, proceeds: 20, realizedAppu: { users: 1, proceeds: 0, missingMoney: false } }]);
   assert.equal(input.installs.length, 5);
   assert.equal(input.events.length, 5);
 });
@@ -31,7 +31,7 @@ test("exactly 72 elapsed hours qualifies, with early cancellations and non-payer
     event("boundary", 7), event("too-young", 7 + 1 / DAY), event("cancelled", 7),
     event("cancelled", 7.1, { name: "cancellation", transactionId: "cancelled-7" }),
   ]);
-  assert.deepEqual(glowMatureCountries(input, now), [{ country: "US", installs: 2, trials: 2, paid: 0, converted: 0, proceeds: 0 }]);
+  assert.deepEqual(glowMatureCountries(input, now), [{ country: "US", installs: 2, trials: 2, paid: 0, converted: 0, proceeds: 0, realizedAppu: { users: 0, proceeds: 0, missingMoney: false } }]);
 });
 
 test("selected install cohort follows later conversions, renewals and refunds through today", () => {
@@ -44,7 +44,7 @@ test("selected install cohort follows later conversions, renewals and refunds th
     event("old", 4, { name: "renewal", netProceeds: 200 }),
     event("outside", 4, { name: "renewal", netProceeds: 200 }),
   ], start + 2 * DAY);
-  assert.deepEqual(glowMatureCountries(input, now), [{ country: "ES", installs: 1, trials: 1, converted: 1, paid: 1, proceeds: 20 }]);
+  assert.deepEqual(glowMatureCountries(input, now), [{ country: "ES", installs: 1, trials: 1, converted: 1, paid: 1, proceeds: 20, realizedAppu: { users: 0, proceeds: 0, missingMoney: false } }]);
 });
 
 test("missing identity follows a known subscription chain; unrelated revenue cannot inflate the cohort", () => {
