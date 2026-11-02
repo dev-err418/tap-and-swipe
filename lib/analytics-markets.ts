@@ -27,7 +27,8 @@ type Input = Parameters<typeof buildAppOverviewCohorts>[0];
 type Install = Input["installs"][number] & { appVersion: string; country: string; language: string };
 
 /** Only aggregate metrics leave the server. Identity and market are frozen at the first install. */
-export function buildAnalyticsMarkets(input: Omit<Input, "installs"> & { installs: Install[]; attributes: Map<string, Record<string, string>> }): AnalyticsMarkets {
+export function buildAnalyticsMarkets(input: Omit<Input, "installs"> & { installs: Install[]; attributes: Map<string, Record<string, string>> },
+  visibleCountries?: readonly string[]): AnalyticsMarkets {
   const first = new Map<string, Install>();
   for (const row of input.installs) {
     if (!row.appUserId || !Number.isFinite(row.installedAt)) continue;
@@ -36,10 +37,12 @@ export function buildAnalyticsMarkets(input: Omit<Input, "installs"> & { install
   }
   const selected = [...first.values()].filter((row) => row.installedAt >= input.startMs && row.installedAt < input.endMs && row.installedAt <= (input.asOf ?? Date.now()));
   const groups = new Map<string, { language: string; country: string; installs: Install[] }>();
+  const allowedCountries = visibleCountries ? new Set(["all", ...visibleCountries]) : null;
   groups.set("all:all", { language: "all", country: "all", installs: [] });
   for (const row of selected) {
     const language = marketLanguage(row.language), country = marketCountry(row.country);
     for (const [l, c] of [["all", "all"], [language, "all"], ["all", country], [language, country]]) {
+      if (allowedCountries && (l !== "all" || !allowedCountries.has(c))) continue;
       const key = marketKey(l, c);
       const group = groups.get(key) ?? { language: l, country: c, installs: [] };
       group.installs.push(row);

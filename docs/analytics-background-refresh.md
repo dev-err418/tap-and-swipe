@@ -13,6 +13,27 @@ not an event warehouse. Superwall and PostHog remain the sources of truth.
   and Versy's legacy placement report.
 - Directory cards share the same snapshots as their app's Data tab.
 
+## Page performance
+
+Data reports build and send only the all-language market slices selectable by the
+page's country picker (all countries plus its top country choices). Aggregates
+still include every user; no source events, money, dates or displayed metrics are
+dropped. Existing snapshots receive the same projection on read, and refreshed
+snapshots persist the smaller report. Detailed A/B reports keep their full shape.
+The main chart streams independently of the monthly country comparison below it.
+
+The snapshot cache deduplicates concurrent file reads and checks inode, modification
+time and size after its short memory interval. An unchanged file is not read and
+parsed again. Atomic refreshes still become visible after that interval. Report
+projections run after source completeness validation and preserve update timestamps.
+
+Compatible fallback keys must be explicitly allowlisted by a loader. Glow and
+Versy's matched-ROAS Data reports may reuse the prior keyword-cohorts-v2 snapshot
+while waiting for scheduled refresh, retaining its original timestamp and clearing
+the retired estimated ratio. The UI requires the strict matched-period basis before
+showing realized ROAS. There is no fallback across arbitrary schema versions, apps
+or periods, and forced refreshes always run the current loader.
+
 Website funnels, editable notes and individual user-journey lookups stay live.
 All existing dashboard permissions still apply. Snapshot files must never be
 served publicly, uploaded to the public video bucket, or included in builds.

@@ -2,7 +2,7 @@
 
 import { VersyOffersScope } from "./VersyOfferBreakdown";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_APP_LANGUAGE, marketKey, marketCountryLabel, type AnalyticsMarkets } from "@/lib/analytics-markets";
 import type { AppCountryComparisons } from "@/lib/app-country-comparisons";
 import { APP_ANALYTICS_HEADER_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS, DASHBOARD_TAB_LIST_CLASS } from "./dashboard-surface";
@@ -36,6 +36,7 @@ import type { UserJourneyReport } from "@/lib/user-journey";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 import AppleAdsKeywordTable from "./AppleAdsKeywordTable";
 import type { AppleAdsKeywordReport } from "@/lib/apple-ads-keyword-analytics";
+import DeferredCountryBreakdown, { type CountryBreakdownData } from "./DeferredCountryBreakdown";
 
 export default function AppOverviewPanel({
   appId,
@@ -53,6 +54,7 @@ export default function AppOverviewPanel({
   paywallFlowComparison = null,
   countryComparisons,
   countryBreakdown,
+  countryBreakdownPromise,
   appleAdsKeywords,
   headerStart,
   headerEnd,
@@ -76,6 +78,7 @@ export default function AppOverviewPanel({
   paywallFlowComparison?: PaywallCohortComparison | null;
   countryComparisons?: AppCountryComparisons;
   countryBreakdown?: { countries: MobileAppCountryRow[]; available: boolean; windowLabel: string };
+  countryBreakdownPromise?: Promise<CountryBreakdownData>;
   appleAdsKeywords?: AppleAdsKeywordReport | null;
   headerStart?: ReactNode;
   headerEnd?: ReactNode;
@@ -173,10 +176,12 @@ export default function AppOverviewPanel({
         {appId === "poky" ? <PokyPaywallFlowTable key={country} report={selectedPokyPaywalls} windowLabel={windowLabel} /> : null}
         {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={comparisonLabel ?? windowLabel} /> : null}
         {appId === "glow" || appId === "versy" ? <AppleAdsKeywordTable report={appleAdsKeywords} country={country} windowLabel={windowLabel} /> : null}
-        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+        {countryBreakdownPromise ? <Suspense fallback={<p role="status" className="py-6 text-sm text-muted-foreground">Loading country comparison…</p>}>
+          <DeferredCountryBreakdown report={countryBreakdownPromise} country={country} />
+        </Suspense> : <div className="grid min-w-0 gap-4 xl:grid-cols-2">
           <AppCountryBreakdown countries={selectedCountries} windowLabel={countryBreakdown?.windowLabel} available={countryBreakdown?.available} />
           <AppConversionBreakdown countries={selectedCountries} conversion="paid" windowLabel={countryBreakdown?.windowLabel} available={countryBreakdown?.available} />
-        </div>
+        </div>}
       </div>
     </section></VersyOffersScope>
   );

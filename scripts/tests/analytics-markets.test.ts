@@ -50,3 +50,15 @@ test("market intersections freeze first metadata and retain anonymous renewals i
   assert.equal(report.slices["en:US"], undefined);
   assert.doesNotMatch(JSON.stringify(report), /appUserId|originalTransactionId/);
 });
+
+test("visible-country aggregation matches full reports exactly without building unused language intersections", () => {
+  const input = { period: "week" as const, startMs: start, endMs: start + 7 * day, asOf: start + 10 * day,
+    downloads: [], attributes: new Map(),
+    installs: [install("a", "en", "US"), install("b", "es", "US"), install("c", "en", "GB"), install("d", "pt", "BR")],
+    events: [event("a"), event("b"), event("c"), event("d")] };
+  const full = buildAnalyticsMarkets(input);
+  const selected = buildAnalyticsMarkets(input, ["US", "GB"]);
+  assert.deepEqual(Object.keys(selected.slices).sort(), ["all:GB", "all:US", "all:all"]);
+  for (const key of Object.keys(selected.slices)) assert.deepEqual(selected.slices[key], full.slices[key]);
+  assert.equal(selected.slices["all:all"].overview.total.installs, 4, "unselected countries must remain in all-user totals");
+});

@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export type SnapshotMetadata = { snapshotUpdatedAt?: string };
@@ -45,41 +45,84 @@ function deserialize<T>(text: string): Snapshot<T> {
   return result;
 }
 
+type SnapshotOptions<T> = {
+  /** Explicitly compatible keys only; never reuse an arbitrary old report version. */
+  fallbackKeys?: readonly string[];
+  /** Keep the same projection for every caller of a key. Applied to disk reads and new reports. */
+  project?: (value: T) => T;
+};
+
 export function createAnalyticsSnapshotCache() {
-  const memory = new Map<string, { checkedAt: number; snapshot: Snapshot<object> }>();
+  const memory = new Map<string, { checkedAt: number; snapshot: Snapshot<object>; revision?: string; fallback?: boolean }>();
+  const reads = new Map<string, Promise<Snapshot<object> | undefined>>();
   const pending = new Map<string, Promise<object>>();
-  return async function snapshot<T extends object>(key: string, load: () => Promise<T>): Promise<T & SnapshotMetadata> {
+  return async function snapshot<T extends object>(key: string, load: () => Promise<T>, options: SnapshotOptions<T> = {}): Promise<T & SnapshotMetadata> {
     const directory = analyticsSnapshotDirectory();
-    const id = `${directory}:${VERSION}:${key}`;
+    const identity = (name: string) => `${directory}:${VERSION}:${name}`;
+    const fileFor = (name: string) => directory ? path.join(directory, VERSION, `${createHash("sha256").update(name).digest("hex")}.json`) : null;
+    const id = identity(key), file = fileFor(key);
     const force = refreshContext.getStore() === true;
-    const file = directory ? path.join(directory, VERSION, `${createHash("sha256").update(key).digest("hex")}.json`) : null;
-    let saved = memory.get(id)?.snapshot as Snapshot<T> | undefined;
+    const project = (entry: Snapshot<T>): Snapshot<T> => options.project ? { ...entry, value: options.project(entry.value) } : entry;
     const stamp = (entry: Snapshot<T>): T & SnapshotMetadata => directory
       ? { ...entry.value, snapshotUpdatedAt: entry.updatedAt } : entry.value;
-    // Brief memory cache; re-read the shared volume to pick up another process's refresh.
-    if (!force && saved && Date.now() - memory.get(id)!.checkedAt < (directory ? 10_000 : 90_000)) return stamp(saved);
-    if (file) {
-      try {
-        saved = deserialize<T>(await readFile(file, "utf8"));
-        memory.set(id, { checkedAt: Date.now(), snapshot: saved });
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") console.error("analytics_snapshot_read_failed", { key });
-      }
-      // Deliberately serve stale data. The scheduler owns refreshes, so opening a
-      // page never waits on an upstream API when a successful snapshot exists.
-      if (!force && saved && (process.env.NODE_ENV === "production"
-        || Date.now() - Date.parse(saved.updatedAt) < 30 * 60_000)) return stamp(saved);
+    const revisionOf = (info: Awaited<ReturnType<typeof stat>>) => `${info.ino}:${info.mtimeMs}:${info.size}`;
+
+    async function readSaved(name: string): Promise<Snapshot<T> | undefined> {
+      const readId = identity(name), entry = memory.get(readId), source = fileFor(name);
+      if (entry && Date.now() - entry.checkedAt < (directory ? 10_000 : 90_000)) return entry.snapshot as Snapshot<T>;
+      if (!source) return undefined;
+      const running = reads.get(readId);
+      if (running) return running as Promise<Snapshot<T> | undefined>;
+      const work = (async () => {
+        try {
+          // Atomic replacements change the revision. Unchanged multi-megabyte reports
+          // need only a stat, not another read, JSON parse and Date-reviver traversal.
+          const revision = revisionOf(await stat(source));
+          if (entry?.revision === revision) {
+            entry.checkedAt = Date.now();
+            return entry.snapshot as Snapshot<T>;
+          }
+          const raw = deserialize<T>(await readFile(source, "utf8"));
+          const saved = name === key ? project(raw) : raw;
+          memory.set(readId, { checkedAt: Date.now(), snapshot: saved, revision });
+          return saved;
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "ENOENT") console.error("analytics_snapshot_read_failed", { key: name });
+          // A fallback must check its actual source again after the short memory cache.
+          return entry?.fallback ? undefined : entry?.snapshot as Snapshot<T> | undefined;
+        }
+      })();
+      reads.set(readId, work);
+      try { return await work; } finally { reads.delete(readId); }
     }
+
+    let saved = await readSaved(key);
+    if (!saved && !force) {
+      for (const fallback of options.fallbackKeys ?? []) {
+        const candidate = await readSaved(fallback);
+        if (candidate) {
+          saved = project(candidate);
+          memory.set(id, { checkedAt: Date.now(), snapshot: saved, fallback: true });
+          break;
+        }
+      }
+    }
+    // Production serves the last compatible report while the scheduler refreshes.
+    // Keep its original timestamp, including when using a compatible previous key.
+    if (!force && saved && (!directory || process.env.NODE_ENV === "production"
+      || Date.now() - Date.parse(saved.updatedAt) < 30 * 60_000)) return stamp(saved);
     const running = pending.get(id);
     if (running) return running as Promise<T & SnapshotMetadata>;
     const work = (async () => {
       try {
-        const value = await load();
-        if (!completeAnalyticsReport(value)) {
+        const raw = await load();
+        // Validate before projection so omitted UI fields cannot hide a source failure.
+        if (!completeAnalyticsReport(raw)) {
           if (force) throw new Error(`Incomplete analytics report: ${key}`);
-          return saved ? stamp(saved) : value;
+          return saved ? stamp(saved) : options.project ? options.project(raw) : raw;
         }
-        const entry = { updatedAt: new Date().toISOString(), value };
+        const entry = project({ updatedAt: new Date().toISOString(), value: raw });
+        let revision: string | undefined;
         if (file) {
           try {
             await mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
@@ -87,16 +130,16 @@ export function createAnalyticsSnapshotCache() {
             try {
               await writeFile(temporary, serialize(entry), { mode: 0o600 });
               await rename(temporary, file);
+              revision = revisionOf(await stat(file));
             } finally { await rm(temporary, { force: true }); }
           } catch (error) {
             if (force) throw error;
             console.error("analytics_snapshot_write_failed", { key });
             if (saved) return stamp(saved);
-            // Storage failure must not turn otherwise usable live data into a 500.
-            return value;
+            return entry.value;
           }
         }
-        memory.set(id, { checkedAt: Date.now(), snapshot: entry });
+        memory.set(id, { checkedAt: Date.now(), snapshot: entry, revision });
         return stamp(entry);
       } catch (error) {
         if (!force && saved) return stamp(saved);

@@ -110,3 +110,49 @@ test("an unavailable statistical estimate does not reject a complete experiment 
   assert.ok(saved.snapshotUpdatedAt);
   assert.equal(completeAnalyticsReport({ ...report, product: { status: "unavailable" } }), false);
 });
+
+test("unchanged files reuse parsed reports; an atomic refresh is picked up after the memory interval", async (t) => {
+  const { cache } = await fixture(t);
+  await cache("large", async () => ({ users: 1, unused: [1, 2, 3] }));
+  const reader = createAnalyticsSnapshotCache();
+  let projections = 0;
+  const options = { project: (value: { users: number; unused: number[] }) => { projections++; return { ...value, unused: [] }; } };
+  const noLoad = async () => { throw new Error("Saved reports must not fetch"); };
+  await Promise.all([reader("large", noLoad, options), reader("large", noLoad, options)]);
+  assert.equal(projections, 1);
+  const now = Date.now;
+  try {
+    let elapsed = 11_000;
+    Date.now = () => now() + elapsed;
+    assert.equal((await reader("large", noLoad, options)).users, 1);
+    assert.equal(projections, 1, "stat-only checks must not parse/project again");
+    await refreshAnalyticsSnapshots(() => cache("large", async () => ({ users: 2, unused: [4] })));
+    elapsed += 11_000;
+    assert.equal((await reader("large", noLoad, options)).users, 2);
+    assert.equal(projections, 2);
+  } finally { Date.now = now; }
+});
+
+test("explicit compatible fallbacks avoid live loads, preserve timestamps and yield to the refreshed key", async (t) => {
+  const { cache } = await fixture(t);
+  const old = await cache("glow:week:old", async () => ({ users: 3, retiredEstimate: 999 }));
+  const options = { fallbackKeys: ["glow:week:old"], project: (value: { users: number; retiredEstimate: number | null }) => ({ ...value, retiredEstimate: null }) };
+  const noLoad = async () => { throw new Error("Must serve compatible saved data"); };
+  const saved = await cache("glow:week:new", noLoad, options);
+  assert.equal(saved.users, 3);
+  assert.equal(saved.retiredEstimate, null);
+  assert.equal(saved.snapshotUpdatedAt, old.snapshotUpdatedAt);
+  await assert.rejects(refreshAnalyticsSnapshots(() => cache("glow:week:new", noLoad, options)));
+  await refreshAnalyticsSnapshots(() => cache("glow:week:new", async () => ({ users: 4, retiredEstimate: null }), options));
+  assert.equal((await cache("glow:week:new", noLoad, options)).users, 4);
+  assert.equal((await cache("versy:week:new", async () => ({ users: 8 }))).users, 8);
+  assert.equal((await cache<{ users: number; retiredEstimate: number }>("glow:week:old", noLoad)).retiredEstimate, 999, "fallback projection must not mutate the source report");
+});
+
+test("projection cannot hide an incomplete source report from the refresh validator", async (t) => {
+  const { cache } = await fixture(t);
+  const options = { project: (value: { users: number; ignored?: { status: string } }) => ({ users: value.users }) };
+  await refreshAnalyticsSnapshots(() => cache("projected", async () => ({ users: 2 }), options));
+  await assert.rejects(refreshAnalyticsSnapshots(() => cache("projected", async () => ({ users: 3, ignored: { status: "unavailable" } }), options)));
+  assert.equal((await cache("projected", async () => ({ users: 99 }), options)).users, 2);
+});

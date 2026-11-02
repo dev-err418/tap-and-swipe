@@ -21,6 +21,7 @@ import {
   type MobileAppAnalytics,
 } from "@/lib/mobile-app-analytics";
 import AppOverviewPanel from "@/components/analytics/AppOverviewPanel";
+import type { CountryBreakdownData } from "@/components/analytics/DeferredCountryBreakdown";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
 import { AnalyticsThemeSetting } from "@/components/analytics/AnalyticsTheme";
 import { AnalyticsDirectorySkeleton, AppCardSkeleton, AppTotalsSkeleton, WebsiteCardSkeleton, WebsiteTotalsSkeleton } from "@/components/analytics/AnalyticsDirectorySkeleton";
@@ -524,15 +525,17 @@ async function AppDetail({
   appId: AppId;
 }) {
   let app: MobileAppAnalytics | null = null;
-  let countryReport: MobileAppAnalytics | null = null;
+  let countryBreakdown: Promise<CountryBreakdownData> | undefined;
   try {
     // Compact comparison tables do not need the detailed experiment reports.
     const current = getMobileAppById(period, appId, { sessions: false, includeReports: false });
     const monthly = period === "month" ? current : getMobileAppById("month", appId, { sessions: false, includeReports: false });
-    const [currentResult, monthlyResult] = await Promise.allSettled([current, monthly]);
-    if (currentResult.status === "rejected") throw currentResult.reason;
-    app = currentResult.value;
-    countryReport = monthlyResult.status === "fulfilled" ? monthlyResult.value : null;
+    // Stream the lower-page comparison independently; its monthly loader can be cold
+    // even when the selected period is already saved and ready to display.
+    countryBreakdown = monthly.then((report) => ({ countries: report.dataCountries ?? [],
+      available: Boolean(report.cohortDataAvailable), windowLabel: "Last 30 days" }),
+    () => ({ countries: [], available: false, windowLabel: "Last 30 days" }));
+    app = await current;
   } catch (error) {
     const log = process.env.NODE_ENV === "development" ? console.warn : console.error;
     log("tap_and_swipe.mobile_app_detail_failed", {
@@ -628,7 +631,7 @@ async function AppDetail({
         paywallFlowComparison={app.paywallFlowComparison}
         countryComparisons={app.countryComparisons}
         appleAdsKeywords={app.appleAdsKeywords}
-        countryBreakdown={{ countries: countryReport?.dataCountries ?? [], available: Boolean(countryReport?.cohortDataAvailable), windowLabel: "Last 30 days" }}
+        countryBreakdownPromise={countryBreakdown}
       />
     </div>
   );

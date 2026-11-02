@@ -32,7 +32,7 @@ async function resolveServerComponents(node: ReactNode): Promise<ReactNode> {
   return createElement(node.type, { ...node.props, key: node.key }, children);
 }
 
-function pageFixture() {
+function pageFixture(overrides: Record<string, unknown> = {}) {
   const calls: string[] = [];
   const dependencies: Record<string, unknown> = {
     "@/lib/analytics-session": { getAnalyticsViewer: async () => alberto },
@@ -68,7 +68,7 @@ function pageFixture() {
     "aso-debug/ProxyAnalyticsPanel", "aso-debug/ProxyHealthPanel", "aso-debug/LicenseUsagePanel",
     "aso-debug/FeedbackPanel", "aso-debug/TrialAbusePanel",
   ]) dependencies[`@/components/${component}`] = { __esModule: true, default: passthrough };
-  return { page: loadTestModule<Page>("app/analytics/page.tsx", dependencies).default, calls };
+  return { page: loadTestModule<Page>("app/analytics/page.tsx", { ...dependencies, ...overrides }).default, calls };
 }
 
 test("Alberto's rendered directory greets him and totals only Poky", async () => {
@@ -98,4 +98,31 @@ test("Alberto's loading directory shows his greeting and only the Poky card", ()
   assert.match(html, /Hey alberto/);
   assert.match(html, /Poky/);
   assert.doesNotMatch(html, /Arthur|Glow|Versy|appsprint\.app|community|Loading websites/);
+});
+
+
+test("the selected app period renders without waiting for its monthly country comparison", async () => {
+  let finishMonth!: (value: object) => void;
+  const month = new Promise<object>((resolve) => { finishMonth = resolve; });
+  let comparison: Promise<unknown> | undefined;
+  const f = pageFixture({
+    "@/lib/mobile-app-analytics": { getMobileAppById: async (period: string) => period === "month" ? month : {
+      id: "poky", name: "Poky", downloads: 25, revenueCents: 10000, trend: [], iconUrl: "/poky.png", snapshotUpdatedAt: "2026-11-02T07:00:00Z",
+    } },
+    "@/components/analytics/AppOverviewPanel": { __esModule: true, default: (props: Props) => {
+      comparison = props.countryBreakdownPromise as Promise<unknown>;
+      return props.headerStart;
+    } },
+  });
+  const tree = await f.page({ searchParams: Promise.resolve({ app: "poky" }) });
+  let timer: ReturnType<typeof setTimeout>;
+  try {
+    const resolved = await Promise.race([resolveServerComponents(tree), new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("Chart was blocked by monthly data")), 1000);
+    })]);
+    assert.match(renderToStaticMarkup(resolved), /Poky/);
+    assert.ok(comparison);
+    finishMonth({ dataCountries: [], cohortDataAvailable: true });
+    assert.deepEqual(JSON.parse(JSON.stringify(await comparison)), { countries: [], available: true, windowLabel: "Last 30 days" });
+  } finally { clearTimeout(timer!); finishMonth({}); }
 });
