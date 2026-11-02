@@ -32,10 +32,9 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
     return {
       tests: [
         {
-          id: GLOW_ONBOARDING_ID, label: "IAM vs manifest-audio", scope: "Next app build · new eligible installations", tone: "blue", planned: true,
+          id: GLOW_ONBOARDING_ID, label: "IAM vs manifest-audio", scope: "Deprecated — only IAM · next app build · new eligible installations", tone: "blue", planned: true,
           branches: [
-            { id: "iam", label: "IAM", percent: 50 },
-            { id: "manifest-audio", label: "manifest-audio", percent: 50 },
+            { id: "iam", label: "IAM", percent: 100 },
           ],
         },
         {
@@ -54,7 +53,7 @@ export function appExperimentMap(appId: string): AppExperimentMapDefinition | nu
       notes: [
         "Results start September 20, 2026 at 08:00 GMT+2; earlier cohorts and proceeds are excluded.",
         "Practice is the only Home experience in the next Glow release. The Journal comparison has ended.",
-        "IAM wording is retired in the next app build. Both onboarding arms use Copy wording under a new experiment ID; historical comparisons stay separate.",
+        "IAM vs manifest-audio is deprecated — only IAM for new users in the next app build. Historical 50/50 results and saved assignments are preserved; fixed IAM users are excluded from the A/B comparison.",
         "New users receive a saved v5 price/trial assignment, with equal chances of 3 and 7 days. Existing v4 assignments keep their 7-day offer and results in the matching rows. Older five-variant and temporary US presentations remain separate.",
         "The Versy reminder flow also offers a fixed Weekly plan in View all plans, with the assigned annual plan selected by default. Weekly is not randomized; its purchases remain attributed to the saved flow and yearly-price assignments.",
         "80% see testimonials followed by a team note before the paywall sequence; 20% keep the original sequence. The two base flows remain equally likely. Saved v1 assignments stay in their historical 50/50 report.",

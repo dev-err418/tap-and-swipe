@@ -13,9 +13,10 @@ export default function GlowOnboardingExperiencePanel({ report }: { report: Glow
   const analysis = report?.status === "ready" && report.warnings.length === 0
     ? analyzeExperiment(report.rows.map((r) => ({ key: r.variant, label: r.label, exposures: r.users,
       conversions: r.paid, revenue: r.proceeds ?? 0, variance: r.proceedsVariance ?? 0 })), "revenue_per_visitor", "APPU") : null;
-  return <><AppExperimentLayout title={historical ? "Historical onboarding experience" : "IAM vs manifest-audio"} label="Onboarding experience" subtitle={historical ? (original ? "Original IAM wording · historical" : "Copy mascot comparison · historical") : "50% IAM · 50% manifest-audio"}>
+  return <><AppExperimentLayout title={historical ? "Historical onboarding experience" : "IAM vs manifest-audio"} label="Onboarding experience" subtitle={historical ? (original ? "Original IAM wording · historical" : "Copy mascot comparison · historical") : "Deprecated — only IAM"}>
+    {!historical && <p className="px-4 py-3 text-sm text-muted-foreground"><strong className="font-medium text-foreground">Deprecated — only IAM.</strong>{" "}New users receive 100% IAM in the next app build. Historical 50/50 results remain below; existing assignments are preserved.</p>}
     {!report || report.status === "unavailable" ? <p role="status" className="px-4 py-4 text-sm text-muted-foreground">Onboarding reporting is unavailable. Refresh to retry.</p> : <>
-      {report.status === "empty" && <p role="status" className="px-4 py-4 text-sm text-muted-foreground">{historical ? "No historical assignments in this date range." : "No production assignments in this date range; results appear after the updated app is released and eligible new users enroll."}</p>}
+      {report.status === "empty" && <p role="status" className="px-4 py-4 text-sm text-muted-foreground">No historical assignments in this date range.</p>}
       {report.warnings.map((warning) => <p role="status" key={warning} className="px-4 py-3 text-sm text-muted-foreground">{warning}</p>)}
       {analysis && <ExperimentStats title="APPU" titleClassName="font-bold" analysis={analysis} />}
       <ExperimentTable caption="All assigned users, including non-payers and unfinished onboarding" headings={<>

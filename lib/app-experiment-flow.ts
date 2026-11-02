@@ -80,7 +80,7 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
   const edges: ExperimentFlowEdge[] = [];
   onboarding.branches.forEach((branch, index) => {
     nodes.push({ id: branch.id, x: 140, y: 112 + index * 112, width: 160,
-      label: branch.label, detail: "Next app build", tone: "blue", experimentId: onboarding.id, variantId: branch.id });
+      label: branch.label, detail: "Deprecated — only IAM", tone: "blue", statsTarget: { experimentId: onboarding.id } });
     edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` });
   });
   paywallFlow.branches.forEach((branch, index) => {
@@ -95,8 +95,8 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
     edges.push({ from: branch.id, to: "home" });
   });
   return { width: 1186, height: 64 + (prices.branches.length - 1) * 104 + 64, nodes, edges,
-    stages: [{ x: 140, label: "Onboarding" }, { x: 414, label: "Paywall flow" }, { x: 730, label: "Yearly price" }, { x: 1010, label: "Practice" }],
-    notes: ["The onboarding journey, paywall flow and yearly price are independent saved assignments. The reminder flow is tested in both IAM and manifest-audio.", "The paywall flow comparison enrolls everyone reaching their first assigned screen, including testimonials; the price test also covers other app placements. Their user counts and APPU denominators differ.", ...map.notes] };
+    stages: [{ x: 140, label: "Onboarding · next app build" }, { x: 414, label: "Paywall flow" }, { x: 730, label: "Yearly price" }, { x: 1010, label: "Practice" }],
+    notes: ["New users receive IAM only. Paywall flow and yearly price remain independent saved assignments, including for existing manifest-audio users.", "The paywall flow comparison enrolls everyone reaching their first assigned screen, including testimonials; the price test also covers other app placements. Their user counts and APPU denominators differ.", ...map.notes] };
 }
 
 function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): ExperimentFlow {

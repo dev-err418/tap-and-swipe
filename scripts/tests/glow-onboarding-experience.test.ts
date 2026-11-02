@@ -35,6 +35,23 @@ test("IAM / manifest-audio is separate from both historical cohorts", () => {
   assert.match(markup, /Historical IAM wording comparison/);
   assert.match(markup, /Historical Copy mascot comparison/);
   assert.match(markup, /IAM vs manifest-audio/);
+  assert.match(markup, /Deprecated — only IAM/);
+});
+
+test("fixed IAM rollout is excluded from historical A/B results without warnings", () => {
+  const report = buildGlowOnboardingReport([
+    assignment("historical-iam"), assignment("historical-manifest", "manifest-audio"),
+    assignment("fixed-iam", "iam", start, { allocation: "100_0", randomized: false }),
+  ], [event("fixed-iam", "fixed-charge", 100)], start, asOf, asOf);
+  assert.deepEqual(report.rows.map((row) => row.users), [1, 1]);
+  assert.deepEqual(report.rows.map((row) => row.proceeds), [0, 0]);
+  assert.deepEqual(report.warnings, []);
+  const invalid = buildGlowOnboardingReport([
+    assignment("fake-random", "iam", start, { allocation: "100_0" }),
+    assignment("wrong-route", "manifest-audio", start, { allocation: "100_0", randomized: false }),
+  ], [], start, asOf, asOf);
+  assert.deepEqual(invalid.rows.map((row) => row.users), [0, 0]);
+  assert.equal(invalid.warnings.length, 1);
 });
 
 test("new experiment rejects historical arms and allocations instead of relabeling them", () => {
@@ -170,15 +187,16 @@ test("unmatched or invalid cancellation timing never becomes a false average", (
 test("the comparison shows all three metrics with empty and unavailable values kept honest", () => {
   const empty = buildGlowOnboardingReport([], [], start, asOf, asOf);
   const markup = renderToStaticMarkup(createElement(GlowOnboardingExperiencePanel, { report: empty }));
-  assert.match(markup, /No production assignments in this date range/);
-  assert.match(markup, /results appear after the updated app is released/);
-  assert.match(markup, /50% IAM · 50% manifest-audio/);
+  assert.match(markup, /No historical assignments in this date range/);
+  assert.match(markup, /Historical 50\/50 results remain below/);
+  assert.match(markup, /Deprecated — only IAM/);
   assert.match(markup, /APPU/);
   assert.match(markup, /Sessions \/ user \/ day/);
   assert.match(markup, /Avg time to cancel/);
   assert.doesNotMatch(markup, /\$0\.00/);
   const unavailable = renderToStaticMarkup(createElement(GlowOnboardingExperiencePanel, { report: { ...empty, status: "unavailable" } }));
   assert.match(unavailable, /unavailable/);
+  assert.match(unavailable, /Deprecated — only IAM/);
   assert.doesNotMatch(unavailable, /\$0\.00/);
 });
 

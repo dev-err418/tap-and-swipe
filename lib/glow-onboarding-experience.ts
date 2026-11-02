@@ -22,7 +22,7 @@ export const isGlowPaywallFlowExperiment = (id: string) => [GLOW_PAYWALL_FLOW_ID
 export const DAY_MS = 86_400_000;
 type Variant = "standard" | "standard_note" | "versy_reminder" | "versy_reminder_note" | "iam" | "manifest-audio" | "current" | "mascot_free";
 type RecordValue = {
-  schema: 1; experiment: string; allocation: "50_50" | "15_85" | "30_70" | typeof GLOW_PAYWALL_FLOW_ALLOCATION; environment: string;
+  schema: 1; experiment: string; allocation: "100_0" | "50_50" | "15_85" | "30_70" | typeof GLOW_PAYWALL_FLOW_ALLOCATION; environment: string;
   variant: Variant; language: string; randomized: boolean;
   assignedAt: number; updatedAt: number; completedAt?: number; viewedAt?: number;
   days: Record<string, { sessions: number; active: true }>;
@@ -51,7 +51,8 @@ function parse(value: string, asOf: number, experiment: string): RecordValue | n
     if (flow && object(r)) r = { ...r, days: {} };
     if (![GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_LEGACY_ID, GLOW_ONBOARDING_ID, GLOW_ONBOARDING_COPY_ID, GLOW_ONBOARDING_LEGACY_ID].includes(experiment)) return null;
     if (!object(r) || r.schema !== 1 || r.experiment !== experiment
-      || !(noteFlow ? [GLOW_PAYWALL_FLOW_ALLOCATION] : active || flow ? ["50_50"] : ["15_85", "30_70"]).includes(String(r.allocation))
+      || !(noteFlow ? [GLOW_PAYWALL_FLOW_ALLOCATION] : active ? ["50_50", "100_0"] : flow ? ["50_50"] : ["15_85", "30_70"]).includes(String(r.allocation))
+      || (active && r.allocation === "100_0" && (r.variant !== "iam" || r.randomized !== false))
       || !(noteFlow ? GLOW_PAYWALL_FLOWS.map((v) => v.id) : flow ? ["standard", "versy_reminder"] : active ? ["iam", "manifest-audio"] : ["current", "mascot_free"]).includes(String(r.variant)) || typeof r.environment !== "string"
       || typeof r.language !== "string" || typeof r.randomized !== "boolean"
       || !timestamp(r.assignedAt) || !timestamp(r.updatedAt) || r.assignedAt > asOf
