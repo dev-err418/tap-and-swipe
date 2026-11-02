@@ -4,7 +4,7 @@ import { buildAppleAdsKeywordReport, type AppleAdsKeywordRow } from "../../lib/a
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import AppleAdsKeywordTable from "../../components/analytics/AppleAdsKeywordTable";
-import { addAppleKeywordSpend } from "../../lib/apple-ads-keyword-spend";
+import { addAppleKeywordSpend, keywordMatureEnd } from "../../lib/apple-ads-keyword-spend";
 import { generateKeyPairSync } from "node:crypto";
 import { realizedKeywordRoas } from "../../lib/apple-ads-keyword-roas";
 
@@ -83,70 +83,127 @@ test("keyword table displays Superwall cohort metrics and never fabricates ad sp
   assert.doesNotMatch(html, /NaN|Infinity/);
 });
 
-test("last week calculates realized ROAS with mixed mature/pending users and each country's actual spend", async () => {
+async function withAppleSpend(run: (requests: { endTime: string; startTime: string; selector: { conditions: unknown[] } }[]) => Promise<void>, failOlder = false) {
   const savedFetch = globalThis.fetch;
   const keys = ["APPLE_ADS_CLIENT_ID", "APPLE_ADS_TEAM_ID", "APPLE_ADS_KEY_ID", "APPLE_ADS_ORG_ID", "APPLE_ADS_PRIVATE_KEY"] as const;
   const saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
   const key = generateKeyPairSync("ec", { namedCurve: "prime256v1" }).privateKey.export({ type: "pkcs8", format: "pem" });
   Object.assign(process.env, { APPLE_ADS_CLIENT_ID: "client", APPLE_ADS_TEAM_ID: "team", APPLE_ADS_KEY_ID: "key", APPLE_ADS_ORG_ID: "10", APPLE_ADS_PRIVATE_KEY: key });
-  const requests: unknown[] = [];
+  const requests: Parameters<typeof run>[0] = [];
   globalThis.fetch = (async (input, init) => {
     const url = String(input);
     if (url.includes("appleid.apple.com")) return Response.json({ access_token: "test" });
     if (url.includes("ecb.europa.eu")) return new Response("<Cube currency='USD' rate='1.2'/>");
     if (url.includes("/campaigns/11/")) return new Response("failed", { status: 503 });
     const body = JSON.parse(String(init?.body)); requests.push(body);
+    const older = body.endTime === "2026-10-11";
+    if (older && failOlder) return new Response("failed", { status: 503 });
     return Response.json({ data: { reportingDataResponse: { row: [
-      { metadata: { keyword: "daily affirmations", countryOrRegion: "US" }, total: { localSpend: { amount: "10", currency: "EUR" } } },
-      { metadata: { keyword: "daily affirmations", countryOrRegion: "DE" }, total: { localSpend: { amount: "5", currency: "EUR" } } },
+      { metadata: { keyword: "daily affirmations", countryOrRegion: "US" }, total: { localSpend: { amount: older ? "4" : "10", currency: "EUR" } } },
+      { metadata: { keyword: "daily affirmations", countryOrRegion: "DE" }, total: { localSpend: { amount: older ? "2" : "5", currency: "EUR" } } },
     ] } } });
   }) as typeof fetch;
-  try {
-    const weekStart = Date.parse("2026-10-13T00:00:00Z");
-    const attributes = new Map([["a", attr("daily affirmations", "1")], ["b", attr("daily affirmations", "2")],
-      ["c", attr("daily affirmations", "3", "DE")]]);
-    const installs = ["a", "b", "c"].map((id) => ({ ...install(id), installedAt: id === "b" ? asOf - 86400000 : weekStart + 1000 }));
-    const paid = (user: string, proceeds: number) => event(user, "initial_purchase", user, {
-      netProceeds: proceeds, eventTs: weekStart + 2000, purchasedAt: weekStart + 2000 });
-    const cohort = buildAppleAdsKeywordReport(installs, [paid("a", 12), paid("c", 6)], attributes, weekStart, asOf, asOf);
-    assert.equal(cohort.rows[0].realizedAppu?.users, 2);
-    assert.equal(cohort.rows[0].users, 3);
-    const report = await addAppleKeywordSpend(cohort, weekStart, asOf, ["10", "11"]);
-    assert.equal(report.rows[0].spend, 15);
-    assert.equal(report.rows[0].spendUsd, 18);
-    assert.equal(report.rows[0].realizedRoas, 1.5);
-    assert.equal(report.countries.US[0].spend, 10);
-    assert.equal(report.countries.US[0].realizedRoas, 2);
-    assert.equal(report.countries.DE[0].realizedRoas, 1);
-    assert.equal(requests.length, 1); // No empty eight-day historical spend query.
-    assert.ok(requests.every((request) => JSON.stringify(request).includes('"startTime":"2026-10-13"')));
-    assert.ok(requests.every((request) => JSON.stringify(request).includes('"adGroupDeleted"')));
-    const html = renderToStaticMarkup(createElement(AppleAdsKeywordTable, { report, country: "US", windowLabel: "Last 30 days" }));
-    assert.match(html, /€10\.00/);
-    assert.match(html, /100\.0%/);
-    assert.match(html, /≈200\.0% realized/);
-    assert.match(html, /Estimated realized ROAS/);
-  } finally {
+  try { await run(requests); }
+  finally {
     globalThis.fetch = savedFetch;
     for (const key of keys) if (saved[key] === undefined) delete process.env[key]; else process.env[key] = saved[key];
   }
+}
+
+function keywordCohorts(since = start, lateTrial = false) {
+  const attributes = new Map([["a", attr("daily affirmations", "1")], ["b", attr("daily affirmations", "2")],
+    ["c", attr("daily affirmations", "3", "DE")]]);
+  const installs = ["a", "b", "c"].map((id) => ({ ...install(id), installedAt: id === "b" ? asOf - 86400000 : since + 1000 }));
+  const paid = (user: string, proceeds: number) => event(user, "initial_purchase", user, {
+    netProceeds: proceeds, eventTs: since + 2000, purchasedAt: since + 2000 });
+  const events = [paid("a", 12), paid("c", 6)];
+  if (lateTrial) events.push(event("a", "initial_purchase", "late-trial", {
+    periodType: "trial", eventTs: asOf - 1000, purchasedAt: asOf - 1000, expiresAt: asOf + 86400000 }));
+  const matureEnd = Math.max(since, keywordMatureEnd(asOf));
+  return { matureEnd,
+    current: buildAppleAdsKeywordReport(installs, events, attributes, since, asOf, asOf),
+    mature: buildAppleAdsKeywordReport(installs, events, attributes, since, matureEnd, asOf) };
+}
+
+const markup = (item: AppleAdsKeywordRow) => renderToStaticMarkup(createElement(AppleAdsKeywordTable, {
+  report: { available: true, rows: [item], countries: {}, excludedConflictingAttribution: 0 }, country: "all", windowLabel: "Last week" }));
+
+test("strict realized ROAS matches older-period revenue and actual spend for each country", async () => {
+  await withAppleSpend(async (requests) => {
+    const { current, mature, matureEnd } = keywordCohorts();
+    assert.equal(current.rows[0].users, 3);
+    assert.equal(mature.rows[0].users, 2);
+    const report = await addAppleKeywordSpend(current, mature, start, asOf, matureEnd, ["10", "11"]);
+    assert.equal(report.rows[0].spend, 15);
+    assert.equal(report.rows[0].spendUsd, 18);
+    assert.ok(Math.abs(report.rows[0].realizedRoas! - 2.5) < 1e-10); // 18 USD / 6 EUR * 1.2 USD/EUR, not average cost.
+    assert.equal(report.countries.US[0].realizedRoas, 2.5);
+    assert.equal(report.countries.DE[0].realizedRoas, 2.5);
+    assert.equal(report.rows[0].realizedRoasBasis?.startMs, start);
+    assert.equal(report.rows[0].realizedRoasBasis?.endMs, matureEnd);
+    assert.deepEqual(requests.map((request) => request.endTime).sort(), ["2026-10-11", "2026-10-20"]);
+    assert.ok(requests.every((request) => request.startTime === "2026-10-01"));
+    assert.deepEqual(requests[0].selector.conditions, [
+      { field: "deleted", operator: "IN", values: ["false", "true"] },
+      { field: "adGroupDeleted", operator: "IN", values: ["false", "true"] },
+    ]);
+    assert.match(markup(report.rows[0]), /250\.0% realized/);
+    assert.match(markup(report.rows[0]), /2026-10-01 through 2026-10-11 UTC/);
+    assert.doesNotMatch(markup(report.rows[0]), /≈|Estimated realized/);
+  });
 });
 
-test("realized ROAS distinguishes pending users, zero proceeds, refunds and missing spend/money", () => {
+test("last week stays pending even if some short trials already matured", async () => {
+  await withAppleSpend(async (requests) => {
+    const weekStart = Date.parse("2026-10-13T00:00:00Z");
+    const { current, mature, matureEnd } = keywordCohorts(weekStart);
+    assert.equal(current.rows[0].realizedAppu?.users, 2);
+    assert.equal(matureEnd, weekStart);
+    const report = await addAppleKeywordSpend(current, mature, weekStart, asOf, matureEnd, ["10"]);
+    assert.equal(report.rows[0].realizedRoas, null);
+    assert.equal(report.rows[0].spendUsd, 18);
+    assert.equal(requests.length, 1); // No invalid empty/reversed Apple date query.
+    assert.match(markup(report.rows[0]), /realized pending/);
+  });
+});
+
+test("a late trial keeps the matched older cohort pending without dropping other countries", async () => {
+  await withAppleSpend(async () => {
+    const { current, mature, matureEnd } = keywordCohorts(start, true);
+    const report = await addAppleKeywordSpend(current, mature, start, asOf, matureEnd, ["10"]);
+    assert.equal(report.rows[0].realizedRoas, null);
+    assert.equal(report.countries.US[0].realizedRoas, null);
+    assert.equal(report.countries.DE[0].realizedRoas, 2.5);
+    assert.match(markup(report.rows[0]), /realized pending/);
+  });
+});
+
+test("older-period spend failure never falls back to average cost or hides full-period spend", async () => {
+  await withAppleSpend(async () => {
+    const { current, mature, matureEnd } = keywordCohorts();
+    const report = await addAppleKeywordSpend(current, mature, start, asOf, matureEnd, ["10"]);
+    assert.equal(report.rows[0].spendUsd, 18);
+    assert.equal(report.rows[0].realizedRoas, null);
+    assert.equal(report.rows[0].realizedRoasBasis?.spendUsd, null);
+    assert.match(markup(report.rows[0]), /matched older-period proceeds or positive USD keyword spend are missing/);
+  }, true);
+});
+
+test("strict realized ROAS handles nonpayers/refunds and rejects incomplete or previously estimated ratios", () => {
+  const basis = { startMs: start, endMs: keywordMatureEnd(asOf), users: 4, matureUsers: 4, proceeds: 12, spendUsd: 8, missingMoney: false };
   const row: AppleAdsKeywordRow = { key: "10|keyword", keyword: "keyword", campaignId: "10", keywordIds: ["1"],
     users: 10, trials: 5, finishedTrials: 2, convertedTrials: 1, paidUsers: 1, proceeds: 12, missingMoney: false,
-    spend: 20, spendCurrency: "USD", spendUsd: 20, realizedAppu: { users: 4, proceeds: 12, missingMoney: false } };
+    spend: 20, spendCurrency: "USD", spendUsd: 20, realizedAppu: { users: 4, proceeds: 12, missingMoney: false }, realizedRoasBasis: basis };
   assert.equal(realizedKeywordRoas(row), 1.5);
-  assert.equal(realizedKeywordRoas({ ...row, realizedAppu: { users: 4, proceeds: 0, missingMoney: false } }), 0);
-  assert.equal(realizedKeywordRoas({ ...row, realizedAppu: { users: 4, proceeds: -8, missingMoney: false } }), -1);
-  for (const changed of [{ spendUsd: undefined }, { spendUsd: 0 }, { spendUsd: NaN }, { users: 0 }, { missingMoney: true },
-    { realizedAppu: undefined }, { realizedAppu: { users: 0, proceeds: 0, missingMoney: false } },
-    { realizedAppu: { users: 4, proceeds: 12, missingMoney: true } }]) {
-    assert.equal(realizedKeywordRoas({ ...row, ...changed }), null);
+  assert.equal(realizedKeywordRoas({ ...row, realizedRoasBasis: { ...basis, proceeds: 0 } }), 0);
+  assert.equal(realizedKeywordRoas({ ...row, realizedRoasBasis: { ...basis, proceeds: -8 } }), -1);
+  for (const changed of [{ spendUsd: null }, { spendUsd: 0 }, { spendUsd: NaN }, { users: 0 }, { missingMoney: true },
+    { matureUsers: 3 }, { matureUsers: 5 }, { proceeds: Infinity }, { endMs: start }]) {
+    assert.equal(realizedKeywordRoas({ ...row, realizedRoasBasis: { ...basis, ...changed } }), null);
   }
-  const markup = (item: AppleAdsKeywordRow) => renderToStaticMarkup(createElement(AppleAdsKeywordTable, {
-    report: { available: true, rows: [item], countries: {}, excludedConflictingAttribution: 0 }, country: "all", windowLabel: "Last week" }));
-  assert.match(markup({ ...row, realizedAppu: { users: 0, proceeds: 0, missingMoney: false } }), /realized pending/);
-  assert.match(markup({ ...row, spendUsd: null }), /positive USD keyword spend are missing/);
-  assert.match(markup({ ...row, realizedRoas: 999 }), /≈150\.0% realized/); // Never reuse an older stored formula.
+  assert.equal(realizedKeywordRoas({ ...row, missingMoney: true }), 1.5); // Recent missing money is outside the matched period.
+  const oldEstimate = { ...row, realizedRoasBasis: undefined, realizedRoas: 999 };
+  assert.equal(realizedKeywordRoas(oldEstimate), null);
+  assert.doesNotMatch(markup(oldEstimate), /99900\.0%|150\.0% realized|≈/);
+  assert.match(markup(row), /150\.0% realized/);
 });

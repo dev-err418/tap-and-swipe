@@ -2,7 +2,7 @@ import type { AppleAdsKeywordReport, AppleAdsKeywordRow } from "@/lib/apple-ads-
 import { cn } from "@/lib/utils";
 import { DashboardCard } from "./DashboardCard";
 import RealizedAppu from "./RealizedAppu";
-import { realizedKeywordRoas } from "@/lib/apple-ads-keyword-roas";
+import { realizedKeywordRoas, realizedKeywordRoasPending } from "@/lib/apple-ads-keyword-roas";
 
 const money = (amount: number, currency = "USD") => amount.toLocaleString("en-US", { style: "currency", currency });
 const rate = (n: number, d: number) => d > 0 ? n / d : null;
@@ -24,10 +24,11 @@ export default function AppleAdsKeywordTable({ report, country }: {
   const cell = (row: AppleAdsKeywordRow, kind: "appu" | "trial" | "paid" | "paidCr" | "roas") => {
     const metric = value(row, kind);
     const realized = kind === "roas" ? realizedKeywordRoas(row) : null;
-    const pending = !row.realizedAppu || row.realizedAppu.users === 0;
-    const realizedExplanation = pending ? "No users in this selection have completed their trial observation window yet."
-      : realized == null ? "Realized ROAS is unavailable because proceeds or positive USD keyword spend are missing."
-      : "Estimated realized ROAS: mature-user APPU / average acquisition cost for this keyword and country in the selected period. Assumes mature users have the same average acquisition cost as all attributed users; includes spend on taps without installs.";
+    const pending = realizedKeywordRoasPending(row);
+    const basis = row.realizedRoasBasis;
+    const realizedExplanation = pending ? "Realized ROAS needs an older acquisition period with a fully mature cohort. Recent dates are excluded using an eight-day cutoff; try Last 30 days or All time."
+      : realized == null ? "Realized ROAS is unavailable because matched older-period proceeds or positive USD keyword spend are missing."
+      : `Realized ROAS: net proceeds from the fully mature cohort acquired ${new Date(basis!.startMs).toISOString().slice(0, 10)} through ${new Date(basis!.endMs - 1).toISOString().slice(0, 10)} UTC / actual keyword spend over those same dates and country. Includes spend on taps without installs; USD conversion uses the latest ECB rate. Attribution remains provisional.`;
     const best = highlight(metric, (rows ?? []).map((other) => value(other, kind)));
     const denominator = kind === "paid" ? row.finishedTrials : row.users;
     const numerator = kind === "trial" ? row.trials : kind === "paid" ? row.convertedTrials : row.paidUsers;
@@ -36,7 +37,7 @@ export default function AppleAdsKeywordTable({ report, country }: {
       <span className="font-semibold">{kind === "appu" ? metric == null ? "—" : money(metric) : percent(metric)}</span>
       {kind === "appu" ? <RealizedAppu metric={row.realizedAppu} /> : null}
       {kind === "roas" ? <span className="ml-1 text-[0.8em] font-normal text-muted-foreground" title={realizedExplanation}>
-        {pending ? "(realized pending)" : `(${realized == null ? "—" : `≈${percent(realized)}`} realized)`}
+        {pending ? "(realized pending)" : `(${percent(realized)} realized)`}
       </span> : null}
       {kind !== "appu" && kind !== "roas" && metric != null ? <span className={cn("ml-1", best ? "text-analytics-highlight/75" : "text-muted-foreground")}>({numerator} / {denominator})</span> : null}
     </td>;

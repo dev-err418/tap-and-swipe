@@ -23,19 +23,27 @@ Apple spend remains in its original currency; ROAS uses the latest ECB USD
 reference rate for EUR, not transaction-day FX. Unsupported currencies or a
 failed FX read leave ROAS unavailable.
 
-Realized APPU uses the existing mature-user definition. Estimated realized ROAS
-uses that same mature-user APPU divided by average acquisition cost
-(`keyword USD spend / all attributed users`) for the selected period and country.
-It assumes mature users have the same average acquisition cost as the full
-keyword cohort; Apple does not supply individual-user spend. The full keyword
-cost includes taps that never installed. This is an estimate, displayed with
-`≈` and explained in its tooltip, rather than a separate older-period ROAS.
+Realized APPU uses the existing mature-user definition. Realized ROAS uses a
+separate, strictly matched older acquisition window: from the selected UTC start
+through the earlier of the selected end and the UTC day boundary eight days
+before observation. The eight days allow seven-day offers plus observation time.
+If that leaves no acquisition days (as in Last week), the UI shows `realized pending`.
 
-The previous fixed eight-day cutoff made realized ROAS empty in Last week even
-when three-day trials had matured. There is now one acquisition window for the
-keyword row, its realized APPU and spend. Recent pending users no longer blank
-the entire row. With no mature users the UI shows `realized pending`; incomplete
-money or missing/zero spend remains unavailable, while mature non-payers show
-0.0%. Negative net proceeds remain negative. Total ROAS keeps its definition.
-Snapshot v35 refreshes the changed calculation; the UI also derives the value
-from the row's existing aggregates, so an older stored ratio is not reused.
+Both net proceeds and actual Apple keyword spend use that same older acquisition
+window, keyword/campaign and country. Every user in the older cohort must have
+completed their observed trial window, including late trial starts. Pending
+users keep the matched cohort pending. Realized ROAS is its net proceeds divided
+by its actual USD spend, including non-installing taps. It does not estimate
+mature users' costs from average acquisition cost. The tooltip shows the matched
+UTC dates. APPU beside it can cover a different, more recent mature-user cohort.
+
+Missing older-period proceeds or positive USD spend remains unavailable; mature
+non-payers produce 0.0% and refunds can produce negative values. A failure fetching
+older spend cannot fall back to full-period spend or suppress otherwise available
+total ROAS. Total ROAS and APPU retain their definitions. The click-date versus
+first-launch attribution and FX caveats above still apply.
+
+Glow and Versy use the scoped `keyword-cohorts-v3-matched-roas` report cache key.
+Each row stores `realizedRoasBasis` with its dates, cohort counts, proceeds and
+matched USD spend; the UI calculates only from that basis. Previously saved
+average-cost estimates are never displayed as strictly matched ROAS.

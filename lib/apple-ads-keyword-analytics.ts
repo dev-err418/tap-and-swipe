@@ -20,6 +20,10 @@ export type AppleAdsKeywordRow = {
   paidUsers: number; proceeds: number; missingMoney: boolean; realizedAppu?: RealizedAppu;
   spend?: number | null; spendCurrency?: string; spendUsd?: number | null;
   realizedRoas?: number | null;
+  realizedRoasBasis?: {
+    startMs: number; endMs: number; users: number; matureUsers: number;
+    proceeds: number; spendUsd: number | null; missingMoney: boolean;
+  };
 };
 export type AppleAdsKeywordReport = {
   available: boolean;
