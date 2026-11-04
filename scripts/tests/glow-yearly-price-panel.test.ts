@@ -16,12 +16,15 @@ test("yearly price results use only the current all-language cohort", () => {
   assert.match(html, /987,654/);
   assert.match(html, /Paid users/);
   assert.match(html, /Total APPU/);
-  assert.match(html, /not a fourth price arm/);
+  assert.equal((html.match(/\(7d\)/g) ?? []).length, 3);
+  assert.doesNotMatch(html, /3-day|\(3d\)/);
   assert.doesNotMatch(html, /Annual \+ weekly layouts|yr_wk_/);
 });
 
 test("historical or language-only results cannot fill a missing current total", () => {
   for (const report of [NATIVE_PAYWALL_DEMO_REPORT, {
+    ...YEARLY_PRICE_DEMO_REPORT, groups: YEARLY_PRICE_DEMO_REPORT.groups.map((group) => ({ ...group, experiment: "native_yearly_prices_v5" })),
+  }, {
     ...YEARLY_PRICE_DEMO_REPORT, groups: YEARLY_PRICE_DEMO_REPORT.groups.filter((group) => group.language !== "all"),
   }]) {
     const html = renderToStaticMarkup(createElement(GlowYearlyPricePanel, { report }));

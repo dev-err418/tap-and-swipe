@@ -94,7 +94,7 @@ function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
     paywallFlow.branches.forEach((parent) => edges.push({ from: parent.id, to: branch.id, label: formatPaywallAllocation(branch.percent) }));
     edges.push({ from: branch.id, to: "home" });
   });
-  return { width: 1186, height: 64 + (prices.branches.length - 1) * 104 + 64, nodes, edges,
+  return { width: 1186, height: Math.max(...nodes.map((node) => node.y)) + 64, nodes, edges,
     stages: [{ x: 140, label: "Onboarding · next app build" }, { x: 414, label: "Paywall flow" }, { x: 730, label: "Yearly price" }, { x: 1010, label: "Practice" }],
     notes: ["New users receive IAM only. Paywall flow and yearly price remain independent saved assignments, including for existing manifest-audio users.", "The paywall flow comparison enrolls everyone reaching their first assigned screen, including testimonials; the price test also covers other app placements. Their user counts and APPU denominators differ.", ...map.notes] };
 }

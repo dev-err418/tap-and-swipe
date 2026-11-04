@@ -45,13 +45,13 @@ test("Glow keeps onboarding and paywall assignments after retiring the Journal c
   assert.equal(map.tests[0].planned, true);
   assert.deepEqual(map.tests[0].branches, [{ id: "iam", label: "IAM", percent: 100 }]);
   assert.match(map.tests[0].scope, /Deprecated — only IAM/);
-  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "onboarding_paywall_flow_v2", "native_yearly_prices_v5"]);
+  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "onboarding_paywall_flow_v2", "native_yearly_prices_v4"]);
   assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.label, "Practice");
   assert.ok(map.notes.some((note) => note.includes("Older five-variant")));
   assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [10, 40, 10, 40]);
-  assert.deepEqual(map.tests[2].branches.map((branch) => branch.percent), Array(6).fill(100 / 6));
+  assert.deepEqual(map.tests[2].branches.map((branch) => branch.percent), Array(3).fill(100 / 3));
   for (const branch of map.tests[2].branches) {
-    assert.equal(branch.percent, nativePaywallAllocation("native_yearly_prices_v5", branch.id, branch.id));
+    assert.equal(branch.percent, nativePaywallAllocation("native_yearly_prices_v4", branch.id, branch.id));
   }
 });
 
@@ -286,7 +286,7 @@ test("the map falls back to overall APPU when fixed-age branches are not mature"
 test("paywall variants use compact APPU/CR cards and highlight the unique APPU leader", () => {
   const flow = appExperimentFlow("glow")!;
   const metrics = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT);
-  assert.equal(metrics.size, 6);
+  assert.equal(metrics.size, 3);
   assert.equal([...metrics.values()].filter((metric) => metric.appu != null && metric.conversionRate != null).length, 3);
   assert.equal([...metrics.values()].filter((metric) => metric.users != null).length, 3);
 
@@ -299,7 +299,7 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
   assert.match(markup, /Spanish/);
   assert.match(markup, /German/);
   assert.equal(markup.match(/APPU \$/g)?.length, 3);
-  assert.equal(markup.match(/ · CR /g)?.length, 6);
+  assert.equal(markup.match(/ · CR /g)?.length, 3);
   assert.match(markup, /fill="light-dark\(#fff0e4, #4d3627\)"/);
   const englishUsers = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "en").get("yr_49")!.users!;
   assert.match(markup, new RegExp(`\\$49\\.99/year \\(7d\\) \\(${englishUsers.toLocaleString("en-US")}\\)`));
@@ -313,8 +313,8 @@ test("the map language picker scopes paywall metrics to the selected audience", 
   const flow = appExperimentFlow("glow")!;
   const english = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "en");
   const spanish = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "es");
-  assert.equal(english.size, 6);
-  assert.equal(spanish.size, 6);
+  assert.equal(english.size, 3);
+  assert.equal(spanish.size, 3);
   assert.notEqual(english.get("yr_49")?.appu, spanish.get("yr_49")?.appu);
 
   const poky = appExperimentFlow("poky")!;
@@ -426,11 +426,11 @@ test("Glow uses IAM only and keeps historical onboarding results accessible", ()
   for (const variant of ["standard", "standard_note", "versy_reminder", "versy_reminder_note"]) {
     const allocation = variant.endsWith("_note") ? "40%" : "10%";
     assert.deepEqual(flow.edges.filter((edge) => edge.to === variant).map((edge) => edge.label), [allocation]);
-    assert.deepEqual(flow.edges.filter((edge) => edge.from === variant).map((edge) => edge.label), Array(6).fill("~17%"));
+    assert.deepEqual(flow.edges.filter((edge) => edge.from === variant).map((edge) => edge.label), Array(3).fill("33.33%"));
   }
   assert.ok(flow.nodes.every((node) => node.y + 40 < flow.height));
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "home"), []);
-  assert.equal(flow.edges.filter((edge) => edge.to === "home").length, 6);
+  assert.equal(flow.edges.filter((edge) => edge.to === "home").length, 3);
   assert.ok(flow.nodes.every((node) => node.x + node.width < flow.width));
   assert.ok(flow.nodes.every((node) => node.experimentId !== "journal_vs_practice_v1"));
 });

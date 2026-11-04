@@ -5,7 +5,7 @@ import { NativePaywallResultsTable } from "./NativePaywallsPanel";
 
 export default function GlowYearlyPricePanel({ report }: { report: NativePaywallReport | null }) {
   const group = report?.groups.find((group) => group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id && group.language === "all");
-  return <AppExperimentLayout title="Yearly price comparison" label="Yearly price" subtitle="Six equal price/trial combinations · independent of onboarding and paywall flow">
+  return <AppExperimentLayout title="Yearly price comparison" label="Yearly price" subtitle="Three equal yearly prices · 7-day trials · independent of onboarding and paywall flow">
     {!report || report.status === "unavailable"
       ? <p role="status" className="px-4 py-4 text-sm text-muted-foreground">Yearly price reporting is unavailable. Refresh to retry.</p>
       : <>

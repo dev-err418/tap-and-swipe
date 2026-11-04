@@ -27,24 +27,26 @@ test("v3 composite rows use exact equal yearly weights and readable percentage l
   assert.equal(nativePaywallAllocation("native_paywalls_v3", "yr_wk_34", "yr_wk_59"), null);
 });
 
-test("the live paywall panel shows the new equal six-arm price/trial allocation", () => {
+test("the live paywall panel shows the three equal seven-day price allocations", () => {
   const markup = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "glow", report: null }));
   for (const price of ["$34.99/year", "$49.99/year", "$59.99/year"]) assert.ok(markup.includes(price));
-  assert.equal((markup.match(/~17%/g) ?? []).length, 6);
+  assert.equal((markup.match(/33\.33%/g) ?? []).length, 3);
+  assert.equal((markup.match(/\(7d\)/g) ?? []).length, 3);
+  assert.doesNotMatch(markup, /\(3d\)|3-day/);
   assert.doesNotMatch(markup, /166666/);
   assert.match(markup, /Glow yearly price comparison/);
-  assert.match(markup, /next Glow app build assigns three yearly prices with either a 3-day or 7-day trial/);
-  assert.match(markup, /never mixed into this price\/trial comparison/);
   const poky = renderToStaticMarkup(createElement(NativePaywallsPanel, { appId: "poky", report: null }));
   assert.doesNotMatch(poky, /yr_wk_34/);
 });
 
-test("v5 allocates one sixth to each price/trial combination and leaves history untouched", () => {
+test("active prices receive one third each while retired trial allocations keep their history", () => {
   const allocations = GLOW_YEARLY_PRICE_EXPERIMENT.variants.map(({ id }) =>
     nativePaywallAllocation(GLOW_YEARLY_PRICE_EXPERIMENT.id, `${id}|${id}`, id));
-  assert.deepEqual(allocations, Array(6).fill(100 / 6));
+  assert.deepEqual(allocations, Array(3).fill(100 / 3));
   assert.ok(Math.abs(allocations.reduce<number>((sum, value) => sum + (value ?? 0), 0) - 100) < 1e-9);
   assert.equal(nativePaywallAllocation("native_yearly_prices_v4", "yr_34", "yr_34"), 100 / 3);
+  assert.equal(nativePaywallAllocation("native_yearly_prices_v4", "yr_34_3d", "yr_34_3d"), null);
+  assert.equal(nativePaywallAllocation("native_yearly_prices_v5", "yr_34_3d", "yr_34_3d"), 100 / 6);
   assert.equal(nativePaywallAllocation(GLOW_YEARLY_PRICE_EXPERIMENT.id, "yr_wk_34|yr_wk_34", "yr_wk_34"), null);
   assert.equal(nativePaywallAllocation(GLOW_PAYWALL_EXPERIMENT.id, "yr_wk_34|yr_wk_34", "yr_wk_34"), 25);
 });

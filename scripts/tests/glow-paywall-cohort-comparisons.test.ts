@@ -45,12 +45,12 @@ test("flow and price comparisons independently retain nonpayers and follow later
   assert.equal(standard.purchases, 1);
   assert.equal(standard.refunds, 1);
   assert.equal(report.flows.rows[2].conversions!.global.installPaid, 1);
-  assert.deepEqual(report.prices.rows.map((row) => row.conversions!.global.installs), [1, 1, 1, 0, 0, 0]);
+  assert.deepEqual(report.prices.rows.map((row) => row.conversions!.global.installs), [1, 1, 1]);
   assert.equal(report.prices.rows[0].conversions!.global.proceeds, 6);
-  assert.deepEqual(report.flowPrices.rows.map((row) => row.installs), [1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]);
+  assert.deepEqual(report.flowPrices.rows.map((row) => row.installs), [1, 1, 0, 0, 0, 1]);
   assert.equal(report.flowPrices.rows[0].conversions!.global.proceeds, 6);
   assert.equal(report.flowPrices.rows[0].conversions!.global.refunds, 1);
-  assert.equal(report.flowPrices.rows[8].conversions!.global.installPaid, 1);
+  assert.equal(report.flowPrices.rows[5].conversions!.global.installPaid, 1);
   assert.deepEqual(GLOW_PAYWALL_COHORT_KEYS, [GLOW_PAYWALL_FLOW_KEY, GLOW_PAYWALL_FLOW_LEGACY_KEY, priceKey, "gp1_a_native_yearly_prices_v5"]);
   const html = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report, windowLabel: "Last 7 days" }));
   for (const label of ["Paywall flows", "Yearly prices", "Paywall flow × yearly price", "Current flow", "Versy reminder flow", "$34.99/year", "$49.99/year", "$59.99/year", "APPU", "Refund rate"]) assert.ok(html.includes(label), label);
@@ -128,7 +128,7 @@ test("only valid current randomized production assignments enter, with missing m
 });
 
 
-test("six price/trial rows preserve seven-day history and never double-count an upgrade", () => {
+test("only seven-day price rows remain without counting retired three-day users or upgrade duplicates", () => {
   const currentKey = "gp1_a_native_yearly_prices_v5";
   const current = (variant: string) => price(variant, start + day, { experiment: "native_yearly_prices_v5", variantCount: 6 });
   const attributes = new Map<string, Record<string, string>>([
@@ -139,9 +139,10 @@ test("six price/trial rows preserve seven-day history and never double-count an 
   ]);
   const report = buildGlowPaywallCohortComparisons([...attributes.keys()].map((id) => install(id)),
     [event("old"), event("new3", { netProceeds: 6 })], attributes, start, end, asOf);
-  assert.deepEqual(report.prices.rows.map((row) => row.installs), [2, 0, 0, 1, 0, 0]);
+  assert.deepEqual(report.prices.rows.map((row) => row.installs), [2, 0, 0]);
   assert.equal(report.prices.rows[0].conversions!.global.proceeds, 10);
-  assert.equal(report.prices.rows[3].conversions!.global.proceeds, 6);
+  assert.equal(report.prices.rows.reduce((sum, row) => sum + row.conversions!.global.proceeds, 0), 10);
+  assert.ok(report.prices.rows.every((row) => !row.version.endsWith("_3d")));
 });
 
 test("adding note variants preserves previous flow results and never reenrolls an upgraded user", () => {
@@ -194,7 +195,7 @@ test("joint base-flow rows pool note and control users without averaging rates o
     event("current-paid"), notePurchase, notePurchase, noteRefund, noteRefund,
     event("reminder-paid", { netProceeds: 12 }), event("short-trial-note", { netProceeds: 7 }),
   ], attrs, start, end, asOf);
-  assert.equal(report.flowPrices.rows.length, 12);
+  assert.equal(report.flowPrices.rows.length, 6);
   assert.ok(report.flowPrices.rows.every((row) => !row.version.includes("_note")));
   const current = report.flowPrices.rows.find((row) => row.version === "standard|yr_34")!.conversions!.global;
   assert.equal(current.installs, 4);
@@ -206,11 +207,9 @@ test("joint base-flow rows pool note and control users without averaging rates o
   assert.equal(reminder.installs, 2);
   assert.equal(reminder.proceeds, 12);
   assert.equal(reminder.installPaid, 1);
-  const shortTrial = report.flowPrices.rows.find((row) => row.version === "standard|yr_34_3d")!;
-  assert.equal(shortTrial.installs, 1);
-  assert.equal(shortTrial.conversions!.global.proceeds, 7);
+  assert.equal(report.flowPrices.rows.find((row) => row.version === "standard|yr_34_3d"), undefined);
   assert.deepEqual(report.flows.rows.map((row) => row.installs), [1, 4, 1, 1]);
-  assert.equal(report.flowPrices.rows.reduce((sum, row) => sum + row.installs, 0), 7);
+  assert.equal(report.flowPrices.rows.reduce((sum, row) => sum + row.installs, 0), 6);
   const html = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report, windowLabel: "All time" }));
   assert.match(html, /Note and no-note variants are combined within each flow/);
 });

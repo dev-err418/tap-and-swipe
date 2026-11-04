@@ -21,7 +21,7 @@ The two base flows remain 50/50. Both IAM and manifest-audio participate. The tr
 
 Assignment is saved before exposure. Enrollment starts on the **first screen of the assigned sequence**: testimonials for note arms, trial introduction for controls. This includes users who leave at testimonials or the note in the denominator. Drafts resume on the saved screen, and Back traverses the same assigned sequence. Debug previews never enroll. Existing `v1` assignments keep their original `standard`/`versy_reminder` arm, `50_50` allocation, storage key and `gpf1_onboarding_paywall_flow_v1` reporting attribute; neither exposed nor saved-but-unexposed legacy assignments are rerolled. SDK startup republishes enrolled records under their own experiment key.
 
-Tap & Swipe reads both versions. The Data flow table preserves v1 results in Current flow and Versy reminder flow, adds v2 no-note users to those same rows, and shows the two new note variants separately. A saved v1 assignment takes precedence if both keys exist, matching the app, so upgrades cannot count twice. The Paywall flow × yearly price table includes both versions and combines note and no-note assignments into the two base flows, keeping the six price/trial choices separate. Metrics are recalculated from the combined users; the preview can switch between With note and Without note. Previous results stay visible in the main tables without an expandable historical section. The dedicated A/B report and map retain the original experiment identities. Production/randomized records only; assigned users, paywall reach, paid conversion, net proceeds and total APPU include non-payers and pre-paywall dropouts. Recovery purchases, Weekly purchases, renewals and refunds retain their original attribution. Free trial starts are not paid conversions. The user-journey funnel shows testimonials and note as optional branches so controls are not reported as dropping out. Preview dialogs show both new screens before the relevant existing three-screen flow.
+Tap & Swipe reads both versions. The Data flow table preserves v1 results in Current flow and Versy reminder flow, adds v2 no-note users to those same rows, and shows the two new note variants separately. A saved v1 assignment takes precedence if both keys exist, matching the app, so upgrades cannot count twice. The Paywall flow × yearly price table includes both versions and combines note and no-note assignments into the two base flows, keeping the three seven-day price choices separate. Metrics are recalculated from the combined users; the preview can switch between With note and Without note. Previous results stay visible in the main tables without an expandable historical section. The dedicated A/B report and map retain the original experiment identities. Production/randomized records only; assigned users, paywall reach, paid conversion, net proceeds and total APPU include non-payers and pre-paywall dropouts. Recovery purchases, Weekly purchases, renewals and refunds retain their original attribution. Free trial starts are not paid conversions. The user-journey funnel shows testimonials and note as optional branches so controls are not reported as dropping out. Preview dialogs show both new screens before the relevant existing three-screen flow.
 
 The app and dashboard changes require their normal releases; source changes do not deploy either product. No new analytics backend, database, Superwall campaign or placement is added.
 
@@ -31,7 +31,7 @@ The next app build uses `onboarding_manifest_audio_v3` / `goe1_onboarding_manife
 
 Assignments are sticky for eligible new users. Existing v2 users retain `onboarding_copy_mascot_v2` / `goe1_onboarding_copy_mascot_v2`, their `current` / `mascot_free` variants and `30_70` or `15_85` allocations. They continue reporting under v2, without reenrollment. Existing v1 users keep their presentation without further v1 activity/completion writes. Legacy assignments, saved drafts and completed profiles are excluded from fresh enrollment. Debug previews cannot record completion; completion requires the assigned journey.
 
-The Glow A/B test card stays visible as **Deprecated — only IAM**, retaining both historical rows with assigned users, completion, net proceeds/ARPU, sessions per observed user-day and average time to cancellation. The map shows 100% IAM for new users and opens the preserved comparison without presenting historical metrics as current rollout results. V2 and v1 reports remain separate historical sections. All three assignment keys exclude users from the legacy wording comparison. Purchase attribution and transaction joins are unchanged. The paywall price/trial test has a separate v5 assignment and remains independent of onboarding; saved v4 assignments retain their identity. Both onboarding arms use the same native paywall placement.
+The Glow A/B test card stays visible as **Deprecated — only IAM**, retaining both historical rows with assigned users, completion, net proceeds/ARPU, sessions per observed user-day and average time to cancellation. The map shows 100% IAM for new users and opens the preserved comparison without presenting historical metrics as current rollout results. V2 and v1 reports remain separate historical sections. All three assignment keys exclude users from the legacy wording comparison. Purchase attribution and transaction joins are unchanged. The seven-day yearly-price test uses the separate v4 assignment and remains independent of onboarding; saved assignments retain their identity. Both onboarding arms use the same native paywall placement.
 
 These source changes are not deployed automatically: release the updated app and deploy the dashboard. Older App Store clients can still run their previous experiment. Empty states do not imply enrollment is already live.
 
@@ -42,7 +42,7 @@ The dashboard's existing server-side Superwall Query API connection reads these 
 Related app files (in the sibling `glow-app/glow-app` repo):
 
 - `native/Glow/NativePaywallAnalytics.swift`: persisted local state, scalar-JSON attributes, transaction observer.
-- `native/Glow/GlowProductID.swift`: `GlowPaywallVariant` and persisted `GlowYearlyPriceAssignment`, active v5 six-way price/trial split; saved v4 three-price assignments remain sticky.
+- `native/Glow/GlowProductID.swift`: `GlowPaywallVariant` and persisted `GlowYearlyPriceAssignment`, active v4 three-price split with seven-day trials; saved assignments remain sticky.
 - `native/Glow/SuperwallService.swift`: custom entry-point reach/dismiss hooks; no SDK placement registration.
 - `native/Glow/Views/GlowPaywallView.swift`: actual appearance hook.
 - `native/Glow/GlowSubscriptionStore.swift`: capture purchase attempt/result.
@@ -50,13 +50,13 @@ Related app files (in the sibling `glow-app/glow-app` repo):
 
 From October 7 through October 11, 2026, US/USA users receive yearly-only native paywalls in every language. The existing geo lookup resolves before startup product loading and analytics; non-US and unknown-country users retain their normal assignment. Package variants map to their yearly-only counterpart while preserving the assigned annual product and price. The saved v3 assignment is unchanged, and regular presentation resumes at local midnight October 12. Manual Debug design previews remain isolated. These presentations use the separate nonrandomized `native_paywall_us_yearly_oct2026` analytics experiment with `yr_49`, `yr_59`, or `yr_34` and only the matching yearly SKU in `allowedProducts`; do not mix them into the v3 randomized comparison. No fixed allocation badges are assigned to this temporary geographic cohort. Glow recovery offers also remain restricted to known non-US users through October 11; all countries, including unknown-country users, become eligible at local midnight October 12, 2026.
 
-The next Glow build starts `native_yearly_prices_v5`: three annual prices × two trial lengths, six equally likely assignments (1/6 each). Existing `native_yearly_prices_v4` assignments retain their 7-day SKU, timestamp and immutable attribution. The Data yearly-price and flow × price tables pool matching v4/v5 7-day arms and add distinct 3-day rows; earlier five-way and forced presentation cohorts remain separate. Native purchase-attribution reports retain each experiment's identity. All storefront prices come from StoreKit; US anchors are $34.99, $49.99 and $59.99. The independent reminder flow can still offer the fixed Weekly alternative, attributed to the saved annual-price arm.
+Glow uses `native_yearly_prices_v4`: three annual prices with seven-day trials, equally likely (1/3 each). Existing v4 assignments retain their SKU, timestamp and immutable attribution. The pending v5 trial-duration split was removed on November 4, 2026. The Data yearly-price and flow × price tables pool matching v4/v5 seven-day history and exclude three-day arms; earlier five-way and forced presentation cohorts remain separate. Native purchase-attribution reports retain each experiment's identity. All storefront prices come from StoreKit; US anchors are $34.99, $49.99 and $59.99. The independent reminder flow can still offer the fixed Weekly alternative, attributed to the saved annual-price arm.
 
 Dashboard files:
 
 - `lib/native-paywall-queries.ts`: paginated attribute fetch, authoritative money queries.
 - `lib/native-paywall-analytics.ts`: validation, attribution, cohort aggregation and statistics (pure/testable).
-- `lib/native-paywall-allocation.ts`: mirrors the upcoming Glow `native_yearly_prices_v5` six-way price/trial split, preserves v4’s 1/3 split and the released Glow 1.7.2 `native_paywalls_v3` five-way split: `yr_wk_59` and `yr_wk_34` received 25% each; `yr_49`, `yr_59` and `yr_34` shared the remaining 50% equally (exactly 1/6 each, displayed as ~17%). Variant and paywall identity are the same stable string. The temporary English presentation uses the separate, nonrandomized `native_paywall_legacy_en_sep2026` experiment with `yr_59` at 100%. Historical `native_yearly_v1` stays Annual/Pro yearly 50/50, and `native_paywalls_v2` retains its 25/25/50 allocation. Supports both demo variant IDs and live composite `variant|paywall` row IDs. Unknown allocations are omitted, never inferred from user counts. Badges describe code configuration, not observed traffic.
+- `lib/native-paywall-allocation.ts`: mirrors the active Glow `native_yearly_prices_v4` three-price split at 1/3 each, preserves the retired v5 six-way allocations for historical reporting and the released Glow 1.7.2 `native_paywalls_v3` five-way split: `yr_wk_59` and `yr_wk_34` received 25% each; `yr_49`, `yr_59` and `yr_34` shared the remaining 50% equally (exactly 1/6 each, displayed as ~17%). Variant and paywall identity are the same stable string. The temporary English presentation uses the separate, nonrandomized `native_paywall_legacy_en_sep2026` experiment with `yr_59` at 100%. Historical `native_yearly_v1` stays Annual/Pro yearly 50/50, and `native_paywalls_v2` retains its 25/25/50 allocation. Supports both demo variant IDs and live composite `variant|paywall` row IDs. Unknown allocations are omitted, never inferred from user counts. Badges describe code configuration, not observed traffic.
 - `components/analytics/NativePaywallsPanel.tsx`: language audience filter, all experiment groups, paywall/placement tables.
 - `lib/mobile-app-analytics.ts`: loads this report for Glow and Poky's detail views.
 
@@ -319,7 +319,7 @@ Glow also has compact **Paywall flows** and **Yearly prices** tables below User
 journey. Both use the first-install v1.8.3+ cohort across all time, in all languages and countries. Flow membership uses validated randomized production
 `gpf1_onboarding_paywall_flow_v2` for the four current arms, with `gpf1_onboarding_paywall_flow_v1` retained in the main no-note flow rows; prices read `gp1_a_native_yearly_prices_v4` (three 7-day arms) and
 `gp1_a_native_yearly_prices_v5` (six price/trial arms). Matching 7-day arms are pooled,
-while 3-day arms remain distinct; a user with both records counts once under the original v4 assignment. Startup price assignment can precede the SDK's install timestamp;
+while 3-day arms are excluded from the active price and flow × price tables; a user with both records counts once under the original v4 assignment. Startup price assignment can precede the SDK's install timestamp;
 this does not exclude the install. Outcomes begin at the later of installation
 and assignment and run through report time. Earlier subscription chains are
 excluded. Non-payers remain in the denominator, and renewals, weekly purchases,
@@ -465,9 +465,9 @@ The Versy reminder treatment now offers “View all plans”: the same assigned 
 
 On reaching that treatment, the native ledger permits Weekly in the assignment and current placement's `allowedProducts`; existing pending/completed purchase snapshots remain unchanged. For `native_yearly_prices_v4` and `native_yearly_prices_v5` only, the report accepts offer-list evolution from the assigned annual SKU to that same SKU plus `com.arthurbuildsstuff.glow.Weekly` when matching attribution. Experiment, variant, paywall, language, assignment timestamp and expected annual product must still match. Other product changes remain mismatches; no historical experiment rule is relaxed.
 
-Splash loading awaits all six annual price/trial products, Weekly and recovery-offer preloads. The app keeps the full catalog separate from the annual-only primary presentation.
+Splash loading awaits the three seven-day annual products, Weekly and recovery-offer preloads; retired `.trial3` products are not requested. The app keeps the full catalog separate from the annual-only primary presentation.
 
-The **Paywall flow × yearly price** table has twelve rows (two base flows × three prices × two trial lengths). Current flow pools `standard` + `standard_note`; Versy reminder flow pools `versy_reminder` + `versy_reminder_note`. Both base flows retain v1 users alongside v2 users. The separate Paywall flows table retains all four arms, with v1 history in the no-note rows. Dedicated A/B reports preserve each experiment's identity.
+The **Paywall flow × yearly price** table has six rows (two base flows × three seven-day prices). Current flow pools `standard` + `standard_note`; Versy reminder flow pools `versy_reminder` + `versy_reminder_note`. Both base flows retain v1 users alongside v2 users. The separate Paywall flows table retains all four arms, with v1 history in the no-note rows. Dedicated A/B reports preserve each experiment's identity.
 Membership requires both validated assignments for the same install; it is never
 inferred by multiplying aggregate totals. Outcomes start after the later assignment
 and installation. Users missing either assignment remain in their separate table
@@ -563,10 +563,7 @@ The temporary US override still takes priority and exposed users remain excluded
 
 ## October 23, 2026: annual 3-day / 7-day trials
 
-Glow uses `glow.paywall.assignment.v5` / `native_yearly_prices_v5` for fresh assignments:
-`yr_34`, `yr_49`, `yr_59` are the existing 7-day offers; `yr_34_3d`, `yr_49_3d`,
-`yr_59_3d` use the respective product IDs with `.trial3` appended. Each receives 1/6,
-so each duration receives 50% at each price. Existing v4 assignments are loaded unchanged.
+Glow’s proposed `glow.paywall.assignment.v5` / `native_yearly_prices_v5` split was removed before release on November 4, 2026. Active assignments use v4: `yr_34`, `yr_49` and `yr_59`, each at 1/3 with seven-day trials. Existing v4 assignments remain unchanged. The app ignores any saved v5 offer selection without deleting it; installs without v4 enroll normally into v4. Retired `yr_34_3d`, `yr_49_3d` and `yr_59_3d` identities and their original six-way allocations remain supported only for historical attribution. The active map, yearly-price and flow × price tables exclude three-day arms.
 
 Versy's proposed v4 trial-duration test was removed on October 26 before release.
 Before the fixed-price rollout below, the app assignment was `versy.paywall.yearlyPrice.assignment.v3` /
@@ -576,11 +573,11 @@ Matching seven-day v4 history is accepted defensively if present; migrated, deve
 unknown-product and mismatched allocations remain excluded. Country slices use the same rules.
 Historical transactions and purchase attribution records are not deleted.
 
-Glow warms every annual SKU before onboarding. Selection never substitutes a different
+Glow warms the three seven-day annual SKUs before onboarding. Selection never substitutes a different
 price or duration if Apple has not returned the assigned product. StoreKit's actual intro
-offer drives the rendered duration; the assignment supplies a matching 3/7-day fallback
-while loading. Standard flows remind 2 days before expiry (day 1 or 5). Choice flows offer
-1/2 days before a 3-day expiry and 2/3 before a 7-day expiry. Scheduled notifications use
+offer drives the rendered duration; the assignment supplies a seven-day fallback
+while loading. Standard flows remind 2 days before expiry (day 5). Choice flows offer
+2/3 days before a seven-day expiry and still adapt to actual shorter metadata. Scheduled notifications use
 verified Apple trial expiry; paid/ineligible purchases do not schedule a trial reminder.
 Versy retains its original seven-day product preload and reminder setup.
 

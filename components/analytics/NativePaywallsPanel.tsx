@@ -7,7 +7,7 @@ import { useState } from "react";
 import { type NativePaywallReport, type NativePaywallRow } from "@/lib/native-paywall-analytics";
 import { DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS } from "./dashboard-surface";
 import { cn } from "@/lib/utils";
-import { GLOW_PAYWALL_EXPERIMENT, GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES, formatPaywallAllocation, glowYearlyPrice, nativePaywallAllocation } from "@/lib/native-paywall-allocation";
+import { GLOW_PAYWALL_EXPERIMENT, GLOW_RETIRED_TRIAL_EXPERIMENT, GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_YEARLY_PRICES, formatPaywallAllocation, glowYearlyPrice, nativePaywallAllocation } from "@/lib/native-paywall-allocation";
 import { ReadinessIndicator } from "@/components/analytics/ExperimentStats";
 
 const languages: Record<string, string> = { all: "All languages", en: "English", es: "Spanish", de: "German", fr: "French", pt: "Portuguese" };
@@ -87,7 +87,7 @@ export default function NativePaywallsPanel({ appId, report }: { appId: "glow" |
       : !groups.length ? <Empty>{appId === "versy" ? "No verified attribution records yet. New records require the updated iOS app; earlier purchases are not assigned to a placement retroactively. Existing onboarding A/B revenue remains available in A/B tests." : "No production paywall records for this audience and date range yet."}</Empty>
       : groups.map((group) => <div key={group.experiment} className="space-y-4">
         {groups.length > 1 || appId === "versy" ? <h2 className="px-1 pt-2 text-sm font-semibold">{group.name}</h2> : null}
-        {appId === "glow" && (group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id || group.experiment === GLOW_PREVIOUS_YEARLY_PRICE_EXPERIMENT || group.experiment === GLOW_PAYWALL_EXPERIMENT.id || group.experiment === "native_paywall_us_yearly_oct2026") ? <>
+        {appId === "glow" && (group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id || group.experiment === GLOW_RETIRED_TRIAL_EXPERIMENT || group.experiment === GLOW_PAYWALL_EXPERIMENT.id || group.experiment === "native_paywall_us_yearly_oct2026") ? <>
           <NativePaywallResultsTable title="Yearly prices" rows={group.paywalls.filter((row) => glowYearlyPrice(row.id, row.paywall) !== null)} experiment={group.experiment} language={group.language} showProbabilityBest={group.experiment === GLOW_YEARLY_PRICE_EXPERIMENT.id} showGlowYearlyPrice />
           {group.experiment === GLOW_PAYWALL_EXPERIMENT.id && group.paywalls.some((row) => glowYearlyPrice(row.id, row.paywall) === null) && <details className="space-y-2">
             <summary className="cursor-pointer px-1 text-xs text-muted-foreground">Other paywall layouts in this five-variant test</summary>
