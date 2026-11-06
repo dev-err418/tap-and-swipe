@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "postinstall": "prisma generate",
+    "prebuild": "npm run check:whop",
     "build": "NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
     "lint": "eslint",
-    "check:discover": "tsx scripts/seo/check-discover-readiness.ts"
+    "check:discover": "tsx scripts/seo/check-discover-readiness.ts",
+    "check:whop": "node --import tsx --test scripts/tests/whop-*.test.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

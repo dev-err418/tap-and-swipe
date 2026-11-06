@@ -1,3 +1,4 @@
+import { validWhopMemberships, withWhopMemberEmail, retrieveWhopDiscord } from "../lib/whop-current";
 /**
  * Backfill script: walks all active Whop memberships and runs the same
  * grant flow as the new Discord-join webhook. Catches users who paid
@@ -59,24 +60,13 @@ function extractEmail(m: WhopMembership): string | null {
 
 async function fetchAllValidMemberships(): Promise<WhopMembership[]> {
   const all: WhopMembership[] = [];
-  let page = 1;
-  while (true) {
-    const url = new URL("https://api.whop.com/api/v2/memberships");
-    url.searchParams.set("valid", "true");
-    url.searchParams.set("per", "50");
-    url.searchParams.set("page", String(page));
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${WHOP_API_KEY}` },
+  for await (const membership of validWhopMemberships(WHOP_API_KEY)) {
+    const member = await withWhopMemberEmail(WHOP_API_KEY, membership);
+    all.push({
+      ...member,
+      plan: member.plan_id,
+      discord: await retrieveWhopDiscord(WHOP_API_KEY, member),
     });
-    if (!res.ok) {
-      throw new Error(`Whop API page=${page} failed: ${res.status} ${await res.text()}`);
-    }
-    const json = (await res.json()) as { data?: WhopMembership[] };
-    const batch = json.data ?? [];
-    if (batch.length === 0) break;
-    all.push(...batch);
-    if (batch.length < 50) break;
-    page++;
   }
   return all;
 }

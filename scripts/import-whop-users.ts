@@ -1,3 +1,4 @@
+import { validWhopMemberships, retrieveWhopDiscord } from "../lib/whop-current";
 /**
  * One-time import script for existing Whop memberships.
  *
@@ -55,20 +56,6 @@ async function addRole(discordUserId: string): Promise<boolean> {
   return true;
 }
 
-function extractDiscordId(membership: Record<string, unknown>): string | null {
-  // Try top-level "discord" field (could be string or object with .id)
-  const discord = membership.discord;
-  if (typeof discord === "string" && discord.length > 0) return discord;
-  if (
-    typeof discord === "object" &&
-    discord !== null &&
-    "id" in (discord as Record<string, unknown>)
-  ) {
-    return String((discord as Record<string, string>).id);
-  }
-  return null;
-}
-
 // ── Main ────────────────────────────────────────────────────────────
 
 async function main() {
@@ -77,87 +64,51 @@ async function main() {
   let imported = 0;
   let skipped = 0;
   let errors = 0;
-  let page = 1;
+  for await (const membership of validWhopMemberships(WHOP_API_KEY)) {
+    const discord = await retrieveWhopDiscord(WHOP_API_KEY, membership);
+    const discordId = discord?.id;
 
-  // Paginate through all active memberships (V2 API includes discord field)
-  while (true) {
-    const url = new URL("https://api.whop.com/api/v2/memberships");
-    url.searchParams.set("valid", "true");
-    url.searchParams.set("per", "50");
-    url.searchParams.set("page", String(page));
-
-    const res = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${WHOP_API_KEY}`,
-      },
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error(`API request failed: ${res.status} ${text}`);
-      process.exit(1);
+    if (!discordId) {
+      skipped++;
+      continue;
     }
 
-    const json = await res.json();
-    const memberships: Record<string, unknown>[] = json.data ?? [];
+    const discordUsername = discord?.username ?? discordId;
 
-    if (memberships.length === 0) break;
-
-    for (const membership of memberships) {
-      const discordId = extractDiscordId(membership);
-
-      if (!discordId) {
-        skipped++;
-        continue;
-      }
-
-      // Use discord username from Whop if available, fall back to ID
-      const discord = membership.discord as Record<string, unknown> | null;
-      const discordUsername =
-        (typeof discord?.username === "string" ? discord.username : null) ??
-        discordId;
-
-      try {
-        const roleGranted = await addRole(discordId);
-        if (!roleGranted) {
-          console.warn(
-            `  [skip] addRole returned false for ${discordId} — not in guild`
-          );
-        }
-
-        await prisma.user.upsert({
-          where: { discordId },
-          update: {
-            subscriptionStatus: "active",
-            roleGranted,
-          },
-          create: {
-            discordId,
-            discordUsername,
-            subscriptionStatus: "active",
-            roleGranted,
-          },
-        });
-
-        imported++;
-        console.log(
-          `  [imported] discordId=${discordId} (${discordUsername}) roleGranted=${roleGranted}`
+    try {
+      const roleGranted = await addRole(discordId);
+      if (!roleGranted) {
+        console.warn(
+          `  [skip] addRole returned false for ${discordId} — not in guild`
         );
-
-        // Avoid Discord rate limits
-        await sleep(500);
-      } catch (err) {
-        errors++;
-        console.error(`  [error] discordId=${discordId}:`, err);
       }
+
+      await prisma.user.upsert({
+        where: { discordId },
+        update: {
+          subscriptionStatus: "active",
+          roleGranted,
+        },
+        create: {
+          discordId,
+          discordUsername,
+          subscriptionStatus: "active",
+          roleGranted,
+        },
+      });
+
+      imported++;
+      console.log(
+        `  [imported] discordId=${discordId} (${discordUsername}) roleGranted=${roleGranted}`
+      );
+
+      // Avoid Discord rate limits
+      await sleep(500);
+    } catch (err) {
+      errors++;
+      console.error(`  [error] discordId=${discordId}:`, err);
     }
-
-    // V2 pagination uses current_page / total_page
-    const totalPages = json.pagination?.total_page ?? 1;
-    if (page >= totalPages) break;
-    page++;
   }
-
   console.log(`\nDone!`);
   console.log(`  Imported: ${imported}`);
   console.log(`  Skipped (no Discord): ${skipped}`);

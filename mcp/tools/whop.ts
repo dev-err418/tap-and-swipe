@@ -1,3 +1,4 @@
+import { whopList, validWhopMemberships, resolveWhopAccountId, whopAmount, type CurrentWhopVariant } from "@/lib/whop-current";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { fetchWhopMrr } from "@/lib/stats-helpers";
@@ -37,35 +38,21 @@ async function loadPlans(product: z.infer<typeof ProductKey>): Promise<PlanRecor
     return cached.plans;
   }
   const apiKey = whopKey(product);
+  const accountId = process.env[`WHOP_${product.toUpperCase()}_COMPANY_ID`] ?? await resolveWhopAccountId(apiKey);
   const plans: PlanRecord[] = [];
-  let page = 1;
-  let hasMore = true;
-  while (hasMore) {
-    const res = await fetch(
-      `https://api.whop.com/api/v2/plans?per_page=50&page=${page}`,
-      { headers: { Authorization: `Bearer ${apiKey}` } },
-    );
-    if (!res.ok) throw new Error(`Whop plans API: ${res.status}`);
-    const body = await res.json();
-    const list = body.data ?? body;
-    for (const p of Array.isArray(list) ? list : []) {
-      const renewal = Number(p.renewal_price ?? 0);
-      const initial = Number(p.initial_price ?? renewal);
-      const period = Number(p.billing_period ?? 30);
-      plans.push({
-        id: p.id,
-        name: p.name ?? p.internal_name ?? null,
-        renewalPrice: renewal,
-        initialPrice: initial,
-        billingPeriodDays: period,
-        monthlyEquivalent: period > 0 ? Math.round((renewal / period) * 30 * 100) / 100 : 0,
-        currency: p.base_currency ?? null,
-        product,
-      });
-    }
-    const pagination = body.pagination;
-    hasMore = pagination && pagination.current_page < pagination.total_page;
-    page++;
+  for await (const plan of whopList<CurrentWhopVariant>(apiKey, "variants", { account_id: accountId })) {
+    const renewal = whopAmount(plan.renewal_price);
+    const period = plan.billing_period ?? 0;
+    plans.push({
+      id: plan.id,
+      name: plan.title,
+      renewalPrice: renewal,
+      initialPrice: whopAmount(plan.initial_price),
+      billingPeriodDays: period,
+      monthlyEquivalent: plan.plan_type === "renewal" && period > 0 ? Math.round((renewal / period) * 30 * 100) / 100 : 0,
+      currency: plan.currency,
+      product,
+    });
   }
   cache.set(product, { fetchedAt: Date.now(), plans });
   return plans;
@@ -78,24 +65,10 @@ async function countActiveMemberships(
   const apiKey = whopKey(product);
   const byPlan = new Map<string, number>();
   let total = 0;
-  let page = 1;
-  let hasMore = true;
-  while (hasMore) {
-    const res = await fetch(
-      `https://api.whop.com/api/v2/memberships?valid=true&per_page=50&page=${page}`,
-      { headers: { Authorization: `Bearer ${apiKey}` } },
-    );
-    if (!res.ok) throw new Error(`Whop memberships API: ${res.status}`);
-    const body = await res.json();
-    const list = body.data ?? body;
-    for (const m of Array.isArray(list) ? list : []) {
-      if (planId && m.plan !== planId) continue;
-      total += 1;
-      byPlan.set(m.plan, (byPlan.get(m.plan) ?? 0) + 1);
-    }
-    const pagination = body.pagination;
-    hasMore = pagination && pagination.current_page < pagination.total_page;
-    page++;
+  for await (const membership of validWhopMemberships(apiKey)) {
+    if (planId && membership.plan_id !== planId) continue;
+    total += 1;
+    byPlan.set(membership.plan_id, (byPlan.get(membership.plan_id) ?? 0) + 1);
   }
   return { total, byPlan: Object.fromEntries(byPlan) };
 }

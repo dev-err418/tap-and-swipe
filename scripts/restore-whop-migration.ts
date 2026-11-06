@@ -1,3 +1,4 @@
+import { whopList, withWhopMemberEmail, retrieveWhopDiscord, type CurrentWhopMembership } from "../lib/whop-current";
 /**
  * Restore Whop migration casualties
  *
@@ -81,8 +82,6 @@ interface WhopMembership {
   id: string;
   status: string;
   email?: string;
-  stripe_customer_id?: string | null;
-  stripe_subscription_id?: string | null;
   manage_url?: string;
   plan?: { id: string };
   discord?: { id?: string } | null;
@@ -91,8 +90,6 @@ interface WhopMembership {
 
 let whopByEmail: Map<string, WhopMembership> | null = null;
 let whopByDiscord: Map<string, WhopMembership> | null = null;
-let whopByStripeCustomer: Map<string, WhopMembership> | null = null;
-let whopByStripeSub: Map<string, WhopMembership> | null = null;
 
 function bestMembership(a: WhopMembership | undefined, b: WhopMembership): WhopMembership {
   if (!a) return b;
@@ -104,49 +101,27 @@ async function loadWhopMemberships(): Promise<void> {
   if (whopByEmail) return;
   const byEmail = new Map<string, WhopMembership>();
   const byDiscord = new Map<string, WhopMembership>();
-  const byStripeCustomer = new Map<string, WhopMembership>();
-  const byStripeSub = new Map<string, WhopMembership>();
-  let page = 1;
-  while (true) {
-    const res = await fetch(
-      `https://api.whop.com/api/v2/memberships?per=50&page=${page}`,
-      { headers: { Authorization: `Bearer ${WHOP_API_KEY}` } }
-    );
-    if (!res.ok) break;
-    const json = (await res.json()) as {
-      data?: WhopMembership[];
-      pagination?: { current_page: number; total_page: number };
+  for await (const membership of whopList<CurrentWhopMembership>(WHOP_API_KEY, "memberships")) {
+    const member = await withWhopMemberEmail(WHOP_API_KEY, membership);
+    const m: WhopMembership = {
+      id: member.id,
+      status: member.status,
+      email: member.email ?? undefined,
+      manage_url: member.manage_url ?? undefined,
+      plan: { id: member.plan_id },
+      discord: await retrieveWhopDiscord(WHOP_API_KEY, member),
     };
-    for (const m of (json.data ?? [])) {
-      if (m.email) {
-        const k = m.email.toLowerCase();
-        byEmail.set(k, bestMembership(byEmail.get(k), m));
-      }
-      const did = m.discord?.id ?? m.metadata?.discordId;
-      if (did) byDiscord.set(did, bestMembership(byDiscord.get(did), m));
-      if (m.stripe_customer_id) {
-        byStripeCustomer.set(
-          m.stripe_customer_id,
-          bestMembership(byStripeCustomer.get(m.stripe_customer_id), m)
-        );
-      }
-      if (m.stripe_subscription_id) {
-        byStripeSub.set(
-          m.stripe_subscription_id,
-          bestMembership(byStripeSub.get(m.stripe_subscription_id), m)
-        );
-      }
+    if (m.email) {
+      const k = m.email.toLowerCase();
+      byEmail.set(k, bestMembership(byEmail.get(k), m));
     }
-    const pag = json.pagination;
-    if (!pag || pag.current_page >= pag.total_page) break;
-    page++;
+    const did = m.discord?.id ?? m.metadata?.discordId;
+    if (did) byDiscord.set(did, bestMembership(byDiscord.get(did), m));
   }
   whopByEmail = byEmail;
   whopByDiscord = byDiscord;
-  whopByStripeCustomer = byStripeCustomer;
-  whopByStripeSub = byStripeSub;
   console.log(
-    `Loaded Whop memberships: email=${byEmail.size} discord=${byDiscord.size} stripeCustomer=${byStripeCustomer.size} stripeSub=${byStripeSub.size}`
+    `Loaded Whop memberships: email=${byEmail.size} discord=${byDiscord.size}`
   );
 }
 
@@ -157,13 +132,11 @@ function isActiveStatus(s: string): boolean {
 async function findWhopMembership(opts: {
   email?: string | null;
   discordId?: string | null;
-  stripeCustomerId?: string | null;
-  stripeSubId?: string | null;
 }): Promise<WhopMembership | null> {
   await loadWhopMemberships();
+  // The Current API no longer returns Stripe customer/subscription IDs on
+  // memberships. Match the verified identity; main still checks Stripe status.
   const lookups: Array<WhopMembership | undefined> = [
-    opts.stripeSubId ? whopByStripeSub!.get(opts.stripeSubId) : undefined,
-    opts.stripeCustomerId ? whopByStripeCustomer!.get(opts.stripeCustomerId) : undefined,
     opts.discordId ? whopByDiscord!.get(opts.discordId) : undefined,
     opts.email ? whopByEmail!.get(opts.email.toLowerCase()) : undefined,
   ];
@@ -241,8 +214,6 @@ async function main() {
     const whop = await findWhopMembership({
       email,
       discordId: user.discordId,
-      stripeCustomerId: user.stripeCustomerId,
-      stripeSubId: activeSub.id,
     });
 
     console.log(
@@ -319,7 +290,6 @@ async function main() {
   for (const lic of orphanLicenses.rows) {
     const whop = await findWhopMembership({
       email: lic.email,
-      stripeCustomerId: lic.stripe_customer_id,
     });
     if (!whop) continue;
 

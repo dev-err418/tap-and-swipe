@@ -1,3 +1,4 @@
+import { retrieveWhopMembership, retrieveWhopDiscord, WhopRequestError, type CurrentWhopMembership } from "@/lib/whop-current";
 import { NextRequest, NextResponse } from "next/server";
 import { Whop } from "@whop/sdk";
 import {
@@ -161,25 +162,6 @@ function tierFromPlanId(
   return null;
 }
 
-async function fetchDiscordFromWhop(
-  membershipId: string
-): Promise<{ id: string; username: string } | null> {
-  const res = await fetch(
-    `https://api.whop.com/api/v2/memberships/${membershipId}`,
-    {
-      headers: { Authorization: `Bearer ${process.env.WHOP_API_KEY}` },
-    }
-  );
-  if (!res.ok) {
-    console.warn(
-      `[whop] fetchDiscordFromWhop failed — status=${res.status} membership=${membershipId}`
-    );
-    return null;
-  }
-  const json = await res.json();
-  return extractDiscord(json as Record<string, unknown>);
-}
-
 function unwrapWhopWebhook(
   bodyText: string,
   headers: Record<string, string>
@@ -235,6 +217,7 @@ async function fetchWhopMembership(
 ): Promise<{
   data: Record<string, unknown> | null;
   source: WhopWebhookSource | null;
+  apiKey?: string;
 }> {
   const configs: Array<{ label: WhopWebhookSource; apiKey?: string }> = [
     {
@@ -257,28 +240,12 @@ async function fetchWhopMembership(
     if (!config.apiKey || seen.has(config.apiKey)) continue;
     seen.add(config.apiKey);
 
-    const res = await fetch(
-      `https://api.whop.com/api/v2/memberships/${membershipId}`,
-      {
-        headers: { Authorization: `Bearer ${config.apiKey}` },
-      }
-    );
-    if (res.status === 404) continue;
-    if (!res.ok) {
-      console.warn(
-        `[whop] membership lookup failed — source=${config.label} status=${res.status} membership=${membershipId}`
-      );
-      continue;
+    try {
+      const membership = await retrieveWhopMembership(config.apiKey, membershipId);
+      return { data: membership as unknown as Record<string, unknown>, source: config.label, apiKey: config.apiKey };
+    } catch (error) {
+      console.warn(`[whop] membership lookup failed — source=${config.label}`, error);
     }
-
-    const json = (await res.json()) as Record<string, unknown>;
-    return {
-      data:
-        json.data && typeof json.data === "object"
-          ? (json.data as Record<string, unknown>)
-          : json,
-      source: config.label,
-    };
   }
 
   return { data: null, source: null };
@@ -363,15 +330,33 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fallback 2: fetch from Whop API when webhook payload lacks discord data
-    if (!discord) {
-      const membershipIdForLookup =
-        (data.id as string | undefined) ??
-        ((data.membership as Record<string, unknown> | undefined)?.id as
-          | string
-          | undefined);
-      if (membershipIdForLookup) {
-        discord = await fetchDiscordFromWhop(membershipIdForLookup);
+    if (!discord && membershipFromApi) {
+      discord = extractDiscordFromMetadata(membershipFromApi);
+    }
+
+    // Existing bindings also let cancellation events revoke the right Discord
+    // role without requiring another external-account lookup.
+    if (!discord && membershipIdForLookup) {
+      const existing = await prisma.user.findUnique({
+        where: { whopMembershipId: membershipIdForLookup },
+        select: { discordId: true, discordUsername: true },
+      });
+      if (existing?.discordId) discord = {
+        id: existing.discordId,
+        username: existing.discordUsername ?? existing.discordId,
+      };
+    }
+
+    if (!discord && membershipFromApi && resolvedMembership.apiKey) {
+      try {
+        discord = await retrieveWhopDiscord(
+          resolvedMembership.apiKey, membershipFromApi as unknown as CurrentWhopMembership,
+        );
+      } catch (error) {
+        // Preserve email/license fulfillment. Users can still claim access on
+        // Discord join via the membership external_account filter.
+        if (!(error instanceof WhopRequestError) || error.status !== 403) throw error;
+        console.warn("[whop] Whop denied customer Discord lookup; continuing with metadata, stored bindings, and Discord join verification");
       }
     }
 

@@ -1,3 +1,4 @@
+import { validWhopMemberships, whopList, whopAmount, type CurrentWhopMembership, type CurrentWhopVariant } from "./whop-current";
 // ── Shared helpers used by mobile/stats route and daily-stats cron ───
 
 export function pctChange(current: number, previous: number): number | null {
@@ -80,59 +81,21 @@ export const PRODUCT_LABELS: Record<string, string> = {
 // ── Whop MRR ────────────────────────────────────────────────────────────
 
 export async function fetchWhopMrr(apiKey: string): Promise<number> {
+  const memberships: CurrentWhopMembership[] = [];
+  for await (const membership of validWhopMemberships(apiKey)) memberships.push(membership);
+  if (!memberships.length) return 0;
+
   const planPrices = new Map<string, number>();
-
-  let planPage = 1;
-  let hasMorePlans = true;
-  while (hasMorePlans) {
-    const res = await fetch(
-      `https://api.whop.com/api/v2/plans?per_page=50&page=${planPage}`,
-      { headers: { Authorization: `Bearer ${apiKey}` } }
-    );
-    if (!res.ok) throw new Error(`Whop plans API: ${res.status}`);
-    const body = await res.json();
-    const plans = body.data ?? body;
-
-    for (const plan of Array.isArray(plans) ? plans : []) {
-      const id = plan.id as string;
-      const renewalAmount = Number(
-        plan.renewal_price ?? plan.initial_price ?? 0
-      );
-      const billingPeriod = Number(plan.billing_period ?? 30);
-      const monthly =
-        billingPeriod > 0 ? (renewalAmount / billingPeriod) * 30 : 0;
-      planPrices.set(id, monthly);
+  const accountIds = new Set(memberships.map((membership) => membership.account.id));
+  for (const accountId of accountIds) {
+    for await (const plan of whopList<CurrentWhopVariant>(apiKey, "variants", { account_id: accountId })) {
+      const period = plan.billing_period;
+      const monthly = plan.plan_type === "renewal" && period && period > 0
+        ? (whopAmount(plan.renewal_price) / period) * 30 : 0;
+      planPrices.set(plan.id, monthly);
     }
-
-    const pagination = body.pagination;
-    hasMorePlans =
-      pagination && pagination.current_page < pagination.total_page;
-    planPage++;
   }
-
-  let mrr = 0;
-  let memberPage = 1;
-  let hasMore = true;
-  while (hasMore) {
-    const res = await fetch(
-      `https://api.whop.com/api/v2/memberships?valid=true&per_page=50&page=${memberPage}`,
-      { headers: { Authorization: `Bearer ${apiKey}` } }
-    );
-    if (!res.ok) throw new Error(`Whop memberships API: ${res.status}`);
-    const body = await res.json();
-    const memberships = body.data ?? body;
-
-    for (const m of Array.isArray(memberships) ? memberships : []) {
-      const planId = m.plan as string;
-      mrr += planPrices.get(planId) ?? 0;
-    }
-
-    const pagination = body.pagination;
-    hasMore =
-      pagination && pagination.current_page < pagination.total_page;
-    memberPage++;
-  }
-
+  const mrr = memberships.reduce((total, membership) => total + (planPrices.get(membership.plan_id) ?? 0), 0);
   return Math.round(mrr * 100) / 100;
 }
 
