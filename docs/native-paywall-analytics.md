@@ -515,8 +515,10 @@ underlying detailed report modules and authenticated API remain available.
 
 ### Country selector
 
-App detail has All countries plus the three known countries with the highest net
-proceeds earned during the selected date period, with country code as the tie-breaker.
+Versy's app detail picker shows All countries, United States, France and Germany
+in that order. Glow and Poky show All countries plus the three known countries
+with the highest net proceeds earned during the selected date period, with country
+code as the tie-breaker.
 Ranking uses the period’s transaction-country totals, including renewals and refunds,
 independently of the minimum-version experiment cohort and the fixed 30-day bottom
 charts. All countries also includes smaller/unknown countries. Within the cohort
@@ -526,7 +528,7 @@ tables, screen-funnel modals and Trial survival together. Version cutoffs and
 maturity rules remain unchanged. A country with no installs in the selected date
 window stays empty in the overview; it never falls back to global totals.
 
-Only aggregate reports for the top three countries reach the browser. Journey
+Only aggregate reports for the picker countries reach the browser. Journey
 queries group by first country and version before summing the All countries report;
 no proportional allocation or user-level records are used. Subscription-chain
 ownership retains anonymous renewals/refunds in the original install country.

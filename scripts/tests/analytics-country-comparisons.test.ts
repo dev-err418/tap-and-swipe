@@ -3,7 +3,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
-import { topAnalyticsCountries } from "../../lib/analytics-country-options";
+import { analyticsCountryOptions } from "../../lib/analytics-country-options";
 import { buildAppCountryComparisons } from "../../lib/app-country-comparisons";
 import { experimentMinimumInstallVersion } from "../../lib/app-experiment-cohort";
 import { GLOW_PAYWALL_FLOW_ALLOCATION, GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY } from "../../lib/glow-onboarding-experience";
@@ -19,16 +19,17 @@ const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUs
   isTrialConversion: false, eventTs: start + day, attributionTs: start + day, expiresAt: 0, ...extra });
 
 test("top three countries rank period proceeds, excluding unknown countries with stable tie ordering", () => {
-  assert.deepEqual(topAnalyticsCountries([
+  assert.deepEqual(analyticsCountryOptions("glow", [
     { country: "US", proceeds: 100 }, { country: "us", proceeds: -90 },
     { country: "MX", proceeds: 50 }, { country: "CA", proceeds: 30 }, { country: "GB", proceeds: 30 },
     { country: "unknown", proceeds: 500 }, { country: "FR", proceeds: Number.NaN },
   ]), [{ code: "MX", proceeds: 50 }, { code: "CA", proceeds: 30 }, { code: "GB", proceeds: 30 }]);
-  assert.deepEqual(topAnalyticsCountries([]), []);
+  assert.deepEqual(analyticsCountryOptions("poky", []), []);
 });
 
 for (const appId of ["glow", "poky", "versy"] as const) {
   test(`${appId} country comparisons preserve nonpayers and anonymous subscription outcomes without cross-country leakage`, () => {
+    const secondCountry = appId === "versy" ? "FR" : "MX";
     const definition = userJourneyDefinition(appId)!;
     const variant = definition.variants[0].key;
     const attrs = {
@@ -46,19 +47,22 @@ for (const appId of ["glow", "poky", "versy"] as const) {
       { variant, key: ASSIGNED_KEY, users: assigned }, { variant, key: definition.variants[0].steps[0].attribute, users: assigned },
     ]);
     const report = buildAppCountryComparisons({ appId, asOf,
-      countries: [{ country: "US", proceeds: 10 }, { country: "MX", proceeds: 30 }],
+      countries: [{ country: "US", proceeds: 10 }, { country: secondCountry, proceeds: 30 },
+        ...(appId === "versy" ? [{ country: "MX", proceeds: 100 }] : [])],
       installs: [install("payer", "US", experimentMinimumInstallVersion(appId)), install("free", "US", experimentMinimumInstallVersion(appId)),
-        install("mexico", "MX", experimentMinimumInstallVersion(appId)), install("old", "FR", "1.0.0"),
+        install("second-payer", secondCountry, experimentMinimumInstallVersion(appId)), install("old", "FR", "1.0.0"),
         install("old", "US", experimentMinimumInstallVersion(appId), start + day)],
       events: [event("payer", { periodType: "trial", netProceeds: 0, expiresAt: start + 8 * day }),
         event("", { originalTransactionId: "payer", transactionId: "paid", name: "renewal", netProceeds: 12, eventTs: start + 8 * day }),
         event("", { originalTransactionId: "payer", transactionId: "paid", name: "cancellation", isRefund: true, netProceeds: -2, eventTs: start + 9 * day }),
-        event("mexico")],
-      attributes: new Map(["payer", "free", "mexico", "old"].map((id) => [id, attrs])),
-      journey: journey(3), journeyCountries: { US: journey(2), MX: journey(1) },
+        event("second-payer")],
+      attributes: new Map(["payer", "free", "second-payer", "old"].map((id) => [id, attrs])),
+      journey: journey(3), journeyCountries: { US: journey(2), [secondCountry]: journey(1) },
     });
-    assert.deepEqual(report.options, [{ code: "MX", proceeds: 30 }, { code: "US", proceeds: 10 }]);
-    for (const [code, installs, proceeds] of [["US", 2, 10], ["MX", 1, 30]] as const) {
+    assert.deepEqual(report.options, appId === "versy"
+      ? [{ code: "US", proceeds: 10 }, { code: "FR", proceeds: 30 }, { code: "DE", proceeds: 0 }]
+      : [{ code: "MX", proceeds: 30 }, { code: "US", proceeds: 10 }]);
+    for (const [code, installs, proceeds] of [["US", 2, 10], [secondCountry, 1, 30]] as const) {
       const slice = report.slices[code];
       assert.equal(slice.userJourney!.variants[0].assigned, installs);
       assert.equal(slice.userJourney!.variants[0].steps[0].users, installs);
@@ -80,8 +84,12 @@ for (const appId of ["glow", "poky", "versy"] as const) {
     assert.match(html, /role="group" aria-label="Country"/);
     assert.match(html, /aria-pressed="true"[^>]*><span[^>]*>🌍<\/span>All countries/);
     assert.match(html, /United States/);
-    assert.match(html, /Mexico/);
-    assert.ok(html.indexOf("Mexico") < html.indexOf("United States"));
+    if (appId === "versy") {
+      assert.match(html, /All countries[\s\S]*United States[\s\S]*France[\s\S]*Germany/);
+      assert.doesNotMatch(html, /Mexico/);
+    } else {
+      assert.match(html, /Mexico[\s\S]*United States/);
+    }
   });
 }
 

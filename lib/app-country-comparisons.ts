@@ -1,4 +1,4 @@
-import { topAnalyticsCountries, type AnalyticsCountryOption } from "./analytics-country-options";
+import { analyticsCountryOptions, type AnalyticsCountryOption } from "./analytics-country-options";
 import { marketCountry } from "./analytics-markets";
 import { experimentInstallCohort, experimentMinimumInstallVersion } from "./app-experiment-cohort";
 import { buildGlowPaywallCohortComparisons, type GlowPaywallCohortComparisons, type PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
@@ -25,13 +25,13 @@ type Event = Parameters<typeof installCohortTrialSurvival>[1][number] & Paramete
 /** Aggregate each country independently; no user identities or raw transactions leave the server. */
 export function buildAppCountryComparisons(input: {
   appId: "glow" | "poky" | "versy"; installs: Install[]; events: Event[];
-  countries: Parameters<typeof topAnalyticsCountries>[0];
+  countries: Parameters<typeof analyticsCountryOptions>[1];
   attributes: Map<string, Record<string, string>>; asOf: number;
   journey: UserJourneyReport | null; journeyCountries?: Record<string, UserJourneyReport>;
 }): AppCountryComparisons {
   const minimum = experimentMinimumInstallVersion(input.appId)!;
   const eligible = experimentInstallCohort(input.installs, minimum, input.asOf);
-  const options = topAnalyticsCountries(input.countries);
+  const options = analyticsCountryOptions(input.appId, input.countries);
   const slices = Object.fromEntries(options.map(({ code }) => {
     const members = eligible.filter((install) => marketCountry(install.country) === code);
     const definition = userJourneyDefinition(input.appId)!;

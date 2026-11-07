@@ -45,7 +45,7 @@ import { buildAppOverviewCohorts, type AppOverviewCohorts } from "./app-overview
 import { APPLE_ADS_KEYWORD_ATTRIBUTE_KEYS, buildAppleAdsKeywordReport, type AppleAdsKeywordReport } from "./apple-ads-keyword-analytics";
 import { addAppleKeywordSpend, keywordMatureEnd, keywordUtcStart } from "./apple-ads-keyword-spend";
 import { compactAppDataView } from "./app-analytics-data-view";
-import { topAnalyticsCountries } from "./analytics-country-options";
+import { analyticsCountryOptions } from "./analytics-country-options";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -410,13 +410,14 @@ async function getSuperwallAppAnalytics(
   sessions = true,
   includeReports = true,
 ): Promise<MobileAppAnalytics> {
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":four-onboarding-routes-20261030" : ":yearly-trial3-20261023"}:${app.id === "poky" ? "keyword-cohorts-v2" : "keyword-cohorts-v3-matched-roas"}`;
+  const fixedCountryPicker = includeCountries && app.id === "versy";
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":four-onboarding-routes-20261030" : ":yearly-trial3-20261023"}:${app.id === "poky" ? "keyword-cohorts-v2" : "keyword-cohorts-v3-matched-roas"}${fixedCountryPicker ? ":fixed-countries" : ""}`;
   return analyticsSnapshot(`mobile:${cacheKey}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports), {
     project: includeReports ? undefined : compactAppDataView,
     // Only the keyword ROAS definition changed; the rest of these saved reports is compatible.
     // The projection removes old estimates until the scheduler supplies a matched-period basis.
-    fallbackKeys: !includeReports && app.id !== "poky"
+    fallbackKeys: !includeReports && app.id !== "poky" && !fixedCountryPicker
       ? [`mobile:${cacheKey.replace("keyword-cohorts-v3-matched-roas", "keyword-cohorts-v2")}`] : [],
   });
 }
@@ -595,7 +596,7 @@ async function loadSuperwallAppAnalytics(
   }));
 
   const markets = facts ? buildAnalyticsMarkets({ period, startMs, endMs, installs: facts.installs, events: facts.events, attributes: facts.attributes, downloads: [] },
-    includeReports ? undefined : topAnalyticsCountries(countries).map((country) => country.code)) : undefined;
+    includeReports ? undefined : analyticsCountryOptions(app.id, countries).map((country) => country.code)) : undefined;
   if (facts && markets) {
     const owners = new Map<string, { user: string; at: number }>();
     for (const event of facts.events) {
