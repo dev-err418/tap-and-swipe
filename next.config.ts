@@ -24,6 +24,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/draft/:id",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
+      {
         source: "/:path(guests|community-icons|screenshots)/:file*",
         headers: [
           {
@@ -97,6 +104,10 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
+      {
+        source: "/draft/:id",
+        destination: "/drafts/:id",
+      },
       {
         source: "/.well-known/llms.txt",
         destination: "/llms.txt",

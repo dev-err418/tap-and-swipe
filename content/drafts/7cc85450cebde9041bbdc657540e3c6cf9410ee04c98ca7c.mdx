@@ -1,0 +1,116 @@
+---
+title: "Whop Payments Review: How I Handle SaaS Subscriptions"
+description: "My Whop payments review as a SaaS founder: checkout setup, recurring billing, customer access, daily operations, and what to check before switching."
+date: "2026-11-08"
+image: "/arthur-podcast.webp"
+imageAlt: "Arthur Spalanzani, founder of Tap & Swipe, speaking into a microphone"
+tags: ["SaaS", "payments", "whop", "subscription billing", "indie dev"]
+# Draft only. Arthur reviews first; Karina Egle at Whop approves before publication.
+# Paid placement: $200 from Whop. Suggested future slug: whop-payments-review.
+---
+
+*Disclosure: Whop is sponsoring this article. I use Whop for payments and subscription billing across my SaaS products. This review covers my own setup and experience.*
+
+**I run all my SaaS products on Whop for payments and subscription billing, and it works well for me. Customers pay through Whop, subscriptions renew through Whop, and my backend connects those payments to access inside my products. Here's how that actually works.**
+
+---
+
+## Why I use Whop for SaaS payments
+
+I'm Arthur, the founder of Tap & Swipe. I build software, including the [App Sprint ASO tool](/case-studies/app-sprint-aso), and I want to spend my time improving those products. Billing is necessary, but I don't want every new subscription to create work for me.
+
+The first payment is only part of it. Someone needs to get access after paying. Their subscription needs to renew. If they cancel, the app needs to know when their access should end. And when they email with a billing question, I need to be able to connect the payment to the right customer.
+
+That's the job Whop does in my stack: **payments and subscription billing infrastructure for my software businesses.**
+
+I covered the wider provider decision in my [SaaS payments comparison](/case-studies/saas-payments). This review is about living with the setup once you've made that decision.
+
+---
+
+## How my Whop checkout works
+
+My website handles the product explanation and pricing. When someone chooses an offer, my backend creates a Whop checkout for that plan and sends them to the payment page. After checkout, they return to my site.
+
+For App Sprint ASO, that means choosing Solo or Pro, then monthly or annual billing. Each combination maps to its own plan in the integration. The customer picks what they want, and the checkout uses the matching billing terms.
+
+I also attach information about the purchase, such as the product and billing interval. That lets my backend connect what happened at checkout to what should happen in the app.
+
+Whop offers both checkout links and embedded checkout, as described on its <a href="https://whop.com/network/" rel="sponsored noopener noreferrer">payments overview</a>. My current setup uses hosted checkout. That's been a practical fit for me: I keep control of the sales page and use Whop to take the payment.
+
+---
+
+## Setting up Whop for subscription billing
+
+The way I think about setup is in three parts: the offer, the checkout, and access to the software.
+
+### Define the subscription customers are buying
+
+Start with the pricing structure. What does each tier include? Is it monthly or annual? Is there a trial? Those decisions need to be clear before connecting the buy button.
+
+In my ASO integration, the monthly and annual options are explicit. I can trace the customer's selection to the plan used at checkout. That makes the flow easier to understand when I change an offer or investigate a purchase.
+
+### Connect checkout to the product
+
+Creating a checkout is one part of the integration. Delivering what the customer paid for is another.
+
+My backend listens for Whop's payment and membership events. A webhook is simply a notification sent to my server when something happens, such as a successful payment or a subscription becoming active. Whop documents this in its <a href="https://docs.whop.com/developer/guides/webhooks" rel="sponsored noopener noreferrer">webhook guide</a>.
+
+For my software, those events connect billing to license creation and access. The license system still belongs to my application. Whop supplies the billing events that drive it.
+
+### Check the full subscription lifecycle
+
+The setup work doesn't end when a test payment succeeds. I'd also check renewals, failed payments, cancellation, and the point at which access actually expires.
+
+One detail in my own integration: **canceling the next renewal doesn't immediately deactivate the customer's license.** My backend treats cancellation at the end of the billing period separately from membership deactivation. Someone who has paid for a period should keep the access they're entitled to.
+
+That's the kind of detail I'd spend time on before sending traffic to a new checkout. The <a href="https://docs.whop.com/" rel="sponsored noopener noreferrer">Whop documentation</a> is the starting point for connecting the payment flow to your own app.
+
+---
+
+## What day-to-day subscription management looks like
+
+Once the integration is in place, I don't need to manually create a license for every new purchase. My backend handles that from the billing events and sends the customer their license email.
+
+The same connection matters later. An active subscription and a deactivated subscription should produce different outcomes in the software. My integration handles those changes so billing and access stay connected.
+
+For support, I care about a few very ordinary questions: which offer did this person buy, did their payment succeed, and should their license still be active? Keeping the payment, membership, and product access connected makes those questions easier to work through.
+
+Whop's <a href="https://whop.com/blog/subscription-billing-software/" rel="sponsored noopener noreferrer">guide to subscription billing software</a> covers the broader category, including recurring charges, failed-payment handling, and subscription management. Those are the things I'd look at when choosing a provider. A checkout that works on day one is useful; a billing setup that still makes sense at renewal is what I need to run a SaaS.
+
+---
+
+## What works well for me
+
+The biggest benefit is having a repeatable payment flow across my SaaS products. I can connect an offer to checkout, then connect the resulting subscription to the relevant access or license.
+
+I also like that this fits around my existing software. My website, backend, and product experience remain mine. Whop handles the payments and recurring billing, and the integration connects the two.
+
+For a small software business, that's useful. There are already enough things to maintain: the app, the website, customer support, and whatever API decides to break this week. I want the billing side to be understandable when I need to touch it, and automated for the routine purchases and renewals.
+
+That's why it works for me. The value is in how it fits into the business I'm already running.
+
+---
+
+## Whop fees and the trade-offs I'd check
+
+I would still look beyond the checkout before choosing Whop for another business.
+
+First, compare the **total cost for your actual transactions**. Whop's own <a href="https://whop.com/blog/payment-processing-for-small-business/" rel="sponsored noopener noreferrer">payment-processing guide</a>, listed in its business resources, distinguishes card processing from optional features such as billing and payment orchestration. International cards and currency conversion can also affect the cost. The headline processing rate alone won't tell you what you'll pay.
+
+Second, budget time for the integration. My software needs its own rules for licenses, account matching, and access. Whop provides the billing infrastructure, but I still own that application logic. The webhook endpoint is code I have to maintain.
+
+Third, check any billing behavior that is specific to your product. My monthly and annual subscriptions are a useful example, but they don't prove that every custom enterprise contract or usage-based pricing model will fit the same setup. I'd test the exact flow I planned to sell.
+
+And if you're switching providers, work through existing subscriptions with the team before making the move. Keeping current customers billing correctly matters more than getting a new checkout button live quickly.
+
+---
+
+## Would I recommend Whop for SaaS subscription billing?
+
+Yes, based on my experience running my SaaS payments through it.
+
+For a founder selling software subscriptions, Whop is worth considering if you want payment acceptance and recurring billing connected to your own product. My setup is a concrete example: monthly and annual offers, hosted checkout, and billing events that control software access.
+
+I'd start with one offer and check the whole journey, from purchase to renewal to cancellation. If that works cleanly with your product and the costs make sense for your business, you have something useful to build on.
+
+That's what I want from payments: customers can subscribe, my software knows what they've bought, and I can get back to building it.
