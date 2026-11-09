@@ -177,20 +177,20 @@ test("expiry and missing data are explicit, and no immature user is counted as a
 
 test("country slicing rebuilds the comparison, retaining anonymous transaction follow-ups", () => {
   const report = buildAppCountryComparisons({ appId: "versy", asOf, journey: null,
-    countries: [{ country: "US", proceeds: 0 }, { country: "FR", proceeds: 0 }, { country: "MX", proceeds: 0 }],
-    installs: [install("us"), install("fr", { country: "FR" }), install("mx", { country: "MX" })],
-    attributes: new Map([["us", assignment()], ["fr", assignment({ country: "FR" })], ["mx", assignment({ country: "MX" })]]),
-    events: [event("us"), event("fr"), event("mx"), event("", { originalTransactionId: "us", name: "cancellation", eventTs: start + 30 * hour })],
+    countries: [{ country: "US", proceeds: 0 }, { country: "FR", proceeds: 0 }, { country: "DE", proceeds: 0 }],
+    installs: [install("us"), install("fr", { country: "FR" }), install("de", { country: "DE" })],
+    attributes: new Map([["us", assignment()], ["fr", assignment({ country: "FR" })], ["de", assignment({ country: "DE" })]]),
+    events: [event("us"), event("fr"), event("de"), event("", { originalTransactionId: "us", name: "cancellation", eventTs: start + 30 * hour })],
   });
   assert.equal(report.slices.US.versyPaywallComparison!.checkpoints.hard[1].uncancelledTrials, 0);
   assert.equal(report.slices.FR.versyPaywallComparison!.checkpoints.hard[1].uncancelledTrials, 1);
-  assert.equal(report.slices.MX.versyPaywallComparison!.status, "ready");
-  assert.equal(report.slices.MX.versyPaywallComparison!.rows[0].conversions!.global.trials, 1);
-  assert.equal(report.slices.MX.versyPaywallComparison!.noteExperiment!.flows.rows.find((row) => row.version === "bible_widget")!.installs, 1);
+  assert.equal(report.slices.DE.versyPaywallComparison!.status, "ready");
+  assert.equal(report.slices.DE.versyPaywallComparison!.rows[0].conversions!.global.trials, 1);
+  assert.equal(report.slices.DE.versyPaywallComparison!.noteExperiment!.flows.rows.find((row) => row.version === "bible_widget")!.installs, 1);
   const html = renderToStaticMarkup(createElement(VersyPaywallComparisonPanel, { report: report.slices.US.versyPaywallComparison! }));
   assert.ok(html.indexOf("Onboarding paywalls") < html.indexOf("Paywall flows · note variants"));
   assert.match(html, /Hard Widget/);
-  assert.match(html, /all countries and trial lengths/);
+  assert.match(html, /Installed on v1\.2\.6\+/);
   assert.doesNotMatch(html, /7-day trials|excludes Mexico/);
   assert.doesNotMatch(html, /<details|<summary/);
   assert.match(renderToStaticMarkup(createElement(VersyPaywallComparisonPanel, { report: null })), /comparison is unavailable/);

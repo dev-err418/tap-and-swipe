@@ -6,6 +6,7 @@ import type { MobileAppExperiment, MobileAppExperimentSlice, MobileAppExperiment
 
 export const VERSY_NOTE_EXPERIMENT = "versy_paywall_note_v1";
 export const VERSY_NOTE_ATTRIBUTE = "vn1_versy_paywall_note_v1";
+const VERSY_NOTE_LANGUAGES = ["en", "de", "es", "pt", "fr"] as const;
 export const VERSY_NOTE_FLOWS = [
   { key: "bible_widget", label: "Bible Widget" },
   { key: "bible_widget_shorter", label: "Bible Short" },
@@ -16,7 +17,7 @@ export const VERSY_NOTE_FLOWS = [
 export type VersyNoteAssignment = {
   schema: 1; experiment: typeof VERSY_NOTE_EXPERIMENT; allocation: "20_80" | "50_50";
   variant: "control" | "note"; flow: typeof VERSY_NOTE_FLOWS[number]["key"];
-  language: "en" | "de" | "es" | "pt"; assignedAt: number;
+  language: typeof VERSY_NOTE_LANGUAGES[number]; assignedAt: number;
   environment: "production"; randomized: true; access: "hard" | "dismissible"; yearlyProduct: string;
   viewedAt?: number; continuedAt?: number; paywallViewedAt?: number;
 };
@@ -30,7 +31,7 @@ export function parseVersyNoteAssignment(values: Record<string, string> | undefi
     if (typeof r === "string") r = JSON.parse(r);
     if (!object(r) || r.schema !== 1 || r.experiment !== VERSY_NOTE_EXPERIMENT || !["20_80", "50_50"].includes(String(r.allocation))
       || !["control", "note"].includes(String(r.variant)) || !VERSY_NOTE_FLOWS.some((f) => f.key === r.flow)
-      || !["en", "de", "es", "pt"].includes(String(r.language)) || r.environment !== "production" || r.randomized !== true
+      || !VERSY_NOTE_LANGUAGES.some((language) => language === r.language) || r.environment !== "production" || r.randomized !== true
       || !["hard", "dismissible"].includes(String(r.access)) || typeof r.yearlyProduct !== "string" || !r.yearlyProduct
       || (isVersyScrollRoute(r.flow) && r.access !== "dismissible")
       || typeof r.assignedAt !== "number" || !Number.isFinite(r.assignedAt) || r.assignedAt <= 0 || r.assignedAt > asOf) return null;
@@ -154,7 +155,7 @@ export function versyNoteExperiment(facts: Facts, asOf = Date.now()): MobileAppE
     return ["control", "note"].map((key) => ({ ...slice(overall, key), key, label: overall.overall.labels[key],
       countries: Object.fromEntries(countryReports.map(([country, comparison]) => [country, slice(comparison, key)])) }));
   };
-  const languageVariants = Object.fromEntries(["en", "de", "es", "pt"].map((language) => [language,
+  const languageVariants = Object.fromEntries(VERSY_NOTE_LANGUAGES.map((language) => [language,
     variants(new Map([...facts.attributes].filter(([, attrs]) => parseVersyNoteAssignment(attrs, asOf)?.language === language)))]));
   const checked = report(facts.installs);
   const incomplete = checked.overall.rows.some((r) => {

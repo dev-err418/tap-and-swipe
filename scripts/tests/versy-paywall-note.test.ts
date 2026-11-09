@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import VersyPaywallNotePanel from "../../components/analytics/VersyPaywallNotePanel";
 import { buildVersyNoteReport, parseVersyNoteAssignment, versyNoteExperiment, VERSY_NOTE_ATTRIBUTE, VERSY_NOTE_EXPERIMENT, VERSY_NOTE_FLOWS, type VersyNoteAssignment } from "../../lib/versy-paywall-note";
 import { appExperimentFlow } from "../../lib/app-experiment-flow";
+import { buildAppCountryComparisons } from "../../lib/app-country-comparisons";
 import { buildVersyPaywallComparison, VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE } from "../../lib/versy-paywall-comparison";
 
 const day = 86_400_000, start = Date.parse("2026-10-26T00:00:00Z"), end = start + 7 * day, asOf = start + 20 * day;
@@ -72,7 +73,7 @@ test("flow totals pool historical no-note users with new controls while A/B resu
       comparison.rows.reduce((sum, r) => sum + r.conversions!.global[field], 0) + (field === "installs" ? 1 : 0));
   }
   const html = renderToStaticMarkup(createElement(VersyPaywallNotePanel, { report }));
-  assert.match(html, /Without-note rows combine previous users and current controls/);
+  assert.match(html, /Installed on v1\.2\.6\+/);
   const flowTable = html.split("Team note A/B test")[0];
   assert.doesNotMatch(flowTable, /Win %|APPU lift/);
 });
@@ -87,6 +88,25 @@ test("invalid saved note assignments cannot be relabelled as historical users", 
   assert.deepEqual(report.overall.rows.map((r) => r.installs), [0, 0]);
 });
 
+test("French note assignments and their trials are counted in the France picker and French A/B slice", () => {
+  const installs = [install("control", start, "FR"), install("note", start, "FR"), install("german", start, "DE")];
+  const events = [{ ...event("note", { netProceeds: 0, expiresAt: start + 8 * day }), periodType: "trial", isTrialConversion: false }];
+  const attributes = new Map([
+    ["control", attrs({ language: "fr", variant: "control" })],
+    ["note", attrs({ language: "fr", flow: "scroll_the_bible", access: "dismissible" })],
+    ["german", attrs({ language: "de" })],
+  ]);
+  const report = buildAppCountryComparisons({ appId: "versy", installs, events, attributes, countries: [], asOf, journey: null });
+  const flows = report.slices.FR.versyPaywallComparison!.noteExperiment!.flows;
+  assert.deepEqual(flows.warnings, []);
+  assert.equal(flows.rows.find((row) => row.version === "bible_widget")!.installs, 1);
+  const note = flows.rows.find((row) => row.version === "scroll_the_bible_note")!.conversions!.global;
+  assert.deepEqual([note.installs, note.trials], [1, 1]);
+  assert.equal(flows.rows.find((row) => row.version === "bible_widget_note")!.installs, 0);
+  const experiment = versyNoteExperiment({ installs, events, attributes, startMs: start, endMs: end }, asOf);
+  assert.deepEqual(experiment.languageVariants?.fr.map((row) => [row.installs, row.trials]), [[1, 0], [1, 1]]);
+});
+
 test("reviews are shared before the 50/50 test and both arms keep the existing paywall paths", () => {
   const flow = appExperimentFlow("versy")!;
   assert.deepEqual(flow.edges.filter((e) => e.from === "reviews").map((e) => [e.to, e.label]), [["note-control", "50%"], ["note-note", "50%"]]);
@@ -99,7 +119,7 @@ test("strict production records reject missing, corrupt, future and impossible m
   assert.equal(parseVersyNoteAssignment(undefined, asOf), null);
   assert.equal(parseVersyNoteAssignment({ versy_tracking_environment: "production" }, asOf), null);
   assert.equal(parseVersyNoteAssignment(attrs({}, "sandbox"), asOf), null);
-  for (const patch of [{ schema: 2 }, { allocation: "40_60" }, { flow: "unknown" }, { assignedAt: asOf + 1 },
+  for (const patch of [{ schema: 2 }, { allocation: "40_60" }, { flow: "unknown" }, { language: "unknown" }, { assignedAt: asOf + 1 },
     { continuedAt: start + 2000 }, { paywallViewedAt: start + 3000 },
     { viewedAt: start + 3000, continuedAt: start + 2000 }, { variant: "control", viewedAt: start + 2000 },
     { flow: "scroll_the_bible", access: "hard" }]) {
