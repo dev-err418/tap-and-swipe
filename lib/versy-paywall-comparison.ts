@@ -1,4 +1,4 @@
-import { VERSY_ONBOARDING_EXPERIMENT } from "./versy-onboarding-routes";
+import { VERSY_META_ONBOARDING_EXPERIMENT, VERSY_ONBOARDING_EXPERIMENT } from "./versy-onboarding-routes";
 import { buildVersyNoteReport, buildVersyPaywallFlowHistory, type VersyNoteReport } from "./versy-paywall-note";
 import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./app-experiment-cohort";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
@@ -9,7 +9,7 @@ import { versyWidgetPaywallAccess } from "./versy-paywall-policy";
 
 type Install = Parameters<typeof versionCohortConversions>[0][number] & { country: string };
 type Event = Parameters<typeof versionCohortConversions>[1][number];
-type Member = { install: Install; start: number; variant: string; flow: string };
+type Member = { install: Install; start: number; variant: string; flow: string; adRouted: boolean };
 export type VersyPaywallCheckpoint = {
   hours: 24 | 48; installs: number; trials: number; uncancelledTrials: number;
   paid: number; uncancelledOrPaid: number; missingMoney: boolean; missingTrialExpiry: boolean;
@@ -34,15 +34,17 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
   const members: Member[] = experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.versy, asOf)
     .flatMap((install) => {
       const values = attributes.get(install.appUserId);
-      if (!values || values.versy_tracking_environment !== "production"
-        || !["scroll_the_bible_v1", VERSY_ONBOARDING_EXPERIMENT].includes(values.onboarding_experiment_id)) return [];
+      if (!values || values.versy_tracking_environment !== "production") return [];
+      const experiment = values.onboarding_experiment_id;
+      const adRouted = experiment === VERSY_META_ONBOARDING_EXPERIMENT;
+      if (!adRouted && experiment !== "scroll_the_bible_v1" && experiment !== VERSY_ONBOARDING_EXPERIMENT) return [];
       const variant = values.onboarding_variant === "scroll_the_bible" ? "bible_scroll"
         : values.onboarding_variant === "scroll_the_bible_animations" ? "bible_scroll_animations"
         : values.onboarding_variant === "scroll_the_bible_videos" ? "bible_scroll_videos"
         : versyWidgetPaywallAccess(values);
       if (!variant) return [];
       const enrollment = assignments.get(`${install.appUserId}|${ONBOARDING_EXPERIMENT}`);
-      if (values[VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE] !== undefined) {
+      if (adRouted || values[VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE] !== undefined) {
         // Price attributes can change on upgrade. Keep the original Welcome
         // time so earlier trials and direct purchases retain their attribution.
         if (!enrollment || enrollment.variant !== values.onboarding_variant || enrollment.paywall !== enrollment.variant) {
@@ -52,7 +54,7 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
       }
       const assignedAt = enrollment?.assignedAt ?? Number(values.yearly_price_assigned_at);
       if (!Number.isFinite(assignedAt) || assignedAt <= 0 || assignedAt > asOf) { invalidTimes++; return []; }
-      return [{ install, variant, flow: values.onboarding_variant, start: Math.max(install.installedAt, assignedAt) }];
+      return [{ install, variant, flow: values.onboarding_variant, start: Math.max(install.installedAt, assignedAt), adRouted }];
     });
   const observed = events.filter((event) => Number.isFinite(event.eventTs) && event.eventTs <= asOf);
   const chains = new Map<string, Event[]>();
@@ -108,7 +110,9 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
     return { version: variant, installs: conversions.global.installs, tracked: conversions.global.installs, variants: [], conversions };
   });
   const noteExperiment = buildVersyNoteReport(installs, events, attributes, 0, asOf + 1, asOf, "install", false);
-  noteExperiment.flows = buildVersyPaywallFlowHistory(members, installs, events, attributes, asOf);
+  // Ad-routed users enter note rows through their saved note record. Without
+  // one, they may have left before note enrollment, so keep them out of history.
+  noteExperiment.flows = buildVersyPaywallFlowHistory(members.filter((member) => !member.adRouted), installs, events, attributes, asOf);
   return { noteExperiment,
     status: rows.some((row) => row.installs > 0) ? "ready" : "empty", asOf, rows, labels: LABELS, checkpoints,
     warnings: [

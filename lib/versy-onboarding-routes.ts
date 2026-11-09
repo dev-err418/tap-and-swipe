@@ -1,5 +1,6 @@
 /** New assignments only; saved v1 routes keep their original experiment. */
 export const VERSY_ONBOARDING_EXPERIMENT = "scroll_the_bible_v2";
+export const VERSY_META_ONBOARDING_EXPERIMENT = "versy_meta_ad_name_onboarding_v1";
 export const VERSY_ONBOARDING_REPORT = "versy-scroll-the-bible-v2";
 export const VERSY_ONBOARDING_ROUTES = [
   { key: "bible_widget_shorter", label: "Bible Short", percent: 100 / 3 },

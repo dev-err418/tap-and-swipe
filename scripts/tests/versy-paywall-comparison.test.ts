@@ -7,6 +7,7 @@ import { buildAppCountryComparisons } from "../../lib/app-country-comparisons";
 import VersyPaywallComparisonPanel from "../../components/analytics/VersyPaywallComparisonPanel";
 import { VERSY_YEARLY_PRICES } from "../../lib/versy-yearly-price-cohorts";
 import { VERSY_HARD_PAYWALL_EXPERIMENT, VERSY_FIXED_YEARLY_PRICE } from "../../lib/versy-paywall-policy";
+import { VERSY_META_ONBOARDING_EXPERIMENT } from "../../lib/versy-onboarding-routes";
 
 const hour = 3_600_000, start = Date.parse("2026-10-20T00:00:00Z"), asOf = start + 72 * hour;
 const install = (appUserId: string, extra = {}) => ({ appUserId, country: "US", appVersion: "1.2.6", installedAt: start, ...extra });
@@ -112,6 +113,28 @@ test("present but invalid original enrollment cannot fall back to mutable price 
   const report = buildVersyPaywallComparison([...attrs.keys()].map((id) => install(id)), [], attrs, asOf);
   assert.equal(report.rows[0].installs, 1);
   assert.equal(report.warnings.length, 2);
+});
+
+test("country comparisons include verified ad-routed installs in their saved flow without inferring note enrollment", () => {
+  const saved = (flow: string) => assignment({ onboarding_experiment_id: VERSY_META_ONBOARDING_EXPERIMENT,
+    onboarding_variant: flow, yearly_price_assigned_at: String(start + 2 * hour),
+    [VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE]: enrollment({ variant: flow, paywall: flow }),
+  });
+  const attributes = new Map([
+    ["french", saved("scroll_the_bible")], ["german", saved("bible_widget_shorter")],
+    ["missing", assignment({ onboarding_experiment_id: VERSY_META_ONBOARDING_EXPERIMENT })],
+  ]);
+  const report = buildAppCountryComparisons({ appId: "versy", asOf, journey: null, countries: [], attributes,
+    installs: [install("french", { country: "FR" }), install("german", { country: "DE" }), install("missing", { country: "FR" })],
+    events: [event("french"), event("german"), event("missing")],
+  });
+  const france = report.slices.FR.versyPaywallComparison!;
+  const germany = report.slices.DE.versyPaywallComparison!;
+  assert.deepEqual(france.rows.map((row) => [row.installs, row.conversions!.global.trials]), [[0, 0], [0, 0], [1, 1], [0, 0], [0, 0]]);
+  assert.equal(germany.rows[0].conversions!.global.trials, 1);
+  assert.match(france.warnings[0], /1 invalid original onboarding records/);
+  assert.ok(france.noteExperiment!.flows.rows.every((row) => row.installs === 0));
+  assert.ok(germany.noteExperiment!.flows.rows.every((row) => row.installs === 0));
 });
 
 test("all countries and trial offers enter; widget flows pool and Scroll ignores its access draw", () => {
