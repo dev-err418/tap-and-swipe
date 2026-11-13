@@ -13,7 +13,7 @@ import {
   deactivateAsoLicensesByWhop,
   reactivateAsoLicensesByWhop,
 } from "@/lib/aso-db";
-import { sendLicenseKeyEmail } from "@/lib/aso-email";
+import { sendLicenseKeyEmailOnce } from "@/lib/aso-email";
 import { grantAccess } from "@/lib/grant-access";
 import { recordCommunityWhopPayment } from "@/lib/community-payment-analytics";
 import { communityEuroTierForPlan } from "@/lib/community-pricing-experiment";
@@ -389,9 +389,7 @@ export async function POST(request: NextRequest) {
           if (email && tier === "full") {
             const { key: licenseKey, isNew: isNewLicense } =
               await generateAsoLicenseWhop(email, membershipId, asoPlan, manageUrl);
-            if (isNewLicense) {
-              await sendLicenseKeyEmail(email, licenseKey, emailSource, manageUrl);
-            }
+            await sendLicenseKeyEmailOnce(email, licenseKey, emailSource, manageUrl, isNewLicense);
           }
 
           // Claim an existing row by whopMembershipId first, then by email
@@ -575,9 +573,7 @@ export async function POST(request: NextRequest) {
             if (email) {
               const { key: licenseKey, isNew: isNewLicense } =
                 await generateAsoLicenseWhop(email, membershipId, "pro", manageUrl);
-              if (isNewLicense) {
-                await sendLicenseKeyEmail(email, licenseKey, "community", manageUrl);
-              }
+              await sendLicenseKeyEmailOnce(email, licenseKey, "community", manageUrl, isNewLicense);
             }
           }
         }

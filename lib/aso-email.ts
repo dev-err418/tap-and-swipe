@@ -1,4 +1,6 @@
 import { sendPlunkEmail } from "@/lib/plunk-email";
+import { asoPool } from "@/lib/aso-db";
+import { deliverLicenseEmailOnce } from "@/lib/license-email-delivery";
 
 export type LicenseEmailSource = "aso" | "community" | "community-starter";
 
@@ -35,7 +37,7 @@ const SOURCE_CONFIG: Record<
   },
   community: {
     from: { name: "Arthur from AppSprint", email: "arthur@appsprint.app" },
-    subject: "Your free ASO Pro license is ready!",
+    subject: "Welcome to AppSprint Community! Your access and ASO Pro key",
     templateId:
       process.env.APPSPRINT_PLUNK_COMMUNITY_PRO_TEMPLATE_ID ||
       process.env.PLUNK_APPSPRINT_FIRST_EVENT_TEMPLATE_ID ||
@@ -44,7 +46,7 @@ const SOURCE_CONFIG: Record<
   },
   "community-starter": {
     from: { name: "Arthur from AppSprint", email: "arthur@appsprint.app" },
-    subject: "Your free ASO Solo license is ready!",
+    subject: "Welcome to AppSprint Community! Your access and ASO Solo key",
     templateId:
       process.env.APPSPRINT_PLUNK_COMMUNITY_STARTER_TEMPLATE_ID ||
       process.env.PLUNK_APPSPRINT_FIRST_EVENT_TEMPLATE_ID ||
@@ -52,6 +54,20 @@ const SOURCE_CONFIG: Record<
     label: "Community-Starter",
   },
 };
+
+export async function sendLicenseKeyEmailOnce(
+  to: string,
+  licenseKey: string,
+  source: LicenseEmailSource,
+  manageUrl: string | undefined,
+  isNew: boolean,
+): Promise<boolean> {
+  return deliverLicenseEmailOnce(
+    licenseKey, isNew,
+    (sql, values) => asoPool.query(sql, values),
+    () => sendLicenseKeyEmail(to, licenseKey, source, manageUrl),
+  );
+}
 
 export async function sendLicenseKeyEmail(
   to: string,

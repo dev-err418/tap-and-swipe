@@ -7,7 +7,7 @@ import {
   sendChannelMessage,
 } from "@/lib/discord";
 import { generateAsoLicenseWhop } from "@/lib/aso-db";
-import { sendLicenseKeyEmail } from "@/lib/aso-email";
+import { sendLicenseKeyEmailOnce } from "@/lib/aso-email";
 
 export type GrantTier = "full" | "starter";
 
@@ -279,12 +279,10 @@ export async function grantAccess(input: GrantAccessInput): Promise<GrantAccessR
         asoPlan,
         manageUrl
       );
-      if (isNewLicense) {
-        await sendLicenseKeyEmail(email, key, emailSource, manageUrl);
-        asoLicenseSent = true;
-      }
+      asoLicenseSent = await sendLicenseKeyEmailOnce(email, key, emailSource, manageUrl, isNewLicense);
     } catch (err) {
       console.error(`[grantAccess:${source}] ASO license generation failed:`, err);
+      if (source === "whop-webhook") throw err;
     }
   }
 
