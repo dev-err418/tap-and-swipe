@@ -5,6 +5,7 @@ import { exchangeCode, getUser, addToGuildWithRoles, createPrivateChannel, sendC
 import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/session";
 import { getAnalyticsAccess } from "@/lib/analytics-access";
+import { hasCommunityCourseAccess } from "@/lib/community-managed-access";
 
 const STATE_COOKIE = "discord_oauth_state";
 const SECRET = new TextEncoder().encode(process.env.SESSION_SECRET!);
@@ -244,10 +245,11 @@ Feel free to reach out here if you have any questions 😉`;
       process.env.ADMIN_DISCORD_ID,
     ]);
     const isWhitelisted = WHITELISTED_DISCORD_IDS.has(discordUser.id);
+    const hasCourseAccess = isWhitelisted || await hasCommunityCourseAccess(user);
 
     if (isLearnRedirect) {
       // Check subscription or whitelist
-      if (user.subscriptionStatus !== "active" && !isWhitelisted) {
+      if (!hasCourseAccess) {
         return NextResponse.redirect(
           `${APP_URL}/login?error=not_subscribed`
         );
@@ -266,7 +268,7 @@ Feel free to reach out here if you have any questions 😉`;
     }
 
     // Subscribed or whitelisted user: create session and send to roadmap
-    if (user.subscriptionStatus === "active" || isWhitelisted) {
+    if (hasCourseAccess) {
       await createSession(
         {
           discordId: discordUser.id,

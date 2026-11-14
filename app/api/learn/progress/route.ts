@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { hasCommunityCourseAccess } from "@/lib/community-managed-access";
 
 const WHITELISTED_DISCORD_IDS = new Set([
   process.env.ADMIN_DISCORD_ID,
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { discordId: session.discordId },
-    select: { id: true, subscriptionStatus: true, discordId: true },
+    select: { id: true, subscriptionStatus: true, discordId: true, whopMembershipId: true },
   });
 
   if (!user) {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   const isWhitelisted = WHITELISTED_DISCORD_IDS.has(user.discordId ?? "");
 
-  if (user.subscriptionStatus !== "active" && !isWhitelisted) {
+  if (!isWhitelisted && !await hasCommunityCourseAccess(user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

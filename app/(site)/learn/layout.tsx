@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import LearnTabs from "@/components/roadmap/LearnTabs";
 import AdminStarterPreviewToggle from "@/components/roadmap/AdminStarterPreviewToggle";
+import { hasCommunityCourseAccess } from "@/lib/community-managed-access";
 
 const WHITELISTED_DISCORD_IDS = new Set([
   process.env.ADMIN_DISCORD_ID,
@@ -44,7 +45,7 @@ export default async function LearnLayout({
   }
 
   const hasAccess =
-    user?.subscriptionStatus === "active" ||
+    (user ? await hasCommunityCourseAccess(user) : false) ||
     WHITELISTED_DISCORD_IDS.has(session?.discordId ?? "");
 
   if (!isDev && (!user || !hasAccess)) {
