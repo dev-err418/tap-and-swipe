@@ -1,6 +1,19 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { hasAppSprintCheckout, resolveCommunityCourseAccess } from "../../lib/community-managed-access";
+import { hasAppSprintCheckout, resolveCommunityCourseAccess, isNewAppSprintCommunityMembership } from "../../lib/community-managed-access";
+
+test("the direct purchase cutover delegates only new memberships on exact approved plans", () => {
+  process.env.COMMUNITY_LAUNCH_AT = "2026-11-14T10:00:00Z";
+  process.env.COMMUNITY_DIRECT_PLAN_IDS = "plan_new";
+  try {
+    assert.equal(isNewAppSprintCommunityMembership({ created_at: "2026-11-14T11:00:00Z", plan_id: "plan_new" }), true);
+    assert.equal(isNewAppSprintCommunityMembership({ created_at: "2026-11-13T11:00:00Z", plan_id: "plan_new" }), false);
+    assert.equal(isNewAppSprintCommunityMembership({ created_at: "2026-11-14T11:00:00Z", plan_id: "plan_other" }), false);
+  } finally {
+    delete process.env.COMMUNITY_LAUNCH_AT;
+    delete process.env.COMMUNITY_DIRECT_PLAN_IDS;
+  }
+});
 
 test("only checkout metadata with the full AppSprint proof delegates fulfillment", () => {
   assert.equal(hasAppSprintCheckout({ metadata: { community_checkout_id: "id" } }), false);

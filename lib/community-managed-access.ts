@@ -28,6 +28,16 @@ export async function isAppSprintManagedMembership(id: string | undefined) {
   return result.rowCount !== 0;
 }
 
+export function isNewAppSprintCommunityMembership(membership: Record<string, unknown> | null) {
+  const launch = Date.parse(process.env.COMMUNITY_LAUNCH_AT || "");
+  const created = Date.parse(String(membership?.created_at ?? ""));
+  const plans = (process.env.COMMUNITY_DIRECT_PLAN_IDS || "").split(",").map((id) => id.trim());
+  const nestedPlan = membership?.plan as { id?: string } | undefined;
+  const plan = membership?.plan_id ?? nestedPlan?.id;
+  return Number.isFinite(launch) && Number.isFinite(created) && created >= launch
+    && typeof plan === "string" && plans.includes(plan);
+}
+
 export function resolveCommunityCourseAccess(user: CourseUser, memberships: CommunityAccess[]) {
   const owned = memberships.find((row) => row.id === user.whopMembershipId);
   // A migrated membership's paid term replaces its historical stored status.
