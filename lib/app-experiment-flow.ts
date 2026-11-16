@@ -49,20 +49,17 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
     nodes.push({ id, x: 650, y: 212 + index * 136, width: 200, label: branch.id === "note" ? "Team note" : "Skip note",
       detail: "Keep assigned onboarding route", tone: "orange", experimentId: note.id, variantId: branch.id });
     edges.push({ from: "reviews", to: id, label: formatPaywallAllocation(branch.percent) });
-    access.branches.forEach((mode) => edges.push({ from: id, to: `access-${mode.id}`, label: `Widget · ${mode.percent}%` }));
-    edges.push({ from: id, to: "scroll-trial", label: "Scroll" });
+    access.branches.forEach((mode) => edges.push({ from: id, to: `access-${mode.id}`, label: `${mode.percent}%` }));
   });
   access.branches.forEach((branch, index) => {
     nodes.push({ id: `access-${branch.id}`, x: 950, y: 76 + index * 136, width: 190,
-      label: branch.label, detail: "100% · next app build", tone: "orange" });
+      label: branch.label, detail: "Same Scroll UI · yearly + weekly", tone: "orange" });
   });
-  nodes.push({ id: "scroll-trial", x: 950, y: 348, width: 190,
-    label: "Bible Scroll trial", detail: "Dismissible · yearly + weekly", tone: "orange" });
   price.branches.forEach((branch, index) => {
     const id = `price-${index}`;
     nodes.push({ id, x: 1230, y: 212 + index * 136, width: 190,
       label: branch.label, detail: "100% rollout · next app build", tone: "orange" });
-    [...access.branches.map((mode) => `access-${mode.id}`), "scroll-trial"].forEach((from) =>
+    access.branches.map((mode) => `access-${mode.id}`).forEach((from) =>
       edges.push({ from, to: id, label: formatPaywallAllocation(branch.percent) }));
   });
   return { width: 1470, height: 570, nodes, edges,

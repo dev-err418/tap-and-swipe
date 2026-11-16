@@ -111,7 +111,7 @@ test("reviews are shared before the 50/50 test and both arms keep the existing p
   const flow = appExperimentFlow("versy")!;
   assert.deepEqual(flow.edges.filter((e) => e.from === "reviews").map((e) => [e.to, e.label]), [["note-control", "50%"], ["note-note", "50%"]]);
   for (const treatment of ["note-control", "note-note"]) {
-    assert.deepEqual(flow.edges.filter((e) => e.from === treatment).map((e) => e.to), ["access-hard", "scroll-trial"]);
+    assert.deepEqual(flow.edges.filter((e) => e.from === treatment).map((e) => e.to), ["access-hard", "access-dismissible"]);
   }
 });
 
@@ -121,8 +121,7 @@ test("strict production records reject missing, corrupt, future and impossible m
   assert.equal(parseVersyNoteAssignment(attrs({}, "sandbox"), asOf), null);
   for (const patch of [{ schema: 2 }, { allocation: "40_60" }, { flow: "unknown" }, { language: "unknown" }, { assignedAt: asOf + 1 },
     { continuedAt: start + 2000 }, { paywallViewedAt: start + 3000 },
-    { viewedAt: start + 3000, continuedAt: start + 2000 }, { variant: "control", viewedAt: start + 2000 },
-    { flow: "scroll_the_bible", access: "hard" }]) {
+    { viewedAt: start + 3000, continuedAt: start + 2000 }, { variant: "control", viewedAt: start + 2000 }]) {
     assert.equal(parseVersyNoteAssignment({ ...attrs(), [VERSY_NOTE_ATTRIBUTE]: JSON.stringify({ ...record(), ...patch }) }, asOf), null);
   }
   assert.deepEqual(parseVersyNoteAssignment({ ...attrs(), [VERSY_NOTE_ATTRIBUTE]: JSON.stringify(JSON.stringify(record())) }, asOf), record());

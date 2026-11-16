@@ -6,6 +6,7 @@ import { parsePaywallAttributes } from "./native-paywall-analytics";
 import { isMobileMoneyEvent } from "./mobile-app-money";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { versyWidgetPaywallAccess } from "./versy-paywall-policy";
+import { buildVersyScrollAccessComparison } from "./versy-scroll-paywall-access";
 
 type Install = Parameters<typeof versionCohortConversions>[0][number] & { country: string };
 type Event = Parameters<typeof versionCohortConversions>[1][number];
@@ -17,6 +18,7 @@ export type VersyPaywallCheckpoint = {
 export type VersyPaywallComparison = PaywallCohortComparison & {
   asOf: number;
   noteExperiment?: VersyNoteReport;
+  scrollAccess?: ReturnType<typeof buildVersyScrollAccessComparison>;
   checkpoints: Record<string, VersyPaywallCheckpoint[]>;
 };
 const LABELS = { hard: "Hard Widget", dismissible: "Dismissible Widget", bible_scroll: "Bible Scroll · Current", bible_scroll_animations: "Bible Scroll · Animations", bible_scroll_videos: "Bible Scroll · Videos" };
@@ -113,7 +115,7 @@ export function buildVersyPaywallComparison(installs: Install[], events: Event[]
   // Ad-routed users enter note rows through their saved note record. Without
   // one, they may have left before note enrollment, so keep them out of history.
   noteExperiment.flows = buildVersyPaywallFlowHistory(members.filter((member) => !member.adRouted), installs, events, attributes, asOf);
-  return { noteExperiment,
+  return { noteExperiment, scrollAccess: buildVersyScrollAccessComparison(installs, events, attributes, asOf),
     status: rows.some((row) => row.installs > 0) ? "ready" : "empty", asOf, rows, labels: LABELS, checkpoints,
     warnings: [
       ...(invalidTimes ? [`${invalidTimes} assignments with missing or invalid dates were excluded.`] : []),

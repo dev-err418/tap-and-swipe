@@ -1,6 +1,7 @@
 import { createOfferAccumulator, hasVersyProducts, offerProductResolver, type WithOfferBreakdown } from "./versy-offer-breakdown";
 import { VERSY_ONBOARDING_REPORT, VERSY_ONBOARDING_V2_VARIANTS } from "./versy-onboarding-routes";
 import { versyNoteExperiment, VERSY_NOTE_ATTRIBUTE } from "./versy-paywall-note";
+import { VERSY_SCROLL_ACCESS_ATTRIBUTE, VERSY_SCROLL_ONBOARDING_EXPERIMENT } from "./versy-scroll-paywall-access";
 import { buildDailyAppReport } from "./daily-app-report";
 import { loadCompleteAttributeRows } from "./analytics-attribute-batches";
 import { buildAnalyticsMarkets, marketLanguage, marketCountry, type AnalyticsMarkets } from "./analytics-markets";
@@ -220,7 +221,7 @@ const GLOW_ICON_URL =
   "/community-icons/glow-wordmark.png";
 
 const GLOW_ATTRIBUTE_KEYS = ["onboarding_variant", "yearly_product", "widget_screen_seen", GLOW_ONBOARDING_KEY, GLOW_ONBOARDING_COPY_KEY, GLOW_ONBOARDING_LEGACY_KEY] as const;
-const VERSY_ATTRIBUTE_KEYS = [VERSY_NOTE_ATTRIBUTE, VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE, "country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
+const VERSY_ATTRIBUTE_KEYS = [VERSY_SCROLL_ACCESS_ATTRIBUTE, VERSY_NOTE_ATTRIBUTE, VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE, "country", "scroll_bible_trial_screen_seen", "bible_widget_paywall_screen_seen", "onboarding_experiment_id", "onboarding_variant", "widget_screen_seen",
   "scroll_benefits_experiment_id", "scroll_benefits_variant", "scroll_benefits_allocation",
   "scroll_benefits_assigned_at", "scroll_benefits_screen_seen", "scroll_benefits_completed",
   "bible_widget_widget_screen_seen",
@@ -1186,13 +1187,20 @@ function versyExperiments(facts: AppFacts): MobileAppExperiment[] {
   };
   return [
     versyNoteExperiment(facts),
+    attributeExperiment(facts, {
+      ...currentOnboarding, id: "versy-scroll-the-bible-v3", title: "Scroll onboarding · Current / Animations / Videos",
+      subtitle: "Equal thirds · independent 50/50 hard / current soft paywall",
+      variants: VERSY_ONBOARDING_V2_VARIANTS.filter((v) => v.key !== "bible_widget_shorter").map((v) => ({
+        ...v, attributes: { ...v.attributes, onboarding_experiment_id: VERSY_SCROLL_ONBOARDING_EXPERIMENT },
+      })),
+    }),
     { ...attributeExperiment(facts, {
         ...currentOnboarding, id: VERSY_ONBOARDING_REPORT,
-        title: "Onboarding · Bible Short vs three Scroll variants",
+        title: "Historical onboarding · Bible Short vs three Scroll variants",
         subtitle: "Bible Short 33.33% · Current / Animations / Videos 22.22% each · all countries",
         variants: VERSY_ONBOARDING_V2_VARIANTS,
       }),
-      planningNote: "Next app build. Fresh assignments only, saved under scroll_the_bible_v2. One third receive Bible Short; two thirds receive Scroll, split equally across its three presentations. All countries participate, including Mexico. Existing assignments remain in historical reports. All Scroll variants share reviews, the independent 50/50 team note and the same dismissible paywall. Bible Short stays hard. Paywall reached measures the final screen; APPU includes non-payers.",
+      planningNote: "Historical scroll_the_bible_v2 assignments only. New installs enter v3 with three equal Scroll routes and an independent 50/50 access test. Saved v2 Scroll users remain soft and Bible Short stays hard. Paywall reached measures the final screen; APPU includes non-payers.",
     },
     { ...attributeExperiment(audienceFacts("comparison"), currentOnboarding),
       planningNote: "Historical v1 equal-thirds assignments only. New v2 assignments are reported separately. Earlier saved assignments retain their original variants. Mexico and uncertain countries are reported separately. Country uses matching install and reported geo values; the app does not yet save immutable assignment geography. Paywall reached measures the final onboarding screen. Avg sessions / day is sessions per user per observed day since install, including free users and zero-session users; unavailable data shows a dash." },

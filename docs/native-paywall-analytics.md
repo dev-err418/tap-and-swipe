@@ -710,8 +710,8 @@ The new app split is 50% HP / 50% trials. Each trial design receives exactly one
 third of trial users, or 16⅔% of all new assignments. Map edges show 50% / 16⅔% /
 16⅔% / 16⅔%, and the table explains the nested split. The independent note split
 remains 80% / 20%. Existing assignments and attributed purchases keep their original
-identities. The US-only HP override remains through October 28, with normal saved
-offer routing resuming October 29. This changes code configuration for the next
+identities. The US-only HP override remains through October 29, with normal saved
+offer routing resuming October 30 at device-local midnight. This changes code configuration for the next
 app build, not existing installations.
 
 ## October 29, 2026: Versy fixed price and hard Widget paywalls
@@ -831,3 +831,20 @@ window within that same cohort.
 Snapshot schema v34 refreshes the new aggregates. Existing attribute queries
 already include the assignments, so no app release, database migration or new
 ingestion is needed. The dashboard needs deployment and snapshot refresh.
+
+## November 16, 2026 · next Versy release
+
+New `scroll_the_bible_v3` entrants split equally between Current, Animations and
+Videos; ad names no longer select Widget. Saved assignments are retained. At
+Welcome, the app independently assigns 50/50 hard/current-soft Scroll access and
+publishes immutable `vs1_versy_scroll_paywall_access_v1` JSON with schema 1,
+experiment, production environment, flow, access, assignedAt in milliseconds and
+yearlyProduct. Both arms keep the current Scroll UI and plans; hard removes the
+exit to free access. Checkout cancellation opens hard recovery, with no close or swipe dismissal and purchase/restore required. Soft keeps dismissible recovery.
+
+The existing analytics route loads the new attribute. Its dedicated Scroll-access
+panel shows pooled arms and six route/access rows, with country and Meta slices.
+Proceeds and denominator both use mature members only, including non-payers;
+actual trial expiry can extend maturity. Missing or invalid assignments never
+become controls. Historical Widget and v2 reports remain separate; snapshot v36
+invalidates old report shapes. Requires the app release and website deployment.
