@@ -1,3 +1,4 @@
+import { getVersyMetaRoas } from "@/lib/versy-meta-roas-server";
 import RealizedAppu from "@/components/analytics/RealizedAppu";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -524,6 +525,7 @@ async function AppDetail({
   period: Period;
   appId: AppId;
 }) {
+  const metaRoas = appId === "versy" ? getVersyMetaRoas() : undefined;
   let app: MobileAppAnalytics | null = null;
   let countryBreakdown: Promise<CountryBreakdownData> | undefined;
   try {
@@ -632,6 +634,7 @@ async function AppDetail({
         countryComparisons={app.countryComparisons}
         appleAdsKeywords={app.appleAdsKeywords}
         countryBreakdownPromise={countryBreakdown}
+        metaRoasPromise={metaRoas}
       />
     </div>
   );

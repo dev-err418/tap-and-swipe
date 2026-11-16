@@ -46,6 +46,8 @@ function deserialize<T>(text: string): Snapshot<T> {
 }
 
 type SnapshotOptions<T> = {
+  /** Opt-in request refresh for reports not managed by the background scheduler. */
+  maxAgeMs?: number;
   /** Explicitly compatible keys only; never reuse an arbitrary old report version. */
   fallbackKeys?: readonly string[];
   /** Keep the same projection for every caller of a key. Applied to disk reads and new reports. */
@@ -109,8 +111,9 @@ export function createAnalyticsSnapshotCache() {
     }
     // Production serves the last compatible report while the scheduler refreshes.
     // Keep its original timestamp, including when using a compatible previous key.
-    if (!force && saved && (!directory || process.env.NODE_ENV === "production"
-      || Date.now() - Date.parse(saved.updatedAt) < 30 * 60_000)) return stamp(saved);
+    if (!force && saved && (options.maxAgeMs != null
+      ? Date.now() - Date.parse(saved.updatedAt) < options.maxAgeMs
+      : !directory || process.env.NODE_ENV === "production" || Date.now() - Date.parse(saved.updatedAt) < 30 * 60_000)) return stamp(saved);
     const running = pending.get(id);
     if (running) return running as Promise<T & SnapshotMetadata>;
     const work = (async () => {

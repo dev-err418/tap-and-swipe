@@ -1,5 +1,8 @@
 "use client";
 
+import DeferredVersyMetaRoas from "./VersyMetaRoasTables";
+import type { VersyRoasReport } from "@/lib/versy-meta-roas";
+
 import { VersyOffersScope } from "./VersyOfferBreakdown";
 
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
@@ -56,6 +59,7 @@ export default function AppOverviewPanel({
   countryBreakdown,
   countryBreakdownPromise,
   appleAdsKeywords,
+  metaRoasPromise,
   headerStart,
   headerEnd,
 }: {
@@ -80,6 +84,7 @@ export default function AppOverviewPanel({
   countryBreakdown?: { countries: MobileAppCountryRow[]; available: boolean; windowLabel: string };
   countryBreakdownPromise?: Promise<CountryBreakdownData>;
   appleAdsKeywords?: AppleAdsKeywordReport | null;
+  metaRoasPromise?: Promise<VersyRoasReport>;
   headerStart?: ReactNode;
   headerEnd?: ReactNode;
 }) {
@@ -169,6 +174,9 @@ export default function AppOverviewPanel({
         </DashboardCard> : userJourney?.versions?.length ? <DashboardCard title="App versions" contentClassName="pt-0">
           <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
         </DashboardCard> : null}
+        {appId === "versy" && metaRoasPromise ? <Suspense fallback={<DashboardCard title="Meta ROAS"><p role="status" className="text-sm text-muted-foreground">Loading daily campaign performance…</p></DashboardCard>}>
+          <DeferredVersyMetaRoas report={metaRoasPromise} country={country} />
+        </Suspense> : null}
         <UserJourneyFunnel key={`${appId}:${country}`} appId={appId} report={selectedJourney} windowLabel={windowLabel} funnelOnly />
         {appId === "glow" ? <GlowPaywallCohortTables key={country} report={selectedGlowPaywalls} windowLabel={windowLabel} /> : null}
         {appId === "versy" ? <VersyYearlyPriceTable key={country} report={selectedYearlyPrices} /> : null}

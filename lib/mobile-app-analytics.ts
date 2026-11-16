@@ -767,6 +767,23 @@ function attributeKeysFor(id: SuperwallAppConfig["id"]) {
   return [...VERSY_ATTRIBUTE_KEYS, ...acquisition];
 }
 
+/** Monthly acquisition report deliberately includes every app version. */
+export async function getVersyAcquisitionFacts(from: string, to: string) {
+  const apiKey = process.env.SUPERWALL_VERSY_API_KEY?.trim();
+  if (!apiKey) throw new Error("SUPERWALL_VERSY_API_KEY is not configured");
+  const app: SuperwallAppConfig = { id: "versy", name: "Versy", iconUrl: VERSY_ICON_URL,
+    organizationId: VERSY_SUPERWALL_ORGANIZATION_ID, applicationId: VERSY_SUPERWALL_APPLICATION_ID, apiKey };
+  const start = clickhouseDate(new Date(from)), end = clickhouseDate(new Date(to));
+  const [installs, events, rows] = await Promise.all([
+    fetchInstallCohort(app, start, end), fetchAttributedEvents(app, start),
+    fetchUserAttributes(app, [...ACQUISITION_ATTRIBUTE_KEYS, "versy_tracking_environment"]),
+  ]);
+  const attributes = attributeMap(rows);
+  const allowed = (id: string) => attributes.get(id)?.versy_tracking_environment !== "development";
+  return { installs: installs.filter((row) => allowed(row.appUserId)),
+    events: events.filter((row) => allowed(row.appUserId)), attributes };
+}
+
 async function fetchInstallCohort(app: SuperwallAppConfig, start: string, end: string, minimumInstallVersion?: string): Promise<InstallRow[]> {
   const rows = await querySuperwall<{
     appUserId: string;
