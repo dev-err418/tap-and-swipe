@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hasCommunityCourseAccess } from "@/lib/community-managed-access";
 import { verifyCourseRequest } from "@/lib/community-course-signature";
-import { isStarterLocked } from "@/lib/roadmap";
 
 const headers = { "Cache-Control": "private, no-store" };
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers });
@@ -36,7 +35,6 @@ export async function POST(request: Request) {
     if (typeof input.lessonId !== "string" || !input.lessonId || typeof input.completed !== "boolean") return json({ error: "Invalid body" }, 400);
     const lesson = await prisma.lesson.findUnique({ where: { id: input.lessonId } });
     if (!lesson) return json({ error: "Lesson not found" }, 404);
-    if (user.tier === "starter" && isStarterLocked(lesson.category)) return json({ error: "Forbidden" }, 403);
     if (input.completed) {
       await prisma.lessonProgress.upsert({
         where: { userId_lessonId: { userId: user.id, lessonId: lesson.id } },
@@ -72,12 +70,9 @@ export async function POST(request: Request) {
     }) });
   }
   if (input.category !== undefined && typeof input.category !== "string") return json({ error: "Invalid body" }, 400);
-  if (input.category && user.tier === "starter" && isStarterLocked(input.category)) return json({ error: "Forbidden" }, 403);
   const [lessons, progress] = await Promise.all([
     prisma.lesson.findMany({ where: input.category ? { category: input.category } : {}, orderBy: [{ category: "asc" }, { order: "asc" }] }),
     prisma.lessonProgress.findMany({ where: { userId: user.id, uncheckedAt: null }, select: { lessonId: true } }),
   ]);
-  // The overview needs counts, never the content of a locked category.
-  return json({ lessons: lessons.map((lesson) => user.tier === "starter" && isStarterLocked(lesson.category)
-    ? { ...lesson, description: null, videoUrl: null, youtubeUrl: null, markdownContent: null } : lesson), completedLessonIds: progress.map((p) => p.lessonId) });
+  return json({ lessons, completedLessonIds: progress.map((p) => p.lessonId) });
 }

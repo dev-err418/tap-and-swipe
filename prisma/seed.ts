@@ -735,10 +735,10 @@ $5/week feels different than 40kr/week. Price for the market, not just for the U
   },
   {
     category: "scaling",
-    title: "MMP - AppSprint",
-    description: "Coming soon",
-    type: "markdown",
-    markdownContent: "",
+    title: "Start Meta Ads (and MMP setup)",
+    description: "Set up your MMP and launch your first Meta Ads campaign",
+    type: "video",
+    youtubeUrl: "https://youtu.be/tyhBqc6AGTM",
     order: 0,
   },
   {

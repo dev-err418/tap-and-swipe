@@ -117,10 +117,18 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/community", destination: "https://appsprint.app/community", permanent: true },
+      { source: "/community/privacy", destination: "https://appsprint.app/community/privacy", permanent: true },
+      { source: "/community/:page(tos|terms)", destination: "https://appsprint.app/community/terms", permanent: true },
+      { source: "/community/login", destination: "https://appsprint.app/community/auth", permanent: true },
+      { source: "/community/:page(auth|connect|checkout)", destination: "https://appsprint.app/community/:page", permanent: true },
+      { source: "/community/learn/:path*", destination: "https://appsprint.app/community/learn/:path*", permanent: true },
 
       // Member course moved to AppSprint. Operations routes remain local.
       { source: "/learn", destination: "https://appsprint.app/community/learn", permanent: true },
-      { source: "/learn/:path(classroom|calendar|earn|community)/:rest*", destination: "https://appsprint.app/community/learn/:path/:rest*", permanent: true },
+      { source: "/learn/:page(calendar|earn|community)", destination: "https://appsprint.app/community/learn/classroom", permanent: true },
+      { source: "/learn/classroom/weekly-calls", destination: "https://appsprint.app/community/learn/classroom", permanent: true },
+      { source: "/learn/weekly-calls", destination: "https://appsprint.app/community/learn/classroom", permanent: true },
+      { source: "/learn/classroom/:rest*", destination: "https://appsprint.app/community/learn/classroom/:rest*", permanent: true },
       { source: "/learn/:slug(getting-started|find-your-idea|design|build|build-with-boilerplate|monetize|launch-and-grow|scaling|weekly-calls)", destination: "https://appsprint.app/community/learn/classroom/:slug", permanent: true },
 
       // Poky replaced the legacy GLP-1 product pages.
@@ -152,12 +160,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/app-sprint-community/privacy",
-        destination: "/community/privacy",
+        destination: "https://appsprint.app/community/privacy",
         permanent: true,
       },
       {
         source: "/app-sprint-community/tos",
-        destination: "/community/tos",
+        destination: "https://appsprint.app/community/terms",
         permanent: true,
       },
       {

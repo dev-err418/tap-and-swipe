@@ -12,10 +12,8 @@ export const CATEGORIES = [
 
 export type CategorySlug = (typeof CATEGORIES)[number]["slug"];
 
-export const STARTER_LOCKED_SLUGS: CategorySlug[] = [
-  "build-with-boilerplate",
-  "scaling",
-];
+// All active community members have the complete classroom.
+export const STARTER_LOCKED_SLUGS: CategorySlug[] = [];
 
 export function isStarterLocked(slug: string): boolean {
   return (STARTER_LOCKED_SLUGS as readonly string[]).includes(slug);

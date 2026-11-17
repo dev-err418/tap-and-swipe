@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadTestModule } from "./helpers/load-test-module";
 import { signCourseRequest, verifyCourseRequest } from "../../lib/community-course-signature";
-import { isStarterLocked } from "../../lib/roadmap";
 import nextConfig from "../../next.config";
 
 const id = "123456789012345678";
@@ -24,7 +23,6 @@ function setup({ active = true, tier = null as string | null, missing = false, a
     "@/lib/prisma": { prisma },
     "@/lib/community-managed-access": { hasCommunityCourseAccess: async () => active },
     "@/lib/community-course-signature": { verifyCourseRequest },
-    "@/lib/roadmap": { isStarterLocked },
   }, { COMMUNITY_COURSE_API_SECRET: "test-key", ...(admin ? { ADMIN_DISCORD_ID: id } : {}) });
   const request = (input: unknown, signed = true) => {
     const body = JSON.stringify(input), timestamp = String(Date.now());
@@ -44,14 +42,23 @@ test("expired members cannot read lessons or write progress", async () => {
   for (const action of ["user", "lessons", "progress", "stats"]) assert.equal((await s.POST(s.request({ discordId: id, action, lessonId: "lesson", completed: true }))).status, 403);
   assert.equal(s.writes.length, 0);
 });
-test("starter members cannot fetch or mark locked lessons", async () => {
+test("starter members can read every category and save progress", async () => {
   const s = setup({ tier: "starter" });
-  assert.equal((await s.POST(s.request({ discordId: id, action: "lessons", category: "build-with-boilerplate" }))).status, 403);
-  assert.equal((await s.POST(s.request({ discordId: id, action: "progress", lessonId: "lesson", completed: true }))).status, 403);
+  for (const category of ["build-with-boilerplate", "scaling"]) {
+    assert.equal((await s.POST(s.request({ discordId: id, action: "lessons", category }))).status, 200);
+  }
+  assert.equal((await s.POST(s.request({ discordId: id, action: "progress", lessonId: "seed-build-with-boilerplate-1", completed: true }))).status, 200);
   const data = await (await s.POST(s.request({ discordId: id, action: "lessons" }))).json();
-  assert.equal(data.lessons[0].markdownContent, null);
-  assert.equal(data.lessons[0].videoUrl, null);
+  assert.equal(data.lessons[0].markdownContent, "private");
+  assert.equal(data.lessons[0].videoUrl, "private");
   assert.equal(data.lessons[0].id, "seed-build-with-boilerplate-1");
+  assert.equal(s.writes.length, 1);
+});
+test("expired starter members still cannot access lessons or progress", async () => {
+  const s = setup({ tier: "starter", active: false });
+  for (const action of ["lessons", "progress"]) {
+    assert.equal((await s.POST(s.request({ discordId: id, action, category: "scaling", lessonId: "lesson", completed: true }))).status, 403);
+  }
   assert.equal(s.writes.length, 0);
 });
 test("progress retains existing user and lesson identities", async () => {
@@ -80,4 +87,11 @@ test("legacy roadmap and category redirects point directly to AppSprint", async 
   for (const rule of rules.filter((rule) => rule.source.includes("roadmap"))) assert.ok(rule.destination.startsWith("https://appsprint.app/community/learn/classroom"));
   assert.ok(rules.some((rule) => rule.source.includes("getting-started") && rule.destination.endsWith("/classroom/:slug")));
   assert.ok(!rules.some((rule) => rule.source === "/learn/:path*")); // Preserve the existing private operations tools.
+});
+
+test("legacy community policies redirect to the migrated canonical pages", async () => {
+  const rules = await nextConfig.redirects!();
+  for (const [source, path] of [["/community/privacy", "/community/privacy"], ["/app-sprint-community/privacy", "/community/privacy"], ["/app-sprint-community/tos", "/community/terms"], ["/community/login", "/community/auth"], ["/learn/classroom/weekly-calls", "/community/learn/classroom"]]) {
+    assert.equal(rules.find((rule) => rule.source === source)?.destination, `https://appsprint.app${path}`);
+  }
 });
