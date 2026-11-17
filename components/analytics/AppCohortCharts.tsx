@@ -1,7 +1,5 @@
 "use client";
 
-import VersyOfferBreakdown from "./VersyOfferBreakdown";
-import { realizedAppuSuffix } from "@/lib/realized-appu";
 
 import {
   Bar, CartesianGrid, ComposedChart, Line, ReferenceLine,
@@ -96,8 +94,7 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
                 filterNull={false} cursor={{ stroke: "var(--foreground)", strokeOpacity: 0.12, strokeDasharray: "3 3" }}
                 content={({ active, payload }) => (
                   <CohortTooltip active={active} point={payload?.[0]?.payload as PlotPoint | undefined}
-                    showTrialRate={showTrialRate}
-                    available={Boolean(report?.available)} notes={visibleNotes} report={report} installLabel={installLabel} />
+                    installLabel={installLabel} />
                 )}
               />
               <Bar yAxisId="installs" dataKey="installs" name={installLabel} fill={INSTALL_COLOR}
@@ -125,43 +122,19 @@ export default function AppCohortCharts({ report, notes, onNoteClick, onAddNote,
   );
 }
 
-function CohortTooltip({ active, point, available, notes, report, installLabel, showTrialRate }: {
+function CohortTooltip({ active, point, installLabel }: {
   active?: boolean;
   point?: PlotPoint;
-  available: boolean;
-  notes: AnalyticsChartNote[];
-  report: AppOverviewTrend | null;
   installLabel: string;
-  showTrialRate: boolean;
 }) {
   if (!active || !point) return null;
-  const total = point.dailyTotal;
-  const appuLabel = (point.appu === null ? "—" : formatCurrency(point.appu)) + (available ? realizedAppuSuffix(total?.realizedAppu) : "");
-  const noteMatches = report ? notes.filter((note) =>
-    overviewBucket(new Date(note.notedAt), report.period).getTime() === point.timestamp) : [];
   return (
     <ChartTooltip date={point.timestamp} timeZone={APP_ANALYTICS_TIME_ZONE}>
       <div className="grid gap-1.5">
         <TooltipMetric label={installLabel} value={point.installs.toLocaleString("en-US")} color={INSTALL_COLOR} />
-        <TooltipMetric label="APPU · daily average" value={appuLabel} color={APPU_COLOR} />
-        {total && <VersyOfferBreakdown inline breakdown={total.offerBreakdown} users={total.installs} proceeds={total.proceeds} available={available && !total.missingMoney} />}
-        {showTrialRate ? <TooltipMetric label="Download → trial · daily rate" value={point.trialRate == null ? "—" : formatRate(point.trialRate)} color={TRIAL_COLOR} /> : null}
+        <TooltipMetric label="APPU · daily average" value={point.appu == null ? "—" : formatCurrency(point.appu)} color={APPU_COLOR} />
+        <TooltipMetric label="Download → trial · daily rate" value={point.trialRate == null ? "—" : formatRate(point.trialRate)} color={TRIAL_COLOR} />
       </div>
-      {available && total ? (
-        <div className="border-t border-foreground/[0.06] pt-2 text-[11px] leading-relaxed text-muted-foreground">
-          <p>{total.installs.toLocaleString("en-US")} tracked installs that day</p>
-          {showTrialRate ? <p>{total.trials.toLocaleString("en-US")} started a trial through today</p> : null}
-          <p>{total.missingMoney > 0 ? "Proceeds data unavailable" : "Proceeds through today"}</p>
-        </div>
-      ) : <p className="text-[11px] text-muted-foreground">APPU unavailable</p>}
-      {noteMatches.map((note) => (
-        <div key={note.id} className="flex items-start justify-between gap-3 border-t border-foreground/[0.06] pt-2 text-analytics-violet">
-          <span className="inline-flex min-w-0 items-start gap-1.5"><span className="mt-1 size-2 shrink-0 rounded-sm bg-violet-600" /><span className="break-words">{note.title}</span></span>
-          {note.appVersion && note.appVersion !== "Unknown" ? (
-            <span className="shrink-0 font-mono tabular-nums">{/^v/i.test(note.appVersion) ? note.appVersion : `v${note.appVersion}`}</span>
-          ) : null}
-        </div>
-      ))}
     </ChartTooltip>
   );
 }
