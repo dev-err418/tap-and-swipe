@@ -3,7 +3,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
-import { analyticsCountryOptions } from "../../lib/analytics-country-options";
+import { analyticsCountryOptions, monthlyCountryProceeds } from "../../lib/analytics-country-options";
 import { buildAppCountryComparisons } from "../../lib/app-country-comparisons";
 import { experimentMinimumInstallVersion } from "../../lib/app-experiment-cohort";
 import { GLOW_PAYWALL_FLOW_ALLOCATION, GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY } from "../../lib/glow-onboarding-experience";
@@ -60,7 +60,7 @@ for (const appId of ["glow", "poky", "versy"] as const) {
       journey: journey(3), journeyCountries: { US: journey(2), [secondCountry]: journey(1) },
     });
     assert.deepEqual(report.options, appId === "versy"
-      ? [{ code: "US", proceeds: 10 }, { code: "FR", proceeds: 30 }, { code: "DE", proceeds: 0 }]
+      ? [{ code: "MX", proceeds: 100 }, { code: "FR", proceeds: 30 }, { code: "US", proceeds: 10 }]
       : [{ code: "MX", proceeds: 30 }, { code: "US", proceeds: 10 }]);
     for (const [code, installs, proceeds] of [["US", 2, 10], [secondCountry, 1, 30]] as const) {
       const slice = report.slices[code];
@@ -85,8 +85,8 @@ for (const appId of ["glow", "poky", "versy"] as const) {
     assert.match(html, /aria-pressed="true"[^>]*><span[^>]*>🌍<\/span>All countries/);
     assert.match(html, /United States/);
     if (appId === "versy") {
-      assert.match(html, /All countries[\s\S]*United States[\s\S]*France[\s\S]*Germany/);
-      assert.doesNotMatch(html, /Mexico/);
+      assert.match(html, /All countries[\s\S]*Mexico[\s\S]*France[\s\S]*United States/);
+      assert.doesNotMatch(html, /Germany/);
     } else {
       assert.match(html, /Mexico[\s\S]*United States/);
     }
@@ -130,3 +130,24 @@ test("journey country totals and first-version groups sum back to All countries"
   assert.match(sql, /argMin\(upper\(ifNull\(nullIf\(JSONExtractString\(headers, 'Cf-Ipcountry'/);
   assert.match(sql, /GROUP BY variant, step, version, country/);
 });
+
+for (const appId of ["glow", "poky", "versy"] as const) {
+  test(`${appId} picker ranks the last 30 days of net proceeds, including renewals and refunds`, () => {
+    const now = 100 * day;
+    const money = (country: string, proceeds: number | null, daysAgo: number, name = "initial_purchase") =>
+      ({ country, netProceeds: proceeds, eventTs: now - daysAgo * day, name });
+    const rows = monthlyCountryProceeds([
+      money("US", 900, 31), // Older revenue must not win.
+      money("JP", 80, 30), // Inclusive start of the monthly window.
+      money("CA", 70, 20, "renewal"),
+      money("GB", 60, 2), money("gb", -10, 1, "cancellation"),
+      money("FR", 100, 3), money("FR", -90, 1, "cancellation"),
+      money("DE", 999, 1, "cancellation"), // Ordinary cancellation isn't revenue.
+      money("unknown", 999, 2), money("US", 999, 0), // Unknown/future excluded.
+      money("US", null, 1), money("US", Number.NaN, 1),
+    ], now);
+    assert.deepEqual(analyticsCountryOptions(appId, rows), [
+      { code: "JP", proceeds: 80 }, { code: "CA", proceeds: 70 }, { code: "GB", proceeds: 50 },
+    ]);
+  });
+}

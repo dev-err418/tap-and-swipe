@@ -46,7 +46,7 @@ import { buildAppOverviewCohorts, type AppOverviewCohorts } from "./app-overview
 import { APPLE_ADS_KEYWORD_ATTRIBUTE_KEYS, buildAppleAdsKeywordReport, type AppleAdsKeywordReport } from "./apple-ads-keyword-analytics";
 import { addAppleKeywordSpend, keywordMatureEnd, keywordUtcStart } from "./apple-ads-keyword-spend";
 import { compactAppDataView } from "./app-analytics-data-view";
-import { analyticsCountryOptions } from "./analytics-country-options";
+import { analyticsCountryOptions, monthlyCountryProceeds } from "./analytics-country-options";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
@@ -273,6 +273,7 @@ type SessionRow = {
 };
 
 type AppFacts = {
+  pickerCountries?: { country: string; proceeds: number }[];
   comparisonCohort?: { installs: InstallRow[]; events: AttributedRow[] };
   migrationHistory?: { installs: InstallRow[]; events: AttributedRow[]; startMs: number };
   sessionDataAvailable: boolean;
@@ -411,14 +412,14 @@ async function getSuperwallAppAnalytics(
   sessions = true,
   includeReports = true,
 ): Promise<MobileAppAnalytics> {
-  const fixedCountryPicker = includeCountries && app.id === "versy";
-  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":four-onboarding-routes-20261030" : ":yearly-trial3-20261023"}:${app.id === "poky" ? "keyword-cohorts-v2" : "keyword-cohorts-v3-matched-roas"}${fixedCountryPicker ? ":fixed-countries:note-languages-v2:meta-onboarding" : ""}`;
+  const versyDetail = includeCountries && app.id === "versy";
+  const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":four-onboarding-routes-20261030" : ":yearly-trial3-20261023"}:${app.id === "poky" ? "keyword-cohorts-v2" : "keyword-cohorts-v3-matched-roas"}${versyDetail ? ":note-languages-v2:meta-onboarding" : ""}${includeCountries ? ":monthly-country-picker-v1" : ""}`;
   return analyticsSnapshot(`mobile:${cacheKey}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports), {
     project: includeReports ? undefined : compactAppDataView,
     // Only the keyword ROAS definition changed; the rest of these saved reports is compatible.
     // The projection removes old estimates until the scheduler supplies a matched-period basis.
-    fallbackKeys: !includeReports && app.id !== "poky" && !fixedCountryPicker
+    fallbackKeys: !includeCountries && !includeReports && app.id !== "poky"
       ? [`mobile:${cacheKey.replace("keyword-cohorts-v3-matched-roas", "keyword-cohorts-v2")}`] : [],
   });
 }
@@ -570,6 +571,7 @@ async function loadSuperwallAppAnalytics(
     facts ? paidTrendFromFacts(facts, period) : [],
   );
   const countries = facts ? countriesFromFacts(facts) : [];
+  const pickerCountries = facts?.pickerCountries ?? [];
   const dataCountries = facts ? app.id === "glow" ? glowMatureCountries(facts) : installCohortCountries(facts) : [];
   const includePlanCards = Boolean(facts) && app.id !== "glow";
   const plans = includePlanCards && facts ? plansFromFacts(facts) : [];
@@ -597,7 +599,7 @@ async function loadSuperwallAppAnalytics(
   }));
 
   const markets = facts ? buildAnalyticsMarkets({ period, startMs, endMs, installs: facts.installs, events: facts.events, attributes: facts.attributes, downloads: [] },
-    includeReports ? undefined : analyticsCountryOptions(app.id, countries).map((country) => country.code)) : undefined;
+    includeReports ? undefined : analyticsCountryOptions(app.id, pickerCountries).map((country) => country.code)) : undefined;
   if (facts && markets) {
     const owners = new Map<string, { user: string; at: number }>();
     for (const event of facts.events) {
@@ -664,7 +666,7 @@ async function loadSuperwallAppAnalytics(
     paywallFlowComparison: app.id === "poky" && comparisonFacts
       ? buildPokyPaywallFlowComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes,
           comparisonStartMs, comparisonEndMs, comparisonEndMs) : null,
-    countryComparisons: comparisonFacts ? buildAppCountryComparisons({ appId: app.id, countries, installs: comparisonFacts.installs,
+    countryComparisons: comparisonFacts ? buildAppCountryComparisons({ appId: app.id, countries: pickerCountries, installs: comparisonFacts.installs,
       events: comparisonFacts.events, attributes: comparisonFacts.attributes, asOf: comparisonEndMs,
       journey: journeyBase, journeyCountries }) : undefined,
     appleAdsKeywords,
@@ -709,13 +711,19 @@ async function loadAppFacts(
   const minimumInstallVersion = experimentMinimumInstallVersion(app.id);
   const sessionRange = sessionWindow(startMs, endMs);
   const fetchSessions = includeSessions && (app.id === "poky" || app.id === "versy");
+  const pickerAsOf = Date.now();
+  const pickerStartMs = pickerAsOf - 30 * DAY_MS;
   const installPromise = fetchInstallCohort(app, fetchStart, end, minimumInstallVersion);
   const [installResult, attributeResult, eventResult, sessionResult] = await Promise.allSettled([
     installPromise,
     keys.length ? fetchUserAttributes(app, keys) : Promise.resolve([]),
-    installPromise.then((installs) => fetchAttributedEvents(app, minimumInstallVersion
-      ? clickhouseDate(new Date(installs.reduce((earliest, install) => Math.min(earliest, install.installedAt), Date.parse(`${fetchStart.replace(" ", "T")}Z`))))
-      : fetchStart)),
+    // Keep a full monthly transaction window even for Today/Yesterday, while retaining
+    // older events required to attribute experiment subscription chains correctly.
+    installPromise.then((installs) => fetchAttributedEvents(app, clickhouseDate(new Date(
+      Math.min(pickerStartMs, minimumInstallVersion
+        ? installs.reduce((earliest, install) => Math.min(earliest, install.installedAt), Date.parse(`${fetchStart.replace(" ", "T")}Z`))
+        : Date.parse(`${fetchStart.replace(" ", "T")}Z`)),
+    )))),
     fetchSessions ? fetchSessionStarts(app, sessionRange.from, sessionRange.to) : Promise.resolve([]),
   ]);
 
@@ -744,6 +752,7 @@ async function loadAppFacts(
   const events = eventResult.value.filter(production.event);
 
   return {
+    pickerCountries: monthlyCountryProceeds(events, pickerAsOf),
     comparisonCohort: minimumInstallVersion ? { installs: experimentInstallCohort(installs, minimumInstallVersion), events } : undefined,
     migrationHistory: hasMigrationHistory
       ? { installs, events, startMs: historyStartMs } : undefined,

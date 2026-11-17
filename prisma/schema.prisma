@@ -111,6 +111,17 @@ model PageEvent {
   @@index([ref, createdAt])
 }
 
+model AnalyticsExperiment {
+  id        String   @id @default(cuid())
+  appId     String
+  text      String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([appId, createdAt])
+}
+
 model AnalyticsNote {
   id        String   @id @default(cuid())
   appId     String
