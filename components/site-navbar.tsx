@@ -39,7 +39,7 @@ export async function SiteNavbar() {
           </Link>
           {isLoggedIn && (
             <Link
-              href="/learn"
+              href="https://appsprint.app/community/learn"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground/70"
             >
               Learn

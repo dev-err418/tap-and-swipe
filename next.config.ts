@@ -116,6 +116,13 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      { source: "/community", destination: "https://appsprint.app/community", permanent: true },
+
+      // Member course moved to AppSprint. Operations routes remain local.
+      { source: "/learn", destination: "https://appsprint.app/community/learn", permanent: true },
+      { source: "/learn/:path(classroom|calendar|earn|community)/:rest*", destination: "https://appsprint.app/community/learn/:path/:rest*", permanent: true },
+      { source: "/learn/:slug(getting-started|find-your-idea|design|build|build-with-boilerplate|monetize|launch-and-grow|scaling|weekly-calls)", destination: "https://appsprint.app/community/learn/classroom/:slug", permanent: true },
+
       // Poky replaced the legacy GLP-1 product pages.
       {
         source: "/glp-1",
@@ -137,10 +144,10 @@ const nextConfig: NextConfig = {
         destination: "https://trypoky.app/support",
         permanent: true,
       },
-      // Old community URL → new /community
+      // Legacy community landing URLs go directly to AppSprint.
       {
         source: "/app-sprint-community",
-        destination: "/community",
+        destination: "https://appsprint.app/community",
         permanent: true,
       },
       {
@@ -155,7 +162,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/app-sprint",
-        destination: "/community",
+        destination: "https://appsprint.app/community",
         permanent: true,
       },
       {
@@ -166,22 +173,22 @@ const nextConfig: NextConfig = {
       // Old roadmap URLs → /learn
       {
         source: "/app-sprint-community/roadmap/:slug*",
-        destination: "/learn/classroom/:slug*",
+        destination: "https://appsprint.app/community/learn/classroom/:slug*",
         permanent: true,
       },
       {
         source: "/app-sprint-community/roadmap",
-        destination: "/learn/classroom",
+        destination: "https://appsprint.app/community/learn/classroom",
         permanent: true,
       },
       {
         source: "/app-sprint/roadmap/:slug*",
-        destination: "/learn/classroom/:slug*",
+        destination: "https://appsprint.app/community/learn/classroom/:slug*",
         permanent: true,
       },
       {
         source: "/app-sprint/roadmap",
-        destination: "/learn/classroom",
+        destination: "https://appsprint.app/community/learn/classroom",
         permanent: true,
       },
       {

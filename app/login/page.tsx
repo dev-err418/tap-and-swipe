@@ -36,7 +36,7 @@ export default async function LoginPage({
       user?.subscriptionStatus === "active" ||
       WHITELISTED_DISCORD_IDS.has(session.discordId)
     ) {
-      redirect("/learn");
+      redirect("https://appsprint.app/community/learn");
     }
   }
 

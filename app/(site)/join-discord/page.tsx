@@ -46,10 +46,10 @@ export default function JoinDiscordPage() {
       <p className="mb-5 leading-relaxed text-foreground/70">
         Head to{" "}
         <Link
-          href="/learn"
+          href="https://appsprint.app/community/learn"
           className="font-medium text-foreground underline underline-offset-4 hover:no-underline"
         >
-          tap-and-swipe.com/learn
+          appsprint.app/community/learn
         </Link>{" "}
         and start with Getting Started. Your access unlocks as soon as your
         Discord is linked.

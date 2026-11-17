@@ -70,8 +70,8 @@ export default function LessonListClient({
     if (!selectedId || typeof window === "undefined") return;
     const shortPath = buildLessonShortPath(categorySlug, selectedId);
     const url = shortPath
-      ? `${window.location.origin}${shortPath}`
-      : `${window.location.origin}/learn/classroom/${categorySlug}?lesson=${selectedId}`;
+      ? `https://tap-and-swipe.com${shortPath}`
+      : `https://appsprint.app/community/learn/classroom/${categorySlug}?lesson=${selectedId}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

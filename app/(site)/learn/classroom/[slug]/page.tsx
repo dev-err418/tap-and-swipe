@@ -33,7 +33,7 @@ export default async function CategoryPage({
 
   // Starter (Community plan) cannot access locked categories.
   if (isEffectivelyStarter && isStarterLocked(slug)) {
-    redirect("/learn/classroom" + (sp.preview === "starter" ? "?preview=starter" : ""));
+    redirect("https://appsprint.app/community/learn/classroom" + (sp.preview === "starter" ? "?preview=starter" : ""));
   }
 
   const [lessons, progress] = await Promise.all([
@@ -71,7 +71,7 @@ export default async function CategoryPage({
   return (
     <div>
       <Link
-        href="/learn/classroom"
+        href="https://appsprint.app/community/learn/classroom"
         className="inline-flex items-center gap-2 text-sm text-black/50 hover:text-black transition-colors mb-8"
       >
         <ArrowLeft className="h-4 w-4" />

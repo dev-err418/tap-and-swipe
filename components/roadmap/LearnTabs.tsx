@@ -11,10 +11,10 @@ type Tab = {
 };
 
 const BASE_TABS: Tab[] = [
-  { label: "Community", href: "/learn/community", disabled: true },
-  { label: "Classroom", href: "/learn/classroom", disabled: false },
-  { label: "Calendar", href: "/learn/calendar", disabled: false },
-  { label: "Affiliate", href: "/learn/earn", disabled: false, badge: "Earn 30%" },
+  { label: "Community", href: "https://appsprint.app/community/learn/community", disabled: true },
+  { label: "Classroom", href: "https://appsprint.app/community/learn/classroom", disabled: false },
+  { label: "Calendar", href: "https://appsprint.app/community/learn/calendar", disabled: false },
+  { label: "Affiliate", href: "https://appsprint.app/community/learn/earn", disabled: false, badge: "Earn 30%" },
 ];
 
 export default function LearnTabs({ isAdmin = false }: { isAdmin?: boolean }) {

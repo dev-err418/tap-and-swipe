@@ -72,7 +72,7 @@ export default function CategoryCard({
         </div>
       ) : (
         <Link
-          href={`/learn/classroom/${slug}`}
+          href={`https://appsprint.app/community/learn/classroom/${slug}`}
           className="group block overflow-hidden rounded-2xl border border-black/10 bg-white transition-all hover:border-black/20 hover:shadow-sm"
         >
           {cardBody}
