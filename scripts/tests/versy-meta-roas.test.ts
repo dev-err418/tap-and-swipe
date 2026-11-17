@@ -40,16 +40,18 @@ test("organic install cohorts exclude Meta and Apple Ads, and accrue later renew
   assert.deepEqual(report.DE["2026-11-01"], { installs: 0, proceeds: 0 });
 });
 
-test("tables render country flags, five campaigns, hatching and unavailable state", () => {
+test("tables render country flags, three campaigns, hatching and unavailable state", () => {
   const report: VersyRoasReport = { status: "ready", updatedAt: now.toISOString(), days, campaigns: campaignDays({ data: [] }, days), organic: {} };
   const html = renderToStaticMarkup(createElement(VersyMetaRoasTables, { report }));
-  assert.equal((html.match(/<table /g) ?? []).length, 3);
+  assert.equal((html.match(/<table /g) ?? []).length, 2);
   for (const market of VERSY_META_MARKETS) {
     assert.ok(html.includes(market.flag));
     for (const campaign of market.campaigns) assert.ok(html.includes(campaign.name));
   }
   assert.ok(html.includes("repeating-linear-gradient"));
   assert.ok(html.includes("Total ROAS"));
+  assert.ok(!html.includes("United States"));
+  assert.ok(!html.includes("US - Trials - Versy"));
   assert.ok(!html.includes(">Installs<"));
   assert.ok(!html.includes("Proceeds accrue to install day"));
   const failed = renderToStaticMarkup(createElement(VersyMetaRoasTables, { report: { ...report, status: "unavailable" } }));

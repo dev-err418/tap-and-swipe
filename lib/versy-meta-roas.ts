@@ -8,10 +8,6 @@ export const VERSY_META_MARKETS = [
   { code: "DE", name: "Germany", flag: "🇩🇪", campaigns: [
     { id: "120255328782510450", name: "DE - Trials - Versy - Copy" },
   ] },
-  { code: "US", name: "United States", flag: "🇺🇸", campaigns: [
-    { id: "120255309089760450", name: "US - Trials - Versy" },
-    { id: "120255033133290450", name: "US - Web Trials - Versy - Maximize" },
-  ] },
 ] as const;
 const DAY = 86_400_000;
 export type RoasDay = { date: string; immature: boolean };
