@@ -86,7 +86,7 @@ for (const appId of ["glow", "poky", "versy"] as const) {
     assert.match(html, /United States/);
     if (appId === "versy") {
       assert.match(html, /All countries[\s\S]*Mexico[\s\S]*France[\s\S]*United States/);
-      assert.doesNotMatch(html, /Germany/);
+      assert.doesNotMatch(html, /🇩🇪/);
     } else {
       assert.match(html, /Mexico[\s\S]*United States/);
     }

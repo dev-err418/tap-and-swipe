@@ -124,7 +124,8 @@ test("country comparisons include verified ad-routed installs in their saved flo
     ["french", saved("scroll_the_bible")], ["german", saved("bible_widget_shorter")],
     ["missing", assignment({ onboarding_experiment_id: VERSY_META_ONBOARDING_EXPERIMENT })],
   ]);
-  const report = buildAppCountryComparisons({ appId: "versy", asOf, journey: null, countries: [], attributes,
+  const report = buildAppCountryComparisons({ appId: "versy", asOf, journey: null,
+    countries: [{ country: "FR", proceeds: 0 }, { country: "DE", proceeds: 0 }], attributes,
     installs: [install("french", { country: "FR" }), install("german", { country: "DE" }), install("missing", { country: "FR" })],
     events: [event("french"), event("german"), event("missing")],
   });

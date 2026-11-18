@@ -18,7 +18,7 @@ export type VersyNoteAssignment = {
   variant: "control" | "note"; flow: typeof VERSY_NOTE_FLOWS[number]["key"];
   language: typeof VERSY_NOTE_LANGUAGES[number]; assignedAt: number;
   environment: "production"; randomized: true; access: "hard" | "dismissible"; yearlyProduct: string;
-  viewedAt?: number; continuedAt?: number; paywallViewedAt?: number;
+  viewedAt?: number; continuedAt?: number; paywallViewedAt?: number; noteRevision?: string;
 };
 const object = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
 
@@ -50,8 +50,35 @@ type Events = Parameters<typeof versionCohortConversions>[1];
 export type VersyNoteReport = {
   overall: PaywallCohortComparison;
   flows: PaywallCohortComparison;
+  imageVersions: PaywallCohortComparison;
   reached: Record<string, { note: number; continued: number; paywall: number }>;
 };
+
+/** Before/after image comparison among actual note viewers; never relabel on app upgrade. */
+export function buildVersyNoteImageComparison(installs: Install[], events: Events,
+  attributes: Map<string, Record<string, string>>, startMs: number, endMs: number, asOf: number): PaywallCohortComparison {
+  let unknownRevision = 0;
+  const members = experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.versy, asOf).flatMap((install) => {
+    const assignment = parseVersyNoteAssignment(attributes.get(install.appUserId), asOf);
+    if (!assignment || assignment.variant !== "note" || assignment.viewedAt === undefined
+      || assignment.viewedAt < startMs || assignment.viewedAt >= endMs) return [];
+    const key = assignment.noteRevision === undefined ? "old_note"
+      : assignment.noteRevision === "founder_photo_v2" ? "new_note" : null;
+    if (!key) { unknownRevision++; return []; }
+    return [{ install, key, viewedAt: assignment.viewedAt }];
+  });
+  const labels = { old_note: "Old note", new_note: "New note" };
+  const rows = Object.keys(labels).map((key) => {
+    const selected = members.filter((member) => member.key === key);
+    const conversions = versionCohortConversions(selected.map(({ install }) => ({ ...install, appVersion: "0" })),
+      events, attributes, 0, asOf + 1, asOf,
+      new Map(selected.map(({ install, viewedAt }) => [install.appUserId, viewedAt])),
+    ).get("0") ?? emptyVersionConversions();
+    return { version: key, installs: conversions.global.installs, tracked: conversions.global.installs, variants: [], conversions };
+  });
+  return { status: rows.some((r) => r.installs > 0) ? "ready" : "empty", rows, labels,
+    warnings: unknownRevision ? [`${unknownRevision} note views with an unknown image revision were excluded.`] : [] };
+}
 
 /** Descriptive flow totals pool history with current controls, without inventing A/B enrollment. */
 export function buildVersyPaywallFlowHistory(
@@ -126,6 +153,7 @@ export function buildVersyNoteReport(installs: Install[], events: Events, attrib
       warnings: invalid ? [`${invalid} invalid team-note assignments were excluded.`] : [] };
   };
   return {
+    imageVersions: buildVersyNoteImageComparison(installs, events, attributes, startMs, endMs, asOf),
     overall: compare({ control: "Reviews → paywall · 50%", note: "Reviews → note → paywall · 50%" }, (r) => r.variant),
     flows: compare(Object.fromEntries((includeFlows ? VERSY_NOTE_FLOWS : []).flatMap(({ key, label }) => [
       [key, label], [`${key}_note`, `${label} + note`],

@@ -27,6 +27,45 @@ const historicalAttrs = (flow: typeof VERSY_NOTE_FLOWS[number]["key"]) => ({
     expectedProduct: "yearly.trial3" }),
 });
 
+test("old versus new note compares actual first views, retains nonbuyers and excludes earlier subscriptions", () => {
+  const attributes = new Map([
+    ["old", attrs({ viewedAt: start + 2000, allocation: "20_80" })],
+    ["new", attrs({ viewedAt: start + 2 * day, noteRevision: "founder_photo_v2" })],
+    ["new-free", attrs({ viewedAt: start + 2000, noteRevision: "founder_photo_v2" })],
+    ["unseen", attrs({})], ["control", attrs({ variant: "control" })],
+    ["unknown", attrs({ viewedAt: start + 2000, noteRevision: "future-image" })],
+    ["sandbox", attrs({ viewedAt: start + 2000 }, "sandbox")],
+  ]);
+  const installs = [...attributes.keys()].map((id) => ({ ...install(id), appVersion: "1.3.6" }));
+  const events = [event("old"), event("new"),
+    event("new", { name: "renewal", transactionId: "old-renewal", eventTs: start + 3 * day }),
+    event("new", { originalTransactionId: "new-chain", transactionId: "new", eventTs: start + 4 * day, netProceeds: 20 }),
+    event("", { originalTransactionId: "new-chain", transactionId: "refund", name: "cancellation", isRefund: true, eventTs: start + 5 * day, netProceeds: -5 }),
+  ];
+  const report = buildVersyNoteReport(installs, events, attributes, start, end, asOf);
+  assert.deepEqual(report.imageVersions.rows.map((row) => row.installs), [1, 2]);
+  assert.deepEqual(report.imageVersions.rows.map((row) => row.conversions!.global.proceeds), [12, 15]);
+  assert.equal(report.imageVersions.rows[1].conversions!.global.refunds, 1);
+  assert.equal(report.imageVersions.warnings.length, 1);
+  const html = renderToStaticMarkup(createElement(VersyPaywallNotePanel, { report }));
+  const block = html.slice(html.indexOf("Old note vs new note"));
+  assert.match(block, /Note viewers only/);
+  assert.match(block, /Old note/);
+  assert.match(block, /New note/);
+  assert.doesNotMatch(block, /Win %|APPU lift|readiness/);
+  const country = buildAppCountryComparisons({ appId: "versy", installs, events, attributes,
+    countries: [{ country: "US", proceeds: 27 }], asOf, journey: null });
+  assert.deepEqual(country.slices.US.versyPaywallComparison!.noteExperiment!.imageVersions, report.imageVersions);
+});
+
+test("note image comparison waits for new exposures and filters by view date", () => {
+  const attributes = new Map([["old", attrs({ viewedAt: start + 2000 })],
+    ["new", attrs({ viewedAt: end + 1000, noteRevision: "founder_photo_v2" })]]);
+  const report = buildVersyNoteReport([install("old"), install("new")], [], attributes, start, end, asOf);
+  assert.deepEqual(report.imageVersions.rows.map((row) => row.installs), [1, 0]);
+  assert.match(renderToStaticMarkup(createElement(VersyPaywallNotePanel, { report })), /No new-note views recorded yet/);
+});
+
 test("flow totals pool historical no-note users with new controls while A/B results stay enrollment-only", () => {
   const attributes = new Map<string, Record<string, string>>();
   const installs: ReturnType<typeof install>[] = [];
@@ -96,7 +135,8 @@ test("French note assignments and their trials are counted in the France picker 
     ["note", attrs({ language: "fr", flow: "scroll_the_bible", access: "dismissible" })],
     ["german", attrs({ language: "de" })],
   ]);
-  const report = buildAppCountryComparisons({ appId: "versy", installs, events, attributes, countries: [], asOf, journey: null });
+  const report = buildAppCountryComparisons({ appId: "versy", installs, events, attributes,
+    countries: [{ country: "FR", proceeds: 0 }, { country: "DE", proceeds: 0 }], asOf, journey: null });
   const flows = report.slices.FR.versyPaywallComparison!.noteExperiment!.flows;
   assert.deepEqual(flows.warnings, []);
   assert.equal(flows.rows.find((row) => row.version === "bible_widget")!.installs, 1);

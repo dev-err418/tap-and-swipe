@@ -3,7 +3,38 @@ import { emptyVersionConversions, versionCohortConversions } from "./version-coh
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { isVersyFixedYearlyPriceAssignment, VERSY_FIXED_YEARLY_PRICE } from "./versy-paywall-policy";
 
-export type VersyYearlyPriceComparison = PaywallCohortComparison & { rollout: PaywallCohortComparison };
+export type VersyYearlyPriceComparison = PaywallCohortComparison & {
+  current: PaywallCohortComparison;
+  recovery: PaywallCohortComparison;
+  rollout: PaywallCohortComparison;
+};
+
+export const VERSY_CURRENT_YEARLY_PRICE_EXPERIMENT = "versy_yearly_price_3999_4499_4999_v1";
+export const VERSY_CURRENT_YEARLY_PRICES = [
+  { key: "eur_39_99", label: "€39.99/year (7d)", productID: "com.arthurbuildsstuff.bible.Yearly" },
+  // Historical SKU name; this experiment uses the new price and seven-day offer.
+  { key: "eur_44_99", label: "€44.99/year (7d)", productID: "com.arthurbuildsstuff.bible.yearly_3999_80.trial3" },
+  { key: "eur_49_99", label: "€49.99/year (7d)", productID: "com.arthurbuildsstuff.bible.yearly_4999" },
+] as const;
+export const VERSY_RECOVERY_PRICE_EXPERIMENT = "versy_recovery_price_1999_2499_v1";
+export const VERSY_RECOVERY_PRICES = [
+  { key: "eur_19_99", label: "€19.99/year", productID: "com.arthurbuildsstuff.bible.YearlyDiscount" },
+  { key: "eur_24_99", label: "€24.99/year", productID: "com.arthurbuildsstuff.bible.yearly_2999" },
+] as const;
+
+export function isVersyCurrentYearlyPriceAssignment(values: Record<string, string> | undefined): boolean {
+  return values?.versy_tracking_environment === "production"
+    && values.yearly_price_experiment_id === VERSY_CURRENT_YEARLY_PRICE_EXPERIMENT
+    && values.yearly_price_allocation === "equal_thirds"
+    && VERSY_CURRENT_YEARLY_PRICES.some((price) => price.productID === values.yearly_price_product_id);
+}
+
+export function isVersyRecoveryPriceAssignment(values: Record<string, string> | undefined): boolean {
+  return values?.versy_tracking_environment === "production"
+    && values.recovery_price_experiment_id === VERSY_RECOVERY_PRICE_EXPERIMENT
+    && values.recovery_price_allocation === "50_50"
+    && VERSY_RECOVERY_PRICES.some((price) => price.productID === values.recovery_price_product_id);
+}
 
 export const VERSY_YEARLY_PRICE_EXPERIMENT = "versy_yearly_price_v3";
 export const VERSY_RETIRED_YEARLY_PRICE_EXPERIMENT = "versy_yearly_price_v4";
@@ -23,6 +54,9 @@ export function isVersyYearlyPriceAssignment(values: Record<string, string> | un
 export const VERSY_YEARLY_PRICE_ATTRIBUTE_KEYS = [
   "yearly_price_experiment_id", "yearly_price_product_id", "yearly_price_allocation", "yearly_price_assigned_at",
 ] as const;
+export const VERSY_RECOVERY_PRICE_ATTRIBUTE_KEYS = [
+  "recovery_price_experiment_id", "recovery_price_product_id", "recovery_price_allocation", "recovery_price_assigned_at",
+] as const;
 
 /** Saved fresh price assignments, never the purchased product, determine cohort membership. */
 export function buildVersyYearlyPriceComparison(
@@ -32,6 +66,8 @@ export function buildVersyYearlyPriceComparison(
   asOf = Date.now(),
 ): VersyYearlyPriceComparison {
   return {
+    current: priceComparison(installs, events, attributes, asOf, isVersyCurrentYearlyPriceAssignment, VERSY_CURRENT_YEARLY_PRICES),
+    recovery: priceComparison(installs, events, attributes, asOf, isVersyRecoveryPriceAssignment, VERSY_RECOVERY_PRICES, "recovery_price"),
     ...priceComparison(installs, events, attributes, asOf, isVersyYearlyPriceAssignment, VERSY_YEARLY_PRICES),
     rollout: priceComparison(installs, events, attributes, asOf, isVersyFixedYearlyPriceAssignment, [VERSY_FIXED_YEARLY_PRICE]),
   };
@@ -43,15 +79,16 @@ function priceComparison(
   attributes: Map<string, Record<string, string>>, asOf: number,
   assignmentCheck: typeof isVersyYearlyPriceAssignment,
   prices: readonly { key: string; label: string; productID: string }[],
+  attributePrefix: "yearly_price" | "recovery_price" = "yearly_price",
 ): PaywallCohortComparison {
   const eligible = experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.versy, asOf);
   let invalidTimes = 0;
   const enrolled = eligible.flatMap((install) => {
     const values = attributes.get(install.appUserId);
     if (!values || !assignmentCheck(values)) return [];
-    const assignedAt = Number(values.yearly_price_assigned_at);
+    const assignedAt = Number(values[`${attributePrefix}_assigned_at`]);
     if (!Number.isFinite(assignedAt) || assignedAt <= 0 || assignedAt > asOf) { invalidTimes++; return []; }
-    return [{ install, assignedAt, productID: values.yearly_price_product_id }];
+    return [{ install, assignedAt, productID: values[`${attributePrefix}_product_id`] }];
   });
   const rows = prices.map((price) => {
     const members = enrolled.filter((row) => row.productID === price.productID);

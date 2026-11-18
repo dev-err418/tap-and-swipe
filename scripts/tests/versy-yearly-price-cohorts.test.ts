@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import AppOverviewPanel from "../../components/analytics/AppOverviewPanel";
 import VersyYearlyPriceTable from "../../components/analytics/VersyYearlyPriceTable";
-import { buildVersyYearlyPriceComparison, VERSY_YEARLY_PRICE_EXPERIMENT, VERSY_RETIRED_YEARLY_PRICE_EXPERIMENT, VERSY_YEARLY_PRICES } from "../../lib/versy-yearly-price-cohorts";
+import { buildVersyYearlyPriceComparison, VERSY_CURRENT_YEARLY_PRICE_EXPERIMENT, VERSY_CURRENT_YEARLY_PRICES, VERSY_RECOVERY_PRICE_EXPERIMENT, VERSY_RECOVERY_PRICES, VERSY_YEARLY_PRICE_EXPERIMENT, VERSY_RETIRED_YEARLY_PRICE_EXPERIMENT, VERSY_YEARLY_PRICES } from "../../lib/versy-yearly-price-cohorts";
 import { buildUserJourney, userJourneyDefinition } from "../../lib/user-journey";
 import { VERSY_FIXED_YEARLY_PRICE, isVersyFixedYearlyPriceAssignment } from "../../lib/versy-paywall-policy";
 import { buildAppCountryComparisons } from "../../lib/app-country-comparisons";
@@ -24,6 +24,86 @@ const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUs
 const fixedAssignment = (extra = {}) => assignment(1, {
   yearly_price_experiment_id: VERSY_FIXED_YEARLY_PRICE.experiment,
   yearly_price_allocation: VERSY_FIXED_YEARLY_PRICE.allocation, ...extra,
+});
+
+const currentAssignment = (main: number, recovery: number, extra = {}) => ({
+  versy_tracking_environment: "production",
+  yearly_price_experiment_id: VERSY_CURRENT_YEARLY_PRICE_EXPERIMENT,
+  yearly_price_allocation: "equal_thirds",
+  yearly_price_product_id: VERSY_CURRENT_YEARLY_PRICES[main].productID,
+  yearly_price_assigned_at: String(start),
+  recovery_price_experiment_id: VERSY_RECOVERY_PRICE_EXPERIMENT,
+  recovery_price_allocation: "50_50",
+  recovery_price_product_id: VERSY_RECOVERY_PRICES[recovery].productID,
+  recovery_price_assigned_at: String(start),
+  ...extra,
+});
+
+test("three main arms cross independently with both recovery arms without mixing historical assignments", () => {
+  const attributes = new Map<string, Record<string, string>>();
+  for (let main = 0; main < 3; main++) for (let recovery = 0; recovery < 2; recovery++) {
+    attributes.set(`${main}-${recovery}`, currentAssignment(main, recovery));
+  }
+  attributes.set("historical", assignment());
+  attributes.set("fixed", fixedAssignment());
+  attributes.set("obsolete-two-arm", currentAssignment(0, 0, {
+    yearly_price_experiment_id: "versy_yearly_price_3499_4999_v1", recovery_price_experiment_id: "obsolete",
+  }));
+  const report = buildVersyYearlyPriceComparison([...attributes.keys()].map((id) => install(id)), [
+    event("0-0", { productId: VERSY_RECOVERY_PRICES[0].productID }),
+    event("", { originalTransactionId: "0-0", name: "renewal", transactionId: "renewal", netProceeds: 8, eventTs: start + 10 * day }),
+    event("", { originalTransactionId: "0-0", name: "cancellation", transactionId: "renewal", isRefund: true, netProceeds: -2, eventTs: start + 11 * day }),
+    event("1-1", { productId: VERSY_CURRENT_YEARLY_PRICES[1].productID }),
+    event("fixed"), event("historical"), event("obsolete-two-arm"),
+  ], attributes, asOf);
+  assert.deepEqual(report.current.rows.map((r) => r.installs), [2, 2, 2]);
+  assert.deepEqual(report.recovery.rows.map((r) => r.installs), [3, 3]);
+  assert.deepEqual(report.current.rows.map((r) => r.conversions!.global.proceeds), [18, 12, 0]);
+  assert.deepEqual(report.recovery.rows.map((r) => r.conversions!.global.proceeds), [18, 12]);
+  assert.equal(report.recovery.rows[0].conversions!.global.refunds, 1);
+  assert.equal(report.current.rows[0].conversions!.global.proceeds / report.current.rows[0].installs, 9);
+  assert.deepEqual(report.rows.map((r) => r.installs), [1, 0]);
+  assert.equal(report.rollout.rows[0].installs, 1);
+  assert.deepEqual(Object.values(report.current.labels), ["€39.99/year (7d)", "€44.99/year (7d)", "€49.99/year (7d)"]);
+  const html = renderToStaticMarkup(createElement(VersyYearlyPriceTable, { report }));
+  const mainIndex = html.indexOf("Yearly prices · A/B test"), recoveryIndex = html.indexOf("Recovery prices · A/B test");
+  assert.ok(mainIndex >= 0 && recoveryIndex > mainIndex);
+  assert.ok(html.indexOf("Yearly price · historical fixed") > recoveryIndex);
+  for (const label of ["€44.99/year", "€19.99/year", "€24.99/year", "France and Germany", "Equal thirds", "50/50 · independent"]) assert.ok(html.includes(label), label);
+});
+
+test("current tests reject invalid metadata independently and use their own assignment cutoff", () => {
+  const attributes = new Map([
+    ["different-times", currentAssignment(0, 0, { recovery_price_assigned_at: String(start + 2 * day) })],
+    ["invalid-main", currentAssignment(1, 1, { yearly_price_assigned_at: "" })],
+    ["future-recovery", currentAssignment(2, 0, { recovery_price_assigned_at: String(asOf + 1) })],
+    ["debug", currentAssignment(0, 0, { versy_tracking_environment: "development" })],
+    ["allocations", currentAssignment(0, 0, { yearly_price_allocation: "50_50", recovery_price_allocation: "fixed" })],
+    ["products", currentAssignment(0, 0, { yearly_price_product_id: "unknown", recovery_price_product_id: "unknown" })],
+    ["old-install", currentAssignment(0, 0)],
+  ]);
+  const report = buildVersyYearlyPriceComparison([...attributes.keys()].map((id) => install(id, id === "old-install" ? "1.2.5" : "1.3.6")), [
+    event("different-times"),
+    event("different-times", { name: "renewal", transactionId: "old-renewal", eventTs: start + 3 * day }),
+    event("different-times", { originalTransactionId: "new-chain", transactionId: "new", eventTs: start + 4 * day, netProceeds: 5 }),
+  ], attributes, asOf);
+  assert.deepEqual(report.current.rows.map((r) => r.installs), [1, 0, 1]);
+  assert.deepEqual(report.recovery.rows.map((r) => r.installs), [1, 1]);
+  assert.equal(report.current.rows[0].conversions!.global.proceeds, 29);
+  assert.equal(report.recovery.rows[0].conversions!.global.proceeds, 5);
+  assert.equal(report.current.warnings.length, 1);
+  assert.equal(report.recovery.warnings.length, 1);
+});
+
+test("country filters apply to both new price tests", () => {
+  const attributes = new Map([["fr", currentAssignment(1, 0)], ["de", currentAssignment(2, 1)], ["us", currentAssignment(0, 1)]]);
+  const result = buildAppCountryComparisons({ appId: "versy", asOf, journey: null, attributes,
+    installs: [...attributes.keys()].map((id) => ({ ...install(id), country: id.toUpperCase() })),
+    countries: [{ country: "FR", proceeds: 12 }, { country: "DE", proceeds: 12 }, { country: "US", proceeds: 12 }], events: [],
+  });
+  assert.deepEqual(result.slices.FR.yearlyPriceComparison!.current.rows.map((r) => r.installs), [0, 1, 0]);
+  assert.deepEqual(result.slices.DE.yearlyPriceComparison!.recovery.rows.map((r) => r.installs), [0, 1]);
+  assert.deepEqual(result.slices.US.yearlyPriceComparison!.current.rows.map((r) => r.installs), [1, 0, 0]);
 });
 
 test("fixed rollout is isolated from both historical price arms, including after an upgrade", () => {
@@ -49,10 +129,10 @@ test("fixed rollout is isolated from both historical price arms, including after
   assert.equal(report.rollout.warnings.length, 1);
   assert.equal(isVersyFixedYearlyPriceAssignment(assignment(1)), false);
   const html = renderToStaticMarkup(createElement(VersyYearlyPriceTable, { report }));
-  const current = html.slice(0, html.indexOf("Yearly prices · historical test"));
+  const current = html.slice(html.indexOf("Yearly price · historical fixed"), html.indexOf("Yearly prices · historical test"));
   assert.match(current, /100% rollout/);
   assert.doesNotMatch(current, /Win %|APPU lift|readiness/i);
-  assert.match(html, /Retired \$39.99/);
+  assert.match(html, /Yearly prices · historical test/);
 });
 
 test("country slices retain the same fixed-versus-historical separation", () => {

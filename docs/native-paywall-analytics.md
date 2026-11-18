@@ -848,3 +848,46 @@ Proceeds and denominator both use mature members only, including non-payers;
 actual trial expiry can extend maturity. Missing or invalid assignments never
 become controls. Historical Widget and v2 reports remain separate; snapshot v36
 invalidates old report shapes. Requires the app release and website deployment.
+
+## November 18, 2026: Versy annual, recovery and note-image comparisons
+
+The Data route now shows the current annual price comparison first, immediately
+followed by recovery prices. Existing fixed-$49.99 and v3/v4 comparisons remain
+separate historical cards. Country filters rebuild all comparisons identically.
+
+- Main: `versy_yearly_price_3999_4499_4999_v1`, allocation `equal_thirds`.
+  `com.arthurbuildsstuff.bible.Yearly` = €39.99;
+  `com.arthurbuildsstuff.bible.yearly_3999_80.trial3` = €44.99;
+  `com.arthurbuildsstuff.bible.yearly_4999` = €49.99.
+  These arms have seven-day trials for eligible users. The middle SKU's historical
+  name does not describe the new offer.
+- Recovery: `versy_recovery_price_1999_2499_v1`, allocation `50_50`.
+  `com.arthurbuildsstuff.bible.YearlyDiscount` = €19.99;
+  `com.arthurbuildsstuff.bible.yearly_2999` = €24.99. No trial.
+- Both run worldwide with localized StoreKit prices; euro labels describe France
+  and Germany. APPU and proceeds retain the dashboard's USD normalization.
+
+Membership requires production tracking, the exact experiment/allocation/SKU and
+a valid assignment timestamp. The independent `yearly_price_*` and
+`recovery_price_*` attributes determine groups, never purchased products. Each
+comparison includes all eligible assigned installs, including nonpayers, and all
+subscription chains started after the later of install and that test's assignment.
+Recovery results therefore measure total downstream proceeds, not just recovery
+purchases or exposed users. Earlier subscription chains are excluded; linked
+renewals and refunds remain attached. The new report/cache key prevents old saved
+reports from hiding the new cards. Scheduled product changes take effect November
+20; dashboard availability is separate from the iOS release.
+
+**Old note vs new note** is a descriptive before/after block below the existing
+note A/B table. Only production `note` participants with a recorded first view
+qualify, including both historical allocations (20/80 and 50/50) and nonbuyers.
+The existing `vn1_versy_paywall_note_v1` JSON now saves
+`noteRevision=founder_photo_v2` at the first view of the new photo. Existing first
+views without this field retain the old-note identity, including after upgrades;
+unviewed assignments acquire the revision only when they actually see the note.
+Unknown revisions are excluded rather than classified as old. No control users or
+unseen assignments enter this block. Outcomes start at the later of first install
+and first note view; country filters use the same membership and money rules.
+The comparison has no winner/lift estimate: pricing, routes, acquisition mix and
+observation time may differ between the historical periods. New-note rows stay
+empty until the instrumented app with the updated photo is released and viewed.
