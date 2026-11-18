@@ -61,7 +61,7 @@ export function VersyMetaRoasTables({ report, country = "all" }: { report: Versy
         { key: "total", title: "Total ROAS", metric: "Meta + organic", values: days.map(({ date }) => ratio(totalRoas(report, market, date))), group: true },
       );
       return <DashboardCard key={market.code} title={`${market.flag} ${market.name} · Meta ROAS`} contentClassName="pt-0"
-        action={<span className="text-xs text-muted-foreground">Last 30 days · USD · UTC</span>}>
+        action={<span className="text-xs text-muted-foreground">By install date · Last 30 days · USD · UTC</span>}>
         {report.status === "unavailable" ? <p role="status" className="py-4 text-sm text-muted-foreground">Meta ROAS could not be loaded. Refresh to retry.</p> : <>
           <div data-roas-scroll className="min-w-0 overflow-x-auto scrollbar-none rounded-xl border border-foreground/[0.06]" role="region" aria-label={`${market.name} daily Meta ROAS`} tabIndex={0}>
             <table className="w-full border-separate border-spacing-0 text-left text-xs">

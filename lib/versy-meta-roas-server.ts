@@ -6,7 +6,7 @@ import { campaignDays, organicDays, roasDays, type RoasChart, type VersyRoasRepo
 export async function getVersyMetaRoas(): Promise<VersyRoasReport> {
   const now = new Date(), days = roasDays(now);
   try {
-    return await analyticsSnapshot(`versy-meta-roas-v1:${days.at(-1)!.date}`, async () => {
+    return await analyticsSnapshot(`versy-meta-roas-v2-explicit-proceeds:${days.at(-1)!.date}`, async () => {
       const apiKey = process.env.SUPERWALL_VERSY_API_KEY?.trim();
       if (!apiKey) throw new Error("SUPERWALL_VERSY_API_KEY is not configured");
       const from = `${days[0].date}T00:00:00Z`;
@@ -15,6 +15,8 @@ export async function getVersyMetaRoas(): Promise<VersyRoasReport> {
           method: "POST", cache: "no-store", signal: AbortSignal.timeout(60_000),
           headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({ application_id: "51393", y_axis: "roas", x_axis: "installDate",
+            // The default ROAS response can lag paid renewals; explicitly request its proceeds metric.
+            include: ["netProceeds"],
             breakdown: "acquisitionCampaignId", date_interval: "day", environment: ["PRODUCTION"],
             date_filter: { dimension: "installDate", preset: "custom", range: { from, to: now.toISOString() } } }),
         }),
