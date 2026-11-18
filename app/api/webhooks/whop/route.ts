@@ -17,7 +17,6 @@ import { sendLicenseKeyEmailOnce } from "@/lib/aso-email";
 import { grantAccess } from "@/lib/grant-access";
 import { recordCommunityWhopPayment } from "@/lib/community-payment-analytics";
 import { communityEuroTierForPlan } from "@/lib/community-pricing-experiment";
-import { hasAppSprintCheckout, isAppSprintManagedMembership, isNewAppSprintCommunityMembership } from "@/lib/community-managed-access";
 
 type WhopWebhookData = ReturnType<ReturnType<typeof getWhop>["webhooks"]["unwrap"]>;
 type WhopWebhookSource = "default" | "community";
@@ -297,14 +296,6 @@ export async function POST(request: NextRequest) {
       ? await fetchWhopMembership(membershipIdForLookup, webhookSource)
       : { data: null, source: null };
     const membershipFromApi = resolvedMembership.data;
-    // The AppSprint website owns fulfillment and expiration for its checkouts.
-    // Keep this handler for historical Whop purchases without issuing a second
-    // key, welcome email, or competing Discord role change for the new flow.
-    if (hasAppSprintCheckout(data, membershipForMeta, membershipFromApi)
-      || isNewAppSprintCommunityMembership(membershipFromApi)
-      || await isAppSprintManagedMembership(membershipIdForLookup)) {
-      return NextResponse.json({ received: true, fulfillment: "appsprint" });
-    }
     const visitorId =
       extractVisitorId(data) ??
       (membershipForMeta ? extractVisitorId(membershipForMeta) : null) ??
