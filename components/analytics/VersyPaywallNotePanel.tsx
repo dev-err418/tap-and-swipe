@@ -32,12 +32,9 @@ export default function VersyPaywallNotePanel({ report }: { report: VersyNoteRep
     </DashboardCard>
     <DashboardCard title="Old note vs new note" contentClassName="pt-0"
       action={<span className="text-xs text-muted-foreground">Note viewers only · Before/after</span>}>
-      <p className="pb-2 text-xs text-muted-foreground">Compares the previous image with the new photo, recorded at the first note view. Includes nonbuyers; outcomes start at that view. Prices, onboarding paths and observation time can differ between groups, so this is a historical comparison, not a randomized image test.</p>
       {!report.imageVersions || report.imageVersions.status === "unavailable"
         ? <p role="status" className="py-2 text-sm text-muted-foreground">Note image reporting is unavailable. Refresh to retry.</p>
         : <>
-          {report.imageVersions.rows.find((row) => row.version === "new_note")?.installs === 0
-            && <p className="pb-2 text-xs text-muted-foreground">No new-note views recorded yet. This row will populate after the updated app is released and users view the note.</p>}
           {report.imageVersions.warnings.map((warning) => <p key={warning} role="status" className="pb-2 text-xs text-muted-foreground">{warning}</p>)}
           <JourneyVersionComparison cohorts={report.imageVersions.rows} rowLabels={report.imageVersions.labels} rowHeading="Note image"
             allUsersOnly showInstallPaid showRefundRate />
