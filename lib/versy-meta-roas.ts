@@ -20,9 +20,9 @@ export type VersyRoasReport = {
   campaigns: Record<string, Record<string, RoasMetric>>;
   organic: Record<string, Record<string, OrganicMetric>>;
 };
-export type RoasChart = {
+export type AcquisitionChart = {
   series?: { key: string; breakdown: string }[];
-  data: { x: string; values: Record<string, { y: number | null; extra?: { netProceeds?: number | null; adSpend?: number | null } }> }[];
+  data: { x: string; values: Record<string, { y: number | null }> }[];
 };
 
 export function roasDays(now = new Date()): RoasDay[] {
@@ -32,18 +32,20 @@ export function roasDays(now = new Date()): RoasDay[] {
 export function roasRatio(proceeds: number | null, spend: number): number | null {
   return proceeds == null || spend <= 0 ? null : proceeds / spend;
 }
-export function campaignDays(chart: RoasChart, days: RoasDay[]): VersyRoasReport["campaigns"] {
+export function campaignDays(proceedsChart: AcquisitionChart, spendChart: AcquisitionChart, days: RoasDay[]): VersyRoasReport["campaigns"] {
   const campaigns: VersyRoasReport["campaigns"] = {};
+  const proceedsByDate = new Map(proceedsChart.data.map((point) => [point.x.slice(0, 10), point.values]));
+  const spendByDate = new Map(spendChart.data.map((point) => [point.x.slice(0, 10), point.values]));
   for (const market of VERSY_META_MARKETS) for (const { id } of market.campaigns) {
-    campaigns[id] = Object.fromEntries(days.map(({ date }) => [date, { spend: 0, proceeds: 0, roas: null }]));
-    for (const point of chart.data) {
-      const date = point.x.slice(0, 10), value = point.values[id];
-      if (!campaigns[id][date] || !value) continue;
-      const spend = value.extra?.adSpend;
-      const proceeds = value.extra?.netProceeds;
-      if (spend == null || !Number.isFinite(spend) || (proceeds != null && !Number.isFinite(proceeds))) throw new Error("Incomplete ROAS chart amounts");
-      campaigns[id][date] = { spend, proceeds: proceeds ?? null, roas: roasRatio(proceeds ?? null, spend) };
-    }
+    campaigns[id] = Object.fromEntries(days.map(({ date }) => {
+      const spendValue = spendByDate.get(date)?.[id];
+      const proceedsValue = proceedsByDate.get(date)?.[id];
+      // Sparse chart entries mean no activity; an explicit null remains unavailable.
+      const spend = spendValue ? spendValue.y : 0;
+      const proceeds = proceedsValue ? proceedsValue.y : 0;
+      if (spend == null || !Number.isFinite(spend) || (proceeds != null && !Number.isFinite(proceeds))) throw new Error("Incomplete acquisition chart amounts");
+      return [date, { spend, proceeds, roas: roasRatio(proceeds, spend) }];
+    }));
   }
   return campaigns;
 }

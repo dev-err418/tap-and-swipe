@@ -38,6 +38,16 @@ Website funnels, editable notes and individual user-journey lookups stay live.
 All existing dashboard permissions still apply. Snapshot files must never be
 served publicly, uploaded to the public video bucket, or included in builds.
 
+Versy's Meta ROAS table refreshes on request after five minutes. It independently
+queries Superwall's `netProceeds` by `installDate` and `adSpend` by `tsDate`, joins
+the results by campaign ID and UTC date, and calculates the ratio locally. Do not
+use the proceeds bundled into the `roas` metric: on November 19, 2026, that response
+omitted recent trial conversions even with `include: ["netProceeds"]`. The separate
+proceeds query matched transaction records across all 90 displayed campaign/day
+combinations. The `versy-meta-roas-v3-separate-metrics` snapshot key prevents reuse
+of the previous calculation. Failed metric queries retain a prior complete
+snapshot rather than publishing zero revenue.
+
 ## Enable on Coolify
 
 1. Add a persistent volume mounted at `/app/analytics-cache`. It must be writable

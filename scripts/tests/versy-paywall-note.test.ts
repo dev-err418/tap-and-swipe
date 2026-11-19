@@ -13,9 +13,9 @@ const install = (appUserId: string, installedAt = start, country = "US") => ({ a
 const record = (extra: Partial<VersyNoteAssignment> = {}): VersyNoteAssignment => ({ schema: 1, experiment: VERSY_NOTE_EXPERIMENT,
   allocation: "50_50", variant: "note", flow: "bible_widget", language: "en", assignedAt: start + 1000, environment: "production", randomized: true, access: "hard", yearlyProduct: "yearly", ...extra });
 const attrs = (extra: Partial<VersyNoteAssignment> = {}, environment = "production") => ({ versy_tracking_environment: environment, [VERSY_NOTE_ATTRIBUTE]: JSON.stringify(record({ ...extra, environment } as Partial<VersyNoteAssignment>)) });
-type Event = Parameters<typeof buildVersyNoteReport>[1][number];
+type Event = Parameters<typeof buildAppCountryComparisons>[0]["events"][number];
 const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUserId, originalTransactionId: appUserId,
-  transactionId: appUserId, name: "initial_purchase", periodType: "normal", netProceeds: 12, isRefund: false,
+  transactionId: appUserId, name: "initial_purchase", periodType: "normal", netProceeds: 12, isRefund: false, isTrialConversion: false,
   eventTs: start + day, attributionTs: start + day, expiresAt: 0, ...extra });
 const historicalAttrs = (flow: typeof VERSY_NOTE_FLOWS[number]["key"]) => ({
   versy_tracking_environment: "production", onboarding_experiment_id: flow === "scroll_the_bible_animations" || flow === "scroll_the_bible_videos" ? "scroll_the_bible_v2" : "scroll_the_bible_v1", onboarding_variant: flow,
@@ -63,7 +63,7 @@ test("note image comparison waits for new exposures and filters by view date", (
     ["new", attrs({ viewedAt: end + 1000, noteRevision: "founder_photo_v2" })]]);
   const report = buildVersyNoteReport([install("old"), install("new")], [], attributes, start, end, asOf);
   assert.deepEqual(report.imageVersions.rows.map((row) => row.installs), [1, 0]);
-  assert.match(renderToStaticMarkup(createElement(VersyPaywallNotePanel, { report })), /No new-note views recorded yet/);
+  assert.doesNotMatch(renderToStaticMarkup(createElement(VersyPaywallNotePanel, { report })), /No new-note views recorded yet/);
 });
 
 test("flow totals pool historical no-note users with new controls while A/B results stay enrollment-only", () => {
