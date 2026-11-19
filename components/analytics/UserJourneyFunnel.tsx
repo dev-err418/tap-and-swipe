@@ -135,12 +135,13 @@ function journeyVariantLabel(variant: UserJourneyVariantResult) {
   return variant.family && variant.family !== variant.label ? `${variant.family} · ${variant.label}` : variant.label;
 }
 
-export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRefundRate = false, splitAdSources = false, showInstallPaid = false, rowHeading = "First version", rowLabels, showAppuComparison = false, showArpuGraph = false, onRowClick, clickableRows }: {
+export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRefundRate = false, splitAdSources = false, showInstallPaid = false, showTrialConversions = true, rowHeading = "First version", rowLabels, showAppuComparison = false, showArpuGraph = false, onRowClick, clickableRows }: {
   cohorts: JourneyVersionCohort[];
   allUsersOnly?: boolean;
   showRefundRate?: boolean;
   splitAdSources?: boolean;
   showInstallPaid?: boolean;
+  showTrialConversions?: boolean;
   rowHeading?: string;
   rowLabels?: Record<string, string>;
   showAppuComparison?: boolean;
@@ -158,15 +159,18 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
     return [audience, { results, extent }];
   })), [cohorts, showAppuComparison]);
   const labelFor = (key: string) => rowLabels?.[key] ?? (key === "unknown" ? "Unknown" : `v${key}`);
-  const fields = showInstallPaid ? ["trials", "paid", "installPaid"] as const : ["trials", "paid"] as const;
+  const fields: ("trials" | "paid" | "installPaid")[] = [
+    ...(showTrialConversions ? ["trials", "paid"] as const : []),
+    ...(showInstallPaid ? ["installPaid"] as const : []),
+  ];
   if (!cohorts.length) return <p className="text-sm text-muted-foreground">No known first-seen versions in this install window.</p>;
   return <Tooltip.Provider delayDuration={150}><div className="space-y-3">
     <div className="min-w-0 overflow-x-auto rounded-xl border border-foreground/[0.06] scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" role="region" aria-label={rowHeading === "First version" ? "Conversions by first-seen version" : `Conversions by ${rowHeading.toLowerCase()}`} tabIndex={0}>
-      <table className="w-full text-left text-xs" style={{ minWidth: 136 + audiences.length * ((showInstallPaid ? 560 : 440) + (showAppuComparison ? showArpuGraph ? 540 : 176 : 0) + (showRefundRate ? 112 : 0)) }}>
+      <table className="w-full text-left text-xs" style={{ minWidth: 136 + audiences.length * ((216 + fields.length * 112) + (showAppuComparison ? showArpuGraph ? 540 : 176 : 0) + (showRefundRate ? 112 : 0)) }}>
         <thead className="bg-analytics-subtle">
           {!allUsersOnly ? <tr className="border-b border-foreground/[0.06]">
             <th scope="col" rowSpan={2} className="sticky left-0 z-10 min-w-32 bg-analytics-subtle px-4 py-3 font-medium">{rowHeading}</th>
-            {audiences.map(({ key, label }) => <th key={key} title={key === "asa" ? "Apple Search Ads" : key === "nonAds" ? "No recorded ad attribution" : undefined} scope="colgroup" colSpan={(showInstallPaid ? 5 : 4) + (showAppuComparison ? 2 : 0) + (showRefundRate ? 1 : 0)} className="border-l border-foreground/[0.06] px-3 py-3 font-medium">
+            {audiences.map(({ key, label }) => <th key={key} title={key === "asa" ? "Apple Search Ads" : key === "nonAds" ? "No recorded ad attribution" : undefined} scope="colgroup" colSpan={(2 + fields.length) + (showAppuComparison ? 2 : 0) + (showRefundRate ? 1 : 0)} className="border-l border-foreground/[0.06] px-3 py-3 font-medium">
               {label}{key === "nonAds" ? <span className="ml-2 font-normal text-muted-foreground">No recorded ad attribution</span> : null}
             </th>)}
           </tr> : null}
@@ -179,8 +183,10 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
                 <th scope="col" className="min-w-20 whitespace-nowrap px-3 py-3 text-right font-medium" title="Estimated chance of highest APPU among populated rows in this audience">Win %</th>
               </> : null}
               <th scope="col" className="min-w-28 px-3 py-3 text-right font-medium" title="Average proceeds per user: net proceeds in USD / all installs in this cohort, including non-payers">APPU</th>
-              <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium">Trial start</th>
-              <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Paid users / trials whose recorded end has passed">Trial → paid</th>
+              {showTrialConversions ? <>
+                <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium">Trial start</th>
+                <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Paid users / trials whose recorded end has passed">Trial → paid</th>
+              </> : null}
               {showInstallPaid ? <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Paid users from this cohort / installs in this cohort">Install → paid</th> : null}
               {showRefundRate ? <>
                 <th scope="col" className="min-w-28 whitespace-nowrap px-3 py-3 text-right font-medium" title="Refunded transactions / paid purchases, including renewals. Free trials excluded.">Refund rate</th>

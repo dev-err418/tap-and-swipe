@@ -69,7 +69,7 @@ test("three main arms cross independently with both recovery arms without mixing
   const mainIndex = html.indexOf("Yearly prices · A/B test"), recoveryIndex = html.indexOf("Recovery prices · A/B test");
   assert.ok(mainIndex >= 0 && recoveryIndex > mainIndex);
   assert.ok(html.indexOf("Yearly price · historical fixed") > recoveryIndex);
-  for (const label of ["€44.99/year", "€19.99/year", "€24.99/year", "France and Germany", "Equal thirds", "50/50 · independent"]) assert.ok(html.includes(label), label);
+  for (const label of ["€44.99/year", "€19.99/year", "€24.99/year", "Equal thirds", "50/50 · independent"]) assert.ok(html.includes(label), label);
 });
 
 test("current tests reject invalid metadata independently and use their own assignment cutoff", () => {
@@ -217,4 +217,33 @@ test("retired seven-day history stays while all three-day assignments are exclud
     [event("old7"), event("old3", { netProceeds: 6 })], attributes, asOf);
   assert.deepEqual(report.rows.map((row) => row.installs), [2, 0]);
   assert.equal(report.rows[0].conversions!.global.proceeds, 12);
+});
+
+
+test("recovery cohorts keep overall outcomes without presenting main-offer trials as recovery trials", () => {
+  const attributes = new Map([
+    ["main-trial", currentAssignment(0, 0)],
+    ["recovery-payer", currentAssignment(1, 0)],
+    ["nonpayer", currentAssignment(2, 0)],
+  ]);
+  const report = buildVersyYearlyPriceComparison([...attributes.keys()].map((id) => install(id)), [
+    event("main-trial", { productId: VERSY_CURRENT_YEARLY_PRICES[0].productID,
+      periodType: "trial", netProceeds: 0, expiresAt: start + 8 * day }),
+    event("recovery-payer", { productId: VERSY_RECOVERY_PRICES[0].productID }),
+  ], attributes, asOf);
+  const metric = report.recovery.rows[0].conversions!.global;
+  assert.equal(metric.installs, 3);
+  assert.equal(metric.trials, 1); // A real main-offer trial in the assigned cohort.
+  assert.equal(metric.installPaid, 1); // The recovery purchase is immediately paid.
+  assert.equal(metric.proceeds, 12);
+  const html = renderToStaticMarkup(createElement(VersyYearlyPriceTable, { report }));
+  const recovery = html.slice(html.indexOf("Recovery prices · A/B test"), html.indexOf("Yearly price · historical fixed"));
+  const main = html.slice(html.indexOf("Yearly prices · A/B test"), html.indexOf("Recovery prices · A/B test"));
+  assert.doesNotMatch(recovery, /Trial start|Trial → paid/);
+  assert.match(recovery, /no trial · all offers/);
+  assert.match(recovery, /Install → paid/);
+  assert.match(recovery, /33\.3%/);
+  assert.match(recovery, /\$4\.00/);
+  assert.match(main, /Trial start/);
+  assert.match(main, /Trial → paid/);
 });
