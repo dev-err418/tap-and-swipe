@@ -7,7 +7,7 @@ import { fetchVersyCampaignDays } from "./versy-meta-roas-queries";
 export async function getVersyMetaRoas(): Promise<VersyRoasReport> {
   const now = new Date(), days = roasDays(now);
   try {
-    return await analyticsSnapshot(`versy-meta-roas-v3-separate-metrics:${days.at(-1)!.date}`, async () => {
+    return await analyticsSnapshot(`versy-meta-roas-v4-transaction-ledger:${days.at(-1)!.date}`, async () => {
       const apiKey = process.env.SUPERWALL_VERSY_API_KEY?.trim();
       if (!apiKey) throw new Error("SUPERWALL_VERSY_API_KEY is not configured");
       const from = `${days[0].date}T00:00:00Z`;

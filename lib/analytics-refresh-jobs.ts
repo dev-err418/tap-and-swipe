@@ -5,12 +5,13 @@ export type AnalyticsApp = typeof ANALYTICS_APPS[number];
 export type AnalyticsPeriod = typeof ANALYTICS_PERIODS[number];
 export type AnalyticsRefreshJob = {
   appId: AnalyticsApp;
-  kind: "data" | "experiments" | "product" | "winback" | "placements";
+  kind: "data" | "experiments" | "product" | "winback" | "placements" | "meta-roas";
   period: AnalyticsPeriod;
 };
 
 export function analyticsRefreshJobs(appId: AnalyticsApp): AnalyticsRefreshJob[] {
   return [
+    ...(appId === "versy" ? [{ appId, kind: "meta-roas" as const, period: "month" as const }] : []),
     { appId, kind: "experiments", period: "month" },
     ...ANALYTICS_PERIODS.map((period) => ({ appId, kind: "data" as const, period })),
     ...(appId === "poky" ? [] : [

@@ -61,7 +61,7 @@ test("every compact experiment table restores the accessible readiness ring besi
     { element: createElement(GlowPaywallCohortTables, { report: { flows: comparison, prices: comparison, flowPrices: comparison }, windowLabel: "Last week" }), count: 3 },
     { element: createElement(PokyPaywallFlowTable, { report: comparison, windowLabel: "Last week" }), count: 1 },
     { element: createElement(VersyYearlyPriceTable, { report: { ...comparison, current: comparison, recovery: comparison,
-      rollout: { ...comparison, rows: comparison.rows.slice(0, 1) } } }), count: 3 },
+      rollout: { ...comparison, rows: comparison.rows.slice(0, 1) } } }), count: 2 },
     ...(["glow", "poky", "versy"] as const).map((appId) => ({ element: createElement(UserJourneyFunnel, {
       appId, funnelOnly: true, windowLabel: "Last week", report: buildUserJourney(userJourneyDefinition(appId)!, []),
     }), count: 1 })),

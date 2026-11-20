@@ -8,6 +8,7 @@ import { getGlowProductReport } from "@/lib/glow-product-queries";
 import { getVersyProductReport } from "@/lib/versy-product-queries";
 import { getWinbackPaywallReport } from "@/lib/winback-paywall-queries";
 import { getVersyPaywallPlacements } from "@/lib/versy-paywall-placement-queries";
+import { getVersyMetaRoas } from "@/lib/versy-meta-roas-server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
   if (!job) return reply({ error: "Invalid analytics refresh job" }, 400);
   try {
     const report = await refreshAnalyticsSnapshots(async () => {
+      if (job.kind === "meta-roas") return getVersyMetaRoas();
       if (job.kind === "data") return getMobileAppById(job.period, job.appId, { sessions: false, includeReports: false });
       if (job.kind === "experiments") return getMobileAppById("month", job.appId);
       if (job.kind === "product") return job.appId === "glow" ? getGlowProductReport(job.period) : getVersyProductReport(job.period);

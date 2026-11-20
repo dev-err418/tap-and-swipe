@@ -1,75 +1,98 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { fetchVersyCampaignDays } from "../../lib/versy-meta-roas-queries";
-import { campaignDays, type AcquisitionChart } from "../../lib/versy-meta-roas";
+import { fetchVersyCampaignDays, campaignTransactionProceeds, type CampaignTransaction } from "../../lib/versy-meta-roas-queries";
+import { campaignDays, roasDays } from "../../lib/versy-meta-roas";
 
 const fr = "120255328753620450", qualified = "120255385345590450", de = "120255328782510450";
-const days = [{ date: "2026-11-12", immature: true }, { date: "2026-11-13", immature: true }];
-const to = "2026-11-19T19:00:00.000Z";
 const point = (date: string, values: Record<string, number | null>) => ({ x: `${date}T00:00:00`, values: Object.fromEntries(Object.entries(values).map(([id, y]) => [id, { y }])) });
+const charge = (extra: Partial<CampaignTransaction> = {}): CampaignTransaction => ({
+  id: "notification-1", name: "initial_purchase", originalTransactionId: "chain", transactionId: "purchase",
+  campaignId: fr, installDay: "2026-11-13", periodType: "normal", isRefund: 0, proceeds: "15.51",
+  eventTs: Date.parse("2026-11-13T10:00:00Z"), attributionTs: 1, insertedAt: 1, ...extra,
+});
+const days = roasDays(new Date("2026-11-20T20:00:00Z"));
 
-test("recent renewals come from proceeds, never the stale bundled ROAS response, including on subsequent refreshes", async () => {
-  let revenue = 192.99;
-  const calls: string[] = [];
-  const request: typeof fetch = async (_url, init) => {
-    const body = JSON.parse(String(init?.body));
-    calls.push(body.y_axis);
+test("new conversions and refunds update the original cohort through consecutive UTC day rollovers without chart revenue", async () => {
+  const rows: CampaignTransaction[] = [charge(),
+    charge({ id: "trial", transactionId: "trial", periodType: "trial", proceeds: null }),
+    charge({ id: "conversion", transactionId: "paid", name: "renewal", proceeds: "157.69", eventTs: Date.parse("2026-11-20T08:00:00Z") }),
+    charge({ id: "refund", transactionId: "paid", name: "cancellation", isRefund: 1, proceeds: "31.61", eventTs: Date.parse("2026-11-21T08:00:00Z") }),
+  ];
+  const metrics: string[] = [], queries: string[] = [];
+  const request: typeof fetch = async (url, init) => {
     assert.equal(init?.cache, "no-store");
-    assert.equal(body.application_id, "51393");
+    if (String(url).endsWith("/query")) {
+      const sql = String(init?.body); queries.push(sql);
+      for (const filter of ["applicationId = 51393", "isSandbox = 0", "source = 'integration'", "isFamilyShare = 0", "ts < now()", "installDate >=", "LIMIT 50000"]) assert.ok(sql.includes(filter));
+      return Response.json({ data: rows, rows: rows.length });
+    }
+    const body = JSON.parse(String(init?.body)); metrics.push(body.y_axis);
+    assert.equal(body.y_axis, "adSpend", "No revenue/ROAS chart request may influence the report");
+    assert.equal(body.x_axis, "tsDate");
+    assert.equal(body.date_filter.dimension, "tsDate");
     assert.deepEqual(body.environment, ["PRODUCTION"]);
-    assert.deepEqual(body.date_filter.range, { from: "2026-11-12T00:00:00Z", to });
-    assert.equal(body.breakdown, "acquisitionCampaignId");
-    // The broken upstream response intentionally remains stale across refreshes.
-    if (body.y_axis === "roas") return Response.json({ data: [{ x: days[0].date, values: {
-      [fr]: { y: 0.6992, extra: { netProceeds: 46.69, adSpend: 66.7763 } },
-    } }] });
-    const isRevenue = body.y_axis === "netProceeds";
-    const dimension = isRevenue ? "installDate" : "tsDate";
-    assert.equal(body.x_axis, dimension);
-    assert.equal(body.date_filter.dimension, dimension);
-    return Response.json({ y_axis: { key: body.y_axis }, x_axis: { key: dimension },
-      series: [fr, qualified].map((key) => ({ key, breakdown: "acquisitionCampaignId" })),
-      // Deliberately different ordering and a revenue-only campaign/day.
-      data: isRevenue ? [point(days[1].date, { [qualified]: 5 }), point(days[0].date, { [fr]: revenue, [qualified]: 62.70 })]
-        : [point(days[0].date, { [qualified]: 42.3754, [fr]: 66.7763 }), point(days[1].date, { [fr]: 10 })],
-    });
+    return Response.json({ y_axis: { key: "adSpend" }, x_axis: { key: "tsDate" },
+      series: [fr, qualified, de].map((key) => ({ key, breakdown: "acquisitionCampaignId" })),
+      data: [point("2026-11-13", { [fr]: 66.3377, [qualified]: 10, [de]: 20 })] });
   };
-  const first = await fetchVersyCampaignDays("test-key", days, to, request);
-  assert.equal(first[fr][days[0].date].proceeds, 192.99);
-  assert.equal(first[fr][days[0].date].roas, 192.99 / 66.7763);
-  assert.equal(first[qualified][days[0].date].roas, 62.70 / 42.3754);
-  assert.deepEqual(first[qualified][days[1].date], { spend: 0, proceeds: 5, roas: null });
-  assert.deepEqual(first[fr][days[1].date], { spend: 10, proceeds: 0, roas: 0 });
-  assert.deepEqual(first[de][days[0].date], { spend: 0, proceeds: 0, roas: null });
-  revenue += 31.62;
-  const second = await fetchVersyCampaignDays("test-key", days, to, request);
-  assert.equal(second[fr][days[0].date].proceeds, revenue);
-  assert.equal(second[fr][days[0].date].roas, revenue / 66.7763);
-  assert.deepEqual(calls.sort(), ["adSpend", "adSpend", "netProceeds", "netProceeds"]);
+  const expected = [15.51, 173.20, 141.59];
+  for (const [index, to] of ["2026-11-19T20:00:00Z", "2026-11-20T20:00:00Z", "2026-11-21T20:00:00Z"].entries()) {
+    const report = await fetchVersyCampaignDays("test-key", roasDays(new Date(to)), to, request);
+    assert.equal(report[fr]["2026-11-13"].proceeds, expected[index]);
+    assert.equal(report[fr]["2026-11-13"].roas, expected[index] / 66.3377);
+    assert.equal(report[fr][to.slice(0, 10)].proceeds, 0, "A renewal must not move revenue to the conversion day");
+    assert.equal(report[qualified]["2026-11-13"].proceeds, 0);
+  }
+  assert.deepEqual(metrics, ["adSpend", "adSpend", "adSpend"]);
+  assert.equal(new Set(queries).size, 3, "SQL must use each refresh's actual observation window");
 });
 
-test("null proceeds stay unknown, negative proceeds preserve refunds, and missing spend fails", () => {
-  const revenue: AcquisitionChart = { data: [point(days[0].date, { [fr]: null, [qualified]: -12 })] };
-  const spend: AcquisitionChart = { data: [point(days[0].date, { [fr]: 10, [qualified]: 20 })] };
-  const result = campaignDays(revenue, spend, days);
-  assert.deepEqual(result[fr][days[0].date], { spend: 10, proceeds: null, roas: null });
-  assert.equal(result[qualified][days[0].date].roas, -0.6);
-  assert.throws(() => campaignDays(revenue, { data: [point(days[0].date, { [fr]: null })] }, days), /Incomplete/);
+test("duplicate notifications count once, latest corrections win, and refunds remain separate", () => {
+  const rows = [charge(), charge({ id: "duplicate", name: "renewal" }),
+    charge({ id: "correction", proceeds: "20.00", insertedAt: 2 }),
+    charge({ id: "refund", name: "cancellation", isRefund: 1, proceeds: "5.00" }),
+    charge({ id: "refund-duplicate", name: "cancellation", isRefund: 1, proceeds: "5.00" }),
+    charge({ id: "other", transactionId: "other", campaignId: "not-selected", proceeds: "999" }),
+  ];
+  const chart = campaignTransactionProceeds(rows, days, Date.parse("2026-11-20T20:00:00Z"));
+  assert.equal(chart.data[0].values[fr].y, 15);
+  assert.equal(chart.data[0].values["not-selected"], undefined);
+  // A later attribution correction moves, rather than duplicates, the charge.
+  rows.push(charge({ id: "reattributed", campaignId: de, proceeds: "20.00", attributionTs: 3 }));
+  const updated = campaignTransactionProceeds(rows, days, Date.parse("2026-11-20T20:00:00Z"));
+  assert.equal(updated.data[0].values[fr].y, -5);
+  assert.equal(updated.data[0].values[de].y, 20);
 });
 
-test("failed or malformed metric queries cannot become a zero-revenue report", async () => {
-  for (const failure of ["http", "metric", "dimension", "series", "value"]) {
-    const request: typeof fetch = async (_url, init) => {
-      const body = JSON.parse(String(init?.body));
-      const fail = body.y_axis === "netProceeds";
-      if (fail && failure === "http") return new Response("Unavailable", { status: 503 });
-      return Response.json({
-        y_axis: { key: fail && failure === "metric" ? "roas" : body.y_axis },
-        x_axis: { key: fail && failure === "dimension" ? "purchaseDate" : body.x_axis },
-        series: fail && failure === "series" ? undefined : [{ key: fr, breakdown: "acquisitionCampaignId" }],
-        data: [{ x: days[0].date, values: { [fr]: { y: fail && failure === "value" ? "bad" : 10 } } }],
+test("missing transaction IDs use notification identity rather than collapse unrelated money", () => {
+  const rows = [charge({ transactionId: null }), charge({ id: "second", transactionId: null })];
+  assert.equal(campaignTransactionProceeds(rows, days, Date.now()).data[0].values[fr].y, 31.02);
+});
+
+test("missing paid amounts and explicit unknown spend cannot silently become zero", () => {
+  for (const proceeds of [null, "", "bad"]) assert.throws(() => campaignTransactionProceeds([charge({ proceeds })], days, Date.now()), /missing proceeds/);
+  assert.throws(() => campaignTransactionProceeds([charge({ eventTs: "bad" })], days, Date.now()), /timestamps/);
+  const revenue = { data: [point("2026-11-13", { [fr]: null, [qualified]: -12 })] };
+  const result = campaignDays(revenue, { data: [point("2026-11-13", { [fr]: 10, [qualified]: 20 })] }, days);
+  assert.equal(result[fr]["2026-11-13"].roas, null);
+  assert.equal(result[qualified]["2026-11-13"].roas, -0.6);
+  assert.throws(() => campaignDays(revenue, { data: [point("2026-11-13", { [fr]: null })] }, days), /Incomplete/);
+});
+
+test("HTTP errors, partial ledger responses and unexpected spend metrics fail closed", async () => {
+  for (const failure of ["http", "exception", "partial", "limit", "metric", "dimension", "value"]) {
+    const request: typeof fetch = async (url) => {
+      if (String(url).endsWith("/query")) {
+        if (failure === "http") return new Response("Unavailable", { status: 503 });
+        const data = failure === "limit" ? Array(50000).fill(charge()) : [charge()];
+        return Response.json({ data, rows: failure === "partial" ? 2 : data.length, exception: failure === "exception" ? "Query failed" : undefined });
+      }
+      return Response.json({ y_axis: { key: failure === "metric" ? "roas" : "adSpend" },
+        x_axis: { key: failure === "dimension" ? "purchaseDate" : "tsDate" },
+        series: [{ key: fr, breakdown: "acquisitionCampaignId" }],
+        data: [{ x: "2026-11-13", values: { [fr]: { y: failure === "value" ? "bad" : 10 } } }],
       });
     };
-    await assert.rejects(fetchVersyCampaignDays("test-key", days, to, request), /Superwall/);
+    await assert.rejects(fetchVersyCampaignDays("test-key", days, "2026-11-20T20:00:00Z", request));
   }
 });

@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useLayoutEffect, useRef, type CSSProperties } from "react";
+import { use, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardCard } from "./DashboardCard";
 import { VERSY_META_MARKETS, totalRoas, type VersyRoasReport } from "@/lib/versy-meta-roas";
 
@@ -10,13 +11,25 @@ const ratio = (value: number | null | undefined) => value == null ? "—" : `${v
 const label = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 export default function DeferredVersyMetaRoas({ report, country }: { report: Promise<VersyRoasReport>; country: string }) {
+  const router = useRouter();
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === "visible") router.refresh(); };
+    const timer = window.setInterval(refresh, 5 * 60_000 + 1000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
+  }, [router]);
   return <VersyMetaRoasTables report={use(report)} country={country} />;
 }
 
 export function VersyMetaRoasTables({ report, country = "all" }: { report: VersyRoasReport; country?: string }) {
   const root = useRef<HTMLDivElement>(null);
+  const [checkedAt, setCheckedAt] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setCheckedAt(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const days = report.days;
-  const initialRightDate = days.at(-8)?.date;
+  const initialRightDate = days.at(-9)?.date;
   useLayoutEffect(() => {
     if (!initialRightDate) return;
     const cleanups: (() => void)[] = [];
@@ -49,7 +62,12 @@ export function VersyMetaRoasTables({ report, country = "all" }: { report: Versy
     return () => cleanups.forEach((cleanup) => cleanup());
   }, [country, initialRightDate, report.status]);
   const markets = VERSY_META_MARKETS.filter((market) => country === "all" || market.code === country);
+  const delayed = checkedAt - Date.parse(report.updatedAt) > 10 * 60_000;
+  const refreshed = new Date(report.updatedAt).toLocaleString("en-GB", { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
   return <div ref={root} className="min-w-0 space-y-4">
+    {report.status === "ready" && <p role={delayed ? "status" : undefined} className="text-xs text-muted-foreground">
+      {delayed ? "Update delayed — showing the last successful report. " : ""}Updated {refreshed} Paris · refreshes automatically every 5 minutes
+    </p>}
     {markets.map((market) => {
       const rows: { key: string; title: string; metric: string; values: string[]; group: boolean }[] = market.campaigns.flatMap((campaign) => [
         { key: `${campaign.id}:spend`, title: campaign.name, metric: "Spend", values: days.map(({ date }) => money(report.campaigns[campaign.id]?.[date]?.spend)), group: true },
@@ -65,13 +83,13 @@ export function VersyMetaRoasTables({ report, country = "all" }: { report: Versy
         {report.status === "unavailable" ? <p role="status" className="py-4 text-sm text-muted-foreground">Meta ROAS could not be loaded. Refresh to retry.</p> : <>
           <div data-roas-scroll className="min-w-0 overflow-x-auto scrollbar-none rounded-xl border border-foreground/[0.06]" role="region" aria-label={`${market.name} daily Meta ROAS`} tabIndex={0}>
             <table className="w-full border-separate border-spacing-0 text-left text-xs">
-              <caption className="sr-only">{market.name}: daily spend and lifetime proceeds grouped by install date. Hatched columns have less than seven days of observation.</caption>
+              <caption className="sr-only">{market.name}: daily spend and lifetime proceeds grouped by install date. Hatched columns have installs with less than seven full days of observation.</caption>
               <thead><tr className="bg-analytics-subtle">
                 <th scope="col" className="sticky left-0 z-20 min-w-72 bg-analytics-subtle px-4 py-3 font-medium">Campaign / metric</th>
                 {days.map((day) => <th key={day.date} data-roas-date={day.date} scope="col" style={day.immature ? hatching : undefined}
-                  title={day.immature ? "Less than 7 days old — trial proceeds are still maturing" : undefined}
+                  title={day.immature ? "Not all installs have 7 full days of observation — trial proceeds are still maturing" : undefined}
                   className="min-w-24 whitespace-nowrap border-l border-foreground/[0.06] px-3 py-3 text-right font-medium text-muted-foreground">
-                  {label(day.date)}{day.immature && <span className="sr-only"> · less than 7 days old</span>}
+                  {label(day.date)}{day.immature && <span className="sr-only"> · trials still maturing</span>}
                 </th>)}
               </tr></thead>
               <tbody>{rows.map((row) => <tr key={row.key} className={row.key === "total" ? "font-semibold" : ""}>

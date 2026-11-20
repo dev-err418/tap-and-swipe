@@ -27,7 +27,7 @@ export type AcquisitionChart = {
 
 export function roasDays(now = new Date()): RoasDay[] {
   const today = Date.parse(`${now.toISOString().slice(0, 10)}T00:00:00Z`);
-  return Array.from({ length: 30 }, (_, i) => ({ date: new Date(today - (29 - i) * DAY).toISOString().slice(0, 10), immature: 29 - i < 7 }));
+  return Array.from({ length: 30 }, (_, i) => ({ date: new Date(today - (29 - i) * DAY).toISOString().slice(0, 10), immature: 29 - i <= 7 }));
 }
 export function roasRatio(proceeds: number | null, spend: number): number | null {
   return proceeds == null || spend <= 0 ? null : proceeds / spend;

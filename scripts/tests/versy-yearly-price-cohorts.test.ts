@@ -16,9 +16,9 @@ const assignment = (price = 0, extra = {}) => ({
   yearly_price_product_id: VERSY_YEARLY_PRICES[price].productID, yearly_price_allocation: "50_50",
   yearly_price_assigned_at: String(start - 1000), ...extra,
 });
-type Event = Parameters<typeof buildVersyYearlyPriceComparison>[1][number];
+type Event = Parameters<typeof buildAppCountryComparisons>[0]["events"][number];
 const event = (appUserId: string, extra: Partial<Event> = {}): Event => ({ appUserId, originalTransactionId: appUserId,
-  transactionId: appUserId, name: "initial_purchase", periodType: "normal", netProceeds: 12, isRefund: false,
+  transactionId: appUserId, name: "initial_purchase", periodType: "normal", netProceeds: 12, isRefund: false, isTrialConversion: false,
   eventTs: start + day, attributionTs: start + day, expiresAt: 0, ...extra });
 
 const fixedAssignment = (extra = {}) => assignment(1, {
@@ -68,7 +68,7 @@ test("three main arms cross independently with both recovery arms without mixing
   const html = renderToStaticMarkup(createElement(VersyYearlyPriceTable, { report }));
   const mainIndex = html.indexOf("Yearly prices · A/B test"), recoveryIndex = html.indexOf("Recovery prices · A/B test");
   assert.ok(mainIndex >= 0 && recoveryIndex > mainIndex);
-  assert.ok(html.indexOf("Yearly price · historical fixed") > recoveryIndex);
+  assert.doesNotMatch(html, /Yearly price · historical fixed|Yearly prices · historical test/);
   for (const label of ["€44.99/year", "€19.99/year", "€24.99/year", "Equal thirds", "50/50 · independent"]) assert.ok(html.includes(label), label);
 });
 
@@ -129,10 +129,7 @@ test("fixed rollout is isolated from both historical price arms, including after
   assert.equal(report.rollout.warnings.length, 1);
   assert.equal(isVersyFixedYearlyPriceAssignment(assignment(1)), false);
   const html = renderToStaticMarkup(createElement(VersyYearlyPriceTable, { report }));
-  const current = html.slice(html.indexOf("Yearly price · historical fixed"), html.indexOf("Yearly prices · historical test"));
-  assert.match(current, /100% rollout/);
-  assert.doesNotMatch(current, /Win %|APPU lift|readiness/i);
-  assert.match(html, /Yearly prices · historical test/);
+  assert.doesNotMatch(html, /Yearly price · historical fixed|Yearly prices · historical test/);
 });
 
 test("country slices retain the same fixed-versus-historical separation", () => {
@@ -192,14 +189,15 @@ test("outcomes begin after both assignment and install; old subscription chains 
   assert.equal(report.rows[0].conversions!.global.purchases, 1);
 });
 
-test("Versy shows the compact two-price table below User journey without restoring the removed banner", () => {
+test("Versy shows current price tests below User journey without historical cards", () => {
   const report = buildVersyYearlyPriceComparison([], [], new Map(), asOf);
   const html = renderToStaticMarkup(createElement(AppOverviewPanel, {
     appId: "versy", installs: 0, windowLabel: "Last 7 days", trend: [], countries: [], plans: [], retention: [],
     userJourney: buildUserJourney(userJourneyDefinition("versy")!, []), yearlyPriceComparison: report,
   }));
   assert.ok(html.indexOf("Yearly prices") > html.indexOf("User journey"));
-  for (const label of ["$39.99/year", "$49.99/year", "APPU lift", "Win %", "Refund rate", "Installed on v1.2.6+"]) assert.ok(html.includes(label), label);
+  for (const label of ["€39.99/year", "€44.99/year", "€49.99/year", "APPU lift", "Win %", "Refund rate", "Installed on v1.2.6+"]) assert.ok(html.includes(label), label);
+  assert.doesNotMatch(html, /Yearly prices · historical test|Yearly price · historical fixed/);
   assert.doesNotMatch(html, /Annual pricing test|\$29.99|\$17.99/);
   assert.match(renderToStaticMarkup(createElement(VersyYearlyPriceTable, { report: null })), /reporting is unavailable/);
 });
@@ -237,7 +235,7 @@ test("recovery cohorts keep overall outcomes without presenting main-offer trial
   assert.equal(metric.installPaid, 1); // The recovery purchase is immediately paid.
   assert.equal(metric.proceeds, 12);
   const html = renderToStaticMarkup(createElement(VersyYearlyPriceTable, { report }));
-  const recovery = html.slice(html.indexOf("Recovery prices · A/B test"), html.indexOf("Yearly price · historical fixed"));
+  const recovery = html.slice(html.indexOf("Recovery prices · A/B test"));
   const main = html.slice(html.indexOf("Yearly prices · A/B test"), html.indexOf("Recovery prices · A/B test"));
   assert.doesNotMatch(recovery, /Trial start|Trial → paid/);
   assert.match(recovery, /no trial · all offers/);
@@ -252,7 +250,7 @@ test("recovery cohorts keep overall outcomes without presenting main-offer trial
 test("only the current price tests reset at the rollout boundary, including country slices", () => {
   const cutoff = Date.parse("2026-11-20T00:00:00Z");
   const at = cutoff + 2 * day;
-  const attributes = new Map([
+  const attributes = new Map<string, Record<string, string>>([
     ["old", currentAssignment(0, 0, { yearly_price_assigned_at: String(cutoff - 1), recovery_price_assigned_at: String(cutoff - 1) })],
     ["old-install-new-assignment", currentAssignment(0, 0)],
     ["new-install-old-assignment", currentAssignment(0, 0, { yearly_price_assigned_at: String(cutoff - 1), recovery_price_assigned_at: String(cutoff - 1) })],
@@ -291,5 +289,5 @@ test("only the current price tests reset at the rollout boundary, including coun
   const html = renderToStaticMarkup(createElement(VersyYearlyPriceTable, { report }));
   assert.equal((html.match(/dateTime="2026-11-20T00:00:00Z"/g) ?? []).length, 2);
   assert.equal((html.match(/Since 20 Nov 2026, 00:00 UTC/g) ?? []).length, 2);
-  assert.doesNotMatch(html.slice(html.indexOf("Yearly price · historical fixed")), /Since 20 Nov/);
+  assert.doesNotMatch(html, /Yearly price · historical fixed|Yearly prices · historical test/);
 });

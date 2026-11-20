@@ -6,11 +6,11 @@ import { campaignDays, organicDays, roasDays, roasRatio, totalRoas, VERSY_META_M
 import { VersyMetaRoasTables } from "../../components/analytics/VersyMetaRoasTables";
 const now = new Date("2026-11-16T12:00:00Z"), days = roasDays(now), day = 86_400_000;
 
-test("30 daily columns include today and hatch only the last seven days", () => {
+test("30 daily columns include today and keep the seventh-day conversion cohort immature", () => {
   assert.equal(days.length, 30);
   assert.equal(days[0].date, "2026-10-18");
   assert.equal(days.at(-1)?.date, "2026-11-16");
-  assert.deepEqual(days.filter((d) => d.immature).map((d) => d.date), Array.from({ length: 7 }, (_, i) => `2026-11-${10 + i}`));
+  assert.deepEqual(days.filter((d) => d.immature).map((d) => d.date), Array.from({ length: 8 }, (_, i) => `2026-11-${String(9 + i).padStart(2, "0")}`));
   assert.equal(roasRatio(20, 0), null);
   assert.equal(roasRatio(null, 20), null);
 });
@@ -52,6 +52,8 @@ test("tables render country flags, three campaigns, hatching and unavailable sta
   }
   assert.ok(html.includes("repeating-linear-gradient"));
   assert.ok(html.includes("Total ROAS"));
+  assert.ok(html.includes("Update delayed"));
+  assert.ok(html.includes("refreshes automatically every 5 minutes"));
   assert.ok(!html.includes("United States"));
   assert.ok(!html.includes("US - Trials - Versy"));
   assert.ok(!html.includes(">Installs<"));

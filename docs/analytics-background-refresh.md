@@ -38,15 +38,25 @@ Website funnels, editable notes and individual user-journey lookups stay live.
 All existing dashboard permissions still apply. Snapshot files must never be
 served publicly, uploaded to the public video bucket, or included in builds.
 
-Versy's Meta ROAS table refreshes on request after five minutes. It independently
-queries Superwall's `netProceeds` by `installDate` and `adSpend` by `tsDate`, joins
-the results by campaign ID and UTC date, and calculates the ratio locally. Do not
-use the proceeds bundled into the `roas` metric: on November 19, 2026, that response
-omitted recent trial conversions even with `include: ["netProceeds"]`. The separate
-proceeds query matched transaction records across all 90 displayed campaign/day
-combinations. The `versy-meta-roas-v3-separate-metrics` snapshot key prevents reuse
-of the previous calculation. Failed metric queries retain a prior complete
-snapshot rather than publishing zero revenue.
+Versy's Meta ROAS uses individual production transaction records from the Query API,
+not either revenue chart endpoint. Both `roas` and `netProceeds` chart responses
+were observed omitting new renewals on successive days in November 2026. Revenue
+is grouped by the transaction's recorded acquisition campaign and UTC install day.
+Repeated notifications are deduplicated by subscription/transaction and charge or
+refund; the latest attribution and ingestion version wins. Refunds are negative,
+free trial starts add no money, and missing paid amounts or truncated responses
+fail the refresh. These are reported proceeds, including Apple renewal events
+received before their paid-period start, not a settlement report. Spend continues
+to come from the `adSpend` chart by UTC calendar day.
+
+The `versy-meta-roas-v4-transaction-ledger` snapshot key excludes all earlier
+chart-based snapshots. ROAS refreshes first in each Versy scheduled run, and the
+open page refreshes every five minutes and when it regains visibility. The table
+shows its own last successful update and flags delays after ten minutes. Failed
+refreshes retain the prior complete snapshot and scheduled failures return 502.
+The cohort seven calendar days ago remains hatched because late-day installs may
+still be in trial. No revenue event warehouse or manually maintained totals are
+introduced.
 
 ## Enable on Coolify
 
@@ -84,7 +94,7 @@ HTTPS origin with no redirects. The Worker has no public fetch endpoint.
 
 Glow starts at :00/:30, Poky at :10/:40, and Versy at :20/:50 (UTC). Each app is
 refreshed every 30 minutes, with sequential report jobs to limit provider load.
-There are 36 report jobs across all three apps in a full cycle. Each request
+There are 37 report jobs across all three apps in a full cycle. Each request
 refreshes exactly one allowlisted report and returns only job metadata.
 
 The Worker continues other jobs if one fails and marks the scheduled invocation

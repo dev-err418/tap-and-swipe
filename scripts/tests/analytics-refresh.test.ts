@@ -27,6 +27,7 @@ function fixture(secret: string | undefined = "test-secret", directory: string |
     "@/lib/versy-product-queries": { getVersyProductReport: load("versy-product") },
     "@/lib/winback-paywall-queries": { getWinbackPaywallReport: load("winback") },
     "@/lib/versy-paywall-placement-queries": { getVersyPaywallPlacements: load("placements") },
+    "@/lib/versy-meta-roas-server": { getVersyMetaRoas: load("meta-roas") },
   }, { CRON_SECRET: secret });
   return { ...route, calls };
 }
@@ -67,7 +68,8 @@ test("all scheduled report variants refresh through the same loaders without ret
       assert.equal((await response.text()).includes("privateData"), false);
     }
   }
-  assert.equal(f.calls.length, 36);
+  assert.equal(f.calls.length, 37);
+  assert.ok(f.calls.includes("meta-roas:[]"));
   assert.ok(f.calls.some((call) => call.includes('mobile:["day","glow",{"sessions":false,"includeReports":false}]')));
   assert.ok(f.calls.some((call) => call === 'mobile:["month","poky"]'));
 });
