@@ -9,7 +9,7 @@ import { buildUserJourney, userJourneyDefinition } from "../../lib/user-journey"
 import { VERSY_FIXED_YEARLY_PRICE, isVersyFixedYearlyPriceAssignment } from "../../lib/versy-paywall-policy";
 import { buildAppCountryComparisons } from "../../lib/app-country-comparisons";
 
-const day = 86_400_000, start = Date.parse("2026-10-01T00:00:00Z"), asOf = start + 20 * day;
+const day = 86_400_000, start = Date.parse("2026-11-20T00:00:00Z"), asOf = start + 20 * day;
 const install = (appUserId: string, appVersion = "1.2.6") => ({ appUserId, appVersion, installedAt: start });
 const assignment = (price = 0, extra = {}) => ({
   versy_tracking_environment: "production", yearly_price_experiment_id: VERSY_YEARLY_PRICE_EXPERIMENT,
@@ -246,4 +246,50 @@ test("recovery cohorts keep overall outcomes without presenting main-offer trial
   assert.match(recovery, /\$4\.00/);
   assert.match(main, /Trial start/);
   assert.match(main, /Trial → paid/);
+});
+
+
+test("only the current price tests reset at the rollout boundary, including country slices", () => {
+  const cutoff = Date.parse("2026-11-20T00:00:00Z");
+  const at = cutoff + 2 * day;
+  const attributes = new Map([
+    ["old", currentAssignment(0, 0, { yearly_price_assigned_at: String(cutoff - 1), recovery_price_assigned_at: String(cutoff - 1) })],
+    ["old-install-new-assignment", currentAssignment(0, 0)],
+    ["new-install-old-assignment", currentAssignment(0, 0, { yearly_price_assigned_at: String(cutoff - 1), recovery_price_assigned_at: String(cutoff - 1) })],
+    ["duplicate-old-install", currentAssignment(0, 0)],
+    ["boundary-payer", currentAssignment(0, 0)],
+    ["boundary-nonpayer", currentAssignment(0, 0)],
+    ["independent-cutoffs", currentAssignment(1, 1, { recovery_price_assigned_at: String(cutoff - 1) })],
+    ["historical", assignment()], ["fixed", fixedAssignment()],
+  ]);
+  const older = new Set(["old", "old-install-new-assignment", "duplicate-old-install", "historical", "fixed"]);
+  const installs = [...attributes.keys()].map((id) => ({ ...install(id),
+    installedAt: older.has(id) ? cutoff - day : cutoff, country: "FR" }));
+  installs.push({ ...install("duplicate-old-install"), installedAt: cutoff + 1, country: "FR" });
+  const events = [...attributes.keys()].filter((id) => !["boundary-nonpayer", "independent-cutoffs"].includes(id)).map((id) => event(id));
+  events.push(event("boundary-payer", { originalTransactionId: "pre-cutoff-chain", transactionId: "old", eventTs: cutoff - 1, netProceeds: 100 }));
+  events.push(event("", { originalTransactionId: "pre-cutoff-chain", transactionId: "old-renewal", name: "renewal", eventTs: cutoff + day, netProceeds: 100 }));
+  const report = buildVersyYearlyPriceComparison(installs, events, attributes, at);
+  assert.deepEqual(report.current.rows.map((r) => r.installs), [2, 1, 0]);
+  assert.deepEqual(report.recovery.rows.map((r) => r.installs), [2, 0]);
+  for (const comparison of [report.current, report.recovery]) {
+    const metric = comparison.rows[0].conversions!.global;
+    assert.equal(metric.proceeds, 12);
+    assert.equal(metric.installPaid, 1);
+    assert.equal(metric.proceeds / metric.installs, 6);
+  }
+  assert.equal(report.rows[0].installs, 1);
+  assert.equal(report.rows[0].conversions!.global.proceeds, 12);
+  assert.equal(report.rollout.rows[0].installs, 1);
+  assert.equal(report.rollout.rows[0].conversions!.global.proceeds, 12);
+  const before = buildVersyYearlyPriceComparison(installs, events, attributes, cutoff - 1);
+  assert.equal(before.current.status, "empty");
+  assert.equal(before.recovery.status, "empty");
+  const countries = buildAppCountryComparisons({ appId: "versy", asOf: at, journey: null, installs, events, attributes,
+    countries: [{ country: "FR", proceeds: 12 }] });
+  assert.deepEqual(countries.slices.FR.yearlyPriceComparison, report);
+  const html = renderToStaticMarkup(createElement(VersyYearlyPriceTable, { report }));
+  assert.equal((html.match(/dateTime="2026-11-20T00:00:00Z"/g) ?? []).length, 2);
+  assert.equal((html.match(/Since 20 Nov 2026, 00:00 UTC/g) ?? []).length, 2);
+  assert.doesNotMatch(html.slice(html.indexOf("Yearly price · historical fixed")), /Since 20 Nov/);
 });

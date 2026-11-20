@@ -9,6 +9,11 @@ export type VersyYearlyPriceComparison = PaywallCohortComparison & {
   rollout: PaywallCohortComparison;
 };
 
+// Start a fresh reporting cohort once the corrected localized prices took effect.
+// Earlier assignments and installs may have been exposed to the old prices.
+export const VERSY_PRICE_TEST_START_ISO = "2026-11-20T00:00:00Z";
+export const VERSY_PRICE_TEST_START = Date.parse(VERSY_PRICE_TEST_START_ISO);
+
 export const VERSY_CURRENT_YEARLY_PRICE_EXPERIMENT = "versy_yearly_price_3999_4499_4999_v1";
 export const VERSY_CURRENT_YEARLY_PRICES = [
   { key: "eur_39_99", label: "€39.99/year (7d)", productID: "com.arthurbuildsstuff.bible.Yearly" },
@@ -66,8 +71,8 @@ export function buildVersyYearlyPriceComparison(
   asOf = Date.now(),
 ): VersyYearlyPriceComparison {
   return {
-    current: priceComparison(installs, events, attributes, asOf, isVersyCurrentYearlyPriceAssignment, VERSY_CURRENT_YEARLY_PRICES),
-    recovery: priceComparison(installs, events, attributes, asOf, isVersyRecoveryPriceAssignment, VERSY_RECOVERY_PRICES, "recovery_price"),
+    current: priceComparison(installs, events, attributes, asOf, isVersyCurrentYearlyPriceAssignment, VERSY_CURRENT_YEARLY_PRICES, "yearly_price", VERSY_PRICE_TEST_START),
+    recovery: priceComparison(installs, events, attributes, asOf, isVersyRecoveryPriceAssignment, VERSY_RECOVERY_PRICES, "recovery_price", VERSY_PRICE_TEST_START),
     ...priceComparison(installs, events, attributes, asOf, isVersyYearlyPriceAssignment, VERSY_YEARLY_PRICES),
     rollout: priceComparison(installs, events, attributes, asOf, isVersyFixedYearlyPriceAssignment, [VERSY_FIXED_YEARLY_PRICE]),
   };
@@ -80,14 +85,17 @@ function priceComparison(
   assignmentCheck: typeof isVersyYearlyPriceAssignment,
   prices: readonly { key: string; label: string; productID: string }[],
   attributePrefix: "yearly_price" | "recovery_price" = "yearly_price",
+  cohortStart = 0,
 ): PaywallCohortComparison {
   const eligible = experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.versy, asOf);
   let invalidTimes = 0;
   const enrolled = eligible.flatMap((install) => {
+    if (install.installedAt < cohortStart) return [];
     const values = attributes.get(install.appUserId);
     if (!values || !assignmentCheck(values)) return [];
     const assignedAt = Number(values[`${attributePrefix}_assigned_at`]);
     if (!Number.isFinite(assignedAt) || assignedAt <= 0 || assignedAt > asOf) { invalidTimes++; return []; }
+    if (assignedAt < cohortStart) return [];
     return [{ install, assignedAt, productID: values[`${attributePrefix}_product_id`] }];
   });
   const rows = prices.map((price) => {
