@@ -49,9 +49,9 @@ fail the refresh. These are reported proceeds, including Apple renewal events
 received before their paid-period start, not a settlement report. Spend continues
 to come from the `adSpend` chart by UTC calendar day.
 
-The `versy-meta-roas-v4-transaction-ledger` snapshot key excludes all earlier
-chart-based snapshots. ROAS refreshes first in each Versy scheduled run, and the
-open page refreshes every five minutes and when it regains visibility. The table
+The `versy-meta-roas-v5-transaction-ledger` snapshot key requires a fresh report
+with the current campaign list. ROAS refreshes first in each Versy scheduled run.
+The open page refreshes every five minutes and when it regains visibility. The table
 shows its own last successful update and flags delays after ten minutes. Failed
 refreshes retain the prior complete snapshot and scheduled failures return 502.
 The cohort seven calendar days ago remains hatched because late-day installs may

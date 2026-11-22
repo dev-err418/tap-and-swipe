@@ -19,13 +19,16 @@ test("only selected campaigns contribute; blended ROAS is a ratio of summed mone
   const campaigns = campaignDays({ data: [{ x: days[0].date, values: {
     "120255328753620450": { y: 20 },
     "120255385345590450": { y: 15 },
+    "120255534469740450": { y: 25 },
     "other-app": { y: 999 },
   } }] }, { data: [{ x: days[0].date, values: {
     "120255328753620450": { y: 10 }, "120255385345590450": { y: 30 },
+    "120255534469740450": { y: 10 },
   } }] }, days);
   assert.equal(campaigns["other-app"], undefined);
   const report: VersyRoasReport = { status: "ready", updatedAt: now.toISOString(), days, campaigns, organic: { FR: { [days[0].date]: { installs: 3, proceeds: 5 } } } };
-  assert.equal(totalRoas(report, VERSY_META_MARKETS[0], days[0].date), 1);
+  assert.equal(campaigns["120255534469740450"][days[0].date].roas, 2.5);
+  assert.equal(totalRoas(report, VERSY_META_MARKETS[0], days[0].date), 1.3);
   report.organic.FR[days[0].date].proceeds = null;
   assert.equal(totalRoas(report, VERSY_META_MARKETS[0], days[0].date), null);
 });
@@ -42,7 +45,7 @@ test("organic install cohorts exclude Meta and Apple Ads, and accrue later renew
   assert.deepEqual(report.DE["2026-11-01"], { installs: 0, proceeds: 0 });
 });
 
-test("tables render country flags, three campaigns, hatching and unavailable state", () => {
+test("tables render country flags, configured campaigns, hatching and unavailable state", () => {
   const report: VersyRoasReport = { status: "ready", updatedAt: now.toISOString(), days, campaigns: campaignDays({ data: [] }, { data: [] }, days), organic: {} };
   const html = renderToStaticMarkup(createElement(VersyMetaRoasTables, { report }));
   assert.equal((html.match(/<table /g) ?? []).length, 2);

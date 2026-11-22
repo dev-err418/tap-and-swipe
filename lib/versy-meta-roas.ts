@@ -4,6 +4,7 @@ export const VERSY_META_MARKETS = [
   { code: "FR", name: "France", flag: "🇫🇷", campaigns: [
     { id: "120255328753620450", name: "FR - Trials - Versy" },
     { id: "120255385345590450", name: "FR - Qualified Trials (2h) - Versy" },
+    { id: "120255534469740450", name: "FR - iOS - Initial Conv (30m) - Versy" },
   ] },
   { code: "DE", name: "Germany", flag: "🇩🇪", campaigns: [
     { id: "120255328782510450", name: "DE - Trials - Versy - Copy" },
