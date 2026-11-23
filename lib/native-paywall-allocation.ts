@@ -16,11 +16,20 @@ export const GLOW_PAYWALL_EXPERIMENT = {
   ],
 } as const;
 
-/** Active annual prices; all three use seven-day trials. */
+/** US anchors for existing and historical reports. */
 export const GLOW_YEARLY_PRICES = [
   { id: "yr_34", price: "$34.99/year (7d)" },
   { id: "yr_49", price: "$49.99/year (7d)" },
   { id: "yr_59", price: "$59.99/year (7d)" },
+] as const;
+
+export const GLOW_FRANCE_PRICE_START_DATE = "2026-11-24";
+export const GLOW_FRANCE_PRICE_START_MS = Date.parse(`${GLOW_FRANCE_PRICE_START_DATE}T00:00:00+01:00`);
+export const GLOW_FRANCE_RECOVERY_PRICES = { low: "€19.99/year", high: "€24.99/year" } as const;
+export const GLOW_FRANCE_YEARLY_PRICES = [
+  { id: "yr_34", price: "€34.99/year", recovery: "low" },
+  { id: "yr_49", price: "€39.99/year", recovery: "low" },
+  { id: "yr_59", price: "€44.99/year", recovery: "high" },
 ] as const;
 
 /** Retain labels and allocations for immutable historical purchase records. */

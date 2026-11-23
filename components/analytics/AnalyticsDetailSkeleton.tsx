@@ -6,6 +6,7 @@ import { APP_ANALYTICS_HEADER_CLASS, DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_LIST
 import { WebsiteFavicon } from "@/components/analytics/website-summary-card";
 import { DashboardCard } from "./DashboardCard";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
+import { GLOW_NO_NOTE_ONBOARDING_INSTALL_VERSION } from "@/lib/user-journey";
 import { VERSY_ANALYTICS_PLATFORM_LABELS, VERSY_ANDROID_INSTALL_VERSION, type VersyAnalyticsPlatformFilter } from "@/lib/versy-analytics-platform";
 import { cn } from "@/lib/utils";
 
@@ -120,11 +121,11 @@ function AppOverviewSkeleton({ app, period, platform, showPlatformLabel }: {
       </div>
       <div className="space-y-4">
         <VersionTableSkeleton app={app} />
-        <ComparisonTableSkeleton title="User journey" rows={app === "glow" ? 2 : app === "poky" ? 4 : 3} rowHeading="Onboarding funnel" cohortLabel={cohortLabel} />
-        {app !== "versy" ? <ComparisonTableSkeleton title="Paywall flows" rows={app === "poky" ? 4 : 2} rowHeading="Paywall flow" cohortLabel={cohortLabel} /> : null}
-        {app !== "poky" ? <ComparisonTableSkeleton title="Yearly prices" rows={app === "glow" ? 6 : 3} rowHeading="Price" cohortLabel={cohortLabel} /> : null}
+        <ComparisonTableSkeleton title="User journey" rows={app === "glow" ? 2 : app === "poky" ? 4 : 3} rowHeading="Onboarding funnel"
+          cohortLabel={app === "glow" ? `Installed on v${GLOW_NO_NOTE_ONBOARDING_INSTALL_VERSION}+` : cohortLabel} />
+        {app === "poky" ? <ComparisonTableSkeleton title="Paywall flows" rows={4} rowHeading="Paywall flow" cohortLabel={cohortLabel} /> : null}
+        {app !== "poky" ? <ComparisonTableSkeleton title="Yearly prices · A/B test" rows={3} rowHeading="Price" cohortLabel={app === "glow" ? "France · 7-day trials" : cohortLabel} /> : null}
         {app === "versy" ? <ComparisonTableSkeleton title="Recovery prices" rows={2} rowHeading="Price" cohortLabel={cohortLabel} /> : null}
-        {app === "glow" ? <ComparisonTableSkeleton title="Paywall flow × yearly price" rows={12} rowHeading="Flow × price" cohortLabel={cohortLabel} /> : null}
         {app !== "poky" ? <DashboardCard title="Trial survival · 7-day trials" action={<span className="text-xs text-muted-foreground">{cohortLabel}</span>}>
           <div aria-hidden="true" className="mb-4 grid grid-cols-3 gap-3">
             {Array.from({ length: 3 }, (_, index) => <div key={index} className="space-y-2"><Bone className="w-24" /><Bone className="h-6 w-12" /><Bone className="w-20" /></div>)}

@@ -11,9 +11,10 @@ test("glow and versy journeys follow each onboarding variant", () => {
   const glow = userJourneyDefinition("glow")!;
   assert.deepEqual(glow.variants.map((variant) => variant.key), ["iam", "manifest-audio"]);
   assert.equal(glow.variantAttribute, "glow_onboarding_journey_variant");
+  assert.equal(glow.minimumInstallVersion, "1.8.8");
   assert.deepEqual(glow.cohortAttributes, { glow_onboarding_journey_schema: "1", glow_tracking_environment: "production" });
-  assert.equal(glow.variants[0].steps.length, 44);
-  assert.equal(glow.variants[1].steps.length, 47);
+  assert.equal(glow.variants[0].steps.length, 42);
+  assert.equal(glow.variants[1].steps.length, 45);
   for (const variant of glow.variants) {
     assert.equal(variant.steps[0].attribute, "glow_journey_welcome_screen_seen");
     assert.equal(variant.steps.find((step) => step.paywall)?.attribute, "glow_journey_paywall_screen_seen");
@@ -22,10 +23,9 @@ test("glow and versy journeys follow each onboarding variant", () => {
     assert.equal(variant.steps.at(-1)?.attribute, "glow_journey_completed");
     assert.equal(variant.steps.find((step) => step.attribute.includes("notifications_denied"))?.branch, true);
     const trialIndex = variant.steps.findIndex((step) => step.attribute === "glow_journey_trial_access_screen_seen");
-    assert.deepEqual(variant.steps.slice(trialIndex - 2, trialIndex).map(({ attribute, branch }) => ({ attribute, branch })), [
-      { attribute: "glow_journey_paywall_testimonials_screen_seen", branch: true },
-      { attribute: "glow_journey_team_note_screen_seen", branch: true },
-    ]);
+    assert.deepEqual(variant.steps.slice(trialIndex, trialIndex + 3).map(({ label }) => label),
+      ["Trial introduction", "Trial reminder", "Paywall"]);
+    assert.ok(variant.steps.every(({ attribute }) => !/paywall_testimonials|team_note/.test(attribute)));
     assert.equal(new Set(variant.steps.map((step) => step.attribute)).size, variant.steps.length);
     assert.equal(variant.steps.some((step) => /source|religion|zodiac|brain/.test(step.attribute)), false);
   }

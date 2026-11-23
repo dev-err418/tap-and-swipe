@@ -75,8 +75,9 @@ export type UserJourneyReport = {
 };
 
 const ASSIGNED_KEY = "__assigned__";
+export const GLOW_NO_NOTE_ONBOARDING_INSTALL_VERSION = "1.8.8";
 
-/** Matches the two shipping sequences, not the retired IAM/Copy experiment. */
+/** Screen attributes for the current IAM path and saved manifest-audio journeys. */
 const glowScreens = (rows: [string, string, boolean?][]): UserJourneyStep[] => rows.map(([name, label, branch]) => ({
   attribute: `glow_journey_${name}_screen_seen`, label, ...(branch ? { branch: true } : {}),
 }));
@@ -119,10 +120,8 @@ const GLOW_IAM_STEPS = glowScreens([
   ["goals", "Goals"],
   ["glow_goals", "Make room for"],
   ["widget", "Widget"],
-  ["paywall_testimonials", "Testimonials · note variants", true],
-  ["team_note", "Team note · note variants", true],
   ["trial_access", "Trial introduction"],
-  ["trial_reminder", "Trial reminder / timing"],
+  ["trial_reminder", "Trial reminder"],
 ]);
 
 const GLOW_MANIFEST_AUDIO_STEPS = glowScreens([
@@ -166,10 +165,8 @@ const GLOW_MANIFEST_AUDIO_STEPS = glowScreens([
   ["widget", "Widget"],
   ["notifications", "Notifications"],
   ["notifications_denied", "Notifications denied", true],
-  ["paywall_testimonials", "Testimonials · note variants", true],
-  ["team_note", "Team note · note variants", true],
   ["trial_access", "Trial introduction"],
-  ["trial_reminder", "Trial reminder / timing"],
+  ["trial_reminder", "Trial reminder"],
 ]);
 
 function glowVariant(key: string, label: string, steps: UserJourneyStep[]): UserJourneyVariant {
@@ -276,9 +273,10 @@ export function userJourneyDefinition(appId: "glow" | "poky" | "versy"): UserJou
     return {
       title: "User journey",
       variantAttribute: "glow_onboarding_journey_variant",
+      minimumInstallVersion: GLOW_NO_NOTE_ONBOARDING_INSTALL_VERSION,
       showEmptyVariants: true,
       cohortAttributes: { glow_onboarding_journey_schema: "1", glow_tracking_environment: "production" },
-      note: "All languages and countries. Journeys starting at Welcome in the updated app only; earlier visits cannot be reconstructed. IAM and manifest-audio stay separate. Notification denial and recovery are optional branches. Trial reminder includes both paywall-flow treatments. Completion percentage means paywall seen, not purchase; existing subscribers can finish without a paywall.",
+      note: "The current paywall sequence is Trial introduction → Trial reminder → Paywall. New installs use IAM. Saved manifest-audio journeys remain visible. Notification denial and recovery are optional branches.",
       variants: [
         glowVariant("iam", "IAM", GLOW_IAM_STEPS),
         glowVariant("manifest-audio", "manifest-audio", GLOW_MANIFEST_AUDIO_STEPS),

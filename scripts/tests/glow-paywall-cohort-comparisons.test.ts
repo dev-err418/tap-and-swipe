@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import GlowPaywallCohortTables from "../../components/analytics/GlowPaywallCohortTables";
 import { buildGlowPaywallCohortComparisons, GLOW_PAYWALL_COHORT_KEYS } from "../../lib/glow-paywall-cohort-comparisons";
 import { GLOW_PAYWALL_FLOW_LEGACY_ID, GLOW_PAYWALL_FLOW_LEGACY_KEY, GLOW_PAYWALL_FLOW_ALLOCATION, GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY } from "../../lib/glow-onboarding-experience";
+import { GLOW_FRANCE_PRICE_START_MS } from "../../lib/native-paywall-allocation";
 
 const day = 86_400_000, start = Date.parse("2026-10-01T00:00:00Z"), end = start + 7 * day, asOf = start + 20 * day;
 const priceKey = "gp1_a_native_yearly_prices_v4";
@@ -52,9 +53,33 @@ test("flow and price comparisons independently retain nonpayers and follow later
   assert.equal(report.flowPrices.rows[0].conversions!.global.refunds, 1);
   assert.equal(report.flowPrices.rows[5].conversions!.global.installPaid, 1);
   assert.deepEqual(GLOW_PAYWALL_COHORT_KEYS, [GLOW_PAYWALL_FLOW_KEY, GLOW_PAYWALL_FLOW_LEGACY_KEY, priceKey, "gp1_a_native_yearly_prices_v5"]);
-  const html = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report, windowLabel: "Last 7 days" }));
-  for (const label of ["Paywall flows", "Yearly prices", "Paywall flow × yearly price", "Current flow", "Versy reminder flow", "$34.99/year", "$49.99/year", "$59.99/year", "APPU", "Refund rate"]) assert.ok(html.includes(label), label);
-  for (const label of ["Meta Ads", "See graph", ">Refunds</th>"]) assert.ok(!html.includes(label), label);
+});
+
+test("French pricing starts with new France installs and v4 assignments at the rollout", () => {
+  const cutoff = GLOW_FRANCE_PRICE_START_MS;
+  const records = [
+    { id: "low", country: "FR", priceId: "yr_34", installedAt: cutoff, assignedAt: cutoff },
+    { id: "middle", country: "FR", priceId: "yr_49", installedAt: cutoff + day, assignedAt: cutoff + day },
+    { id: "high", country: "FR", priceId: "yr_59", installedAt: cutoff + day, assignedAt: cutoff + day },
+    { id: "older-install", country: "FR", priceId: "yr_59", installedAt: cutoff - 1, assignedAt: cutoff + day },
+    { id: "older-assignment", country: "FR", priceId: "yr_34", installedAt: cutoff + day, assignedAt: cutoff - 1 },
+    { id: "belgium", country: "BE", priceId: "yr_34", installedAt: cutoff + day, assignedAt: cutoff + day },
+    { id: "retired", country: "FR", priceId: "yr_34", installedAt: cutoff + day, assignedAt: cutoff + day },
+  ];
+  const installs = records.map(({ id, country, installedAt }) => ({ ...install(id, installedAt), country }));
+  const attrs = new Map(records.map(({ id, priceId, assignedAt }) => {
+    const retired = id === "retired";
+    const key = retired ? "gp1_a_native_yearly_prices_v5" : priceKey;
+    return [id, { [key]: price(priceId, assignedAt, retired ? { experiment: "native_yearly_prices_v5", variantCount: 6 } : {}) }];
+  }));
+  const report = buildGlowPaywallCohortComparisons(installs, [], attrs, cutoff - day, cutoff + 3 * day, cutoff + 3 * day);
+  assert.deepEqual(report.francePrices.rows.map(({ installs }) => installs), [1, 1, 1]);
+  assert.deepEqual(report.prices.rows.map(({ installs }) => installs), [4, 1, 2]);
+  const html = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report }));
+  assert.match(html, /Yearly prices · A\/B test/);
+  assert.match(html, /France · Equal thirds · 7-day trials/);
+  assert.match(html, /Recovery prices[\s\S]*€19\.99\/year[\s\S]*€34\.99\/year or €39\.99\/year[\s\S]*€24\.99\/year[\s\S]*€44\.99\/year/);
+  assert.doesNotMatch(html, /Paywall flows|Flow ×|With note|Versy reminder flow|\$59\.99/);
 });
 
 test("joint cohorts require both assignments and only count outcomes after the later assignment", () => {
@@ -123,8 +148,9 @@ test("only valid current randomized production assignments enter, with missing m
     assert.equal(comparison.rows[0].conversions!.global.missingInstallMoney, true);
     assert.ok(comparison.warnings.length > 0);
   }
-  const unavailable = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report: null, windowLabel: "Today" }));
+  const unavailable = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report: null }));
   assert.ok(unavailable.includes("reporting is unavailable"));
+  assert.match(unavailable, /€34\.99\/year[\s\S]*€39\.99\/year[\s\S]*€44\.99\/year/);
 });
 
 
@@ -171,11 +197,6 @@ test("adding note variants preserves previous flow results and never reenrolls a
   assert.equal(report.flowPrices.rows.find((r) => r.version === "versy_reminder|yr_59")?.conversions?.global.proceeds, 20);
   assert.equal(report.historicalFlows?.rows[0].installs, 2);
   assert.equal(report.historicalFlows?.rows[0].conversions?.global.proceeds, 20);
-  const html = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report, windowLabel: "All time" }));
-  assert.match(html, /Current flow \+ note/);
-  assert.match(html, /Versy reminder flow \+ note/);
-  assert.match(html, /include their previous results/);
-  assert.doesNotMatch(html, /<details|Previous 50\/50 paywall-flow experiment/);
 });
 
 test("joint base-flow rows pool note and control users without averaging rates or mixing trial lengths", () => {
@@ -210,6 +231,4 @@ test("joint base-flow rows pool note and control users without averaging rates o
   assert.equal(report.flowPrices.rows.find((row) => row.version === "standard|yr_34_3d"), undefined);
   assert.deepEqual(report.flows.rows.map((row) => row.installs), [1, 4, 1, 1]);
   assert.equal(report.flowPrices.rows.reduce((sum, row) => sum + row.installs, 0), 6);
-  const html = renderToStaticMarkup(createElement(GlowPaywallCohortTables, { report, windowLabel: "All time" }));
-  assert.match(html, /Note and no-note variants are combined within each flow/);
 });

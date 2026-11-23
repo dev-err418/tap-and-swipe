@@ -183,7 +183,7 @@ export default function AppOverviewPanel({
           <DeferredVersyMetaRoas report={metaRoasPromise} country={country} />
         </Suspense> : null}
         <UserJourneyFunnel key={`${appId}:${country}`} appId={appId} report={selectedJourney} windowLabel={windowLabel} funnelOnly />
-        {appId === "glow" ? <GlowPaywallCohortTables key={country} report={selectedGlowPaywalls} windowLabel={windowLabel} /> : null}
+        {appId === "glow" && (country === "all" || country === "FR") ? <GlowPaywallCohortTables report={selectedGlowPaywalls} /> : null}
         {appId === "versy" ? <VersyYearlyPriceTable key={country} report={selectedYearlyPrices} cohortLabel={comparisonLabel} /> : null}
         {appId === "versy" ? <VersyPaywallComparisonPanel key={`paywalls:${country}`} report={selectedVersyPaywalls} cohortLabel={comparisonLabel} /> : null}
         {appId === "poky" ? <PokyPaywallFlowTable key={country} report={selectedPokyPaywalls} windowLabel={windowLabel} /> : null}

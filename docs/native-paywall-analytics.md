@@ -4,7 +4,17 @@ Glow's separate [Journal VS Practice](journal-practice-experiment.md) activity e
 
 ## Architecture and constraints
 
-### Pending Glow onboarding paywall-flow test
+### Current Glow onboarding and France prices
+
+Glow 1.8.8 uses trial introduction, trial reminder, then the standard paywall.
+The Data view reports the current screen sequence for first installs on 1.8.8
+or later and shows the three equal v4 yearly assignments for tracked France
+installs and assignments from November 24, 2026. All three have seven-day
+introductory trials. The prices after trial are €34.99, €39.99 and €44.99 per
+year. Recovery is configured at €19.99 for the first two tiers and €24.99 for
+the third, as paid annual offers. The recovery panel shows offer configuration.
+
+### Retired Glow onboarding paywall-flow test
 
 New eligible installs use **80% testimonials + team note / 20% original sequence**, independently of the onboarding journey and annual price/trial assignment:
 

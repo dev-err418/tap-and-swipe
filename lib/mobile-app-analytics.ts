@@ -421,7 +421,8 @@ async function getSuperwallAppAnalytics(
 ): Promise<MobileAppAnalytics> {
   const versyDetail = includeCountries && app.id === "versy";
   const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":yearly-recovery-prices-20261118" : ":yearly-trial3-20261023"}:${app.id === "poky" ? "keyword-cohorts-v2" : "keyword-cohorts-v3-matched-roas"}${versyDetail ? ":note-languages-v2:meta-onboarding" : ""}${includeCountries ? ":monthly-country-picker-v1" : ""}`;
-  return analyticsSnapshot(`mobile:${app.platform === "android" ? "android:" : ""}${cacheKey}`, () =>
+  const detailRevision = includeCountries && app.id === "glow" ? ":france-prices-no-note-v1" : "";
+  return analyticsSnapshot(`mobile:${app.platform === "android" ? "android:" : ""}${cacheKey}${detailRevision}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports), {
     project: includeReports ? undefined : compactAppDataView,
     maxAgeMs: app.platform === "android" ? 90_000 : undefined,

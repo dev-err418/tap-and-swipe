@@ -40,17 +40,14 @@ test("every configured audience has a complete, valid allocation", () => {
   }
 });
 
-test("Glow keeps onboarding and paywall assignments after retiring the Journal comparison", () => {
+test("Glow configures one onboarding path and a three-way French price test", () => {
   const map = appExperimentMap("glow")!;
-  assert.equal(map.tests[0].planned, true);
   assert.deepEqual(map.tests[0].branches, [{ id: "iam", label: "IAM", percent: 100 }]);
-  assert.match(map.tests[0].scope, /Deprecated — only IAM/);
-  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "onboarding_paywall_flow_v2", "native_yearly_prices_v4"]);
+  assert.deepEqual(map.tests.map((experiment) => experiment.id), [GLOW_ONBOARDING_ID, "native_yearly_prices_v4"]);
   assert.equal(appExperimentFlow("glow")?.nodes.find((node) => node.id === "home")?.label, "Practice");
-  assert.ok(map.notes.some((note) => note.includes("Older five-variant")));
-  assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), [10, 40, 10, 40]);
-  assert.deepEqual(map.tests[2].branches.map((branch) => branch.percent), Array(3).fill(100 / 3));
-  for (const branch of map.tests[2].branches) {
+  assert.deepEqual(map.tests[1].branches.map((branch) => branch.label), ["€34.99/year", "€39.99/year", "€44.99/year"]);
+  assert.deepEqual(map.tests[1].branches.map((branch) => branch.percent), Array(3).fill(100 / 3));
+  for (const branch of map.tests[1].branches) {
     assert.equal(branch.percent, nativePaywallAllocation("native_yearly_prices_v4", branch.id, branch.id));
   }
 });
@@ -115,7 +112,7 @@ test("unsupported apps do not show invented experiments", () => {
 });
 
 test("active A/B counts include the new plan design and trial offer assignments", () => {
-  assert.equal(activeABTestCount("glow"), 0); // Both next-build assignments are prepared, not released.
+  assert.equal(activeABTestCount("glow"), 1);
   assert.equal(activeABTestCount("poky"), 4);
   assert.equal(activeABTestCount("versy"), 2);
 });
@@ -161,8 +158,8 @@ test("configured maps render their percentage badges without analytics data", ()
     assert.match(markup, /<svg/);
     if (app === "glow") {
       assert.match(markup, />100%<\/text>/);
-      assert.match(markup, /Deprecated — only IAM/);
-      assert.match(markup, /next app build/i);
+      assert.match(markup, /Trial introduction → reminder/);
+      assert.match(markup, /Yearly price · France/);
     } else assert.match(markup, app === "versy" ? />100%<\/text>/ : />50%<\/text>/);
     assert.match(markup, /Start/);
     assert.match(markup, /onboarding/);
@@ -283,13 +280,7 @@ test("the map falls back to overall APPU when fixed-age branches are not mature"
   assert.equal(currentBestVariants([immature]).get("poky-animated-plan"), "control");
 });
 
-test("paywall variants use compact APPU/CR cards and highlight the unique APPU leader", () => {
-  const flow = appExperimentFlow("glow")!;
-  const metrics = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT);
-  assert.equal(metrics.size, 3);
-  assert.equal([...metrics.values()].filter((metric) => metric.appu != null && metric.conversionRate != null).length, 3);
-  assert.equal([...metrics.values()].filter((metric) => metric.users != null).length, 3);
-
+test("Glow's map keeps historical language metrics off the French price cards", () => {
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
     appId: "glow",
     nativePaywalls: YEARLY_PRICE_DEMO_REPORT,
@@ -298,21 +289,15 @@ test("paywall variants use compact APPU/CR cards and highlight the unique APPU l
   assert.match(markup, /English/);
   assert.match(markup, /Spanish/);
   assert.match(markup, /German/);
-  assert.equal(markup.match(/APPU \$/g)?.length, 3);
-  assert.equal(markup.match(/ · CR /g)?.length, 3);
-  assert.match(markup, /fill="light-dark\(#fff0e4, #4d3627\)"/);
-  const englishUsers = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "en").get("yr_49")!.users!;
-  assert.match(markup, new RegExp(`\\$49\\.99/year \\(7d\\) \\(${englishUsers.toLocaleString("en-US")}\\)`));
-  assert.match(markup, /stroke="var\(--analytics-orange\)"/);
-  assert.match(markup, /stroke-width="3"/);
-  assert.doesNotMatch(markup, /height="68"/);
-  assert.doesNotMatch(markup, /% conf/);
+  assert.match(markup, /€39\.99\/year/);
+  assert.doesNotMatch(markup, /APPU \$| · CR |\$49\.99/);
 });
 
 test("the map language picker scopes paywall metrics to the selected audience", () => {
-  const flow = appExperimentFlow("glow")!;
-  const english = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "en");
-  const spanish = currentPaywallMetrics(flow.nodes, YEARLY_PRICE_DEMO_REPORT, "es");
+  const nodes = appExperimentFlow("glow")!.nodes.filter(({ id }) => id.startsWith("yr_"))
+    .map((node) => ({ ...node, paywallMetric: { experiment: "native_yearly_prices_v4", variant: node.id, language: "all" } }));
+  const english = currentPaywallMetrics(nodes, YEARLY_PRICE_DEMO_REPORT, "en");
+  const spanish = currentPaywallMetrics(nodes, YEARLY_PRICE_DEMO_REPORT, "es");
   assert.equal(english.size, 3);
   assert.equal(spanish.size, 3);
   assert.notEqual(english.get("yr_49")?.appu, spanish.get("yr_49")?.appu);
@@ -355,7 +340,7 @@ test("Glow's fixed IAM map does not present historical A/B metrics as current ro
   const markup = renderToStaticMarkup(createElement(AppExperimentMap, {
     appId: "glow", experiments: [localized], nativePaywalls: YEARLY_PRICE_DEMO_REPORT, onboardingExperience: report,
   }));
-  assert.match(markup, /Deprecated — only IAM/);
+  assert.match(markup, /New installs/);
   assert.doesNotMatch(markup, /APPU \$0\.00|manifest-audio \(1\)/);
   assert.doesNotMatch(markup, /APPU \$9\.00|APPU \$8\.00|APPU \$0\.10|APPU \$0\.20/);
 });
@@ -423,11 +408,9 @@ test("Glow uses IAM only and keeps historical onboarding results accessible", ()
   const flow = appExperimentFlow("glow")!;
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "start").map((edge) => [edge.to, edge.label]), [["iam", "100%"]]);
   assert.deepEqual(flow.nodes.find((node) => node.id === "iam")?.statsTarget, { experimentId: GLOW_ONBOARDING_ID });
-  for (const variant of ["standard", "standard_note", "versy_reminder", "versy_reminder_note"]) {
-    const allocation = variant.endsWith("_note") ? "40%" : "10%";
-    assert.deepEqual(flow.edges.filter((edge) => edge.to === variant).map((edge) => edge.label), [allocation]);
-    assert.deepEqual(flow.edges.filter((edge) => edge.from === variant).map((edge) => edge.label), Array(3).fill("33.33%"));
-  }
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "iam").map((edge) => edge.to), ["standard"]);
+  assert.deepEqual(flow.edges.filter((edge) => edge.from === "standard").map((edge) => edge.label), Array(3).fill("33.33%"));
+  assert.ok(flow.nodes.every(({ id }) => !/note|versy_reminder/.test(id)));
   assert.ok(flow.nodes.every((node) => node.y + 40 < flow.height));
   assert.deepEqual(flow.edges.filter((edge) => edge.from === "home"), []);
   assert.equal(flow.edges.filter((edge) => edge.to === "home").length, 3);

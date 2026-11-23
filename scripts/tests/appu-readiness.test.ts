@@ -58,7 +58,7 @@ test("every compact experiment table restores the accessible readiness ring besi
     rows: [row("a"), row("b")].map(({ key, metric }) => ({ version: key, installs: metric.installs, tracked: metric.installs,
       variants: [], conversions: { ...emptyVersionConversions(), global: metric } })) };
   const examples = [
-    { element: createElement(GlowPaywallCohortTables, { report: { flows: comparison, prices: comparison, flowPrices: comparison }, windowLabel: "Last week" }), count: 3 },
+    { element: createElement(GlowPaywallCohortTables, { report: { flows: comparison, prices: comparison, francePrices: comparison, flowPrices: comparison } }), count: 1 },
     { element: createElement(PokyPaywallFlowTable, { report: comparison, windowLabel: "Last week" }), count: 1 },
     { element: createElement(VersyYearlyPriceTable, { report: { ...comparison, current: comparison, recovery: comparison,
       rollout: { ...comparison, rows: comparison.rows.slice(0, 1) } } }), count: 2 },

@@ -1,5 +1,5 @@
 import { GLOW_PAYWALL_FLOW_ID, GLOW_PAYWALL_FLOW_KEY, GLOW_PAYWALL_FLOW_LEGACY_ID, GLOW_PAYWALL_FLOW_LEGACY_KEY, GLOW_PAYWALL_FLOWS, onboardingCohort } from "./glow-onboarding-experience";
-import { GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_RETIRED_TRIAL_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
+import { GLOW_FRANCE_PRICE_START_MS, GLOW_FRANCE_YEARLY_PRICES, GLOW_YEARLY_PRICE_EXPERIMENT, GLOW_RETIRED_TRIAL_EXPERIMENT, GLOW_YEARLY_PRICES } from "./native-paywall-allocation";
 import { parsePaywallAttributes, type PaywallAttribute } from "./native-paywall-analytics";
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import type { JourneyVersionCohort } from "./user-journey";
@@ -13,9 +13,9 @@ export type PaywallCohortComparison = {
   labels: Record<string, string>;
   warnings: string[];
 };
-export type GlowPaywallCohortComparisons = { flows: PaywallCohortComparison; prices: PaywallCohortComparison; flowPrices: PaywallCohortComparison; historicalFlows?: PaywallCohortComparison; historicalFlowPrices?: PaywallCohortComparison };
+export type GlowPaywallCohortComparisons = { flows: PaywallCohortComparison; prices: PaywallCohortComparison; francePrices: PaywallCohortComparison; flowPrices: PaywallCohortComparison; historicalFlows?: PaywallCohortComparison; historicalFlowPrices?: PaywallCohortComparison };
 type Assignment = { variant: string; assignedAt: number };
-type Install = Parameters<typeof versionCohortConversions>[0][number];
+type Install = Parameters<typeof versionCohortConversions>[0][number] & { country?: string };
 
 /** Install-window comparisons; saved experimental assignments determine membership, never purchases. */
 export function buildGlowPaywallCohortComparisons(
@@ -47,7 +47,8 @@ export function buildGlowPaywallCohortComparisons(
   };
   const parsedPrices = parsePaywallAttributes(records.filter((row) => PRICE_KEYS.includes(row.key)));
   const prices = new Map<string, Assignment>();
-  for (const { appUserId } of selected) {
+  const francePrices = new Map<string, Assignment>();
+  for (const { appUserId, country, installedAt } of selected) {
     // Prefer the original eligible assignment so an upgrade cannot count twice.
     const record = PRICE_EXPERIMENTS.map((id) => parsedPrices.assignments.get(`${appUserId}|${id}`)).find(Boolean);
     const retired = record?.experiment === GLOW_RETIRED_TRIAL_EXPERIMENT;
@@ -55,6 +56,10 @@ export function buildGlowPaywallCohortComparisons(
       || record.assignedAt > asOf || (record.viewedAt != null && record.viewedAt > asOf)
       || record.variant !== record.paywall || !GLOW_YEARLY_PRICES.some(({ id }) => id === record.variant)) continue;
     prices.set(appUserId, record);
+    if (country?.trim().toUpperCase() === "FR" && !retired
+      && installedAt >= GLOW_FRANCE_PRICE_START_MS && record.assignedAt >= GLOW_FRANCE_PRICE_START_MS) {
+      francePrices.set(appUserId, record);
+    }
   }
   const compare = (assignments: Map<string, Assignment>, labels: Record<string, string>, warnings: string[]): PaywallCohortComparison => {
     const rows = Object.keys(labels).map((variant): JourneyVersionCohort => {
@@ -92,6 +97,8 @@ export function buildGlowPaywallCohortComparisons(
   return {
     flows: compare(allFlows.records, flowLabels, allFlows.warnings),
     prices: compare(prices, Object.fromEntries(GLOW_YEARLY_PRICES.map(({ id, price }) => [id, price])),
+      priceWarnings),
+    francePrices: compare(francePrices, Object.fromEntries(GLOW_FRANCE_YEARLY_PRICES.map(({ id, price }) => [id, price])),
       priceWarnings),
     flowPrices: compareFlowPrices(allFlows, baseFlowLabels),
     historicalFlows: compare(historicalFlows.records, historicalLabels, historicalFlows.warnings),

@@ -49,9 +49,10 @@ for (const appId of ["glow", "poky", "versy"] as const) {
     const report = buildAppCountryComparisons({ appId, asOf,
       countries: [{ country: "US", proceeds: 10 }, { country: secondCountry, proceeds: 30 },
         ...(appId === "versy" ? [{ country: "MX", proceeds: 100 }] : [])],
-      installs: [install("payer", "US", experimentMinimumInstallVersion(appId)), install("free", "US", experimentMinimumInstallVersion(appId)),
-        install("second-payer", secondCountry, experimentMinimumInstallVersion(appId)), install("old", "FR", "1.0.0"),
-        install("old", "US", experimentMinimumInstallVersion(appId), start + day)],
+      installs: [install("payer", "US", definition.minimumInstallVersion ?? experimentMinimumInstallVersion(appId)),
+        install("free", "US", definition.minimumInstallVersion ?? experimentMinimumInstallVersion(appId)),
+        install("second-payer", secondCountry, definition.minimumInstallVersion ?? experimentMinimumInstallVersion(appId)),
+        install("old", "FR", "1.0.0"), install("old", "US", experimentMinimumInstallVersion(appId), start + day)],
       events: [event("payer", { periodType: "trial", netProceeds: 0, expiresAt: start + 8 * day }),
         event("", { originalTransactionId: "payer", transactionId: "paid", name: "renewal", netProceeds: 12, eventTs: start + 8 * day }),
         event("", { originalTransactionId: "payer", transactionId: "paid", name: "cancellation", isRefund: true, netProceeds: -2, eventTs: start + 9 * day }),
@@ -116,17 +117,17 @@ test("Poky pools matching flows from different releases within each country", ()
 test("journey country totals and first-version groups sum back to All countries", async () => {
   let sql = "";
   const rows = [
-    { variant: "iam", version: "1.8.3", country: "US", key: ASSIGNED_KEY, users: 2 },
-    { variant: "iam", version: "1.8.4", country: "US", key: ASSIGNED_KEY, users: 1 },
-    { variant: "iam", version: "1.8.3", country: "MX", key: ASSIGNED_KEY, users: 4 },
-    { variant: "iam", version: "1.8.3", country: "unknown", key: ASSIGNED_KEY, users: 1 },
+    { variant: "iam", version: "1.8.8", country: "US", key: ASSIGNED_KEY, users: 2 },
+    { variant: "iam", version: "1.8.9", country: "US", key: ASSIGNED_KEY, users: 1 },
+    { variant: "iam", version: "1.8.8", country: "MX", key: ASSIGNED_KEY, users: 4 },
+    { variant: "iam", version: "1.8.8", country: "unknown", key: ASSIGNED_KEY, users: 1 },
   ];
   const report = await loadUserJourney(async <T,>(query: string): Promise<T[]> => { sql = query; return rows as T[]; },
     "glow", 54736, "1970-01-01 00:00:00", "2026-10-22 00:00:00", "1.8.3", true);
   assert.equal(report.variants[0].assigned, 8);
   assert.equal(report.countries!.US.variants[0].assigned, 3);
   assert.equal(report.countries!.MX.variants[0].assigned, 4);
-  assert.equal(report.versions!.find((row) => row.version === "1.8.3")!.tracked, 7);
+  assert.equal(report.versions!.find((row) => row.version === "1.8.8")!.tracked, 7);
   assert.match(sql, /argMin\(upper\(ifNull\(nullIf\(JSONExtractString\(headers, 'Cf-Ipcountry'/);
   assert.match(sql, /GROUP BY variant, step, version, country/);
 });

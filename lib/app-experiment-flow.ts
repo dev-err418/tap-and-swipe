@@ -69,31 +69,27 @@ function versyFlow(map: AppExperimentMapDefinition): ExperimentFlow {
 }
 
 function glowFlow(map: AppExperimentMapDefinition): ExperimentFlow {
-  const [onboarding, paywallFlow, prices] = map.tests;
+  const [onboarding, prices] = map.tests;
   const nodes: ExperimentFlowNode[] = [
     { id: "start", x: 36, y: 168, width: 0, label: "Onboarding", kind: "start", tone: "blue" },
+    { id: "standard", x: 414, y: 168, width: 208, label: "Trial introduction → reminder", tone: "neutral" },
     { id: "home", x: 1010, y: 168, width: 140, label: "Practice", detail: "Everyone", tone: "neutral" },
   ];
   const edges: ExperimentFlowEdge[] = [];
   onboarding.branches.forEach((branch, index) => {
-    nodes.push({ id: branch.id, x: 140, y: 112 + index * 112, width: 160,
-      label: branch.label, detail: "Deprecated — only IAM", tone: "blue", statsTarget: { experimentId: onboarding.id } });
+    nodes.push({ id: branch.id, x: 140, y: 168 + index * 112, width: 160,
+      label: branch.label, detail: "New installs", tone: "blue", statsTarget: { experimentId: onboarding.id } });
     edges.push({ from: "start", to: branch.id, label: `${branch.percent}%` });
-  });
-  paywallFlow.branches.forEach((branch, index) => {
-    nodes.push({ id: branch.id, x: 414, y: 112 + index * 112, width: 188,
-      label: branch.label, detail: branch.id.endsWith("_note") ? "Testimonials → note → paywall" : "Original paywall sequence", tone: "orange", experimentId: paywallFlow.id, variantId: branch.id });
-    onboarding.branches.forEach((parent) => edges.push({ from: parent.id, to: branch.id, label: `${branch.percent}%` }));
+    edges.push({ from: branch.id, to: "standard" });
   });
   prices.branches.forEach((branch, index) => {
-    nodes.push({ id: branch.id, x: 730, y: 64 + index * 104, width: 180, label: branch.label, tone: "orange",
-      paywallMetric: { experiment: prices.id, variant: branch.id, language: "all" } });
-    paywallFlow.branches.forEach((parent) => edges.push({ from: parent.id, to: branch.id, label: formatPaywallAllocation(branch.percent) }));
+    nodes.push({ id: branch.id, x: 730, y: 64 + index * 104, width: 180, label: branch.label, tone: "orange", detail: "7-day trial" });
+    edges.push({ from: "standard", to: branch.id, label: formatPaywallAllocation(branch.percent) });
     edges.push({ from: branch.id, to: "home" });
   });
   return { width: 1186, height: Math.max(...nodes.map((node) => node.y)) + 64, nodes, edges,
-    stages: [{ x: 140, label: "Onboarding · next app build" }, { x: 414, label: "Paywall flow" }, { x: 730, label: "Yearly price" }, { x: 1010, label: "Practice" }],
-    notes: ["New users receive IAM only. Paywall flow and yearly price remain independent saved assignments, including for existing manifest-audio users.", "The paywall flow comparison enrolls everyone reaching their first assigned screen, including testimonials; the price test also covers other app placements. Their user counts and APPU denominators differ.", ...map.notes] };
+    stages: [{ x: 140, label: "Onboarding" }, { x: 414, label: "Trial setup" }, { x: 730, label: "Yearly price · France" }, { x: 1010, label: "Practice" }],
+    notes: map.notes };
 }
 
 function pokyFlow(map: AppExperimentMapDefinition, selectedLanguage?: string): ExperimentFlow {

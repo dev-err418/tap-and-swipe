@@ -17,6 +17,7 @@ import {
   DASHBOARD_TAB_INACTIVE_CLASS,
 } from "@/components/analytics/dashboard-surface";
 import {
+  GLOW_NO_NOTE_ONBOARDING_INSTALL_VERSION,
   journeyDrops,
   largestDropAttributes,
   type UserJourneyReport,
@@ -42,7 +43,9 @@ export default function UserJourneyFunnel({
   const [graphOpen, setGraphOpen] = useState(false);
   const graphTrigger = useRef<HTMLButtonElement | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const cohortLabel = experimentCohortLabel(appId ?? "") ?? `Installs ${windowLabel.toLowerCase()}`;
+  const cohortLabel = appId === "glow"
+    ? `Installed on v${GLOW_NO_NOTE_ONBOARDING_INSTALL_VERSION}+`
+    : experimentCohortLabel(appId ?? "") ?? `Installs ${windowLabel.toLowerCase()}`;
   if (!report) return null;
   if (!funnelOnly && appId !== "glow" && appId !== "versy" && report.versions?.length) {
     return <DashboardCard title="App versions" contentClassName="pt-0">
