@@ -3,7 +3,7 @@ import { experimentInstallUsersSql, EXPERIMENT_MINIMUM_INSTALL_VERSION } from ".
 
 /** Match PostHog distinct IDs to the same install cohort used by Superwall reports. */
 export async function loadExperimentInstallUserIds(appId: "glow" | "versy"): Promise<Set<string>> {
-  const config = appId === "glow" ? { organization: 27020, application: 54736, key: process.env.SUPERWALL_GLOW_API_KEY }
+  const config = appId === "glow" ? { organization: 25476, application: 54736, key: process.env.SUPERWALL_GLOW_API_KEY }
     : { organization: 25476, application: 51393, key: process.env.SUPERWALL_VERSY_API_KEY };
   if (!config.key?.trim()) throw new Error("Install cohort reporting access is not configured.");
   const response = await fetch(`https://api.superwall.com/v2/organizations/${config.organization}/query`, {

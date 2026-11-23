@@ -7,7 +7,7 @@ config({ path: ".env", quiet: true });
 
 async function main() {
   const selected = process.argv.find((arg) => arg.startsWith("--app="))?.slice(6).toUpperCase();
-  const apps = [["POKY", 16256, 49771], ["GLOW", 27020, 54736], ["VERSY", 25476, 51393]] as const;
+  const apps = [["POKY", 16256, 49771], ["GLOW", 25476, 54736], ["VERSY", 25476, 51393]] as const;
   if (selected && !apps.some(([app]) => app === selected)) throw new Error("Unknown app selector");
   for (const [app, organization, application] of apps) {
     if (selected && app !== selected) continue;
