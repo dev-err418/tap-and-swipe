@@ -6,7 +6,7 @@ import { APP_ANALYTICS_HEADER_CLASS, DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_LIST
 import { WebsiteFavicon } from "@/components/analytics/website-summary-card";
 import { DashboardCard } from "./DashboardCard";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
-import { VERSY_ANDROID_INSTALL_VERSION, type VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
+import { VERSY_ANALYTICS_PLATFORM_LABELS, VERSY_ANDROID_INSTALL_VERSION, type VersyAnalyticsPlatformFilter } from "@/lib/versy-analytics-platform";
 import { cn } from "@/lib/utils";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
@@ -37,19 +37,21 @@ export function AnalyticsDetailSkeleton({
   app,
   site,
   platform = "ios",
+  showPlatformLabel = false,
 }: {
   period: Period;
   app?: AppId;
   site?: WebsiteSite;
-  platform?: VersyAnalyticsPlatform;
+  platform?: VersyAnalyticsPlatformFilter;
+  showPlatformLabel?: boolean;
 }) {
   const periodLabel = analyticsPeriodSummary(period);
   const backLabel = app ? "All apps" : "All websites";
-  const name = app ? APPS[app].name : site ? SITES[site] : "";
+  const name = showPlatformLabel ? VERSY_ANALYTICS_PLATFORM_LABELS[platform] : app ? APPS[app].name : site ? SITES[site] : "";
 
   return (
     <div className="w-full min-w-0 space-y-10" aria-busy="true" aria-label={`Loading ${name}`}>
-      <div className="w-full min-w-0 space-y-5">
+      {showPlatformLabel ? null : <div className="w-full min-w-0 space-y-5">
         <Link
           href={period === "week" ? "/analytics" : `/analytics?period=${period}`}
           className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-sm font-medium text-muted-foreground shadow-none ring-0 transition-all hover:text-foreground active:translate-y-px"
@@ -68,13 +70,15 @@ export function AnalyticsDetailSkeleton({
           </div>
           <AnalyticsPeriodSelect period={period} app={app} site={site} />
         </div> : null}
-      </div>
-      {app ? <AppOverviewSkeleton app={app} period={period} platform={platform} /> : <div className={`h-[28rem] w-full min-w-0 ${DASHBOARD_SURFACE_CLASS}`} />}
+      </div>}
+      {app ? <AppOverviewSkeleton app={app} period={period} platform={platform} showPlatformLabel={showPlatformLabel} /> : <div className={`h-[28rem] w-full min-w-0 ${DASHBOARD_SURFACE_CLASS}`} />}
     </div>
   );
 }
 
-function AppOverviewSkeleton({ app, period, platform }: { app: AppId; period: Period; platform: VersyAnalyticsPlatform }) {
+function AppOverviewSkeleton({ app, period, platform, showPlatformLabel }: {
+  app: AppId; period: Period; platform: VersyAnalyticsPlatformFilter; showPlatformLabel: boolean;
+}) {
   const metrics = ["Tracked installs", "APPU", "Conversion to paid"];
   const cohortLabel = platform === "android" ? `Installed on v${VERSY_ANDROID_INSTALL_VERSION}+` : experimentCohortLabel(app)!;
   return (
@@ -83,7 +87,11 @@ function AppOverviewSkeleton({ app, period, platform }: { app: AppId; period: Pe
         <div className="flex min-w-0 items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={APPS[app].iconUrl} alt="" width={40} height={40} className="size-10 shrink-0 rounded-[10px]" />
-          <h1 className="min-w-0 text-lg font-semibold text-foreground sm:text-xl">{APPS[app].name}</h1>
+          {showPlatformLabel ? (
+            <h2 className="min-w-0 text-lg font-semibold text-foreground sm:text-xl">{VERSY_ANALYTICS_PLATFORM_LABELS[platform]}</h2>
+          ) : (
+            <h1 className="min-w-0 text-lg font-semibold text-foreground sm:text-xl">{APPS[app].name}</h1>
+          )}
         </div>
         <div className="flex min-w-0 overflow-x-auto scrollbar-none" aria-hidden="true">
           <div className={`${DASHBOARD_TAB_LIST_CLASS} mx-auto shrink-0`}>
@@ -91,7 +99,7 @@ function AppOverviewSkeleton({ app, period, platform }: { app: AppId; period: Pe
             {Array.from({ length: 3 }, (_, index) => <span key={index} className="flex h-[26px] w-20 items-center gap-1.5 px-2"><Bone className="size-3.5 shrink-0 rounded-full" /><Bone className="w-10" /></span>)}
           </div>
         </div>
-        <div className="sm:justify-self-end"><AnalyticsPeriodSelect period={period} app={app} platform={platform} /></div>
+        <div className="sm:justify-self-end">{showPlatformLabel ? null : <AnalyticsPeriodSelect period={period} app={app} platform={platform} />}</div>
       </div>
       <div className="w-full min-w-0 max-w-full overflow-visible rounded-[28px] border-0 bg-card shadow-none">
         <div className="min-w-0 border-b border-foreground/[0.08]">

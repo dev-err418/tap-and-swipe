@@ -171,7 +171,7 @@ export default function AppOverviewPanel({
       </div>
 
       <div
-        id="app-analytics-panel-data"
+        id={platform === "android" ? "app-analytics-panel-data-android" : "app-analytics-panel-data"}
         className="space-y-4"
       >
         {markets ? <DashboardCard title="App versions" contentClassName="pt-0">

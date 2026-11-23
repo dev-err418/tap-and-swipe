@@ -24,7 +24,6 @@ import {
 import AppOverviewPanel from "@/components/analytics/AppOverviewPanel";
 import type { CountryBreakdownData } from "@/components/analytics/DeferredCountryBreakdown";
 import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect";
-import { AnalyticsThemeSetting } from "@/components/analytics/AnalyticsTheme";
 import { AnalyticsDirectorySkeleton, AppCardSkeleton, AppTotalsSkeleton, WebsiteCardSkeleton, WebsiteTotalsSkeleton } from "@/components/analytics/AnalyticsDirectorySkeleton";
 import { AnalyticsDetailSkeleton } from "@/components/analytics/AnalyticsDetailSkeleton";
 import DeadProjectsDisclosure from "@/components/analytics/DeadProjectsDisclosure";
@@ -36,8 +35,8 @@ import {
   WebsiteSummaryCard,
   type WebsiteTrendPoint,
 } from "@/components/analytics/website-summary-card";
-import { DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS, DASHBOARD_TAB_LIST_CLASS } from "@/components/analytics/dashboard-surface";
-import { versyAnalyticsPlatform, type VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
+import { DASHBOARD_SURFACE_CLASS } from "@/components/analytics/dashboard-surface";
+import { VERSY_ANALYTICS_PLATFORM_LABELS, versyAnalyticsPlatformFilter, type VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
 import AppSprintFunnelPanel from "@/components/analytics/AppSprintFunnelPanel";
 import LicensesModal from "@/components/aso-debug/LicensesModal";
 import ProxyAnalyticsPanel from "@/components/aso-debug/ProxyAnalyticsPanel";
@@ -129,7 +128,7 @@ export default async function AnalyticsPage({
     params.app === "poky" || params.app === "glow" || params.app === "versy"
       ? params.app
       : null;
-  const platform = detailApp === "versy" ? versyAnalyticsPlatform(params.platform) : "ios";
+  const platform = detailApp === "versy" ? versyAnalyticsPlatformFilter(params.platform) : "ios";
   const detailSite =
     params.site === "appsprint" ||
     params.site === "postback" ||
@@ -143,36 +142,32 @@ export default async function AnalyticsPage({
   return (
     <main className="min-h-screen px-4 py-6 text-foreground sm:px-6 sm:py-8">
       <div className="mx-auto w-full min-w-0 max-w-6xl">
-        {detailApp === "versy" && <nav aria-label="Versy platform" className={`${DASHBOARD_TAB_LIST_CLASS} mb-4 w-fit`}>
-          {([['ios', 'iOS'], ['android', 'Android']] as const).map(([value, label]) => <Link key={value}
-            href={buildAnalyticsUrl({ period, app: "versy", platform: value })}
-            aria-current={platform === value ? "page" : undefined}
-            className={`${DASHBOARD_TAB_CLASS} px-4 ${platform === value ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS}`}>
-            {label}
-          </Link>)}
-        </nav>}
-        <Suspense key={`${viewKey}:${period}:${platform}`} fallback={
-          detailApp ? (
-            <AnalyticsDetailSkeleton period={period} app={detailApp} platform={platform} />
-          ) : detailSite ? (
-            <AnalyticsDetailSkeleton period={period} site={detailSite} />
-          ) : (
-            <div className="space-y-12">
-              <div className="flex justify-end">
-                <AnalyticsPeriodSelect period={period} />
+        {platform === "both" ? (
+          <VersyBothAnalytics key={period} period={period} />
+        ) : (
+          <Suspense key={`${viewKey}:${period}:${platform}`} fallback={
+            detailApp ? (
+              <AnalyticsDetailSkeleton period={period} app={detailApp} platform={platform} />
+            ) : detailSite ? (
+              <AnalyticsDetailSkeleton period={period} site={detailSite} />
+            ) : (
+              <div className="space-y-12">
+                <div className="flex justify-end">
+                  <AnalyticsPeriodSelect period={period} />
+                </div>
+                <AnalyticsDirectorySkeleton periodLabel={PERIOD_SUMMARY_LABELS[period]} access={access} />
               </div>
-              <AnalyticsDirectorySkeleton periodLabel={PERIOD_SUMMARY_LABELS[period]} access={access} />
-            </div>
-          )
-        }>
-          {detailApp ? (
-            <AppDetail period={period} appId={detailApp} platform={platform} />
-          ) : detailSite ? (
-            <WebsiteDetail period={period} site={detailSite} />
-          ) : (
-            <WebsiteDirectory period={period} access={access} />
-          )}
-        </Suspense>
+            )
+          }>
+            {detailApp ? (
+              <AppDetail period={period} appId={detailApp} platform={platform} />
+            ) : detailSite ? (
+              <WebsiteDetail period={period} site={detailSite} />
+            ) : (
+              <WebsiteDirectory period={period} access={access} />
+            )}
+          </Suspense>
+        )}
       </div>
       {access.canManage ? (
         <Link
@@ -487,7 +482,7 @@ function AppSprintOperations() {
             <ArrowLeft className="size-3" />
             Analytics
           </Link>
-          <div className="flex items-center gap-2"><AnalyticsThemeSetting /><LicensesModal /></div>
+          <LicensesModal />
         </div>
 
         <h1 className="mb-8 text-2xl font-bold tracking-tight">AppSprint ASO operations</h1>
@@ -515,31 +510,62 @@ function buildAnalyticsUrl({
   period,
   site,
   app,
-  platform,
 }: {
   period: Period;
   site?: WebsiteSite;
   app?: AppId;
-  platform?: VersyAnalyticsPlatform;
 }) {
   const params = new URLSearchParams();
   if (period !== "week") params.set("period", period);
   if (site) params.set("site", site);
   if (app) params.set("app", app);
-  if (app === "versy" && platform === "android") params.set("platform", platform);
   const query = params.toString();
   return `/analytics${query ? `?${query}` : ""}`;
+}
+
+function AllAppsLink({ period }: { period: Period }) {
+  return (
+    <Link
+      href={buildAnalyticsUrl({ period })}
+      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-card px-3 text-sm font-medium text-muted-foreground shadow-none ring-0 transition-all hover:text-foreground active:translate-y-px"
+    >
+      <ArrowLeft className="size-4" />
+      All apps
+    </Link>
+  );
+}
+
+function VersyBothAnalytics({ period }: { period: Period }) {
+  return (
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <AllAppsLink period={period} />
+        <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 ${DASHBOARD_SURFACE_CLASS}`}>
+          <h1 className="text-lg font-semibold sm:text-xl">Versy</h1>
+          <AnalyticsPeriodSelect period={period} app="versy" platform="both" />
+        </div>
+      </div>
+      {(["ios", "android"] as const).map((platform) => (
+        <Suspense key={platform} fallback={<AnalyticsDetailSkeleton period={period} app="versy" platform={platform} showPlatformLabel />}>
+          <AppDetail period={period} appId="versy" platform={platform} showPlatformLabel />
+        </Suspense>
+      ))}
+    </div>
+  );
 }
 
 async function AppDetail({
   period,
   appId,
   platform,
+  showPlatformLabel = false,
 }: {
   period: Period;
   appId: AppId;
   platform: VersyAnalyticsPlatform;
+  showPlatformLabel?: boolean;
 }) {
+  const platformLabel = VERSY_ANALYTICS_PLATFORM_LABELS[platform];
   const metaRoas = appId === "versy" && platform === "ios" ? getVersyMetaRoas() : undefined;
   let app: MobileAppAnalytics | null = null;
   let countryBreakdown: Promise<CountryBreakdownData> | undefined;
@@ -564,13 +590,12 @@ async function AppDetail({
   if (!app) {
     return (
       <div className="space-y-5">
-        <Link
-          href={buildAnalyticsUrl({ period })}
-          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-sm font-medium text-muted-foreground shadow-none ring-0 transition-all hover:text-foreground active:translate-y-px"
-        >
-          <ArrowLeft className="size-4" />
-          All apps
-        </Link>
+        {showPlatformLabel ? <h2 className="text-lg font-semibold">{platformLabel}</h2> : (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <AllAppsLink period={period} />
+            <AnalyticsPeriodSelect period={period} app={appId} platform={platform} />
+          </div>
+        )}
         <p className="text-lg text-muted-foreground">App analytics could not be loaded.</p>
       </div>
     );
@@ -578,6 +603,11 @@ async function AppDetail({
 
   const windowLabel = APP_PERIOD_LABELS[period];
   const refreshedAt = app.snapshotUpdatedAt ? new Date(app.snapshotUpdatedAt) : null;
+  const refreshTime = refreshedAt && Number.isFinite(refreshedAt.getTime()) ? (
+    <time dateTime={refreshedAt.toISOString()} className="ml-auto text-right text-xs tabular-nums text-muted-foreground">
+      Last refreshed {APP_REFRESH_FORMATTER.format(refreshedAt)}
+    </time>
+  ) : null;
   const dailyConversions = new Map<string, { installs: number; conversions: number }>();
   for (const point of app.trend) {
     const day = appDayKey(point.bucket);
@@ -599,20 +629,12 @@ async function AppDetail({
 
   return (
     <div className="w-full min-w-0 space-y-10">
-      <div className="flex w-full min-w-0 items-center justify-between gap-3">
-        <Link
-          href={buildAnalyticsUrl({ period })}
-          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-card px-3 text-sm font-medium text-muted-foreground shadow-none ring-0 transition-all hover:text-foreground active:translate-y-px"
-        >
-          <ArrowLeft className="size-4" />
-          All apps
-        </Link>
-        {refreshedAt && Number.isFinite(refreshedAt.getTime()) ? (
-          <time dateTime={refreshedAt.toISOString()} className="text-right text-xs tabular-nums text-muted-foreground">
-            Last refreshed {APP_REFRESH_FORMATTER.format(refreshedAt)}
-          </time>
-        ) : null}
-      </div>
+      {!showPlatformLabel || refreshTime ? (
+        <div className="flex w-full min-w-0 items-center gap-3">
+          {showPlatformLabel ? null : <AllAppsLink period={period} />}
+          {refreshTime}
+        </div>
+      ) : null}
 
       <AppOverviewPanel
         headerStart={<div className="flex min-w-0 items-center gap-3">
@@ -624,11 +646,13 @@ async function AppDetail({
               height={40}
               className="size-10 shrink-0 rounded-[10px]"
             />
-            <h1 className="min-w-0 text-lg font-normal text-muted-foreground sm:text-xl">
-              <strong className="font-semibold text-foreground">{app.name}</strong>
-            </h1>
+            {showPlatformLabel ? (
+              <h2 className="min-w-0 text-lg font-semibold sm:text-xl">{platformLabel}</h2>
+            ) : (
+              <h1 className="min-w-0 text-lg font-semibold sm:text-xl">{app.name}</h1>
+            )}
           </div>}
-        headerEnd={<AnalyticsPeriodSelect period={period} app={app.id} platform={platform} />}
+        headerEnd={showPlatformLabel ? undefined : <AnalyticsPeriodSelect period={period} app={app.id} platform={platform} />}
         appId={app.id}
         platform={platform}
         installs={app.downloads}

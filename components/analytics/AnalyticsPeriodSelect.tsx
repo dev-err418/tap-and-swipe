@@ -2,8 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AnalyticsThemeSetting } from "./AnalyticsTheme";
-import type { VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
+import { VERSY_ANALYTICS_PLATFORM_LABELS, versyAnalyticsPlatformFilter, type VersyAnalyticsPlatformFilter } from "@/lib/versy-analytics-platform";
 import {
   Select,
   SelectContent,
@@ -19,67 +18,75 @@ import {
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 
-const PERIOD_OPTIONS: { value: Period; label: string }[] = [
-  { value: "day", label: "Today" },
-  { value: "yesterday", label: "Yesterday" },
-  { value: "3days", label: "Last 3 days" },
-  { value: "week", label: "Last week" },
-  { value: "month", label: "Last month" },
-  { value: "all", label: "All time" },
-];
+const PERIOD_LABELS: Record<Period, string> = {
+  day: "Today",
+  yesterday: "Yesterday",
+  "3days": "Last 3 days",
+  week: "Last week",
+  month: "Last month",
+  all: "All time",
+};
 
 export default function AnalyticsPeriodSelect({
   period,
   site,
   app,
-  platform,
+  platform = "ios",
 }: {
   period: Period;
   site?: "appsprint" | "postback" | "grewit" | "community";
   app?: "glow" | "poky" | "versy";
-  platform?: VersyAnalyticsPlatform;
+  platform?: VersyAnalyticsPlatformFilter;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  function navigate(nextPeriod: Period, nextPlatform: VersyAnalyticsPlatformFilter) {
+    if (nextPeriod === period && nextPlatform === platform) return;
+    const params = new URLSearchParams();
+    if (nextPeriod !== "week") params.set("period", nextPeriod);
+    if (site) params.set("site", site);
+    if (app) params.set("app", app);
+    if (app === "versy" && nextPlatform !== "ios") params.set("platform", nextPlatform);
+    const query = params.toString();
+    startTransition(() => router.push(`/analytics${query ? `?${query}` : ""}`));
+  }
+
   return (
     <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-      <AnalyticsThemeSetting />
+      {app === "versy" ? (
+        <Select value={platform} disabled={isPending} onValueChange={(value) => navigate(period, versyAnalyticsPlatformFilter(value))}>
+          <SelectTrigger aria-label="Versy platform" className={`${DASHBOARD_PICKER_TRIGGER_CLASS} w-28 shrink-0`}>
+            <SelectValue>{VERSY_ANALYTICS_PLATFORM_LABELS[platform]}</SelectValue>
+          </SelectTrigger>
+          <SelectContent position="popper" align="end" className={DASHBOARD_POPOVER_CLASS}>
+            {Object.entries(VERSY_ANALYTICS_PLATFORM_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value} className={DASHBOARD_POPOVER_ITEM_CLASS}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : null}
       <Select
         value={period}
         disabled={isPending}
-        onValueChange={(value) => {
-          const nextPeriod = value as Period;
-          if (nextPeriod === period) return;
-          const params = new URLSearchParams();
-          if (nextPeriod !== "week") params.set("period", nextPeriod);
-          if (site) params.set("site", site);
-          if (app) params.set("app", app);
-          if (app === "versy" && platform === "android") params.set("platform", platform);
-          const query = params.toString();
-          startTransition(() => {
-            router.push(`/analytics${query ? `?${query}` : ""}`);
-          });
-        }}
+        onValueChange={(value) => navigate(value as Period, platform)}
       >
         <SelectTrigger
           aria-label="Analytics period"
           className={`${DASHBOARD_PICKER_TRIGGER_CLASS} w-full sm:w-[160px]`}
         >
-          <SelectValue />
+          <SelectValue>{PERIOD_LABELS[period]}</SelectValue>
         </SelectTrigger>
         <SelectContent
           position="popper"
           align="end"
           className={DASHBOARD_POPOVER_CLASS}
         >
-          {PERIOD_OPTIONS.map((option) => (
-            <SelectItem
-              key={option.value}
-              value={option.value}
-              className={DASHBOARD_POPOVER_ITEM_CLASS}
-            >
-              {option.label}
+          {Object.entries(PERIOD_LABELS).map(([value, label]) => (
+            <SelectItem key={value} value={value} className={DASHBOARD_POPOVER_ITEM_CLASS}>
+              {label}
             </SelectItem>
           ))}
         </SelectContent>

@@ -60,7 +60,6 @@ function pageFixture(overrides: Record<string, unknown> = {}) {
     "@/lib/app-experiment-map": { activeABTestCount: () => 0 },
     "@/lib/website-ab-tests": { activeWebsiteABTestCount },
     "@/components/analytics/dashboard-surface": { DASHBOARD_SURFACE_CLASS: "" },
-    "@/components/analytics/AnalyticsTheme": { AnalyticsThemeSetting: passthrough },
     "@/components/analytics/website-summary-card": { formatCompactRevenue: String, ProjectExperimentBadge: passthrough, WebsiteFavicon: passthrough, WebsiteMiniChart: passthrough, WebsiteSummaryCard: passthrough },
     "@/components/analytics/AnalyticsDirectorySkeleton": { AnalyticsDirectorySkeleton, AppCardSkeleton: passthrough, AppTotalsSkeleton: passthrough, WebsiteCardSkeleton: passthrough, WebsiteTotalsSkeleton: passthrough },
     "@/components/analytics/AnalyticsDetailSkeleton": { AnalyticsDetailSkeleton: passthrough },
@@ -88,7 +87,7 @@ test("Alberto's rendered directory greets him and totals only Poky", async () =>
   assert.ok(f.calls.every((id) => id === "poky"));
 });
 
-test("Versy defaults to iOS and the Android switch preserves the selected period for both data loads", async () => {
+test("Versy defaults to iOS and Both shows the two platform reports with one filter", async () => {
   const seen: string[] = [];
   const f = pageFixture({
     "@/lib/analytics-session": { getAnalyticsViewer: async () => getAnalyticsAccess(null, { development: true }) },
@@ -97,15 +96,25 @@ test("Versy defaults to iOS and the Android switch preserves the selected period
       seen.push(`${appId}:${period}:${options.platform}`);
       return { id: "versy", name: "Versy", trend: [], iconUrl: "/versy.png" };
     } },
+    "@/components/analytics/AnalyticsPeriodSelect": { __esModule: true, default: ({ period, platform }: Props) =>
+      createElement("div", { "data-period": period, "data-platform-filter": platform }) },
+    "@/components/analytics/AppOverviewPanel": { __esModule: true, default: ({ headerStart, headerEnd }: Props) =>
+      createElement(Fragment, null, headerStart as ReactNode, headerEnd as ReactNode) },
   });
   const html = async (params: PageParams) => renderToStaticMarkup(await resolveServerComponents(
     await f.page({ searchParams: Promise.resolve(params) })));
   const ios = await html({ app: "versy", period: "day" });
-  assert.match(ios, /aria-current="page"[^>]*>iOS<\/a>/);
-  assert.match(ios, /href="\/analytics\?period=day&amp;app=versy&amp;platform=android"/);
+  assert.match(ios, /data-period="day" data-platform-filter="ios"/);
   const android = await html({ app: "versy", period: "day", platform: "android" });
-  assert.match(android, /aria-current="page"[^>]*>Android<\/a>/);
-  assert.deepEqual(seen, ["versy:day:ios", "versy:month:ios", "versy:day:android", "versy:month:android"]);
+  assert.match(android, /data-period="day" data-platform-filter="android"/);
+  assert.deepEqual(seen.splice(0), ["versy:day:ios", "versy:month:ios", "versy:day:android", "versy:month:android"]);
+
+  const both = await html({ app: "versy", period: "day", platform: "both" });
+  assert.match(both, /data-period="day" data-platform-filter="both"/);
+  assert.equal(both.match(/data-platform-filter/g)?.length, 1);
+  assert.match(both, /<h2[^>]*>iOS<\/h2>/);
+  assert.match(both, /<h2[^>]*>Android<\/h2>/);
+  assert.deepEqual(seen.sort(), ["versy:day:android", "versy:day:ios", "versy:month:android", "versy:month:ios"]);
 });
 
 test("direct URLs for other projects are rejected before rendering or fetching data", async () => {

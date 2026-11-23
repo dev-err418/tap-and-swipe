@@ -1,4 +1,15 @@
 export type VersyAnalyticsPlatform = "ios" | "android";
+export type VersyAnalyticsPlatformFilter = VersyAnalyticsPlatform | "both";
+
+export const VERSY_ANALYTICS_PLATFORM_LABELS = {
+  ios: "iOS",
+  android: "Android",
+  both: "Both",
+} satisfies Record<VersyAnalyticsPlatformFilter, string>;
+
+export function versyAnalyticsPlatformFilter(value: unknown): VersyAnalyticsPlatformFilter {
+  return value === "both" ? value : versyAnalyticsPlatform(value);
+}
 
 export function versyAnalyticsPlatform(value: unknown): VersyAnalyticsPlatform {
   return value === "android" ? "android" : "ios";

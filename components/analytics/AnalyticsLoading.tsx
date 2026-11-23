@@ -5,6 +5,7 @@ import AnalyticsPeriodSelect from "@/components/analytics/AnalyticsPeriodSelect"
 import { AnalyticsDirectorySkeleton, analyticsPeriodSummary } from "@/components/analytics/AnalyticsDirectorySkeleton";
 import { AnalyticsDetailSkeleton } from "@/components/analytics/AnalyticsDetailSkeleton";
 import { canAccessAnalyticsPage, type AnalyticsAccess } from "@/lib/analytics-access";
+import { versyAnalyticsPlatformFilter } from "@/lib/versy-analytics-platform";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
 type AppId = "glow" | "poky" | "versy";
@@ -22,6 +23,7 @@ export default function AnalyticsLoading({ access }: { access: AnalyticsAccess }
   const app = searchParams.get("app");
   const site = searchParams.get("site");
   const appId = app === "glow" || app === "poky" || app === "versy" ? app as AppId : null;
+  const platform = appId === "versy" ? versyAnalyticsPlatformFilter(searchParams.get("platform")) : "ios";
   const siteId = site === "appsprint" || site === "postback" || site === "grewit" || site === "community"
     ? site as WebsiteSite
     : null;
@@ -36,7 +38,7 @@ export default function AnalyticsLoading({ access }: { access: AnalyticsAccess }
     >
       <div className="mx-auto w-full min-w-0 max-w-6xl">
         {appId ? (
-          <AnalyticsDetailSkeleton period={period} app={appId} />
+          <AnalyticsDetailSkeleton period={period} app={appId} platform={platform} />
         ) : siteId ? (
           <AnalyticsDetailSkeleton period={period} site={siteId} />
         ) : (
