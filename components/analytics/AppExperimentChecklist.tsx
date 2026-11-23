@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Check, Pencil, X } from "lucide-react";
 import type { AnalyticsAppId } from "@/lib/analytics-access";
+import type { VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
 
 type Item = { id: string; text: string; completed: boolean };
 
-export default function AppExperimentChecklist({ appId }: { appId: AnalyticsAppId }) {
+export default function AppExperimentChecklist({ appId, platform = "ios" }: { appId: AnalyticsAppId; platform?: VersyAnalyticsPlatform }) {
   const [items, setItems] = useState<Item[]>([]);
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
@@ -16,7 +17,7 @@ export default function AppExperimentChecklist({ appId }: { appId: AnalyticsAppI
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
   const [saved, setSaved] = useState(false);
-  const endpoint = `/api/analytics/experiments?appId=${appId}`;
+  const endpoint = `/api/analytics/experiments?appId=${appId}${platform === "android" ? "&platform=android" : ""}`;
 
   useEffect(() => {
     const controller = new AbortController();

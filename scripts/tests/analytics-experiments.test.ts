@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { NextRequest } from "next/server";
 import * as accessHelpers from "../../lib/analytics-access";
+import * as platformHelpers from "../../lib/versy-analytics-platform";
 import { loadTestModule } from "./helpers/load-test-module";
 
 type Handler = (request: NextRequest) => Promise<Response>;
@@ -10,6 +11,7 @@ function fixture(signedIn = true, failing = false) {
   const calls: string[] = [];
   const route = loadTestModule<Record<string, Handler>>("app/api/analytics/experiments/route.ts", {
     "@/lib/analytics-access": accessHelpers,
+    "@/lib/versy-analytics-platform": platformHelpers,
     "@/lib/analytics-session": { getAnalyticsViewer: async () => signedIn ? { name: "viewer", appIds: ["poky"], canManage: false } : null },
     "@/lib/analytics-experiments": {
       listExperiments: async (appId: string) => { calls.push(appId); if (failing) throw new Error("DB unavailable"); return items; },

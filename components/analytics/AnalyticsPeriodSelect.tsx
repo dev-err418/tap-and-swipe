@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AnalyticsThemeSetting } from "./AnalyticsTheme";
+import type { VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
 import {
   Select,
   SelectContent,
@@ -31,10 +32,12 @@ export default function AnalyticsPeriodSelect({
   period,
   site,
   app,
+  platform,
 }: {
   period: Period;
   site?: "appsprint" | "postback" | "grewit" | "community";
   app?: "glow" | "poky" | "versy";
+  platform?: VersyAnalyticsPlatform;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -52,6 +55,7 @@ export default function AnalyticsPeriodSelect({
           if (nextPeriod !== "week") params.set("period", nextPeriod);
           if (site) params.set("site", site);
           if (app) params.set("app", app);
+          if (app === "versy" && platform === "android") params.set("platform", platform);
           const query = params.toString();
           startTransition(() => {
             router.push(`/analytics${query ? `?${query}` : ""}`);

@@ -1,4 +1,7 @@
 import { createOfferAccumulator, hasVersyProducts, offerProductResolver, type WithOfferBreakdown } from "./versy-offer-breakdown";
+import { VERSY_ANDROID_ATTRIBUTE_KEYS, VERSY_ANDROID_RECOVERY_EXPERIMENT, VERSY_ANDROID_YEARLY_EXPERIMENT } from "./versy-android-experiments";
+import { VERSY_ANDROID_INSTALL_VERSION, type VersyAnalyticsPlatform } from "./versy-analytics-platform";
+import { buildVersyAndroidJourney } from "./versy-android-journey";
 import { VERSY_ONBOARDING_REPORT, VERSY_ONBOARDING_V2_VARIANTS } from "./versy-onboarding-routes";
 import { versyNoteExperiment, VERSY_NOTE_ATTRIBUTE } from "./versy-paywall-note";
 import { VERSY_SCROLL_ACCESS_ATTRIBUTE, VERSY_SCROLL_ONBOARDING_EXPERIMENT } from "./versy-scroll-paywall-access";
@@ -208,6 +211,7 @@ const SUPERWALL_ORGANIZATION_ID = 16256;
 const POKY_APPLICATION_ID = 49771;
 const VERSY_SUPERWALL_ORGANIZATION_ID = 25476;
 const VERSY_SUPERWALL_APPLICATION_ID = 51393;
+const VERSY_ANDROID_APPLICATION_ID = 58115;
 const GLOW_SUPERWALL_ORGANIZATION_ID = 27020;
 const GLOW_SUPERWALL_APPLICATION_ID = 54736;
 const MAX_QUERY_CONCURRENCY = 6;
@@ -237,6 +241,7 @@ type SuperwallAppConfig = {
   organizationId: number;
   applicationId: number;
   apiKey: string;
+  platform?: VersyAnalyticsPlatform;
 };
 
 type InstallRow = {
@@ -319,13 +324,13 @@ const queryWaiters: Array<() => void> = [];
 export async function getMobileAppById(
   period: Period,
   id: MobileAppAnalytics["id"],
-  options?: { sessions?: boolean; includeReports?: boolean },
+  options?: { sessions?: boolean; includeReports?: boolean; platform?: VersyAnalyticsPlatform },
 ) {
   const sessions = options?.sessions !== false;
   const includeReports = options?.includeReports !== false;
   if (id === "poky") return getPokyAnalytics(period, true, false, includeReports);
   if (id === "glow") return getGlowAnalytics(period, true, sessions, includeReports);
-  return getVersyAnalytics(period, true, sessions, includeReports);
+  return getVersyAnalytics(period, true, sessions, includeReports, options?.platform);
 }
 
 export async function getMobileAppSummary(period: Period, id: MobileAppAnalytics["id"]) {
@@ -385,7 +390,8 @@ async function getPokyAnalytics(period: Period, includeCountries = false, sessio
   );
 }
 
-async function getVersyAnalytics(period: Period, includeCountries = false, sessions = true, includeReports = true): Promise<MobileAppAnalytics> {
+async function getVersyAnalytics(period: Period, includeCountries = false, sessions = true, includeReports = true,
+  platform: VersyAnalyticsPlatform = "ios"): Promise<MobileAppAnalytics> {
   const apiKey = process.env.SUPERWALL_VERSY_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_VERSY_API_KEY is not configured");
 
@@ -396,8 +402,9 @@ async function getVersyAnalytics(period: Period, includeCountries = false, sessi
       name: "Versy",
       iconUrl: VERSY_ICON_URL,
       organizationId: VERSY_SUPERWALL_ORGANIZATION_ID,
-      applicationId: VERSY_SUPERWALL_APPLICATION_ID,
+      applicationId: platform === "android" ? VERSY_ANDROID_APPLICATION_ID : VERSY_SUPERWALL_APPLICATION_ID,
       apiKey,
+      platform,
     },
     includeCountries,
     sessions,
@@ -414,12 +421,13 @@ async function getSuperwallAppAnalytics(
 ): Promise<MobileAppAnalytics> {
   const versyDetail = includeCountries && app.id === "versy";
   const cacheKey = `${app.id}:${period}:${includeCountries ? "detail" : "list"}${sessions ? "" : ":nosessions"}${includeReports ? "" : ":data"}:install-v${experimentMinimumInstallVersion(app.id) ?? "all"}${app.id === "poky" ? ":offer-merged-flows-us-hp-20261025" : app.id === "versy" ? ":yearly-recovery-prices-20261118" : ":yearly-trial3-20261023"}:${app.id === "poky" ? "keyword-cohorts-v2" : "keyword-cohorts-v3-matched-roas"}${versyDetail ? ":note-languages-v2:meta-onboarding" : ""}${includeCountries ? ":monthly-country-picker-v1" : ""}`;
-  return analyticsSnapshot(`mobile:${cacheKey}`, () =>
+  return analyticsSnapshot(`mobile:${app.platform === "android" ? "android:" : ""}${cacheKey}`, () =>
     loadSuperwallAppAnalytics(period, app, includeCountries, sessions, includeReports), {
     project: includeReports ? undefined : compactAppDataView,
+    maxAgeMs: app.platform === "android" ? 90_000 : undefined,
     // Only the keyword ROAS definition changed; the rest of these saved reports is compatible.
     // The projection removes old estimates until the scheduler supplies a matched-period basis.
-    fallbackKeys: !includeCountries && !includeReports && app.id !== "poky"
+    fallbackKeys: app.platform !== "android" && !includeCountries && !includeReports && app.id !== "poky"
       ? [`mobile:${cacheKey.replace("keyword-cohorts-v3-matched-roas", "keyword-cohorts-v2")}`] : [],
   });
 }
@@ -439,7 +447,8 @@ async function loadSuperwallAppAnalytics(
   const endMs = before.getTime();
   const keywordStartMs = keywordUtcStart(startMs);
   const keywordEndMs = Math.min(Date.now(), keywordUtcStart(endMs + DAY_MS - 1));
-  const minimumInstallVersion = experimentMinimumInstallVersion(app.id);
+  const android = app.platform === "android";
+  const minimumInstallVersion = android ? VERSY_ANDROID_INSTALL_VERSION : experimentMinimumInstallVersion(app.id);
   const comparisonStartMs = minimumInstallVersion ? 0 : startMs;
   const comparisonEndMs = minimumInstallVersion ? Date.now() : endMs;
 
@@ -500,7 +509,7 @@ async function loadSuperwallAppAnalytics(
       app.apiKey,
     ),
     includeCountries ? loadAppFacts(app, start, end, startMs, endMs, sessions, includeReports) : Promise.resolve(null),
-    includeCountries && includeReports && (app.id === "glow" || app.id === "poky" || app.id === "versy")
+    includeCountries && includeReports && !android
       ? loadNativePaywalls(
           <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
           app.applicationId,
@@ -511,7 +520,7 @@ async function loadSuperwallAppAnalytics(
           minimumInstallVersion,
         )
       : Promise.resolve(null),
-    includeCountries
+    includeCountries && !android
       ? loadUserJourney(
           <T,>(sql: string) => querySuperwall<T>(sql, app.organizationId, app.apiKey),
           app.id,
@@ -529,7 +538,7 @@ async function loadSuperwallAppAnalytics(
     app.id === "versy" ? querySuperwall<{ product: string; proceeds: number | string; subscriptions: number | string }>(
       offerQuery, app.organizationId, app.apiKey,
     ) : Promise.resolve(null),
-    includeCountries && app.id !== "poky" ? loadAppFacts(app, clickhouseDate(new Date(keywordStartMs)),
+    includeCountries && app.id !== "poky" && !android ? loadAppFacts(app, clickhouseDate(new Date(keywordStartMs)),
       clickhouseDate(new Date(keywordEndMs)), keywordStartMs, keywordEndMs, false, false) : Promise.resolve(null),
   ]);
 
@@ -576,22 +585,37 @@ async function loadSuperwallAppAnalytics(
   const includePlanCards = Boolean(facts) && app.id !== "glow";
   const plans = includePlanCards && facts ? plansFromFacts(facts) : [];
   const retention = includePlanCards && facts ? retentionFromFacts(facts) : [];
+  const yearlyPriceComparison = app.id === "versy" && comparisonFacts
+    ? buildVersyYearlyPriceComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonEndMs, app.platform) : null;
   const experiments = comparisonFacts && includeReports
     ? app.id === "glow"
       ? glowExperiments(comparisonFacts)
       : app.id === "poky"
         ? pokyExperiments(comparisonFacts)
-        : versyExperiments(comparisonFacts)
+        : android && yearlyPriceComparison ? [
+          versyNoteExperiment(comparisonFacts, comparisonEndMs, "android"),
+          ...versyAndroidPriceExperiments(yearlyPriceComparison),
+        ] : versyExperiments(comparisonFacts)
     : [];
   const trialCancelTiming = app.id !== "poky" && comparisonFacts && minimumInstallVersion
     ? installCohortTrialSurvival(comparisonFacts.installs, comparisonFacts.events, minimumInstallVersion, comparisonEndMs) : null;
 
-  const journeyResponse = journeyResult.status === "fulfilled" ? journeyResult.value : null;
+  const androidJourney = android && comparisonFacts && includeCountries ? await (async () => {
+    try {
+      const { fetchVersyAndroidJourneyScreens } = await import("./versy-product-queries");
+      const screens = comparisonFacts.installs.length ? await fetchVersyAndroidJourneyScreens(new Date(comparisonFacts.startMs), new Date(comparisonEndMs)) : new Map();
+      return buildVersyAndroidJourney(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, screens, comparisonEndMs);
+    } catch (error) {
+      logAnalytics("tap_and_swipe.versy_android_journey_failed", { error: error instanceof Error ? error.message : String(error) });
+      return { status: "unavailable" as const, title: "User journey", variants: [], countries: {}, note: "Android onboarding events could not be loaded from PostHog." };
+    }
+  })() : null;
+  const journeyResponse = androidJourney ?? (journeyResult.status === "fulfilled" ? journeyResult.value : null);
   const journeyCountries = journeyResponse?.countries;
   const journeyBase: UserJourneyReport | null = journeyResponse ? { status: journeyResponse.status, title: journeyResponse.title,
-    variants: journeyResponse.variants, versions: journeyResponse.versions, note: journeyResponse.note } : null;
+    variants: journeyResponse.variants, versions: "versions" in journeyResponse ? journeyResponse.versions : undefined, note: journeyResponse.note } : null;
   let journey = withJourneyInstallVersions(journeyBase, comparisonFacts?.installs ?? []);
-  if (journey && comparisonFacts) journey = withJourneyConversions(journey, app.id, comparisonFacts.installs, comparisonFacts.events,
+  if (journey && comparisonFacts && !android) journey = withJourneyConversions(journey, app.id, comparisonFacts.installs, comparisonFacts.events,
     comparisonFacts.attributes, comparisonStartMs, comparisonEndMs, comparisonEndMs);
   const conversions = comparisonFacts ? versionCohortConversions(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonStartMs, comparisonEndMs, comparisonEndMs) : null;
   if (journey?.versions && conversions) journey.versions = journey.versions.map((cohort) => ({
@@ -659,18 +683,35 @@ async function loadSuperwallAppAnalytics(
     paywallCohortComparisons: app.id === "glow" && comparisonFacts
       ? buildGlowPaywallCohortComparisons(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes,
           comparisonStartMs, comparisonEndMs, comparisonEndMs) : null,
-    yearlyPriceComparison: app.id === "versy" && comparisonFacts
-      ? buildVersyYearlyPriceComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonEndMs) : null,
+    yearlyPriceComparison,
     versyPaywallComparison: app.id === "versy" && comparisonFacts
-      ? buildVersyPaywallComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonEndMs) : null,
+      ? buildVersyPaywallComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes, comparisonEndMs, app.platform) : null,
     paywallFlowComparison: app.id === "poky" && comparisonFacts
       ? buildPokyPaywallFlowComparison(comparisonFacts.installs, comparisonFacts.events, comparisonFacts.attributes,
           comparisonStartMs, comparisonEndMs, comparisonEndMs) : null,
     countryComparisons: comparisonFacts ? buildAppCountryComparisons({ appId: app.id, countries: pickerCountries, installs: comparisonFacts.installs,
       events: comparisonFacts.events, attributes: comparisonFacts.attributes, asOf: comparisonEndMs,
-      journey: journeyBase, journeyCountries }) : undefined,
+      journey: journeyBase, journeyCountries, platform: app.platform }) : undefined,
     appleAdsKeywords,
   };
+}
+
+function versyAndroidPriceExperiments(report: VersyYearlyPriceComparison): MobileAppExperiment[] {
+  return ([
+    { id: VERSY_ANDROID_YEARLY_EXPERIMENT, title: "Yearly prices", subtitle: "Equal thirds · seven-day trials", comparison: report.current, showTrials: true },
+    { id: VERSY_ANDROID_RECOVERY_EXPERIMENT, title: "Recovery prices", subtitle: "50/50 · independent · no trial", comparison: report.recovery, showTrials: false },
+  ]).map(({ id, title, subtitle, comparison, showTrials }) => {
+    const incomplete = comparison.rows.some(({ conversions }) => conversions?.global.missingMoney || conversions?.global.missingProceeds || conversions?.global.missingInstallMoney);
+    return { id, title, subtitle, showTrials, showDownloadPaid: true, randomized: true, scoreMetrics: ["appu", "download_paid"],
+      unavailableReason: incomplete ? "Some transaction amounts or identities are missing." : undefined,
+      variants: incomplete ? [] : comparison.rows.map((row) => {
+        const metric = row.conversions?.global;
+        return { ...emptyExperimentVariant(row.version, comparison.labels[row.version]),
+          installs: row.installs, users: row.installs, trials: metric?.trials ?? 0, converted: metric?.paid ?? 0,
+          paid: metric?.installPaid ?? 0, proceeds: metric?.proceeds ?? 0, proceedsVariance: metric?.proceedsVariance ?? undefined,
+          offerBreakdown: metric?.offerBreakdown, realizedAppu: metric?.realizedAppu };
+      }) };
+  });
 }
 
 
@@ -698,8 +739,9 @@ async function loadAppFacts(
   includeSessions: boolean,
   includeReports: boolean,
 ): Promise<AppFacts> {
-  const environmentKey = app.id === "versy" ? "versy_tracking_environment" : app.id === "poky" ? "poky_tracking_environment" : null;
-  const keys = [...new Set([...(includeReports ? attributeKeysFor(app.id) : ACQUISITION_ATTRIBUTE_KEYS), ...journeyCohortAttributeKeys(app.id),
+  const android = app.platform === "android";
+  const environmentKey = android ? "build_environment" : app.id === "versy" ? "versy_tracking_environment" : app.id === "poky" ? "poky_tracking_environment" : null;
+  const keys = android ? VERSY_ANDROID_ATTRIBUTE_KEYS : [...new Set([...(includeReports ? attributeKeysFor(app.id) : ACQUISITION_ATTRIBUTE_KEYS), ...journeyCohortAttributeKeys(app.id),
     ...(app.id === "glow" || app.id === "versy" ? APPLE_ADS_KEYWORD_ATTRIBUTE_KEYS : []),
     ...(app.id === "glow" ? GLOW_PAYWALL_COHORT_KEYS : []), ...(app.id === "versy" ? VERSY_ATTRIBUTE_KEYS : []),
     ...(app.id === "poky" ? POKY_TRIAL_OFFER_ATTRIBUTE_KEYS : []),
@@ -708,7 +750,7 @@ async function loadAppFacts(
   const historyStartMs = app.id === "poky" ? pokyExperimentStart(0) - 30 * DAY_MS
     : app.id === "glow" ? GLOW_SUPERWALL_HISTORY_START_MS : startMs;
   const fetchStart = hasMigrationHistory ? clickhouseDate(new Date(Math.min(startMs, historyStartMs))) : start;
-  const minimumInstallVersion = experimentMinimumInstallVersion(app.id);
+  const minimumInstallVersion = android ? VERSY_ANDROID_INSTALL_VERSION : experimentMinimumInstallVersion(app.id);
   const sessionRange = sessionWindow(startMs, endMs);
   const fetchSessions = includeSessions && (app.id === "poky" || app.id === "versy");
   const pickerAsOf = Date.now();

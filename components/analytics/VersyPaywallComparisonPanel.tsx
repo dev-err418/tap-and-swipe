@@ -5,7 +5,9 @@ import { DashboardCard } from "./DashboardCard";
 import { JourneyVersionComparison } from "./UserJourneyFunnel";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 import type { VersyPaywallComparison } from "@/lib/versy-paywall-comparison";
-export default function VersyPaywallComparisonPanel({ report }: { report: VersyPaywallComparison | null }) {
+export default function VersyPaywallComparisonPanel({ report, cohortLabel = experimentCohortLabel("versy") }: {
+  report: VersyPaywallComparison | null; cohortLabel?: string | null;
+}) {
   return <>
     {report?.scrollAccess && <DashboardCard title="Scroll paywall · 50% hard / 50% current soft" contentClassName="pt-0">
       {report.scrollAccess.overall.status === "empty" && <p className="pb-3 text-sm text-muted-foreground">Waiting for the next app release and new enrollments.</p>}
@@ -16,7 +18,7 @@ export default function VersyPaywallComparisonPanel({ report }: { report: VersyP
         allUsersOnly showInstallPaid showRefundRate />
     </DashboardCard>}
     <DashboardCard title="Onboarding paywalls" contentClassName="pt-0"
-    action={<span className="text-xs text-muted-foreground">{experimentCohortLabel("versy")}</span>}>
+    action={<span className="text-xs text-muted-foreground">{cohortLabel}</span>}>
     {!report || report.status === "unavailable"
       ? <p role="status" className="py-2 text-sm text-muted-foreground">Paywall comparison is unavailable. Refresh to retry.</p>
       : <>

@@ -5,10 +5,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { versyOfferRows, type OfferBreakdown } from "@/lib/versy-offer-breakdown";
 import type { WithRealizedAppu } from "@/lib/realized-appu";
 import RealizedAppu from "./RealizedAppu";
+import type { VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
 
-const VersyOffersContext = createContext(false);
-export function VersyOffersScope({ enabled, children }: { enabled: boolean; children: ReactNode }) {
-  return <VersyOffersContext.Provider value={enabled}>{children}</VersyOffersContext.Provider>;
+const VersyOffersContext = createContext<VersyAnalyticsPlatform | null>(null);
+export function VersyOffersScope({ enabled, platform = "ios", children }: { enabled: boolean; platform?: VersyAnalyticsPlatform; children: ReactNode }) {
+  return <VersyOffersContext.Provider value={enabled ? platform : null}>{children}</VersyOffersContext.Provider>;
 }
 type Props = WithRealizedAppu & { breakdown?: OfferBreakdown; users: number; proceeds: number; available?: boolean; enabled?: boolean; inline?: boolean };
 const money = (value: number) => value.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -17,9 +18,9 @@ const colors = ["#2563eb", "#f59e0b", "#8b5cf6", "#a1a1aa"];
 
 /** Same denominator as the adjacent APPU. Static mode also fits chart tooltips. */
 export default function VersyOfferBreakdown({ breakdown, realizedAppu, users, proceeds, available = true, enabled, inline = false }: Props) {
-  const inVersy = useContext(VersyOffersContext);
-  if (!(enabled ?? inVersy)) return null;
-  const rows = versyOfferRows(breakdown);
+  const platform = useContext(VersyOffersContext);
+  if (!(enabled ?? platform)) return null;
+  const rows = versyOfferRows(breakdown, platform ?? "ios");
   const complete = available && Number.isFinite(proceeds) && rows.every((row) => !row.missingMoney)
     && Math.abs(rows.reduce((sum, row) => sum + row.proceeds, 0) - proceeds) < 0.02;
   if (!complete) return <span className="mt-1 block text-[10px] font-normal text-muted-foreground">Offer mix unavailable</span>;
@@ -38,7 +39,9 @@ export default function VersyOfferBreakdown({ breakdown, realizedAppu, users, pr
       </DialogHeader>
       <OfferMixTable rows={rows} users={users} proceeds={proceeds} />
       <p className="text-xs leading-relaxed text-muted-foreground">Counts are paid subscriptions per product. Renewals add proceeds without adding subscriptions; free trials are excluded. APPU contribution divides each offer’s net proceeds by all {count(users)} users, including non-payers. Contributions add up to total APPU before rounding. Refunds reduce proceeds.</p>
-      <p className="text-xs leading-relaxed text-muted-foreground">Prices are US reference prices. Recovery / daily gift uses the $16.99 discounted yearly product. Retired products, including the older $17.99 yearly plan, stay in Other / historical. This is a purchased-product breakdown; promotions on the same product remain with that product.</p>
+      <p className="text-xs leading-relaxed text-muted-foreground">{platform === "android"
+        ? "Offers are grouped by the purchased Google Play base plan. Pricing varies by country."
+        : "Prices are US reference prices. Recovery / daily gift uses the $16.99 discounted yearly product. Retired products, including the older $17.99 yearly plan, stay in Other / historical. This is a purchased-product breakdown; promotions on the same product remain with that product."}</p>
     </DialogContent>
   </Dialog>;
 }

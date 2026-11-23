@@ -41,9 +41,11 @@ import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
 import AppleAdsKeywordTable from "./AppleAdsKeywordTable";
 import type { AppleAdsKeywordReport } from "@/lib/apple-ads-keyword-analytics";
 import DeferredCountryBreakdown, { type CountryBreakdownData } from "./DeferredCountryBreakdown";
+import { VERSY_ANDROID_INSTALL_VERSION, type VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
 
 export default function AppOverviewPanel({
   appId,
+  platform = "ios",
   windowLabel,
   trend,
   overviewCohorts = null,
@@ -65,6 +67,7 @@ export default function AppOverviewPanel({
   headerEnd,
 }: {
   appId: "glow" | "poky" | "versy";
+  platform?: VersyAnalyticsPlatform;
   installs: number;
   windowLabel: string;
   trend: FunnelTrendPoint[];
@@ -120,7 +123,7 @@ export default function AppOverviewPanel({
   const selectedCountries = countryBreakdown
     ? countryBreakdown.countries.filter((row) => country === "all" || row.country === country)
     : markets ? market?.dataCountries ?? [] : dataCountries;
-  const comparisonLabel = experimentCohortLabel(appId);
+  const comparisonLabel = platform === "android" ? `Installed on v${VERSY_ANDROID_INSTALL_VERSION}+` : experimentCohortLabel(appId);
   const selectedTrialTiming = country !== "all" ? countrySlice?.trialCancelTiming
     : comparisonLabel ? trialCancelTiming : markets ? market?.trialCancelTiming : trialCancelTiming;
   const selectedJourney = country === "all" ? userJourney : countrySlice?.userJourney ?? null;
@@ -145,7 +148,7 @@ export default function AppOverviewPanel({
         </div>
       </div> : null;
   return (
-    <VersyOffersScope enabled={appId === "versy"}><section className="relative w-full min-w-0 space-y-4">
+    <VersyOffersScope enabled={appId === "versy"} platform={platform}><section className="relative w-full min-w-0 space-y-4">
       {headerStart || headerEnd ? <span ref={stickyAnchorRef} aria-hidden="true" className="pointer-events-none absolute top-0 h-px w-px" /> : null}
       {headerStart || headerEnd ? <div ref={headerRef} className={APP_ANALYTICS_HEADER_CLASS} data-analytics-header data-stuck={isHeaderSticky}>
         <span aria-hidden="true" data-header-shadow className={cn("pointer-events-none absolute inset-0 rounded-[inherit] shadow-[0_4px_12px_rgba(0,0,0,0.05),0_12px_32px_rgba(0,0,0,0.08)] transition-opacity duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none", isHeaderSticky ? "opacity-100" : "opacity-0")} />
@@ -153,7 +156,7 @@ export default function AppOverviewPanel({
         {countryPicker ?? <div />}
         <div className="sm:justify-self-end">{headerEnd}</div>
       </div> : countryPicker}
-      <AppExperimentChecklist key={appId} appId={appId} />
+      <AppExperimentChecklist key={`${appId}:${platform}`} appId={appId} platform={platform} />
       <div className="w-full min-w-0 max-w-full overflow-visible rounded-[28px] border-0 bg-card shadow-none">
         <div className="min-w-0 border-b border-foreground/[0.08]">
           <div className="grid grid-cols-3 divide-x divide-black/[0.08]">
@@ -163,7 +166,7 @@ export default function AppOverviewPanel({
           </div>
         </div>
         <div className="min-w-0 p-4 sm:p-6">
-          <AppNotesChart appId={appId} data={trend} cohorts={selectedOverview} installLabel={installLabel} />
+          <AppNotesChart key={`${appId}:${platform}`} appId={appId} platform={platform} data={trend} cohorts={selectedOverview} installLabel={installLabel} />
         </div>
       </div>
 
@@ -172,20 +175,20 @@ export default function AppOverviewPanel({
         className="space-y-4"
       >
         {markets ? <DashboardCard title="App versions" contentClassName="pt-0">
-          <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
+          <JourneyVersionComparison splitAdSources={platform === "ios" && (appId === "glow" || appId === "versy")} showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
         </DashboardCard> : userJourney?.versions?.length ? <DashboardCard title="App versions" contentClassName="pt-0">
-          <JourneyVersionComparison splitAdSources={appId === "glow" || appId === "versy"} showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
+          <JourneyVersionComparison splitAdSources={platform === "ios" && (appId === "glow" || appId === "versy")} showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
         </DashboardCard> : null}
         {appId === "versy" && metaRoasPromise ? <Suspense fallback={<DashboardCard title="Meta ROAS"><p role="status" className="text-sm text-muted-foreground">Loading daily campaign performance…</p></DashboardCard>}>
           <DeferredVersyMetaRoas report={metaRoasPromise} country={country} />
         </Suspense> : null}
         <UserJourneyFunnel key={`${appId}:${country}`} appId={appId} report={selectedJourney} windowLabel={windowLabel} funnelOnly />
         {appId === "glow" ? <GlowPaywallCohortTables key={country} report={selectedGlowPaywalls} windowLabel={windowLabel} /> : null}
-        {appId === "versy" ? <VersyYearlyPriceTable key={country} report={selectedYearlyPrices} /> : null}
-        {appId === "versy" ? <VersyPaywallComparisonPanel key={`paywalls:${country}`} report={selectedVersyPaywalls} /> : null}
+        {appId === "versy" ? <VersyYearlyPriceTable key={country} report={selectedYearlyPrices} cohortLabel={comparisonLabel} /> : null}
+        {appId === "versy" ? <VersyPaywallComparisonPanel key={`paywalls:${country}`} report={selectedVersyPaywalls} cohortLabel={comparisonLabel} /> : null}
         {appId === "poky" ? <PokyPaywallFlowTable key={country} report={selectedPokyPaywalls} windowLabel={windowLabel} /> : null}
         {selectedTrialTiming ? <TrialCancelChart timing={selectedTrialTiming} windowLabel={comparisonLabel ?? windowLabel} /> : null}
-        {appId === "glow" || appId === "versy" ? <AppleAdsKeywordTable report={appleAdsKeywords} country={country} windowLabel={windowLabel} /> : null}
+        {platform === "ios" && (appId === "glow" || appId === "versy") ? <AppleAdsKeywordTable report={appleAdsKeywords} country={country} windowLabel={windowLabel} /> : null}
         {countryBreakdownPromise ? <Suspense fallback={<p role="status" className="py-6 text-sm text-muted-foreground">Loading country comparison…</p>}>
           <DeferredCountryBreakdown report={countryBreakdownPromise} country={country} />
         </Suspense> : <div className="grid min-w-0 gap-4 xl:grid-cols-2">

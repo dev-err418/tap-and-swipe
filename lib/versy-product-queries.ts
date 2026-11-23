@@ -2,6 +2,8 @@ import { analyticsSnapshot } from "./analytics-snapshot";
 import "server-only";
 import { createHash } from "node:crypto";
 import { appAnalyticsPeriodRange } from "./app-analytics-time";
+import { versyClientEvents, versyStoreEvents, type VersyAnalyticsPlatform } from "./versy-analytics-platform";
+import type { AndroidJourneyEvent } from "./versy-android-journey";
 import {
   VERSY_FEATURES,
   cancellationJourneys,
@@ -49,7 +51,7 @@ const MAX_USER_EVENTS = 250;
 const MAX_TRIAL_STARTS = 300;
 const MAX_TRIAL_ACTIVITY = 15_000;
 const USER_EVENTS = [...new Set([
-  ...journeyEvents(), "app_state_snapshot", "notification_permission_requested", "widget_prompt_action",
+  ...journeyEvents(), "$screen", "app_state_snapshot", "notification_permission_requested", "widget_prompt_action",
   "widget_removed_detected", "quote_reading_session", "prayer_session_ended", "premium_status_changed",
   "paywall_reached", "paywall_dismissed", "paywall_purchase_attempted", "paywall_purchase_result",
   "sw_trial_cancelled", "sw_trial_expired", "sw_subscription_cancelled", "sw_subscription_start",
@@ -118,7 +120,26 @@ async function queryPostHog(sql: string, projectId: string, key: string): Promis
   return (data as { results: unknown[][] }).results;
 }
 
-export async function getVersyProductReport(period: VersyProductPeriod): Promise<VersyProductReport> {
+export async function fetchVersyAndroidJourneyScreens(start: Date, end: Date): Promise<Map<string, AndroidJourneyEvent[]>> {
+  const key = process.env.POSTHOG_VERSY_READ_KEY?.trim();
+  const projectId = process.env.POSTHOG_VERSY_PROJECT_ID?.trim();
+  if (!key || !projectId || !/^\d+$/.test(projectId)) throw new Error("Versy PostHog read access is not configured");
+  const limit = 30_000;
+  const rows = await queryPostHog(`SELECT distinct_id, groupArray(tuple(screen, variant, seenAt)) FROM (
+    SELECT distinct_id, toString(properties.$screen_name) AS screen, toString(properties.variant) AS variant,
+      max(toUnixTimestamp64Milli(timestamp)) AS seenAt
+    FROM events WHERE ${timeFilter(start, end)} AND ${versyClientEvents("android")} AND event = '$screen'
+      AND startsWith(toString(properties.$screen_name), 'onboarding_')
+    GROUP BY distinct_id, screen, variant
+  ) GROUP BY distinct_id LIMIT ${limit + 1}`, projectId, key);
+  if (rows.length > limit) throw new Error("Android onboarding event cohort exceeds the reporting limit");
+  return new Map(rows.flatMap(([id, entries]) => typeof id === "string" && Array.isArray(entries) ? [[id,
+    entries.flatMap(([screen, variant, seenAt]) => typeof screen === "string" && typeof variant === "string" && Number.isFinite(Number(seenAt))
+      ? [{ screen, variant, seenAt: Number(seenAt) }] : []),
+  ]] : []));
+}
+
+export async function getVersyProductReport(period: VersyProductPeriod, platform: VersyAnalyticsPlatform = "ios"): Promise<VersyProductReport> {
   const window = appAnalyticsPeriodRange(period);
   const start = new Date(Math.max(window.since.getTime(), FIRST_INSTRUMENTED_DAY.getTime()));
   const end = window.before;
@@ -127,12 +148,12 @@ export async function getVersyProductReport(period: VersyProductPeriod): Promise
   if (!key || !projectId || !/^\d+$/.test(projectId)) {
     return emptyVersyProductReport("setup_required", start, end, "Versy product analytics is waiting for PostHog read access.");
   }
-  return analyticsSnapshot(`versy-product:${period}:${projectId}`, () =>
-    loadVersyProductReport(start, end, projectId, key));
+  return analyticsSnapshot(`versy-product:${platform}:${period}:${projectId}`, () =>
+    loadVersyProductReport(start, end, projectId, key, platform), { maxAgeMs: 90_000 });
 }
 
 /** Exact Superwall-ID lookup for an authenticated owner or trusted agent. */
-export async function getVersyUserJourney(period: VersyProductPeriod, userId: string): Promise<VersyUserJourneyReport> {
+export async function getVersyUserJourney(period: VersyProductPeriod, userId: string, platform: VersyAnalyticsPlatform = "ios"): Promise<VersyUserJourneyReport> {
   const window = appAnalyticsPeriodRange(period);
   const start = new Date(Math.max(window.since.getTime(), FIRST_INSTRUMENTED_DAY.getTime()));
   const end = window.before;
@@ -151,7 +172,7 @@ export async function getVersyUserJourney(period: VersyProductPeriod, userId: st
   try {
     const [rows, premiumSnapshots, totals] = await Promise.all([
       queryPostHog(`SELECT event, toUnixTimestamp(timestamp),
-        toString(properties.screen), toString(properties.category_id), toString(properties.source),
+        coalesce(toString(properties.screen), toString(properties.$screen_name)), toString(properties.category_id), toString(properties.source),
         toString(properties.is_premium), toString(properties.has_widget),
         toString(properties.notification_permission), toString(properties.selected_categories),
         toString(properties.cancelReason), toString(properties.inferred_source),
@@ -162,18 +183,18 @@ export async function getVersyUserJourney(period: VersyProductPeriod, userId: st
         toString(properties.reason)
       FROM events WHERE ${timeFilter(start, end)} AND distinct_id = ${sqlQuote(userId)}
         AND event IN (${USER_EVENTS.map(sqlQuote).join(", ")})
-        AND ((startsWith(event, 'sw_') AND lower(toString(properties.environment)) = 'production')
-          OR properties.app_environment = 'production')
+        AND ((startsWith(event, 'sw_') AND ${versyStoreEvents(platform)})
+          OR (NOT startsWith(event, 'sw_') AND ${versyClientEvents(platform)}))
       ORDER BY timestamp DESC LIMIT ${MAX_USER_EVENTS + 1}`, projectId, key),
       queryPostHog(`SELECT toString(properties.is_premium), toUnixTimestamp(timestamp),
           toString(properties.access_phase)
         FROM events WHERE timestamp >= toDateTime('${sqlTime(FIRST_INSTRUMENTED_DAY)}', 'UTC')
           AND timestamp < toDateTime('${sqlTime(end)}', 'UTC') AND distinct_id = ${sqlQuote(userId)}
-          AND event = 'app_state_snapshot' AND properties.app_environment = 'production'
+          AND event = 'app_state_snapshot' AND ${versyClientEvents(platform)}
         ORDER BY timestamp DESC LIMIT 1`, projectId, key),
       queryPostHog(`SELECT event, count()
         FROM events WHERE ${timeFilter(start, end)} AND distinct_id = ${sqlQuote(userId)}
-          AND properties.app_environment = 'production'
+          AND ${versyClientEvents(platform)}
           AND event IN ('quote_viewed', 'quote_swiped', 'quote_liked',
             'prayer_session_started', 'app_opened_from_widget', 'app_opened_from_notification')
         GROUP BY event LIMIT 6`, projectId, key),
@@ -213,10 +234,11 @@ export async function getVersyUserJourney(period: VersyProductPeriod, userId: st
   }
 }
 
-async function loadVersyProductReport(start: Date, end: Date, projectId: string, key: string): Promise<VersyProductReport> {
+async function loadVersyProductReport(start: Date, end: Date, projectId: string, key: string, platform: VersyAnalyticsPlatform): Promise<VersyProductReport> {
   const report = emptyVersyProductReport("empty", start, end);
   const window = timeFilter(start, end);
-  const production = "properties.app_environment = 'production'";
+  const production = versyClientEvents(platform);
+  const storeProduction = versyStoreEvents(platform);
   try {
     const [engagementTotals, stateSnapshots, widgetEvents, features, screens, categories, premiumUse, feedback, recentCancels, prefetchedTrialStarts] = await Promise.all([
       queryPostHog(`SELECT
@@ -281,10 +303,10 @@ async function loadVersyProductReport(start: Date, end: Date, projectId: string,
       queryPostHog(`SELECT event, distinct_id, toUnixTimestamp(timestamp), toString(properties.cancelReason)
         FROM events WHERE ${window}
           AND event IN ('sw_trial_cancelled', 'sw_subscription_cancelled', 'sw_intro_offer_cancelled')
-          AND lower(toString(properties.environment)) = 'production'
+          AND ${storeProduction}
         ORDER BY timestamp DESC
         LIMIT ${MAX_RECENT_CANCELLATIONS} BY if(event = 'sw_trial_cancelled', 'trial', 'paid')`, projectId, key),
-      trialStartsQuery(start, end, projectId, key),
+      trialStartsQuery(start, end, projectId, key, storeProduction),
     ]);
 
     const permissions = engagementTotals;
@@ -364,13 +386,13 @@ async function loadVersyProductReport(start: Date, end: Date, projectId: string,
     const trialCancellations = cancellations(recentTrialCancels);
     const paidCancellations = cancellations(recentPaidCancels);
     const [trialComparisonResult, historyResult] = await Promise.all([
-      loadTrialComparison(start, end, projectId, key, prefetchedTrialStarts).catch((error: unknown) => {
+      loadTrialComparison(end, projectId, key, prefetchedTrialStarts, production, storeProduction).catch((error: unknown) => {
         console.error("tap_and_swipe.versy_trial_comparison_failed", {
           error: error instanceof Error ? error.message : String(error),
         });
         return emptyTrialComparison("unavailable");
       }),
-      cancellationHistory(trialCancellations, paidCancellations, end, projectId, key, production),
+      cancellationHistory(trialCancellations, paidCancellations, end, projectId, key, production, storeProduction),
     ]);
     report.trialComparison = trialComparisonResult;
     if (historyResult) {
@@ -391,13 +413,13 @@ async function loadVersyProductReport(start: Date, end: Date, projectId: string,
   }
 }
 
-function trialStartsQuery(start: Date, end: Date, projectId: string, key: string) {
+function trialStartsQuery(start: Date, end: Date, projectId: string, key: string, storeProduction: string) {
   const maturityEnd = new Date(end.getTime() - 96 * 3_600_000);
   if (maturityEnd <= start) return Promise.resolve(null);
   return queryPostHog(`SELECT distinct_id, toUnixTimestamp(timestamp),
       toString(properties.productId)
     FROM events WHERE ${timeFilter(start, maturityEnd)} AND event = 'sw_trial_start'
-      AND lower(toString(properties.environment)) = 'production'
+      AND ${storeProduction}
     ORDER BY timestamp DESC LIMIT ${MAX_TRIAL_STARTS + 1}`, projectId, key);
 }
 
@@ -408,6 +430,7 @@ async function cancellationHistory(
   projectId: string,
   key: string,
   production: string,
+  storeProduction: string,
 ) {
   const allCancellations = [...trialCancellations, ...paidCancellations];
   if (allCancellations.length === 0) return null;
@@ -421,7 +444,7 @@ async function cancellationHistory(
       FROM events WHERE ${timeFilter(historyStart, end)}
         AND distinct_id IN (${ids.map(sqlQuote).join(", ")})
         AND event IN (${journeyEvents().map(sqlQuote).join(", ")})
-        AND ((event = 'sw_trial_start' AND lower(toString(properties.environment)) = 'production')
+        AND ((event = 'sw_trial_start' AND ${storeProduction})
           OR ${production})
       ORDER BY timestamp DESC LIMIT ${MAX_HISTORY_ROWS}`, projectId, key);
     if (history.length >= MAX_HISTORY_ROWS) throw new Error("Cancellation activity exceeded the safe query limit");
@@ -445,11 +468,12 @@ async function cancellationHistory(
 }
 
 async function loadTrialComparison(
-  start: Date,
   end: Date,
   projectId: string,
   key: string,
   startsRows: unknown[][] | null,
+  production: string,
+  storeProduction: string,
 ) {
   if (!startsRows) return emptyTrialComparison();
   if (startsRows.length > MAX_TRIAL_STARTS) return emptyTrialComparison("truncated");
@@ -464,8 +488,8 @@ async function loadTrialComparison(
   const activityRows = await queryPostHog(`SELECT distinct_id, event, toUnixTimestamp(timestamp)
     FROM events WHERE ${timeFilter(earliest, end)} AND distinct_id IN (${ids.map(sqlQuote).join(", ")})
       AND event IN ('sw_trial_cancelled', ${VERSY_FEATURES.map((feature) => sqlQuote(feature.event)).join(", ")})
-      AND ((event = 'sw_trial_cancelled' AND lower(toString(properties.environment)) = 'production')
-        OR properties.app_environment = 'production')
+      AND ((event = 'sw_trial_cancelled' AND ${storeProduction})
+        OR ${production})
     ORDER BY timestamp DESC LIMIT ${MAX_TRIAL_ACTIVITY + 1}`, projectId, key);
   if (activityRows.length > MAX_TRIAL_ACTIVITY) return emptyTrialComparison("truncated");
   const activity: VersyTrialEvent[] = activityRows.map((row) => ({

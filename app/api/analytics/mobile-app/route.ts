@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAnalyticsViewer } from "@/lib/analytics-session";
 import { canAccessAnalyticsApp } from "@/lib/analytics-access";
 import { getMobileAppById, type MobileAppAnalytics } from "@/lib/mobile-app-analytics";
+import { versyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +24,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const app = await getMobileAppById("month", appId as MobileAppAnalytics["id"]);
+    const platform = versyAnalyticsPlatform(request.nextUrl.searchParams.get("platform"));
+    const app = await getMobileAppById("month", appId as MobileAppAnalytics["id"], { platform });
     return NextResponse.json({
       snapshotUpdatedAt: app.snapshotUpdatedAt,
       experiments: app.experiments,
       countries: app.countries,
       nativePaywalls: app.nativePaywalls ?? null,
       onboardingExperience: app.onboardingExperience ?? null,
+      yearlyPriceComparison: app.yearlyPriceComparison ?? null,
+      versyPaywallComparison: app.versyPaywallComparison ?? null,
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     const log = process.env.NODE_ENV === "development" ? console.warn : console.error;

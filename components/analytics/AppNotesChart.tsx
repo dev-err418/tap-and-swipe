@@ -1,5 +1,7 @@
 "use client";
 
+import type { VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
+
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { APP_ANALYTICS_TIME_ZONE, parisDatetimeLocalValue as toDatetimeLocalValue, parisDatetimeToDate } from "@/lib/app-analytics-time";
 import {
@@ -20,8 +22,9 @@ import {
 
 type AppId = "glow" | "poky" | "versy";
 
-export default function AppNotesChart({ appId, data, cohorts, languagePicker, installLabel }: {
+export default function AppNotesChart({ appId, platform = "ios", data, cohorts, languagePicker, installLabel }: {
   appId: AppId;
+  platform?: VersyAnalyticsPlatform;
   data: FunnelTrendPoint[];
   cohorts: AppOverviewTrend | null;
   languagePicker?: ReactNode;
@@ -47,7 +50,7 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/analytics/notes?appId=${encodeURIComponent(appId)}`, {
+    fetch(`/api/analytics/notes?appId=${encodeURIComponent(appId)}&platform=${platform}`, {
       signal: controller.signal,
       cache: "no-store",
     })
@@ -61,7 +64,7 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
         setError(fetchError instanceof Error ? fetchError.message : "Could not load notes");
       });
     return () => controller.abort();
-  }, [appId]);
+  }, [appId, platform]);
 
   function openComposer(date?: string) {
     setEditingNote(null);
@@ -89,11 +92,12 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(editingNote ? `/api/analytics/notes/${editingNote.id}` : "/api/analytics/notes", {
+      const response = await fetch(editingNote ? `/api/analytics/notes/${editingNote.id}?platform=${platform}` : "/api/analytics/notes", {
         method: editingNote ? "PATCH" : "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           appId,
+          platform,
           title,
           content,
           appVersion,
@@ -121,7 +125,7 @@ export default function AppNotesChart({ appId, data, cohorts, languagePicker, in
     setRemoving(true);
     setManageError(null);
     try {
-      const response = await fetch(`/api/analytics/notes/${note.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/analytics/notes/${note.id}?platform=${platform}`, { method: "DELETE" });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error ?? "Could not remove note");
       setNotes((current) => current.filter((item) => item.id !== note.id));

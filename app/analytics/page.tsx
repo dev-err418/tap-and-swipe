@@ -36,7 +36,8 @@ import {
   WebsiteSummaryCard,
   type WebsiteTrendPoint,
 } from "@/components/analytics/website-summary-card";
-import { DASHBOARD_SURFACE_CLASS } from "@/components/analytics/dashboard-surface";
+import { DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_ACTIVE_CLASS, DASHBOARD_TAB_CLASS, DASHBOARD_TAB_INACTIVE_CLASS, DASHBOARD_TAB_LIST_CLASS } from "@/components/analytics/dashboard-surface";
+import { versyAnalyticsPlatform, type VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
 import AppSprintFunnelPanel from "@/components/analytics/AppSprintFunnelPanel";
 import LicensesModal from "@/components/aso-debug/LicensesModal";
 import ProxyAnalyticsPanel from "@/components/aso-debug/ProxyAnalyticsPanel";
@@ -111,7 +112,7 @@ function normalizePeriod(value: string | undefined): Period {
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; tab?: string; site?: string; app?: string }>;
+  searchParams: Promise<{ period?: string; tab?: string; site?: string; app?: string; platform?: string }>;
 }) {
   const access = await getAnalyticsViewer();
   if (!access) redirect("/login?redirect=analytics");
@@ -128,6 +129,7 @@ export default async function AnalyticsPage({
     params.app === "poky" || params.app === "glow" || params.app === "versy"
       ? params.app
       : null;
+  const platform = detailApp === "versy" ? versyAnalyticsPlatform(params.platform) : "ios";
   const detailSite =
     params.site === "appsprint" ||
     params.site === "postback" ||
@@ -141,9 +143,17 @@ export default async function AnalyticsPage({
   return (
     <main className="min-h-screen px-4 py-6 text-foreground sm:px-6 sm:py-8">
       <div className="mx-auto w-full min-w-0 max-w-6xl">
-        <Suspense key={`${viewKey}:${period}`} fallback={
+        {detailApp === "versy" && <nav aria-label="Versy platform" className={`${DASHBOARD_TAB_LIST_CLASS} mb-4 w-fit`}>
+          {([['ios', 'iOS'], ['android', 'Android']] as const).map(([value, label]) => <Link key={value}
+            href={buildAnalyticsUrl({ period, app: "versy", platform: value })}
+            aria-current={platform === value ? "page" : undefined}
+            className={`${DASHBOARD_TAB_CLASS} px-4 ${platform === value ? DASHBOARD_TAB_ACTIVE_CLASS : DASHBOARD_TAB_INACTIVE_CLASS}`}>
+            {label}
+          </Link>)}
+        </nav>}
+        <Suspense key={`${viewKey}:${period}:${platform}`} fallback={
           detailApp ? (
-            <AnalyticsDetailSkeleton period={period} app={detailApp} />
+            <AnalyticsDetailSkeleton period={period} app={detailApp} platform={platform} />
           ) : detailSite ? (
             <AnalyticsDetailSkeleton period={period} site={detailSite} />
           ) : (
@@ -156,7 +166,7 @@ export default async function AnalyticsPage({
           )
         }>
           {detailApp ? (
-            <AppDetail period={period} appId={detailApp} />
+            <AppDetail period={period} appId={detailApp} platform={platform} />
           ) : detailSite ? (
             <WebsiteDetail period={period} site={detailSite} />
           ) : (
@@ -505,15 +515,18 @@ function buildAnalyticsUrl({
   period,
   site,
   app,
+  platform,
 }: {
   period: Period;
   site?: WebsiteSite;
   app?: AppId;
+  platform?: VersyAnalyticsPlatform;
 }) {
   const params = new URLSearchParams();
   if (period !== "week") params.set("period", period);
   if (site) params.set("site", site);
   if (app) params.set("app", app);
+  if (app === "versy" && platform === "android") params.set("platform", platform);
   const query = params.toString();
   return `/analytics${query ? `?${query}` : ""}`;
 }
@@ -521,17 +534,19 @@ function buildAnalyticsUrl({
 async function AppDetail({
   period,
   appId,
+  platform,
 }: {
   period: Period;
   appId: AppId;
+  platform: VersyAnalyticsPlatform;
 }) {
-  const metaRoas = appId === "versy" ? getVersyMetaRoas() : undefined;
+  const metaRoas = appId === "versy" && platform === "ios" ? getVersyMetaRoas() : undefined;
   let app: MobileAppAnalytics | null = null;
   let countryBreakdown: Promise<CountryBreakdownData> | undefined;
   try {
     // Compact comparison tables do not need the detailed experiment reports.
-    const current = getMobileAppById(period, appId, { sessions: false, includeReports: false });
-    const monthly = period === "month" ? current : getMobileAppById("month", appId, { sessions: false, includeReports: false });
+    const current = getMobileAppById(period, appId, { sessions: false, includeReports: false, platform });
+    const monthly = period === "month" ? current : getMobileAppById("month", appId, { sessions: false, includeReports: false, platform });
     // Stream the lower-page comparison independently; its monthly loader can be cold
     // even when the selected period is already saved and ready to display.
     countryBreakdown = monthly.then((report) => ({ countries: report.dataCountries ?? [],
@@ -613,8 +628,9 @@ async function AppDetail({
               <strong className="font-semibold text-foreground">{app.name}</strong>
             </h1>
           </div>}
-        headerEnd={<AnalyticsPeriodSelect period={period} app={app.id} />}
+        headerEnd={<AnalyticsPeriodSelect period={period} app={app.id} platform={platform} />}
         appId={app.id}
+        platform={platform}
         installs={app.downloads}
         windowLabel={windowLabel}
         trend={trend}

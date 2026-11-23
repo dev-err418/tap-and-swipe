@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { NextRequest } from "next/server";
 import * as accessHelpers from "../../lib/analytics-access";
+import * as platformHelpers from "../../lib/versy-analytics-platform";
 import { loadTestModule } from "./helpers/load-test-module";
 
 const albertoId = "643841344103776318";
@@ -21,6 +22,7 @@ function fixture(discordId: string | null = albertoId, development = false) {
   const dependencies = {
     "@/lib/analytics-session": { getAnalyticsViewer: async () => access },
     "@/lib/analytics-access": accessHelpers,
+    "@/lib/versy-analytics-platform": platformHelpers,
     "@/lib/mobile-app-analytics": {
       getMobileAppById: async (_period: string, appId: string) => {
         mobileCalls.push(appId);

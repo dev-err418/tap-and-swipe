@@ -6,6 +6,7 @@ import { APP_ANALYTICS_HEADER_CLASS, DASHBOARD_SURFACE_CLASS, DASHBOARD_TAB_LIST
 import { WebsiteFavicon } from "@/components/analytics/website-summary-card";
 import { DashboardCard } from "./DashboardCard";
 import { experimentCohortLabel } from "@/lib/app-experiment-cohort";
+import { VERSY_ANDROID_INSTALL_VERSION, type VersyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
 import { cn } from "@/lib/utils";
 
 type Period = "day" | "yesterday" | "3days" | "week" | "month" | "all";
@@ -35,10 +36,12 @@ export function AnalyticsDetailSkeleton({
   period,
   app,
   site,
+  platform = "ios",
 }: {
   period: Period;
   app?: AppId;
   site?: WebsiteSite;
+  platform?: VersyAnalyticsPlatform;
 }) {
   const periodLabel = analyticsPeriodSummary(period);
   const backLabel = app ? "All apps" : "All websites";
@@ -66,14 +69,14 @@ export function AnalyticsDetailSkeleton({
           <AnalyticsPeriodSelect period={period} app={app} site={site} />
         </div> : null}
       </div>
-      {app ? <AppOverviewSkeleton app={app} period={period} /> : <div className={`h-[28rem] w-full min-w-0 ${DASHBOARD_SURFACE_CLASS}`} />}
+      {app ? <AppOverviewSkeleton app={app} period={period} platform={platform} /> : <div className={`h-[28rem] w-full min-w-0 ${DASHBOARD_SURFACE_CLASS}`} />}
     </div>
   );
 }
 
-function AppOverviewSkeleton({ app, period }: { app: AppId; period: Period }) {
+function AppOverviewSkeleton({ app, period, platform }: { app: AppId; period: Period; platform: VersyAnalyticsPlatform }) {
   const metrics = ["Tracked installs", "APPU", "Conversion to paid"];
-  const cohortLabel = experimentCohortLabel(app)!;
+  const cohortLabel = platform === "android" ? `Installed on v${VERSY_ANDROID_INSTALL_VERSION}+` : experimentCohortLabel(app)!;
   return (
     <section className="w-full min-w-0 space-y-4">
       <div className={APP_ANALYTICS_HEADER_CLASS}>
@@ -88,7 +91,7 @@ function AppOverviewSkeleton({ app, period }: { app: AppId; period: Period }) {
             {Array.from({ length: 3 }, (_, index) => <span key={index} className="flex h-[26px] w-20 items-center gap-1.5 px-2"><Bone className="size-3.5 shrink-0 rounded-full" /><Bone className="w-10" /></span>)}
           </div>
         </div>
-        <div className="sm:justify-self-end"><AnalyticsPeriodSelect period={period} app={app} /></div>
+        <div className="sm:justify-self-end"><AnalyticsPeriodSelect period={period} app={app} platform={platform} /></div>
       </div>
       <div className="w-full min-w-0 max-w-full overflow-visible rounded-[28px] border-0 bg-card shadow-none">
         <div className="min-w-0 border-b border-foreground/[0.08]">

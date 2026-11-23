@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAnalyticsViewer } from "@/lib/analytics-session";
 import { canAccessAnalyticsApp } from "@/lib/analytics-access";
 import { prisma } from "@/lib/prisma";
+import { platformAnalyticsStorageKey } from "@/lib/versy-analytics-platform";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
   }
 
   const notes = await prisma.analyticsNote.findMany({
-    where: { appId },
+    where: { appId: platformAnalyticsStorageKey(appId, request.nextUrl.searchParams.get("platform")) },
     orderBy: { notedAt: "asc" },
   });
 
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
   }
 
   const note = await prisma.analyticsNote.create({
-    data: { appId, title, content, appVersion, notedAt },
+    data: { appId: platformAnalyticsStorageKey(appId, input.platform), title, content, appVersion, notedAt },
   });
 
   return NextResponse.json({ note }, { status: 201 });

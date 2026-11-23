@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAnalyticsViewer } from "@/lib/analytics-session";
 import { prisma } from "@/lib/prisma";
+import { platformAnalyticsStorageKey } from "@/lib/versy-analytics-platform";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export async function PATCH(
 
   const { id } = await params;
   const existing = await prisma.analyticsNote.findFirst({
-    where: { id, appId: { in: [...access.appIds] } },
+    where: { id, appId: { in: access.appIds.map((appId) => platformAnalyticsStorageKey(appId, request.nextUrl.searchParams.get("platform"))) } },
   });
   if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -57,7 +58,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const access = await getAnalyticsViewer();
@@ -67,7 +68,7 @@ export async function DELETE(
 
   const { id } = await params;
   const note = await prisma.analyticsNote.findFirst({
-    where: { id, appId: { in: [...access.appIds] } },
+    where: { id, appId: { in: access.appIds.map((appId) => platformAnalyticsStorageKey(appId, request.nextUrl.searchParams.get("platform"))) } },
   });
   if (!note) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -1,3 +1,5 @@
+import type { VersyAnalyticsPlatform } from "./versy-analytics-platform";
+
 /** Product amounts are authoritative USD proceeds, never inferred from a SKU's price. */
 export type OfferAmount = { subscriptions: number; proceeds: number; missingMoney: boolean };
 export type OfferBreakdown = Record<string, OfferAmount>;
@@ -68,12 +70,28 @@ export function offerProductResolver(events: OfferEvent[]) {
   };
 }
 
-export function versyOfferRows(breakdown: OfferBreakdown = {}) {
+export function versyOfferRows(breakdown: OfferBreakdown = {}, platform: VersyAnalyticsPlatform = "ios") {
   const sum = (products: string[]): OfferAmount => products.reduce<OfferAmount>((result, product) => {
     const row = breakdown[product];
     if (row) { result.subscriptions += row.subscriptions; result.proceeds += row.proceeds; result.missingMoney ||= row.missingMoney; }
     return result;
   }, { subscriptions: 0, proceeds: 0, missingMoney: false });
+  if (platform === "android") {
+    const groups = [
+      { key: "main", label: "Main offer", detail: "Yearly", plans: ["yearly-nov20-lower", "yearly-nov20-middle", "yearly-nov20-higher", "yearly-auto-renew"] },
+      { key: "weekly", label: "Side offer", detail: "Weekly", plans: ["weekly-nov20", "weekly-auto-renew"] },
+      { key: "recovery", label: "Recovery / daily gift", detail: "Discounted yearly", plans: ["yearly-daily-gift", "yearly-nov20-recovery", "yearly-recovery"] },
+    ];
+    const products = Object.keys(breakdown);
+    const matched = new Set<string>();
+    const rows = groups.map(({ plans, ...group }) => {
+      const ids = products.filter((id) => id.startsWith(`${PREFIX}premium:`) && plans.includes(id.split(":")[1]));
+      for (const id of ids) matched.add(id);
+      return { ...group, ...sum(ids), children: [] };
+    });
+    const other = products.filter((id) => !matched.has(id) && (breakdown[id].subscriptions > 0 || breakdown[id].proceeds !== 0 || breakdown[id].missingMoney));
+    return [...rows, ...(other.length ? [{ key: "other", label: "Other", detail: "Unclassified Play products", ...sum(other), children: [] }] : [])];
+  }
   const yearly39 = `${PREFIX}yearly_3999_80`, yearly49 = `${PREFIX}yearly_4999`;
   const weekly = `${PREFIX}Weekly`, recovery = `${PREFIX}YearlyDiscount`;
   const known = new Set([yearly39, yearly49, weekly, recovery]);

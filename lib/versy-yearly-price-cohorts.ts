@@ -2,6 +2,8 @@ import { experimentInstallCohort, EXPERIMENT_MINIMUM_INSTALL_VERSION } from "./a
 import { emptyVersionConversions, versionCohortConversions } from "./version-cohort-conversions";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { isVersyFixedYearlyPriceAssignment, VERSY_FIXED_YEARLY_PRICE } from "./versy-paywall-policy";
+import { androidPriceAssignment, VERSY_ANDROID_RECOVERY_PRICES, VERSY_ANDROID_YEARLY_PRICES } from "./versy-android-experiments";
+import { VERSY_ANDROID_INSTALL_VERSION, type VersyAnalyticsPlatform } from "./versy-analytics-platform";
 
 export type VersyYearlyPriceComparison = PaywallCohortComparison & {
   current: PaywallCohortComparison;
@@ -69,7 +71,15 @@ export function buildVersyYearlyPriceComparison(
   events: Parameters<typeof versionCohortConversions>[1],
   attributes: Map<string, Record<string, string>>,
   asOf = Date.now(),
+  platform: VersyAnalyticsPlatform = "ios",
 ): VersyYearlyPriceComparison {
+  if (platform === "android") {
+    const empty = { status: "empty" as const, rows: [], labels: {}, warnings: [] };
+    return { ...empty, rollout: empty,
+      current: priceComparison(installs, events, attributes, asOf, undefined, VERSY_ANDROID_YEARLY_PRICES, "yearly_price", VERSY_PRICE_TEST_START, platform),
+      recovery: priceComparison(installs, events, attributes, asOf, undefined, VERSY_ANDROID_RECOVERY_PRICES, "recovery_price", VERSY_PRICE_TEST_START, platform),
+    };
+  }
   return {
     current: priceComparison(installs, events, attributes, asOf, isVersyCurrentYearlyPriceAssignment, VERSY_CURRENT_YEARLY_PRICES, "yearly_price", VERSY_PRICE_TEST_START),
     recovery: priceComparison(installs, events, attributes, asOf, isVersyRecoveryPriceAssignment, VERSY_RECOVERY_PRICES, "recovery_price", VERSY_PRICE_TEST_START),
@@ -82,21 +92,26 @@ function priceComparison(
   installs: Parameters<typeof versionCohortConversions>[0],
   events: Parameters<typeof versionCohortConversions>[1],
   attributes: Map<string, Record<string, string>>, asOf: number,
-  assignmentCheck: typeof isVersyYearlyPriceAssignment,
+  assignmentCheck: typeof isVersyYearlyPriceAssignment | undefined,
   prices: readonly { key: string; label: string; productID: string }[],
   attributePrefix: "yearly_price" | "recovery_price" = "yearly_price",
   cohortStart = 0,
+  platform: VersyAnalyticsPlatform = "ios",
 ): PaywallCohortComparison {
-  const eligible = experimentInstallCohort(installs, EXPERIMENT_MINIMUM_INSTALL_VERSION.versy, asOf);
+  const eligible = experimentInstallCohort(installs, platform === "android" ? VERSY_ANDROID_INSTALL_VERSION : EXPERIMENT_MINIMUM_INSTALL_VERSION.versy, asOf);
   let invalidTimes = 0;
   const enrolled = eligible.flatMap((install) => {
     if (install.installedAt < cohortStart) return [];
     const values = attributes.get(install.appUserId);
-    if (!values || !assignmentCheck(values)) return [];
-    const assignedAt = Number(values[`${attributePrefix}_assigned_at`]);
+    const assignment = platform === "android" ? androidPriceAssignment(values, attributePrefix)
+      : values && assignmentCheck?.(values) ? {
+        assignedAt: Number(values[`${attributePrefix}_assigned_at`]), productID: values[`${attributePrefix}_product_id`],
+      } : null;
+    if (!assignment) return [];
+    const { assignedAt, productID } = assignment;
     if (!Number.isFinite(assignedAt) || assignedAt <= 0 || assignedAt > asOf) { invalidTimes++; return []; }
     if (assignedAt < cohortStart) return [];
-    return [{ install, assignedAt, productID: values[`${attributePrefix}_product_id`] }];
+    return [{ install, assignedAt, productID }];
   });
   const rows = prices.map((price) => {
     const members = enrolled.filter((row) => row.productID === price.productID);

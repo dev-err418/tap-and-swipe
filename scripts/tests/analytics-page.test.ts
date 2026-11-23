@@ -4,12 +4,13 @@ import { createElement, Fragment, isValidElement, Suspense, type ReactNode } fro
 import { renderToStaticMarkup } from "react-dom/server";
 import { getAnalyticsAccess } from "../../lib/analytics-access";
 import * as accessHelpers from "../../lib/analytics-access";
+import * as platformHelpers from "../../lib/versy-analytics-platform";
 import { activeWebsiteABTestCount } from "../../lib/website-ab-tests";
 import { AnalyticsDirectorySkeleton } from "../../components/analytics/AnalyticsDirectorySkeleton";
 import { loadTestModule } from "./helpers/load-test-module";
 
 type Props = { children?: ReactNode; [key: string]: unknown };
-type PageParams = { app?: string; site?: string; tab?: string; period?: string };
+type PageParams = { app?: string; site?: string; tab?: string; period?: string; platform?: string };
 type Page = { default(props: { searchParams: Promise<PageParams> }): Promise<ReactNode> };
 const alberto = getAnalyticsAccess("643841344103776318", { development: false })!;
 const passthrough = ({ children }: Props) => children ?? null;
@@ -37,6 +38,8 @@ function pageFixture(overrides: Record<string, unknown> = {}) {
   const dependencies: Record<string, unknown> = {
     "@/lib/analytics-session": { getAnalyticsViewer: async () => alberto },
     "@/lib/analytics-access": accessHelpers,
+    "@/lib/versy-analytics-platform": platformHelpers,
+    "@/lib/versy-meta-roas-server": { getVersyMetaRoas: forbiddenData },
     "next/navigation": { redirect: (url: string) => { throw new Error(`redirect:${url}`); }, notFound: () => { throw new Error("not-found"); } },
     "next/link": { __esModule: true, default: (props: Props) => createElement("a", props, props.children) },
     "lucide-react": { ArrowLeft: passthrough, Command: passthrough },
@@ -83,6 +86,26 @@ test("Alberto's rendered directory greets him and totals only Poky", async () =>
   assert.doesNotMatch(html, /Arthur|Glow|Versy|All websites|tab=appsprint/);
   assert.ok(f.calls.length > 0);
   assert.ok(f.calls.every((id) => id === "poky"));
+});
+
+test("Versy defaults to iOS and the Android switch preserves the selected period for both data loads", async () => {
+  const seen: string[] = [];
+  const f = pageFixture({
+    "@/lib/analytics-session": { getAnalyticsViewer: async () => getAnalyticsAccess(null, { development: true }) },
+    "@/lib/versy-meta-roas-server": { getVersyMetaRoas: async () => ({ status: "empty" }) },
+    "@/lib/mobile-app-analytics": { getMobileAppById: async (period: string, appId: string, options: { platform: string }) => {
+      seen.push(`${appId}:${period}:${options.platform}`);
+      return { id: "versy", name: "Versy", trend: [], iconUrl: "/versy.png" };
+    } },
+  });
+  const html = async (params: PageParams) => renderToStaticMarkup(await resolveServerComponents(
+    await f.page({ searchParams: Promise.resolve(params) })));
+  const ios = await html({ app: "versy", period: "day" });
+  assert.match(ios, /aria-current="page"[^>]*>iOS<\/a>/);
+  assert.match(ios, /href="\/analytics\?period=day&amp;app=versy&amp;platform=android"/);
+  const android = await html({ app: "versy", period: "day", platform: "android" });
+  assert.match(android, /aria-current="page"[^>]*>Android<\/a>/);
+  assert.deepEqual(seen, ["versy:day:ios", "versy:month:ios", "versy:day:android", "versy:month:android"]);
 });
 
 test("direct URLs for other projects are rejected before rendering or fetching data", async () => {

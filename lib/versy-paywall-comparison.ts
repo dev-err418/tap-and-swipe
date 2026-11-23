@@ -7,6 +7,8 @@ import { isMobileMoneyEvent } from "./mobile-app-money";
 import type { PaywallCohortComparison } from "./glow-paywall-cohort-comparisons";
 import { versyWidgetPaywallAccess } from "./versy-paywall-policy";
 import { buildVersyScrollAccessComparison } from "./versy-scroll-paywall-access";
+import { androidOnboardingAssignment, VERSY_ANDROID_ROUTES } from "./versy-android-experiments";
+import { VERSY_ANDROID_INSTALL_VERSION, type VersyAnalyticsPlatform } from "./versy-analytics-platform";
 
 type Install = Parameters<typeof versionCohortConversions>[0][number] & { country: string };
 type Event = Parameters<typeof versionCohortConversions>[1][number];
@@ -27,7 +29,22 @@ export const VERSY_ONBOARDING_ASSIGNMENT_ATTRIBUTE = `gp1_a_${ONBOARDING_EXPERIM
 
 /** All-country onboarding outcomes across trial lengths, including non-payers. */
 export function buildVersyPaywallComparison(installs: Install[], events: Event[],
-  attributes: Map<string, Record<string, string>>, asOf = Date.now()): VersyPaywallComparison {
+  attributes: Map<string, Record<string, string>>, asOf = Date.now(), platform: VersyAnalyticsPlatform = "ios"): VersyPaywallComparison {
+  if (platform === "android") {
+    const enrolled = experimentInstallCohort(installs, VERSY_ANDROID_INSTALL_VERSION, asOf).flatMap((install) => {
+      const assignment = androidOnboardingAssignment(attributes.get(install.appUserId), asOf);
+      return assignment ? [{ install, ...assignment }] : [];
+    });
+    const rows = Object.keys(VERSY_ANDROID_ROUTES).map((route) => {
+      const members = enrolled.filter((assignment) => assignment.route === route);
+      const conversions = versionCohortConversions(members.map(({ install }) => ({ ...install, appVersion: "0" })),
+        events, attributes, 0, asOf + 1, asOf, new Map(members.map(({ install, assignedAt }) => [install.appUserId, assignedAt]))).get("0")
+        ?? emptyVersionConversions();
+      return { version: route, installs: conversions.global.installs, tracked: conversions.global.installs, variants: [], conversions };
+    });
+    return { asOf, status: rows.some((row) => row.installs) ? "ready" : "empty", rows, labels: VERSY_ANDROID_ROUTES,
+      warnings: [], checkpoints: {}, noteExperiment: buildVersyNoteReport(installs, events, attributes, 0, asOf + 1, asOf, "assignment", true, platform) };
+  }
   let invalidTimes = 0;
   let invalidEnrollments = 0;
   const { assignments } = parsePaywallAttributes([...attributes].flatMap(([appUserId, values]) =>

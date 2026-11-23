@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getAnalyticsViewer } from "@/lib/analytics-session";
 import { getVersyProductReport, getVersyUserJourney, type VersyProductPeriod } from "@/lib/versy-product-queries";
+import { versyAnalyticsPlatform } from "@/lib/versy-analytics-platform";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
   if (request.nextUrl.searchParams.has("userId")) {
     return NextResponse.json({ error: "Use POST for a user journey" }, { status: 400 });
   }
-  const report = await getVersyProductReport(period as VersyProductPeriod);
+  const report = await getVersyProductReport(period as VersyProductPeriod, versyAnalyticsPlatform(request.nextUrl.searchParams.get("platform")));
   return NextResponse.json(report, { headers: { "Cache-Control": "private, no-store" } });
 }
 
@@ -48,13 +49,13 @@ export async function POST(request: NextRequest) {
   let input: unknown;
   try { input = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   if (!input || typeof input !== "object") return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  const { period = "month", userId } = input as Record<string, unknown>;
+  const { period = "month", userId, platform = request.nextUrl.searchParams.get("platform") } = input as Record<string, unknown>;
   if (typeof period !== "string" || !PERIODS.has(period as VersyProductPeriod)) {
     return NextResponse.json({ error: "Invalid period" }, { status: 400 });
   }
   if (typeof userId !== "string" || !/^[a-zA-Z0-9_$:.-]{8,128}$/.test(userId)) {
     return NextResponse.json({ error: "Invalid userId" }, { status: 400 });
   }
-  const journey = await getVersyUserJourney(period as VersyProductPeriod, userId);
+  const journey = await getVersyUserJourney(period as VersyProductPeriod, userId, versyAnalyticsPlatform(platform));
   return NextResponse.json(journey, { headers: { "Cache-Control": "private, no-store" } });
 }
