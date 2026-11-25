@@ -49,7 +49,7 @@ export default function UserJourneyFunnel({
   if (!report) return null;
   if (!funnelOnly && appId !== "glow" && appId !== "versy" && report.versions?.length) {
     return <DashboardCard title="App versions" contentClassName="pt-0">
-      <JourneyVersionComparison showInstallPaid={appId === "poky"} cohorts={report.versions.filter((entry) => entry.version !== "unknown").slice(0, 5)} />
+      <JourneyVersionComparison showOfferBreakdown={false} showInstallPaid={appId === "poky"} cohorts={report.versions.filter((entry) => entry.version !== "unknown").slice(0, 5)} />
     </DashboardCard>;
   }
   if ((report.status !== "ready" && report.status !== "empty") || report.variants.length === 0) {
@@ -138,8 +138,9 @@ function journeyVariantLabel(variant: UserJourneyVariantResult) {
   return variant.family && variant.family !== variant.label ? `${variant.family} · ${variant.label}` : variant.label;
 }
 
-export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRefundRate = false, splitAdSources = false, showInstallPaid = false, showTrialConversions = true, rowHeading = "First version", rowLabels, showAppuComparison = false, showArpuGraph = false, onRowClick, clickableRows }: {
+export function JourneyVersionComparison({ cohorts, showOfferBreakdown = true, allUsersOnly = false, showRefundRate = false, splitAdSources = false, showInstallPaid = false, showTrialConversions = true, rowHeading = "First version", rowLabels, showAppuComparison = false, showArpuGraph = false, onRowClick, clickableRows }: {
   cohorts: JourneyVersionCohort[];
+  showOfferBreakdown?: boolean;
   allUsersOnly?: boolean;
   showRefundRate?: boolean;
   splitAdSources?: boolean;
@@ -223,7 +224,7 @@ export function JourneyVersionComparison({ cohorts, allUsersOnly = false, showRe
                   className={cn("whitespace-nowrap px-3 py-4 text-right font-semibold tabular-nums", bestAppu && "bg-analytics-highlight-bg text-analytics-highlight")}>
                   {appu == null ? "—" : appu.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   <RealizedAppu metric={metric?.realizedAppu} />
-                  <VersyOfferBreakdown breakdown={metric?.offerBreakdown} realizedAppu={metric?.realizedAppu} users={metric?.installs ?? 0} proceeds={metric?.proceeds ?? 0} available={!!metric && !metric.missingProceeds} />
+                  {showOfferBreakdown && <VersyOfferBreakdown breakdown={metric?.offerBreakdown} realizedAppu={metric?.realizedAppu} users={metric?.installs ?? 0} proceeds={metric?.proceeds ?? 0} available={!!metric && !metric.missingProceeds} />}
                 </td>
                 {fields.map((field) => {
                   const denominator = metric ? (field === "paid" ? metric.finishedTrials : metric.installs) : 0;

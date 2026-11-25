@@ -1,7 +1,7 @@
 "use client";
 
 import DeferredVersyMetaRoas from "./VersyMetaRoasTables";
-import type { VersyRoasReport } from "@/lib/versy-meta-roas";
+import type { Report as VersyRoasReport } from "@/lib/versy-acquisition-report";
 
 import { VersyOffersScope } from "./VersyOfferBreakdown";
 
@@ -170,18 +170,19 @@ export default function AppOverviewPanel({
         </div>
       </div>
 
+      {appId === "versy" && metaRoasPromise ? <Suspense fallback={<DashboardCard title="Meta ROAS"><p role="status" className="text-sm text-muted-foreground">Loading daily campaign performance…</p></DashboardCard>}>
+        <DeferredVersyMetaRoas report={metaRoasPromise} country={country} />
+      </Suspense> : null}
+
       <div
         id={platform === "android" ? "app-analytics-panel-data-android" : "app-analytics-panel-data"}
         className="space-y-4"
       >
         {markets ? <DashboardCard title="App versions" contentClassName="pt-0">
-          <JourneyVersionComparison splitAdSources={platform === "ios" && (appId === "glow" || appId === "versy")} showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
+          <JourneyVersionComparison showOfferBreakdown={false} splitAdSources={platform === "ios" && (appId === "glow" || appId === "versy")} showInstallPaid={appId === "poky"} cohorts={(market?.versions ?? []).filter((row) => row.version !== "unknown").slice(0, 5)} />
         </DashboardCard> : userJourney?.versions?.length ? <DashboardCard title="App versions" contentClassName="pt-0">
-          <JourneyVersionComparison splitAdSources={platform === "ios" && (appId === "glow" || appId === "versy")} showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
+          <JourneyVersionComparison showOfferBreakdown={false} splitAdSources={platform === "ios" && (appId === "glow" || appId === "versy")} showInstallPaid={appId === "poky"} cohorts={userJourney.versions.filter((row) => row.version !== "unknown").slice(0, 5)} />
         </DashboardCard> : null}
-        {appId === "versy" && metaRoasPromise ? <Suspense fallback={<DashboardCard title="Meta ROAS"><p role="status" className="text-sm text-muted-foreground">Loading daily campaign performance…</p></DashboardCard>}>
-          <DeferredVersyMetaRoas report={metaRoasPromise} country={country} />
-        </Suspense> : null}
         <UserJourneyFunnel key={`${appId}:${country}`} appId={appId} report={selectedJourney} windowLabel={windowLabel} funnelOnly />
         {appId === "glow" && (country === "all" || country === "FR") ? <GlowPaywallCohortTables report={selectedGlowPaywalls} /> : null}
         {appId === "versy" ? <VersyYearlyPriceTable key={country} report={selectedYearlyPrices} cohortLabel={comparisonLabel} /> : null}

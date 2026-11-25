@@ -13,6 +13,12 @@ not an event warehouse. Superwall and PostHog remain the sources of truth.
   and Versy's legacy placement report.
 - Directory cards share the same snapshots as their app's Data tab.
 
+## Versy acquisition
+
+The Versy detail page refreshes its three-week ROAS reports every five minutes while visible. The chart uses Paris install dates, booked Superwall proceeds converted to euros at the daily ECB rate, and euro spend from the AppSprint Meta account. The daily and weekly tables use UTC install cohorts and the Superwall USD transaction ledger for iOS and Android. Each weekly return divides summed proceeds by summed spend.
+
+The standalone server uses `SUPERWALL_VERSY_API_KEY` and `META_ACCESS_TOKEN` with read access to AppSprint. Its analytics cache retains the last verified delivery when Meta authorization expires. A host sharing the side dashboard's private aggregate snapshot can set `VERSY_ACQUISITION_SNAPSHOT` to its filesystem path. Local development discovers that file in the sibling Versy checkout. The browser receives aggregates and never connects to the side dashboard.
+
 ## Page performance
 
 Data reports build and send only the all-language market slices selectable by the
@@ -49,14 +55,7 @@ fail the refresh. These are reported proceeds, including Apple renewal events
 received before their paid-period start, not a settlement report. Spend continues
 to come from the `adSpend` chart by UTC calendar day.
 
-The `versy-meta-roas-v5-transaction-ledger` snapshot key requires a fresh report
-with the current campaign list. ROAS refreshes first in each Versy scheduled run.
-The open page refreshes every five minutes and when it regains visibility. The table
-shows its own last successful update and flags delays after ten minutes. Failed
-refreshes retain the prior complete snapshot and scheduled failures return 502.
-The cohort seven calendar days ago remains hatched because late-day installs may
-still be in trial. No revenue event warehouse or manually maintained totals are
-introduced.
+The daily table hatches the cohort seven calendar days ago because its late-day installs can still be in trial. The weekly table shows three rolling seven-day periods and marks the latest one unfinished. The scheduler refreshes ROAS first and retains complete cached reports if a source fails.
 
 ## Enable on Coolify
 

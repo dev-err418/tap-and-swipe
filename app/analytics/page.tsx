@@ -566,7 +566,7 @@ async function AppDetail({
   showPlatformLabel?: boolean;
 }) {
   const platformLabel = VERSY_ANALYTICS_PLATFORM_LABELS[platform];
-  const metaRoas = appId === "versy" && platform === "ios" ? getVersyMetaRoas() : undefined;
+  const metaRoas = appId === "versy" && (!showPlatformLabel || platform === "ios") ? getVersyMetaRoas() : undefined;
   let app: MobileAppAnalytics | null = null;
   let countryBreakdown: Promise<CountryBreakdownData> | undefined;
   try {

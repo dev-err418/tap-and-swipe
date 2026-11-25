@@ -10,6 +10,7 @@ export const VERSY_META_MARKETS = [
     { id: "120255328782510450", name: "DE - Trials - Versy - Copy" },
   ] },
 ] as const;
+export type RoasMarket = { code: string; campaigns: readonly { id: string }[] };
 const DAY = 86_400_000;
 export type RoasDay = { date: string; immature: boolean };
 export type RoasMetric = { spend: number; proceeds: number | null; roas: number | null };
@@ -33,11 +34,11 @@ export function roasDays(now = new Date()): RoasDay[] {
 export function roasRatio(proceeds: number | null, spend: number): number | null {
   return proceeds == null || spend <= 0 ? null : proceeds / spend;
 }
-export function campaignDays(proceedsChart: AcquisitionChart, spendChart: AcquisitionChart, days: RoasDay[]): VersyRoasReport["campaigns"] {
+export function campaignDays(proceedsChart: AcquisitionChart, spendChart: AcquisitionChart, days: RoasDay[], markets: readonly RoasMarket[] = VERSY_META_MARKETS): VersyRoasReport["campaigns"] {
   const campaigns: VersyRoasReport["campaigns"] = {};
   const proceedsByDate = new Map(proceedsChart.data.map((point) => [point.x.slice(0, 10), point.values]));
   const spendByDate = new Map(spendChart.data.map((point) => [point.x.slice(0, 10), point.values]));
-  for (const market of VERSY_META_MARKETS) for (const { id } of market.campaigns) {
+  for (const market of markets) for (const { id } of market.campaigns) {
     campaigns[id] = Object.fromEntries(days.map(({ date }) => {
       const spendValue = spendByDate.get(date)?.[id];
       const proceedsValue = proceedsByDate.get(date)?.[id];
@@ -54,9 +55,9 @@ export function campaignDays(proceedsChart: AcquisitionChart, spendChart: Acquis
 type Install = Parameters<typeof versionCohortConversions>[0][number] & { country: string };
 type Event = Parameters<typeof versionCohortConversions>[1][number];
 /** Reuse the dashboard's transaction ownership, refund, renewal and missing-money rules. */
-export function organicDays(installs: Install[], events: Event[], attributes: Map<string, Record<string, string>>, days: RoasDay[], asOf: number): VersyRoasReport["organic"] {
+export function organicDays(installs: Install[], events: Event[], attributes: Map<string, Record<string, string>>, days: RoasDay[], asOf: number, markets: readonly RoasMarket[] = VERSY_META_MARKETS): VersyRoasReport["organic"] {
   const organic: VersyRoasReport["organic"] = {};
-  for (const market of VERSY_META_MARKETS) {
+  for (const market of markets) {
     organic[market.code] = {};
     const countryInstalls = installs.filter((install) => install.country === market.code);
     for (const { date } of days) {

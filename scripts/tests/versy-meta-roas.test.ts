@@ -3,6 +3,7 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { campaignDays, organicDays, roasDays, roasRatio, totalRoas, VERSY_META_MARKETS, type VersyRoasReport } from "../../lib/versy-meta-roas";
+import { buildMatrix, multiple, type Report } from "../../lib/versy-acquisition-report";
 import { VersyMetaRoasTables } from "../../components/analytics/VersyMetaRoasTables";
 const now = new Date("2026-11-16T12:00:00Z"), days = roasDays(now), day = 86_400_000;
 
@@ -45,23 +46,30 @@ test("organic install cohorts exclude Meta and Apple Ads, and accrue later renew
   assert.deepEqual(report.DE["2026-11-01"], { installs: 0, proceeds: 0 });
 });
 
-test("tables render country flags, configured campaigns, hatching and unavailable state", () => {
-  const report: VersyRoasReport = { status: "ready", updatedAt: now.toISOString(), days, campaigns: campaignDays({ data: [] }, { data: [] }, days), organic: {} };
+test("21-day tables group spend by country and calculate weekly returns from summed money", () => {
+  const window = days.slice(-21);
+  const values = Object.fromEntries(window.map(({ date }, i) => [date, { spend: i === 0 ? 50 : 10, proceeds: 20, roas: i === 0 ? 0.4 : 2 }]));
+  const empty = Object.fromEntries(window.map(({ date }) => [date, { spend: 0, proceeds: 0, roas: null }]));
+  const organic = Object.fromEntries(window.map(({ date }) => [date, { installs: 1, proceeds: 5 }]));
+  const report: Report = { days: window, delivery: {}, tablesAvailable: true, trend: {}, organic: [{ FR: organic }], campaigns: [
+    { id: "1", label: "FR - Android - Initial", country: "FR", platform: "android", values },
+    { id: "2", label: "US - Retired", country: "US", platform: "ios", values: empty },
+  ] };
+  const weekly = buildMatrix(report, "all", true);
+  assert.deepEqual(weekly.columns.map(c => c.pending), [false, false, true]);
+  assert.deepEqual(weekly.groups.map(g => g.code), ["FR"]);
+  assert.equal(multiple(weekly.total[0]), 175 / 110);
   const html = renderToStaticMarkup(createElement(VersyMetaRoasTables, { report }));
   assert.equal((html.match(/<table /g) ?? []).length, 2);
-  for (const market of VERSY_META_MARKETS) {
-    assert.ok(html.includes(market.flag));
-    for (const campaign of market.campaigns) assert.ok(html.includes(campaign.name));
-  }
-  assert.ok(html.includes("repeating-linear-gradient"));
-  assert.ok(html.includes("Total ROAS"));
-  assert.ok(html.includes("Update delayed"));
-  assert.ok(html.includes("refreshes automatically every 5 minutes"));
-  assert.ok(!html.includes("United States"));
-  assert.ok(!html.includes("US - Trials - Versy"));
-  assert.ok(!html.includes(">Installs<"));
-  assert.ok(!html.includes("Proceeds accrue to install day"));
-  const failed = renderToStaticMarkup(createElement(VersyMetaRoasTables, { report: { ...report, status: "unavailable" } }));
+  assert.equal((html.match(/title="Highest campaign ROAS for this week"/g) ?? []).length, 2);
+  for (const name of ["Blended ROAS", "Daily Meta ROAS", "Weekly Meta ROAS", "Total blended ROAS", "🇫🇷", "Android", "Unfinished", "repeating-linear-gradient"]) assert.ok(html.includes(name), name);
+  assert.ok(!html.includes("refreshes automatically"));
+  assert.ok(!html.includes("Retired"));
+  assert.ok(html.indexOf("Total spend") < html.indexOf("France"));
+  assert.ok(html.includes('aria-expanded="false"'));
+  report.delivery["2"] = [window[0].date];
+  assert.equal(buildMatrix(report, "all", true).total[0].spend, null);
+  const failed = renderToStaticMarkup(createElement(VersyMetaRoasTables, { report: { ...report, tablesAvailable: false, campaigns: [] } }));
   assert.ok(failed.includes("could not be loaded"));
   assert.ok(!failed.includes("<table"));
 });

@@ -1,4 +1,4 @@
-import { campaignDays, VERSY_META_MARKETS, type AcquisitionChart, type RoasDay } from "./versy-meta-roas";
+import { campaignDays, VERSY_META_MARKETS, type AcquisitionChart, type RoasDay, type RoasMarket } from "./versy-meta-roas";
 
 const TRANSACTION_LIMIT = 50_000;
 export type CampaignTransaction = {
@@ -9,9 +9,9 @@ export type CampaignTransaction = {
 };
 
 /** A charge and its refund are separate money movements; repeated notifications are not. */
-export function campaignTransactionProceeds(rows: CampaignTransaction[], days: RoasDay[], asOf: number): AcquisitionChart {
+export function campaignTransactionProceeds(rows: CampaignTransaction[], days: RoasDay[], asOf: number, markets: readonly RoasMarket[] = VERSY_META_MARKETS): AcquisitionChart {
   const selectedDays = new Set(days.map((day) => day.date));
-  const selectedCampaigns = new Set<string>(VERSY_META_MARKETS.flatMap((market) => market.campaigns.map((campaign) => campaign.id)));
+  const selectedCampaigns = new Set<string>(markets.flatMap((market) => market.campaigns.map((campaign) => campaign.id)));
   const latest = new Map<string, CampaignTransaction>();
   for (const row of rows) {
     if (!row.id || !Number.isFinite(Number(row.eventTs)) || !Number.isFinite(Number(row.attributionTs))
@@ -40,7 +40,8 @@ export function campaignTransactionProceeds(rows: CampaignTransaction[], days: R
 }
 
 /** Revenue is calculated from the ledger. Only spend uses Superwall's chart endpoint. */
-export async function fetchVersyCampaignDays(apiKey: string, days: RoasDay[], to: string, request: typeof fetch = fetch) {
+export async function fetchVersyCampaignDays(apiKey: string, days: RoasDay[], to: string, request: typeof fetch = fetch,
+  applicationId: 51393 | 58115 = 51393, markets: readonly RoasMarket[] = VERSY_META_MARKETS) {
   const from = `${days[0].date}T00:00:00Z`, startMs = Date.parse(from), asOf = Date.parse(to);
   if (!Number.isFinite(startMs) || !Number.isFinite(asOf) || asOf <= startMs) throw new Error("Invalid acquisition reporting window");
   const headers = { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" };
@@ -53,7 +54,7 @@ export async function fetchVersyCampaignDays(apiKey: string, days: RoasDay[], to
         toUnixTimestamp64Milli(ts) AS eventTs, toUnixTimestamp64Milli(attributionTs) AS attributionTs,
         toUnixTimestamp64Milli(insertedAt) AS insertedAt
         FROM open_revenue.attributed_events_by_ts_rep FINAL
-        WHERE applicationId = 51393 AND isSandbox = 0 AND source = 'integration' AND isFamilyShare = 0
+        WHERE applicationId = ${applicationId} AND isSandbox = 0 AND source = 'integration' AND isFamilyShare = 0
           AND (name IN ('initial_purchase', 'renewal', 'non_renewing_purchase') OR isRefund = 1)
           AND ts >= fromUnixTimestamp64Milli(${startMs}) AND ts < fromUnixTimestamp64Milli(${asOf}) AND ts < now()
           AND installDate >= fromUnixTimestamp64Milli(${startMs}) AND installDate < fromUnixTimestamp64Milli(${asOf})
@@ -63,12 +64,12 @@ export async function fetchVersyCampaignDays(apiKey: string, days: RoasDay[], to
     const result = await response.json() as { data?: CampaignTransaction[]; rows?: number; exception?: string };
     if (result.exception || !Array.isArray(result.data) || result.rows !== result.data.length
       || result.data.length >= TRANSACTION_LIMIT) throw new Error("Incomplete acquisition transaction query");
-    return campaignTransactionProceeds(result.data, days, asOf);
+    return campaignTransactionProceeds(result.data, days, asOf, markets);
   };
   const spend = async () => {
     const response = await request("https://api.superwall.com/v2/charts/data", {
       method: "POST", cache: "no-store", signal: AbortSignal.timeout(60_000), headers,
-      body: JSON.stringify({ application_id: "51393", y_axis: "adSpend", x_axis: "tsDate",
+      body: JSON.stringify({ application_id: String(applicationId), y_axis: "adSpend", x_axis: "tsDate",
         breakdown: "acquisitionCampaignId", date_interval: "day", environment: ["PRODUCTION"],
         date_filter: { dimension: "tsDate", preset: "custom", range: { from, to } } }),
     });
@@ -84,5 +85,5 @@ export async function fetchVersyCampaignDays(apiKey: string, days: RoasDay[], to
     return chart;
   };
   const [proceedsChart, spendChart] = await Promise.all([transactions(), spend()]);
-  return campaignDays(proceedsChart, spendChart, days);
+  return campaignDays(proceedsChart, spendChart, days, markets);
 }

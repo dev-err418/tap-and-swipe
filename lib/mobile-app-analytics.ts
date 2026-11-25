@@ -820,11 +820,11 @@ function attributeKeysFor(id: SuperwallAppConfig["id"]) {
 }
 
 /** Monthly acquisition report deliberately includes every app version. */
-export async function getVersyAcquisitionFacts(from: string, to: string) {
+export async function getVersyAcquisitionFacts(from: string, to: string, applicationId: 51393 | 58115 = VERSY_SUPERWALL_APPLICATION_ID) {
   const apiKey = process.env.SUPERWALL_VERSY_API_KEY?.trim();
   if (!apiKey) throw new Error("SUPERWALL_VERSY_API_KEY is not configured");
   const app: SuperwallAppConfig = { id: "versy", name: "Versy", iconUrl: VERSY_ICON_URL,
-    organizationId: VERSY_SUPERWALL_ORGANIZATION_ID, applicationId: VERSY_SUPERWALL_APPLICATION_ID, apiKey };
+    organizationId: VERSY_SUPERWALL_ORGANIZATION_ID, applicationId, apiKey };
   const start = clickhouseDate(new Date(from)), end = clickhouseDate(new Date(to));
   const [installs, events, rows] = await Promise.all([
     fetchInstallCohort(app, start, end), fetchAttributedEvents(app, start),
